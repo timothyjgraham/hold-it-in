@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOLD IT IN</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="hud-left">
+            <div class="hud-stat">
+                <span class="icon">🧻</span>
+                <span class="value" id="hygiene-display">5</span>
+            </div>
+            <div class="hud-stat">
+                <span class="icon">🪙</span>
+                <span class="value" id="coins-display">50</span>
+            </div>
+        </div>
+        <div id="hud-center">
+            <span id="wave-display">WAVE 1</span>
+        </div>
+        <div id="hud-right">
+            <div class="hud-stat">
+                <span class="value" id="score-display">0</span>
+                <span class="icon">PTS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wave Announcement -->
+    <div id="wave-announce"></div>
+
+    <!-- Pause Overlay -->
+    <div id="pause-overlay">
+        <div id="pause-text">PAUSED</div>
+    </div>
+
+    <!-- Tower Build Panel -->
+    <div id="tower-panel">
+        <div class="tower-btn" data-tower="wetfloor" title="Wet Floor Sign — Slows enemies">
+            <span class="hotkey">1</span>
+            <span class="label">Wet Floor</span>
+            <span class="cost">15</span>
+        </div>
+        <div class="tower-btn" data-tower="mop" title="Mop Turret — Attacks + knockback">
+            <span class="hotkey">2</span>
+            <span class="label">Mop</span>
+            <span class="cost">25</span>
+        </div>
+        <div class="tower-btn" data-tower="freshener" title="Air Freshener — Ranged DPS">
+            <span class="hotkey">3</span>
+            <span class="label">Freshener</span>
+            <span class="cost">35</span>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>HOLD IT IN</h1>
+        <div class="tagline">Your toilet. Your rules.</div>
+        <button id="start-btn">DEFEND THE THRONE</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen">
+        <h1>OCCUPIED</h1>
+        <div class="subtitle">They got to your toilet.</div>
+        <div class="stats" id="game-over-stats"></div>
+        <button id="restart-btn">TRY AGAIN</button>
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+    const Game = {
+        // === STATE ===
+        scene: null,
+        camera: null,
+        renderer: null,
+        clock: null,
+        toilet: null,
+
+        state: 'title',  // title | playing | paused | gameover
+        wave: 0,
+        hygiene: 5,
+        coins: 50,
+        score: 0,
+        time: 0,
+
+        // Entity arrays
+        enemies: [],
+        towers: [],
+        projectiles: [],
+
+        // Wave management
+        waveTimer: 0,
+        spawnTimer: 0,
+        enemiesSpawned: 0,
+        enemiesPerWave: 8,
+        spawnInterval: 1.5,
+        waveDelay: 3.0,
+        waveActive: false,
+
+        // Build mode
+        selectedTower: null,
+        gridHighlight: null,
+
+        // Raycasting for mouse interaction (initialized in init())
+        raycaster: null,
+        mouse: null,
+        groundPlane: null,
+
+        // Tower definitions
+        TOWERS: {
+            wetfloor: {
+                name: 'Wet Floor Sign',
+                cost: 15,
+                range: 5,
+                color: 0xf1c40f,
+                effect: 'slow',
+                slowFactor: 0.4,
+                hotkey: 'Digit1',
+            },
+            mop: {
+                name: 'Mop Turret',
+                cost: 25,
+                range: 4,
+                color: 0x8e44ad,
+                damage: 15,
+                attackRate: 1.2,
+                knockback: 2.0,
+                hotkey: 'Digit2',
+            },
+            freshener: {
+                name: 'Air Freshener',
+                cost: 35,
+                range: 8,
+                color: 0x2ecc71,
+                damage: 10,
+                attackRate: 0.6,
+                hotkey: 'Digit3',
+            },
+        },
+
+        // ============================
+        // INIT
+        // ============================
+        init() {
+            // Wait for THREE.js to load
+            if (!window.THREE) {
+                setTimeout(() => Game.init(), 50);
+                return;
+            }
+
+            // Init THREE-dependent objects
+            this.raycaster = new THREE.Raycaster();
+            this.mouse = new THREE.Vector2();
+            this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+            const container = document.getElementById('game-container');
+
+            // Renderer
+            this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.setClearColor(0x1a1a2e);
+            container.appendChild(this.renderer.domElement);
+
+            // Scene
+            this.scene = new THREE.Scene();
+            this.scene.fog = new THREE.Fog(0x1a1a2e, 60, 100);
+
+            // Camera — 35 degree top-down perspective
+            this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+            this.camera.position.set(0, CONFIG.cameraHeight, CONFIG.cameraOffsetZ);
+            this.camera.lookAt(0, 0, CONFIG.cameraLookZ);
+
+            // Clock
+            this.clock = new THREE.Clock();
+
+            // Build the scene
+            this._createLighting();
+            this._createGround();
+            this._createToilet();
+            this._createGrid();
+
+            // Input
+            this._setupInput();
+
+            // UI
+            this._setupUI();
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Start render loop (but game doesn't start until player clicks)
+            this._animate();
+
+            console.log('Hold It In — initialized');
+        },
+
+        // ============================
+        // SCENE SETUP
+        // ============================
+        _createLighting() {
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            this.scene.add(ambient);
+
+            // Main directional light (slightly warm, from above-right)
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+            dirLight.position.set(10, 30, -5);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 80;
+            dirLight.shadow.camera.left = -40;
+            dirLight.shadow.camera.right = 40;
+            dirLight.shadow.camera.top = 40;
+            dirLight.shadow.camera.bottom = -40;
+            this.scene.add(dirLight);
+
+            // Subtle blue fill from opposite side
+            const fillLight = new THREE.DirectionalLight(0x4466aa, 0.3);
+            fillLight.position.set(-10, 20, 10);
+            this.scene.add(fillLight);
+        },
+
+        _createGround() {
+            // Main ground plane (dark, extends to fog)
+            const groundGeo = new THREE.PlaneGeometry(200, 200);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: CONFIG.colors.ground,
+                roughness: 0.9,
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.05;
+            ground.receiveShadow = true;
+            this.scene.add(ground);
+
+            // Bathroom tile area (near the toilet)
+            const tileGeo = new THREE.PlaneGeometry(CONFIG.corridorWidth, CONFIG.corridorStart + 4);
+            const tileMat = new THREE.MeshStandardMaterial({
+                color: CONFIG.colors.tile,
+                roughness: 0.3,
+                metalness: 0.05,
+            });
+            const tile = new THREE.Mesh(tileGeo, tileMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.position.set(0, -0.02, CONFIG.corridorStart / 2 - 2);
+            tile.receiveShadow = true;
+            this.scene.add(tile);
+
+            // Lane floor (buildable area — slightly lighter)
+            const laneGeo = new THREE.PlaneGeometry(CONFIG.laneWidth, CONFIG.laneLength - CONFIG.corridorStart);
+            const laneMat = new THREE.MeshStandardMaterial({
+                color: 0x3a3a3a,
+                roughness: 0.85,
+            });
+            const lane = new THREE.Mesh(laneGeo, laneMat);
+            lane.rotation.x = -Math.PI / 2;
+            lane.position.set(0, -0.03, CONFIG.corridorStart + (CONFIG.laneLength - CONFIG.corridorStart) / 2);
+            lane.receiveShadow = true;
+            this.scene.add(lane);
+            this._laneFloor = lane;
+        },
+
+        _createToilet() {
+            this.toilet = createToilet();
+            this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
+            this.scene.add(this.toilet);
+        },
+
+        _createGrid() {
+            // Visual grid overlay for tower placement
+            const gridGroup = new THREE.Group();
+            gridGroup.name = 'buildGrid';
+
+            const gridSize = CONFIG.grid;
+            const halfW = Math.floor(CONFIG.laneWidth / gridSize / 2);
+            const startZ = CONFIG.corridorStart + 2; // Don't build in bathroom
+            const endZ = CONFIG.laneLength - 2;
+
+            const lineMat = new THREE.LineBasicMaterial({
+                color: CONFIG.colors.grid,
+                transparent: true,
+                opacity: 0.08,
+            });
+
+            // Vertical lines (along Z)
+            for (let x = -halfW; x <= halfW; x++) {
+                const geo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x * gridSize, 0.01, startZ),
+                    new THREE.Vector3(x * gridSize, 0.01, endZ),
+                ]);
+                gridGroup.add(new THREE.Line(geo, lineMat));
+            }
+
+            // Horizontal lines (along X)
+            for (let z = startZ; z <= endZ; z += gridSize) {
+                const geo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-halfW * gridSize, 0.01, z),
+                    new THREE.Vector3(halfW * gridSize, 0.01, z),
+                ]);
+                gridGroup.add(new THREE.Line(geo, lineMat));
+            }
+
+            this.scene.add(gridGroup);
+            this._buildGrid = gridGroup;
+
+            // Grid hover highlight
+            const highlightGeo = new THREE.PlaneGeometry(gridSize, gridSize);
+            const highlightMat = new THREE.MeshBasicMaterial({
+                color: 0xffd700,
+                transparent: true,
+                opacity: 0.25,
+                depthWrite: false,
+            });
+            this.gridHighlight = new THREE.Mesh(highlightGeo, highlightMat);
+            this.gridHighlight.rotation.x = -Math.PI / 2;
+            this.gridHighlight.position.y = 0.02;
+            this.gridHighlight.visible = false;
+            this.scene.add(this.gridHighlight);
+        },
+
+        // ============================
+        // INPUT
+        // ============================
+        _setupInput() {
+            // Keyboard
+            window.addEventListener('keydown', (e) => {
+                if (this.state === 'title') return;
+
+                // Pause toggle
+                if (e.code === 'Space' || e.code === 'Escape') {
+                    if (this.state === 'playing') this.pause();
+                    else if (this.state === 'paused') this.unpause();
+                    return;
+                }
+
+                // Tower hotkeys (work while paused too)
+                if (this.state === 'playing' || this.state === 'paused') {
+                    for (const [key, def] of Object.entries(this.TOWERS)) {
+                        if (e.code === def.hotkey) {
+                            this.selectTower(key);
+                            return;
+                        }
+                    }
+                }
+            });
+
+            // Mouse move (for grid highlight)
+            window.addEventListener('mousemove', (e) => {
+                this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            // Mouse click (place tower)
+            window.addEventListener('click', (e) => {
+                if (this.state !== 'playing' && this.state !== 'paused') return;
+                if (this.selectedTower) {
+                    this._tryPlaceTower(e);
+                }
+            });
+
+            // Right click to deselect
+            window.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.selectedTower = null;
+                this._updateTowerButtons();
+            });
+        },
+
+        // ============================
+        // UI
+        // ============================
+        _setupUI() {
+            // Start button
+            document.getElementById('start-btn').addEventListener('click', () => {
+                document.getElementById('start-screen').style.display = 'none';
+                this.start();
+            });
+
+            // Restart button
+            document.getElementById('restart-btn').addEventListener('click', () => {
+                document.getElementById('game-over-screen').classList.remove('active');
+                this.start();
+            });
+
+            // Tower panel buttons
+            document.querySelectorAll('.tower-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const towerType = btn.dataset.tower;
+                    this.selectTower(towerType);
+                });
+            });
+        },
+
+        selectTower(type) {
+            if (this.selectedTower === type) {
+                this.selectedTower = null;
+            } else {
+                this.selectedTower = type;
+            }
+            this._updateTowerButtons();
+        },
+
+        _updateTowerButtons() {
+            document.querySelectorAll('.tower-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.tower === this.selectedTower);
+            });
+        },
+
+        updateHUD() {
+            document.getElementById('hygiene-display').textContent = this.hygiene;
+            document.getElementById('coins-display').textContent = this.coins;
+            document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
+            document.getElementById('score-display').textContent = this.score;
+        },
+
+        announceWave(text) {
+            const el = document.getElementById('wave-announce');
+            el.textContent = text;
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), 2000);
+        },
+
+        // ============================
+        // GAME FLOW
+        // ============================
+        start() {
+            this.state = 'playing';
+            this.wave = 0;
+            this.hygiene = CONFIG.startingHygiene;
+            this.coins = CONFIG.startingCoins;
+            this.score = 0;
+            this.time = 0;
+            this.waveTimer = 0;
+            this.waveActive = false;
+
+            // Clear entities
+            this.enemies.forEach(e => { if (e.mesh) this.scene.remove(e.mesh); });
+            this.towers.forEach(t => { if (t.mesh) this.scene.remove(t.mesh); });
+            this.projectiles.forEach(p => { if (p.mesh) this.scene.remove(p.mesh); });
+            this.enemies = [];
+            this.towers = [];
+            this.projectiles = [];
+
+            this.selectedTower = null;
+            this._updateTowerButtons();
+            this.updateHUD();
+
+            // Start first wave after a brief delay
+            this.waveTimer = 2.0;
+
+            this.clock.start();
+            console.log('Game started — defend the throne!');
+        },
+
+        pause() {
+            if (this.state !== 'playing') return;
+            this.state = 'paused';
+            document.getElementById('pause-overlay').classList.add('active');
+        },
+
+        unpause() {
+            if (this.state !== 'paused') return;
+            this.state = 'playing';
+            document.getElementById('pause-overlay').classList.remove('active');
+        },
+
+        gameOver() {
+            this.state = 'gameover';
+            const stats = document.getElementById('game-over-stats');
+            stats.innerHTML = `Survived to Wave ${this.wave}<br>Score: ${this.score}<br>Enemies repelled: ${this._totalRepelled || 0}`;
+            document.getElementById('game-over-screen').classList.add('active');
+        },
+
+        // ============================
+        // TOWER PLACEMENT
+        // ============================
+        _getGridPos(screenX, screenY) {
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const intersect = new THREE.Vector3();
+            this.raycaster.ray.intersectPlane(this.groundPlane, intersect);
+            if (!intersect) return null;
+
+            const gs = CONFIG.grid;
+            const gx = Math.round(intersect.x / gs) * gs;
+            const gz = Math.round(intersect.z / gs) * gs;
+
+            // Bounds check — must be in buildable area
+            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+            const minZ = CONFIG.corridorStart + 2;
+            const maxZ = CONFIG.laneLength - 2;
+
+            if (gx < -halfW || gx > halfW || gz < minZ || gz > maxZ) return null;
+            return { x: gx, z: gz };
+        },
+
+        _isCellOccupied(gx, gz) {
+            const gs = CONFIG.grid;
+            return this.towers.some(t =>
+                Math.abs(t.gridX - gx) < gs * 0.5 && Math.abs(t.gridZ - gz) < gs * 0.5
+            );
+        },
+
+        _tryPlaceTower() {
+            const pos = this._getGridPos();
+            if (!pos) return;
+            if (this._isCellOccupied(pos.x, pos.z)) return;
+
+            const def = this.TOWERS[this.selectedTower];
+            if (!def) return;
+            if (this.coins < def.cost) return;
+
+            this.coins -= def.cost;
+
+            // Create tower mesh
+            const tower = this._createTowerMesh(this.selectedTower, def);
+            tower.gridX = pos.x;
+            tower.gridZ = pos.z;
+            tower.mesh.position.set(pos.x, 0, pos.z);
+            tower.mesh.castShadow = true;
+            this.scene.add(tower.mesh);
+            this.towers.push(tower);
+
+            this.updateHUD();
+        },
+
+        _createTowerMesh(type, def) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({
+                color: def.color,
+                roughness: 0.5,
+                metalness: 0.1,
+            });
+
+            if (type === 'wetfloor') {
+                // Triangle sign shape
+                const cone = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.6, 1.5, 4),
+                    mat
+                );
+                cone.position.y = 0.75;
+                group.add(cone);
+                // Exclamation mark
+                const dot = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.12, 6, 6),
+                    new THREE.MeshBasicMaterial({ color: 0x000000 })
+                );
+                dot.position.set(0, 0.5, 0.45);
+                group.add(dot);
+            } else if (type === 'mop') {
+                // Handle
+                const handle = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.05, 0.05, 2.0, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+                );
+                handle.position.y = 1.0;
+                group.add(handle);
+                // Mop head
+                const head = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.8, 0.3, 0.8),
+                    mat
+                );
+                head.position.y = 0.15;
+                group.add(head);
+                // Base
+                const base = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.4, 0.5, 0.3, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x555555 })
+                );
+                base.position.y = 0.15;
+                group.add(base);
+            } else if (type === 'freshener') {
+                // Can body
+                const can = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8),
+                    mat
+                );
+                can.position.y = 0.8;
+                group.add(can);
+                // Nozzle
+                const nozzle = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.15, 0.3, 6),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                );
+                nozzle.position.y = 1.5;
+                group.add(nozzle);
+                // Base platform
+                const base = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x555555 })
+                );
+                base.position.y = 0.1;
+                group.add(base);
+            }
+
+            return {
+                type: type,
+                mesh: group,
+                gridX: 0,
+                gridZ: 0,
+                def: def,
+                attackTimer: 0,
+                // Tower-specific state
+                ...(type === 'mop' && { swingAngle: 0 }),
+            };
+        },
+
+        // ============================
+        // ENEMY SPAWNING
+        // ============================
+        _startWave() {
+            this.wave++;
+            this.waveActive = true;
+            this.enemiesSpawned = 0;
+
+            // Scale difficulty
+            this.enemiesPerWave = 8 + Math.floor(this.wave * 2.5);
+            this.spawnInterval = Math.max(0.3, 1.5 - this.wave * 0.05);
+
+            this.spawnTimer = 0;
+            this.announceWave(`WAVE ${this.wave}`);
+            this.updateHUD();
+        },
+
+        _spawnEnemy() {
+            const spread = CONFIG.spawnWidth;
+            const x = (Math.random() - 0.5) * spread;
+            const z = CONFIG.spawnZoneZ + Math.random() * 4;
+
+            // Enemy type varies with wave
+            let speed = 3.0 + Math.random() * 1.5;
+            let hp = 30 + this.wave * 8;
+            let size = 0.5;
+            let color = 0xe67e22;
+            let coins = 3;
+            let enemyType = 'polite';
+
+            const roll = Math.random();
+            if (this.wave >= 3 && roll < 0.3) {
+                // Speed Walker
+                enemyType = 'speedwalker';
+                speed = 5.5 + Math.random() * 2;
+                hp = 20 + this.wave * 4;
+                size = 0.4;
+                color = 0x3498db;
+                coins = 4;
+            } else if (this.wave >= 6 && roll < 0.15) {
+                // Karen
+                enemyType = 'karen';
+                speed = 3.0;
+                hp = 80 + this.wave * 15;
+                size = 0.6;
+                color = 0xe74c3c;
+                coins = 8;
+            } else if (this.wave >= 5 && roll < 0.25) {
+                // Coffee Drinker
+                enemyType = 'coffee';
+                speed = 2.0;
+                hp = 60 + this.wave * 12;
+                size = 0.55;
+                color = 0x795548;
+                coins = 6;
+            }
+
+            // Create enemy mesh — simple low-poly person
+            const group = new THREE.Group();
+
+            // Body
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(size * 0.8, size * 1.4, size * 0.5),
+                new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 })
+            );
+            body.position.y = size * 1.2;
+            body.castShadow = true;
+            group.add(body);
+
+            // Head
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(size * 0.35, 6, 6),
+                new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.5 })
+            );
+            head.position.y = size * 2.1;
+            head.castShadow = true;
+            group.add(head);
+
+            // Legs (two small boxes)
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
+            leftLeg.position.set(-size * 0.15, size * 0.4, 0);
+            group.add(leftLeg);
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
+            rightLeg.position.set(size * 0.15, size * 0.4, 0);
+            group.add(rightLeg);
+
+            group.position.set(x, 0, z);
+            this.scene.add(group);
+
+            const enemy = {
+                type: enemyType,
+                mesh: group,
+                body: body,
+                leftLeg: leftLeg,
+                rightLeg: rightLeg,
+                x: x,
+                z: z,
+                speed: speed,
+                hp: hp,
+                maxHp: hp,
+                size: size,
+                coins: coins,
+                slowed: 0,
+                walkPhase: Math.random() * Math.PI * 2,
+            };
+
+            this.enemies.push(enemy);
+            this.enemiesSpawned++;
+        },
+
+        // ============================
+        // UPDATE LOOP
+        // ============================
+        update(dt) {
+            if (this.state !== 'playing') return;
+
+            this.time += dt;
+
+            // --- Wave management ---
+            if (!this.waveActive) {
+                this.waveTimer -= dt;
+                if (this.waveTimer <= 0) {
+                    this._startWave();
+                }
+            } else {
+                // Spawn enemies
+                this.spawnTimer -= dt;
+                if (this.spawnTimer <= 0 && this.enemiesSpawned < this.enemiesPerWave) {
+                    this._spawnEnemy();
+                    this.spawnTimer = this.spawnInterval;
+                }
+
+                // Wave complete when all enemies spawned and cleared
+                if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length === 0) {
+                    this.waveActive = false;
+                    this.waveTimer = this.waveDelay;
+                    // Bonus coins for surviving the wave
+                    this.coins += 10 + this.wave * 2;
+                    this.updateHUD();
+                }
+            }
+
+            // --- Update enemies ---
+            for (let i = this.enemies.length - 1; i >= 0; i--) {
+                const e = this.enemies[i];
+
+                // Check slow from Wet Floor Signs
+                let slowMult = 1.0;
+                if (e.slowed > 0) {
+                    e.slowed -= dt;
+                } else {
+                    // Check proximity to slow towers
+                    for (const t of this.towers) {
+                        if (t.type !== 'wetfloor') continue;
+                        const dx = e.x - t.mesh.position.x;
+                        const dz = e.z - t.mesh.position.z;
+                        const dist = Math.sqrt(dx * dx + dz * dz);
+                        if (dist < t.def.range) {
+                            slowMult = t.def.slowFactor;
+                            break;
+                        }
+                    }
+                }
+
+                // Move toward toilet
+                const targetZ = CONFIG.toiletPos.z;
+                const moveSpeed = e.speed * slowMult * dt;
+                e.z -= moveSpeed;
+                e.mesh.position.z = e.z;
+                e.mesh.position.x = e.x;
+
+                // Walk animation
+                e.walkPhase += dt * e.speed * 2;
+                const legSwing = Math.sin(e.walkPhase) * 0.3;
+                if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
+                if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
+                // Slight body bob
+                e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
+
+                // Reached the toilet?
+                if (e.z <= targetZ + 2) {
+                    this.hygiene--;
+                    this.scene.remove(e.mesh);
+                    this.enemies.splice(i, 1);
+                    this.updateHUD();
+
+                    if (this.hygiene <= 0) {
+                        this.gameOver();
+                        return;
+                    }
+                    continue;
+                }
+
+                // Dead?
+                if (e.hp <= 0) {
+                    this.score += 10;
+                    this.coins += e.coins;
+                    this._totalRepelled = (this._totalRepelled || 0) + 1;
+
+                    // Coffee Drinker splits on death
+                    if (e.type === 'coffee') {
+                        for (let s = 0; s < 2; s++) {
+                            const miniGroup = new THREE.Group();
+                            const miniBody = new THREE.Mesh(
+                                new THREE.BoxGeometry(0.25, 0.4, 0.2),
+                                new THREE.MeshStandardMaterial({ color: 0x4fc3f7 })
+                            );
+                            miniBody.position.y = 0.3;
+                            miniGroup.add(miniBody);
+                            const miniHead = new THREE.Mesh(
+                                new THREE.SphereGeometry(0.12, 6, 6),
+                                new THREE.MeshStandardMaterial({ color: 0xffccaa })
+                            );
+                            miniHead.position.y = 0.6;
+                            miniGroup.add(miniHead);
+                            miniGroup.position.set(e.x + (s === 0 ? -0.5 : 0.5), 0, e.z);
+                            this.scene.add(miniGroup);
+                            this.enemies.push({
+                                type: 'espresso',
+                                mesh: miniGroup,
+                                body: miniBody,
+                                leftLeg: null,
+                                rightLeg: null,
+                                x: e.x + (s === 0 ? -0.5 : 0.5),
+                                z: e.z,
+                                speed: 7,
+                                hp: 10,
+                                maxHp: 10,
+                                size: 0.3,
+                                coins: 1,
+                                slowed: 0,
+                                walkPhase: Math.random() * Math.PI * 2,
+                            });
+                        }
+                    }
+
+                    this.scene.remove(e.mesh);
+                    this.enemies.splice(i, 1);
+                    this.updateHUD();
+                    continue;
+                }
+            }
+
+            // --- Update towers (attack) ---
+            for (const t of this.towers) {
+                if (t.type === 'wetfloor') continue; // passive, no attack
+
+                t.attackTimer -= dt;
+                if (t.attackTimer > 0) continue;
+
+                // Find nearest enemy in range
+                let nearest = null;
+                let nearestDist = Infinity;
+                for (const e of this.enemies) {
+                    const dx = e.x - t.mesh.position.x;
+                    const dz = e.z - t.mesh.position.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist < t.def.range && dist < nearestDist) {
+                        nearest = e;
+                        nearestDist = dist;
+                    }
+                }
+
+                if (!nearest) continue;
+
+                t.attackTimer = t.def.attackRate;
+
+                if (t.type === 'mop') {
+                    // Melee attack — direct damage + knockback
+                    nearest.hp -= t.def.damage;
+                    nearest.z += t.def.knockback;
+                    nearest.mesh.position.z = nearest.z;
+                    // Animate mop swing
+                    t.swingAngle = 1.0;
+                } else if (t.type === 'freshener') {
+                    // Ranged — spawn projectile
+                    this._fireProjectile(t, nearest);
+                }
+            }
+
+            // --- Animate mop swing ---
+            for (const t of this.towers) {
+                if (t.type !== 'mop' || !t.swingAngle) continue;
+                t.swingAngle *= 0.85;
+                if (t.swingAngle < 0.01) t.swingAngle = 0;
+                t.mesh.rotation.y = Math.sin(this.time * 20) * t.swingAngle * 0.5;
+            }
+
+            // --- Update projectiles ---
+            for (let i = this.projectiles.length - 1; i >= 0; i--) {
+                const p = this.projectiles[i];
+                p.x += p.vx * dt;
+                p.z += p.vz * dt;
+                p.mesh.position.set(p.x, 0.8, p.z);
+                p.life -= dt;
+
+                if (p.life <= 0) {
+                    this.scene.remove(p.mesh);
+                    this.projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Hit detection
+                for (const e of this.enemies) {
+                    const dx = e.x - p.x;
+                    const dz = e.z - p.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist < e.size + 0.3) {
+                        e.hp -= p.damage;
+                        this.scene.remove(p.mesh);
+                        this.projectiles.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        },
+
+        _fireProjectile(tower, target) {
+            const dx = target.x - tower.mesh.position.x;
+            const dz = target.z - tower.mesh.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            const speed = 20;
+
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 6, 6),
+                new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+            );
+            mesh.position.set(tower.mesh.position.x, 0.8, tower.mesh.position.z);
+            this.scene.add(mesh);
+
+            this.projectiles.push({
+                mesh: mesh,
+                x: tower.mesh.position.x,
+                z: tower.mesh.position.z,
+                vx: (dx / dist) * speed,
+                vz: (dz / dist) * speed,
+                damage: tower.def.damage,
+                life: 2.0,
+            });
+        },
+
+        // ============================
+        // GRID HOVER
+        // ============================
+        _updateGridHover() {
+            if (!this.selectedTower || (this.state !== 'playing' && this.state !== 'paused')) {
+                this.gridHighlight.visible = false;
+                return;
+            }
+
+            const pos = this._getGridPos();
+            if (!pos) {
+                this.gridHighlight.visible = false;
+                return;
+            }
+
+            this.gridHighlight.position.set(pos.x, 0.02, pos.z);
+            this.gridHighlight.visible = true;
+
+            // Color: green if can place, red if occupied or can't afford
+            const def = this.TOWERS[this.selectedTower];
+            const canPlace = !this._isCellOccupied(pos.x, pos.z) && this.coins >= def.cost;
+            this.gridHighlight.material.color.setHex(canPlace ? 0x00ff00 : 0xff0000);
+        },
+
+        // ============================
+        // RENDER LOOP
+        // ============================
+        _animate() {
+            requestAnimationFrame(() => this._animate());
+
+            const dt = Math.min(this.clock.getDelta(), 0.05); // Cap dt
+
+            // Always update toilet glow
+            updateToilet(this.toilet, this.clock.elapsedTime);
+
+            // Update grid hover
+            this._updateGridHover();
+
+            // Game logic
+            this.update(dt);
+
+            // Render
+            this.renderer.render(this.scene, this.camera);
+        },
+    };
+    </script>
+
+    <!-- Module entry point (loads after Game is defined) -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
