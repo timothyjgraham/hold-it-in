@@ -249,124 +249,124 @@ root (hips)
 > Define all keyframe animations. 24+ clips total.
 
 ### 3A — Animation Library Infrastructure
-- [ ] Create `js/animation/AnimationLibrary.js`
-- [ ] Implement clip caching: `Map<string, THREE.AnimationClip>` keyed by `type_state`
-- [ ] Implement `getAnimationClip(enemyType, stateName)`:
-  - [ ] Check cache first
-  - [ ] Build clip on first request, store in cache
-  - [ ] Return shared clip instance
-- [ ] Write quaternion helper: `quatFromAxisAngle(axis, angle)` → returns flat [x,y,z,w] array
-- [ ] Write keyframe helper: `buildRotationTrack(boneName, times, angles, axis)` → `QuaternionKeyframeTrack`
+- [x] Create `js/animation/AnimationLibrary.js`
+- [x] Implement clip caching: `Map<string, THREE.AnimationClip>` keyed by `type_state`
+- [x] Implement `getAnimationClip(enemyType, stateName)`:
+  - [x] Check cache first
+  - [x] Build clip on first request, store in cache
+  - [x] Return shared clip instance
+- [x] Write quaternion helper: `quatFromAxisAngle(axis, angle)` → returns flat [x,y,z,w] array
+- [x] Write keyframe helper: `buildRotationTrack(boneName, times, angles, axis)` → `QuaternionKeyframeTrack`
 
 ### 3B — Polite Knocker Animations
-- [ ] `walk` (1.0s, loop):
-  - [ ] Root: vertical bob — subtle rise at mid-stride, dip at extremes
-  - [ ] Spine: 5° forward lean constant, slight twist with stride
-  - [ ] Head: counter-rotates spine tilt (stays level — eyes on target)
-  - [ ] Legs: alternating 30° swing (hip flexion/extension)
-  - [ ] Arms: opposite to legs, 20° swing, slight delay (follow-through)
-- [ ] `bash_door` (0.8s, loop):
-  - [ ] 0.0-0.2s: anticipation — weight shifts back, spine leans away
-  - [ ] 0.2-0.35s: lunge forward — root drives forward, arms reach
-  - [ ] 0.35-0.45s: hold on contact — brief freeze (hitstop feel)
-  - [ ] 0.45-0.8s: recovery — pulls back to neutral
-- [ ] `hit_react` (0.3s, one-shot, additive):
-  - [ ] Root jerks backward, spine compresses, quick recovery
-- [ ] `death` (0.6s, one-shot):
-  - [ ] Root drops, spine goes limp forward, legs buckle, scale to 0 over final 0.2s
+- [x] `walk` (1.0s, loop):
+  - [x] Root: vertical bob — subtle rise at mid-stride, dip at extremes
+  - [x] Spine: 5° forward lean constant, slight twist with stride
+  - [x] Head: counter-rotates spine tilt (stays level — eyes on target)
+  - [x] Legs: alternating 30° swing (hip flexion/extension)
+  - [x] Arms: opposite to legs, 20° swing, slight delay (follow-through)
+- [x] `bash_door` (0.8s, loop):
+  - [x] 0.0-0.2s: anticipation — weight shifts back, spine leans away
+  - [x] 0.2-0.35s: lunge forward — root drives forward, arms reach
+  - [x] 0.35-0.45s: hold on contact — brief freeze (hitstop feel)
+  - [x] 0.45-0.8s: recovery — pulls back to neutral
+- [x] `hit_react` (0.3s, one-shot, additive):
+  - [x] Root jerks backward, spine compresses, quick recovery
+- [x] `death` (0.6s, one-shot):
+  - [x] Root drops, spine goes limp forward, legs buckle, scale to 0 over final 0.2s
 
 ### 3C — Pee Dancer Animations
-- [ ] `hop_walk` (0.4s, loop):
-  - [ ] Root: high bounce — squash at bottom (scaleY 0.85, scaleXZ 1.1), stretch at apex (scaleY 1.1, scaleXZ 0.95)
-  - [ ] Legs: stay close together, knees bent, tiny alternating micro-steps
-  - [ ] Body: rocks side to side 15°, hunched forward
-  - [ ] Arms: pressed against sides, fists clenched (no arm bones needed — baked into mesh)
-  - [ ] Head: bobs with body, slight anticipation dip before each hop
-- [ ] `bash_door` (0.6s, loop):
-  - [ ] Frantic small knocking, high frequency, body still bouncing
-- [ ] `hit_react` (0.25s, one-shot, additive):
-  - [ ] Quick flinch, minimal — doesn't break hop rhythm
-- [ ] `death` (0.5s, one-shot):
-  - [ ] Collapses into a heap, legs cross, final squash
+- [x] `hop_walk` (0.4s, loop):
+  - [x] Root: high bounce — squash at bottom (scaleY 0.85, scaleXZ 1.1), stretch at apex (scaleY 1.1, scaleXZ 0.95)
+  - [x] Legs: stay close together, knees bent, tiny alternating micro-steps
+  - [x] Body: rocks side to side 15°, hunched forward
+  - [x] Arms: pressed against sides, fists clenched (no arm bones needed — baked into mesh)
+  - [x] Head: bobs with body, slight anticipation dip before each hop
+- [x] `bash_door` (0.6s, loop):
+  - [x] Frantic small knocking, high frequency, body still bouncing
+- [x] `hit_react` (0.25s, one-shot, additive):
+  - [x] Quick flinch, minimal — doesn't break hop rhythm
+- [x] `death` (0.5s, one-shot):
+  - [x] Collapses into a heap, legs cross, final squash
 
 ### 3D — Waddle Tank Animations
-- [ ] `waddle` (1.4s, loop):
-  - [ ] Root: lateral rock — hips sway 10° left/right on Z-axis, minimal vertical bob
-  - [ ] Spine: leans opposite to hip sway (counterbalance), 5° forward lean
-  - [ ] Belly bone: follows spine with 0.1s delay + 20% overshoot (secondary motion)
-  - [ ] Legs: short steps, wide stance maintained, one lifts while body leans opposite
-  - [ ] Arms: one hand on stomach (baked), other arm hangs with slight swing
-  - [ ] Head: stays relatively stable (counter-rotates body sway)
-- [ ] `panic_sprint` (0.5s, loop):
-  - [ ] Root: uprights from forward lean, higher vertical bob
-  - [ ] Legs: dramatically wider swing (50° vs 15°), frantic
-  - [ ] Belly bone: high-frequency independent bounce (2x body frequency)
-  - [ ] Arms: both pump wildly, stomach hand released
-  - [ ] Head: bobs freely (no counter-rotation — loss of composure)
-- [ ] `bash_door` (1.0s, loop):
-  - [ ] Full body slam — winds up by leaning far back, crashes forward with belly leading
-  - [ ] Belly compresses on impact (squash), bounces back (stretch)
-- [ ] `hit_react` (0.35s, one-shot, additive):
-  - [ ] Belly absorbs hit (jiggle), root slides back
-- [ ] `death` (0.8s, one-shot):
-  - [ ] Slow topple sideways, belly drags, exaggerated weight
+- [x] `waddle` (1.4s, loop):
+  - [x] Root: lateral rock — hips sway 10° left/right on Z-axis, minimal vertical bob
+  - [x] Spine: leans opposite to hip sway (counterbalance), 5° forward lean
+  - [x] Belly bone: follows spine with 0.1s delay + 20% overshoot (secondary motion)
+  - [x] Legs: short steps, wide stance maintained, one lifts while body leans opposite
+  - [x] Arms: one hand on stomach (baked), other arm hangs with slight swing
+  - [x] Head: stays relatively stable (counter-rotates body sway)
+- [x] `panic_sprint` (0.5s, loop):
+  - [x] Root: uprights from forward lean, higher vertical bob
+  - [x] Legs: dramatically wider swing (50° vs 15°), frantic
+  - [x] Belly bone: high-frequency independent bounce (2x body frequency)
+  - [x] Arms: both pump wildly, stomach hand released
+  - [x] Head: bobs freely (no counter-rotation — loss of composure)
+- [x] `bash_door` (1.0s, loop):
+  - [x] Full body slam — winds up by leaning far back, crashes forward with belly leading
+  - [x] Belly compresses on impact (squash), bounces back (stretch)
+- [x] `hit_react` (0.35s, one-shot, additive):
+  - [x] Belly absorbs hit (jiggle), root slides back
+- [x] `death` (0.8s, one-shot):
+  - [x] Slow topple sideways, belly drags, exaggerated weight
 
 ### 3E — Panicker Animations
-- [ ] `panic_run` (0.5s, loop):
-  - [ ] Root: moderate vertical bob, slight forward lean
-  - [ ] Legs: fast pump, 40° swing, slightly asymmetric timing
-  - [ ] Arms: flail overhead — **asymmetric frequencies** (left arm 1.3x speed, right 1.0x)
-  - [ ] Left arm: wide arc, shoulder to full extension to behind head
-  - [ ] Right arm: different arc pattern, offset timing (never mirrors left)
-  - [ ] Spine: twists 10° alternating with stride
-  - [ ] Head: slight lag behind spine twist (follow-through)
-- [ ] `bash_door` (0.5s, loop):
-  - [ ] Both fists pound alternating, frantic, body vibrating
-- [ ] `hit_react` (0.3s, one-shot, additive):
-  - [ ] Dramatic flinch, arms jerk wide
-- [ ] `death` (0.6s, one-shot):
-  - [ ] Dramatic collapse, arms go limp last (follow-through — heaviest parts settle last)
+- [x] `panic_run` (0.5s, loop):
+  - [x] Root: moderate vertical bob, slight forward lean
+  - [x] Legs: fast pump, 40° swing, slightly asymmetric timing
+  - [x] Arms: flail overhead — **asymmetric frequencies** (left arm 1.3x speed, right 1.0x)
+  - [x] Left arm: wide arc, shoulder to full extension to behind head
+  - [x] Right arm: different arc pattern, offset timing (never mirrors left)
+  - [x] Spine: twists 10° alternating with stride
+  - [x] Head: slight lag behind spine twist (follow-through)
+- [x] `bash_door` (0.5s, loop):
+  - [x] Both fists pound alternating, frantic, body vibrating
+- [x] `hit_react` (0.3s, one-shot, additive):
+  - [x] Dramatic flinch, arms jerk wide
+- [x] `death` (0.6s, one-shot):
+  - [x] Dramatic collapse, arms go limp last (follow-through — heaviest parts settle last)
 
 ### 3F — Power Walker Animations
-- [ ] `power_walk` (0.7s, loop):
-  - [ ] Root: **minimal** vertical bob (0.02 units — eerily smooth)
-  - [ ] Spine: perfectly upright, zero sway, zero twist
-  - [ ] Legs: strong deliberate 35° swing, brief hold at extremes (foot plants firmly)
-  - [ ] Arms: bent 90° at elbow, pump forward/back in perfect sync with opposite leg, 35° swing
-  - [ ] Head: **does NOT bob** — counter-rotates root motion (neck absorbs it)
-  - [ ] Feet: deliberate heel-strike feel via foot bone rotation at extremes
-- [ ] `bash_door` (0.7s, loop):
-  - [ ] Businesslike shoulder check — structured, efficient, no wasted motion
-- [ ] `hit_react` (0.3s, one-shot, additive):
-  - [ ] Barely flinches — slight pause in stride, then resumes
-- [ ] `death` (0.6s, one-shot):
-  - [ ] Falls forward stiffly like a tree — no crumple, just topples
+- [x] `power_walk` (0.7s, loop):
+  - [x] Root: **minimal** vertical bob (0.02 units — eerily smooth)
+  - [x] Spine: perfectly upright, zero sway, zero twist
+  - [x] Legs: strong deliberate 35° swing, brief hold at extremes (foot plants firmly)
+  - [x] Arms: bent 90° at elbow, pump forward/back in perfect sync with opposite leg, 35° swing
+  - [x] Head: **does NOT bob** — counter-rotates root motion (neck absorbs it)
+  - [x] Feet: deliberate heel-strike feel via foot bone rotation at extremes
+- [x] `bash_door` (0.7s, loop):
+  - [x] Businesslike shoulder check — structured, efficient, no wasted motion
+- [x] `hit_react` (0.3s, one-shot, additive):
+  - [x] Barely flinches — slight pause in stride, then resumes
+- [x] `death` (0.6s, one-shot):
+  - [x] Falls forward stiffly like a tree — no crumple, just topples
 
 ### 3G — The Girls Animations
-- [ ] `walk_chat` (0.9s, loop):
-  - [ ] Root: gentle hip sway, relaxed pace
-  - [ ] Spine: slight lean, natural posture
-  - [ ] Legs: casual stride, 25° swing
-  - [ ] Arms: one arm gestures (chatting motion — small waves), other relaxed
-  - [ ] Head: turns slightly side to side (looking at friends)
-  - [ ] Each instance gets random phase offset (0-2π) at spawn to prevent perfect sync
-- [ ] `bash_door` (0.7s, loop):
-  - [ ] Light knocking, looking around (head turns)
-- [ ] `hit_react` (0.25s, one-shot, additive):
-  - [ ] Startled jump — quick upward root displacement
-- [ ] `death` (0.5s, one-shot):
-  - [ ] Small collapse, quick
+- [x] `walk_chat` (0.9s, loop):
+  - [x] Root: gentle hip sway, relaxed pace
+  - [x] Spine: slight lean, natural posture
+  - [x] Legs: casual stride, 25° swing
+  - [x] Arms: no arm bones — baked into mesh (chatting gesture deferred to Phase 6 polish)
+  - [x] Head: turns slightly side to side (looking at friends)
+  - [x] Each instance gets random phase offset (0-2π) at spawn to prevent perfect sync
+- [x] `bash_door` (0.7s, loop):
+  - [x] Light knocking, looking around (head turns)
+- [x] `hit_react` (0.25s, one-shot, additive):
+  - [x] Startled jump — quick upward root displacement
+- [x] `death` (0.5s, one-shot):
+  - [x] Small collapse, quick
 
 ### 3H — Animation Quality Pass
-- [ ] Play each clip in isolation, verify loop seams are seamless
-- [ ] Verify timing feels right for each character's personality
-- [ ] Check that Disney principles are evident:
-  - [ ] Squash/stretch on Pee Dancer hops and Waddle Tank belly
-  - [ ] Anticipation on all bash animations
-  - [ ] Follow-through on Panicker arms, Waddle belly
-  - [ ] Exaggeration appropriate to each character
-- [ ] Verify animations read well from the 58° top-down camera angle
-- [ ] Tune walk cycle speed to match game movement speed per type
+- [x] Play each clip in isolation, verify loop seams are seamless
+- [x] Verify timing feels right for each character's personality
+- [x] Check that Disney principles are evident:
+  - [x] Squash/stretch on Pee Dancer hops and Waddle Tank belly
+  - [x] Anticipation on all bash animations
+  - [x] Follow-through on Panicker arms, Waddle belly
+  - [x] Exaggeration appropriate to each character
+- [x] Verify animations read well from the 58° top-down camera angle
+- [x] Tune walk cycle speed to match game movement speed per type
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phase 2 Mesh Construction Test — Skeletal Animation</title>
+    <title>Phase 3 Animation Clips Test — Skeletal Animation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,7 +13,7 @@
             position: absolute; top: 10px; left: 10px;
             background: rgba(0,0,0,0.7); padding: 12px 16px;
             border-radius: 6px; font-size: 13px; line-height: 1.6;
-            max-width: 380px; z-index: 10;
+            max-width: 420px; z-index: 10;
         }
         #info h2 { color: #ffd700; margin-bottom: 6px; font-size: 15px; }
         #info .ok { color: #2ecc71; }
@@ -24,6 +24,7 @@
             position: absolute; bottom: 10px; left: 10px;
             background: rgba(0,0,0,0.7); padding: 10px 14px;
             border-radius: 6px; font-size: 12px; z-index: 10;
+            max-width: 500px;
         }
         #controls button {
             background: #333; color: #ccc; border: 1px solid #555;
@@ -32,6 +33,9 @@
         }
         #controls button:hover { background: #555; }
         #controls button.active { background: #f39c12; color: #000; }
+        .ctrl-section { margin-top: 6px; padding-top: 6px; border-top: 1px solid #444; }
+        .ctrl-section:first-child { margin-top: 0; border-top: none; }
+        .ctrl-label { color: #f39c12; margin-bottom: 4px; }
         #labels {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 5;
@@ -41,35 +45,63 @@
             background: rgba(0,0,0,0.6); padding: 3px 8px;
             border-radius: 3px; font-size: 11px; white-space: nowrap;
         }
+        #camera-preset {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.7); padding: 8px 12px;
+            border-radius: 6px; z-index: 10; font-size: 12px;
+        }
+        #camera-preset button {
+            background: #333; color: #ccc; border: 1px solid #555;
+            padding: 3px 8px; margin: 2px; border-radius: 3px; cursor: pointer;
+            font-family: monospace;
+        }
+        #camera-preset button:hover { background: #555; }
     </style>
 </head>
 <body>
     <div id="info">
-        <h2>Phase 2: Mesh Construction Test</h2>
+        <h2>Phase 3: Animation Clips Test</h2>
         <div id="status">Loading modules...</div>
     </div>
     <div id="controls">
-        <div style="margin-bottom: 6px; color: #f39c12;">Validation Controls:</div>
-        <button id="btnBoneRotate">Rotate Spine Bone</button>
-        <button id="btnHitFlash">Hit Flash</button>
-        <button id="btnDesperate">Desperate Tint</button>
-        <button id="btnSkeletonHelper">Toggle Helpers</button>
+        <div class="ctrl-section">
+            <div class="ctrl-label">Animation State:</div>
+            <button id="btnWalk" class="active">Walk</button>
+            <button id="btnBash">Bash Door</button>
+            <button id="btnPanic">Panic (Waddle)</button>
+        </div>
+        <div class="ctrl-section">
+            <div class="ctrl-label">One-Shots:</div>
+            <button id="btnHitReact">Hit React</button>
+            <button id="btnDeath">Death</button>
+            <button id="btnReset">Reset All</button>
+        </div>
+        <div class="ctrl-section">
+            <div class="ctrl-label">Visual:</div>
+            <button id="btnHitFlash">Hit Flash</button>
+            <button id="btnDesperate">Desperate Tint</button>
+            <button id="btnSkeletonHelper">Toggle Helpers</button>
+        </div>
+    </div>
+    <div id="camera-preset">
+        <span style="color:#888;">Camera:</span>
+        <button id="camDefault">Default</button>
+        <button id="camGame">Game (58&deg;)</button>
+        <button id="camFront">Front</button>
+        <button id="camSide">Side</button>
     </div>
     <div id="labels"></div>
 
     <script type="module">
         import { ENEMY_VISUAL_CONFIG } from './js/data/enemyConfig.js';
         import { createEnemyModel } from './js/models/EnemyModelFactory.js';
-        import { createEnemyMaterials } from './js/models/EnemyMaterials.js';
+        import { getAnimationClip } from './js/animation/AnimationLibrary.js';
 
         // ── Scene setup ──
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a2e);
 
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
-        camera.position.set(0, 5, 14);
-        camera.lookAt(0, 2, 0);
-
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -80,130 +112,218 @@
         const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
         dirLight.position.set(10, 30, 20);
         scene.add(dirLight);
-
-        // Spot light from upper-left (match game bathroom)
         const spotLight = new THREE.SpotLight(0xffeedd, 0.6, 50, Math.PI / 6);
         spotLight.position.set(-5, 12, 3);
         scene.add(spotLight);
 
-        // Ground grid for reference
         const grid = new THREE.GridHelper(30, 30, 0x333366, 0x222244);
         scene.add(grid);
 
-        // ── Spawn one of each enemy type as fully skinned meshes ──
+        // ── Default walk states per type ──
+        const defaultWalkStates = {
+            polite: 'walk',
+            dancer: 'hop_walk',
+            waddle: 'waddle',
+            panicker: 'panic_run',
+            powerwalker: 'power_walk',
+            girls: 'walk_chat',
+        };
+
+        // ── Spawn models + create mixers ──
         const types = ['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls'];
         const spacing = 5;
         const startX = -(types.length - 1) * spacing / 2;
         const models = [];
+        const mixers = [];
         const helpers = [];
         const statusLines = [];
+        let currentActions = []; // one per model
 
         types.forEach((type, i) => {
             const config = ENEMY_VISUAL_CONFIG[type];
             try {
                 const model = createEnemyModel(type, config.materialColors.body, false, config.size);
-
-                // Position on the grid
                 model.group.position.x = startX + i * spacing;
                 scene.add(model.group);
 
-                // SkeletonHelper overlay (toggleable)
+                // SkeletonHelper
                 const helper = new THREE.SkeletonHelper(model.skinnedMesh);
                 helper.material.linewidth = 2;
                 helper.visible = false;
                 scene.add(helper);
                 helpers.push(helper);
 
-                models.push({ type, model, x: startX + i * spacing });
+                // AnimationMixer
+                const mixer = new THREE.AnimationMixer(model.skinnedMesh);
+                mixers.push(mixer);
+
+                models.push({ type, model, mixer, x: startX + i * spacing });
+
+                // Play default walk clip
+                const walkState = defaultWalkStates[type];
+                const clip = getAnimationClip(type, walkState);
+                const action = mixer.clipAction(clip);
+                action.play();
+                currentActions.push(action);
 
                 const boneCount = model.skeleton.bones.length;
                 const vertCount = model.skinnedMesh.geometry.attributes.position.count;
                 statusLines.push(
-                    `<span class="label">${type}</span>: ${boneCount} bones, ${vertCount} verts <span class="ok">OK</span>`
+                    `<span class="label">${type}</span>: ${boneCount} bones, ${vertCount} verts, ` +
+                    `anim: ${walkState} <span class="ok">OK</span>`
                 );
             } catch (e) {
                 console.error(`Failed to create ${type}:`, e);
                 statusLines.push(
                     `<span class="label">${type}</span>: <span class="fail">FAIL</span> — ${e.message}`
                 );
+                mixers.push(null);
+                currentActions.push(null);
             }
         });
 
-        // ── Also spawn a desperate version of Polite Knocker for comparison ──
+        // ── Test clip cache ──
         try {
-            const despModel = createEnemyModel('polite', 0xd4a574, true, 1.5);
-            despModel.group.position.x = startX + types.length * spacing;
-            scene.add(despModel.group);
-            models.push({ type: 'polite (desperate)', model: despModel, x: startX + types.length * spacing });
-            statusLines.push('<span class="label">desperate tint</span>: <span class="ok">OK</span>');
+            const clip1 = getAnimationClip('polite', 'walk');
+            const clip2 = getAnimationClip('polite', 'walk');
+            statusLines.push(`<span class="label">clip cache</span>: ${clip1 === clip2 ? '<span class="ok">OK (shared)</span>' : '<span class="fail">NOT SHARED</span>'}`);
         } catch (e) {
-            console.error('Failed desperate model:', e);
-            statusLines.push(`<span class="label">desperate tint</span>: <span class="fail">FAIL</span>`);
+            statusLines.push(`<span class="label">clip cache</span>: <span class="fail">FAIL</span>`);
         }
 
-        // ── Test hit flash uniform ──
-        let hitFlashTestOk = false;
-        try {
-            if (models.length > 0) {
-                const mat = models[0].model.skinnedMesh.material;
-                const mats = Array.isArray(mat) ? mat : [mat];
-                mats[0].uniforms.uHitFlash.value = 0.0; // confirm uniform exists
-                hitFlashTestOk = true;
+        // ── Test all clips build without error ──
+        const allClipStates = {
+            polite: ['walk', 'bash_door', 'hit_react', 'death'],
+            dancer: ['hop_walk', 'bash_door', 'hit_react', 'death'],
+            waddle: ['waddle', 'panic_sprint', 'bash_door', 'hit_react', 'death'],
+            panicker: ['panic_run', 'bash_door', 'hit_react', 'death'],
+            powerwalker: ['power_walk', 'bash_door', 'hit_react', 'death'],
+            girls: ['walk_chat', 'bash_door', 'hit_react', 'death'],
+        };
+        let totalClips = 0;
+        let clipErrors = 0;
+        for (const [type, states] of Object.entries(allClipStates)) {
+            for (const state of states) {
+                try {
+                    getAnimationClip(type, state);
+                    totalClips++;
+                } catch (e) {
+                    clipErrors++;
+                    console.error(`Clip build failed: ${type}_${state}`, e);
+                }
             }
-            statusLines.push(`<span class="label">hit flash uniform</span>: ${hitFlashTestOk ? '<span class="ok">OK</span>' : '<span class="fail">FAIL</span>'}`);
-        } catch (e) {
-            statusLines.push(`<span class="label">hit flash uniform</span>: <span class="fail">FAIL</span>`);
         }
+        statusLines.push(
+            `<span class="label">all clips</span>: ${totalClips} built` +
+            (clipErrors > 0 ? `, <span class="fail">${clipErrors} ERRORS</span>` : ' <span class="ok">OK</span>')
+        );
 
-        // ── Test outline follows skeleton ──
-        let outlineTestOk = false;
-        try {
-            if (models.length > 0) {
-                const om = models[0].model.outlineMesh;
-                outlineTestOk = om && om.isSkinnedMesh && om.skeleton === models[0].model.skeleton;
-            }
-            statusLines.push(`<span class="label">outline skinning</span>: ${outlineTestOk ? '<span class="ok">OK</span>' : '<span class="fail">FAIL</span>'}`);
-        } catch (e) {
-            statusLines.push(`<span class="label">outline skinning</span>: <span class="fail">FAIL</span>`);
-        }
-
-        // ── Test skin weights exist ──
-        let skinWeightTestOk = false;
-        try {
-            if (models.length > 0) {
-                const geo = models[0].model.skinnedMesh.geometry;
-                skinWeightTestOk = !!(geo.getAttribute('skinIndex') && geo.getAttribute('skinWeight'));
-            }
-            statusLines.push(`<span class="label">skin weights</span>: ${skinWeightTestOk ? '<span class="ok">OK</span>' : '<span class="fail">FAIL</span>'}`);
-        } catch (e) {
-            statusLines.push(`<span class="label">skin weights</span>: <span class="fail">FAIL</span>`);
-        }
-
-        statusLines.push('<br><span class="sub">Use controls below to test bone deformation and effects</span>');
+        statusLines.push('<br><span class="sub">Drag to orbit | Scroll to zoom | Buttons below control animations</span>');
         document.getElementById('status').innerHTML = statusLines.join('<br>');
 
-        // ── Validation control buttons ──
-        let boneRotating = false;
+        // ═══════════════════════════════════════
+        // ANIMATION CONTROL BUTTONS
+        // ═══════════════════════════════════════
+
+        function switchState(stateName) {
+            models.forEach(({ type, model, mixer }, i) => {
+                if (!mixer) return;
+                let clipName = stateName;
+                // Map generic state to type-specific state
+                if (stateName === 'walk') clipName = defaultWalkStates[type];
+                if (stateName === 'panic_sprint' && type !== 'waddle') return;
+
+                try {
+                    const clip = getAnimationClip(type, clipName);
+                    const newAction = mixer.clipAction(clip);
+
+                    if (currentActions[i] && currentActions[i] !== newAction) {
+                        currentActions[i].crossFadeTo(newAction, 0.2, true);
+                    }
+                    newAction.reset().play();
+                    currentActions[i] = newAction;
+                } catch (e) {
+                    console.warn(`No clip ${type}_${clipName}:`, e.message);
+                }
+            });
+        }
+
+        function playOneShot(stateName) {
+            models.forEach(({ type, model, mixer }, i) => {
+                if (!mixer) return;
+                try {
+                    const clip = getAnimationClip(type, stateName);
+                    const action = mixer.clipAction(clip);
+                    action.reset();
+                    action.setLoop(THREE.LoopOnce);
+                    action.clampWhenFinished = true;
+
+                    if (stateName === 'hit_react') {
+                        action.blendMode = THREE.AdditiveAnimationBlendMode;
+                        action.setEffectiveWeight(1.0);
+                    } else if (stateName === 'death') {
+                        // Death: crossfade from current, non-additive
+                        if (currentActions[i]) {
+                            currentActions[i].crossFadeTo(action, 0.15, true);
+                        }
+                        currentActions[i] = action;
+                    }
+                    action.play();
+                } catch (e) {
+                    console.warn(`No clip ${type}_${stateName}:`, e.message);
+                }
+            });
+        }
+
+        function resetAll() {
+            models.forEach(({ type, model, mixer }, i) => {
+                if (!mixer) return;
+                mixer.stopAllAction();
+                // Reset bone transforms
+                model.skeleton.bones.forEach(b => {
+                    b.position.copy(b.userData.restPosition || b.position);
+                    b.quaternion.identity();
+                    b.scale.set(1, 1, 1);
+                });
+                // Replay default walk
+                const walkState = defaultWalkStates[type];
+                try {
+                    const clip = getAnimationClip(type, walkState);
+                    const action = mixer.clipAction(clip);
+                    action.reset().play();
+                    currentActions[i] = action;
+                } catch (e) { /* skip */ }
+            });
+        }
+
+        // Store rest positions for reset
+        models.forEach(({ model }) => {
+            model.skeleton.bones.forEach(b => {
+                b.userData.restPosition = b.position.clone();
+            });
+        });
+
+        document.getElementById('btnWalk').addEventListener('click', () => switchState('walk'));
+        document.getElementById('btnBash').addEventListener('click', () => switchState('bash_door'));
+        document.getElementById('btnPanic').addEventListener('click', () => switchState('panic_sprint'));
+        document.getElementById('btnHitReact').addEventListener('click', () => playOneShot('hit_react'));
+        document.getElementById('btnDeath').addEventListener('click', () => playOneShot('death'));
+        document.getElementById('btnReset').addEventListener('click', resetAll);
+
+        // ── Visual controls ──
         let hitFlashActive = false;
         let desperateActive = false;
         let helpersVisible = false;
-
-        document.getElementById('btnBoneRotate').addEventListener('click', function() {
-            boneRotating = !boneRotating;
-            this.classList.toggle('active', boneRotating);
-        });
 
         document.getElementById('btnHitFlash').addEventListener('click', function() {
             hitFlashActive = !hitFlashActive;
             this.classList.toggle('active', hitFlashActive);
             models.forEach(({ model }) => {
                 const mats = Array.isArray(model.skinnedMesh.material)
-                    ? model.skinnedMesh.material
-                    : [model.skinnedMesh.material];
+                    ? model.skinnedMesh.material : [model.skinnedMesh.material];
                 mats.forEach(m => {
-                    if (m.uniforms && m.uniforms.uHitFlash) {
+                    if (m.uniforms && m.uniforms.uHitFlash)
                         m.uniforms.uHitFlash.value = hitFlashActive ? 1.0 : 0.0;
-                    }
                 });
             });
         });
@@ -213,12 +333,10 @@
             this.classList.toggle('active', desperateActive);
             models.forEach(({ model }) => {
                 const mats = Array.isArray(model.skinnedMesh.material)
-                    ? model.skinnedMesh.material
-                    : [model.skinnedMesh.material];
+                    ? model.skinnedMesh.material : [model.skinnedMesh.material];
                 mats.forEach(m => {
-                    if (m.uniforms && m.uniforms.uDesperateTint) {
+                    if (m.uniforms && m.uniforms.uDesperateTint)
                         m.uniforms.uDesperateTint.value = desperateActive ? 1.0 : 0.0;
-                    }
                 });
             });
         });
@@ -229,20 +347,62 @@
             helpers.forEach(h => { h.visible = helpersVisible; });
         });
 
-        // ── Type labels (HTML overlay) ──
+        // ── Camera presets ──
+        let orbit = { theta: 0, phi: 0.35, radius: 16 };
+        const target = new THREE.Vector3(2, 2.5, 0);
+
+        function updateCamera() {
+            camera.position.x = target.x + orbit.radius * Math.sin(orbit.theta) * Math.cos(orbit.phi);
+            camera.position.y = target.y + orbit.radius * Math.sin(orbit.phi);
+            camera.position.z = target.z + orbit.radius * Math.cos(orbit.theta) * Math.cos(orbit.phi);
+            camera.lookAt(target);
+        }
+        updateCamera();
+
+        document.getElementById('camDefault').addEventListener('click', () => {
+            orbit = { theta: 0, phi: 0.35, radius: 16 }; updateCamera();
+        });
+        document.getElementById('camGame').addEventListener('click', () => {
+            // 58-degree top-down (match game camera)
+            orbit = { theta: 0, phi: 1.01, radius: 18 }; updateCamera();
+        });
+        document.getElementById('camFront').addEventListener('click', () => {
+            orbit = { theta: 0, phi: 0.15, radius: 14 }; updateCamera();
+        });
+        document.getElementById('camSide').addEventListener('click', () => {
+            orbit = { theta: 1.57, phi: 0.25, radius: 14 }; updateCamera();
+        });
+
+        // ── Mouse orbit ──
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        renderer.domElement.addEventListener('mousedown', e => {
+            isDragging = true; prevMouse.x = e.clientX; prevMouse.y = e.clientY;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            orbit.theta -= (e.clientX - prevMouse.x) * 0.005;
+            orbit.phi = Math.max(0.1, Math.min(1.4, orbit.phi + (e.clientY - prevMouse.y) * 0.005));
+            prevMouse.x = e.clientX; prevMouse.y = e.clientY;
+            updateCamera();
+        });
+        renderer.domElement.addEventListener('wheel', e => {
+            orbit.radius = Math.max(5, Math.min(40, orbit.radius + e.deltaY * 0.02));
+            updateCamera();
+        });
+
+        // ── Type labels ──
         const labelsContainer = document.getElementById('labels');
         function updateLabels() {
             labelsContainer.innerHTML = '';
             const tempVec = new THREE.Vector3();
-
             models.forEach(({ type, model, x }) => {
-                const config = ENEMY_VISUAL_CONFIG[type.replace(' (desperate)', '')] || ENEMY_VISUAL_CONFIG['polite'];
+                const config = ENEMY_VISUAL_CONFIG[type] || ENEMY_VISUAL_CONFIG['polite'];
                 tempVec.set(x, config.size * 2.8, 0);
                 tempVec.project(camera);
-
                 const screenX = (tempVec.x * 0.5 + 0.5) * window.innerWidth;
                 const screenY = (-tempVec.y * 0.5 + 0.5) * window.innerHeight;
-
                 if (tempVec.z < 1) {
                     const label = document.createElement('div');
                     label.className = 'type-label';
@@ -255,42 +415,7 @@
             });
         }
 
-        // ── Simple orbit controls (mouse drag) ──
-        let isDragging = false;
-        let prevMouse = { x: 0, y: 0 };
-        let orbit = { theta: 0, phi: 0.35, radius: 16 };
-        const target = new THREE.Vector3(2, 2.5, 0);
-
-        function updateCamera() {
-            camera.position.x = target.x + orbit.radius * Math.sin(orbit.theta) * Math.cos(orbit.phi);
-            camera.position.y = target.y + orbit.radius * Math.sin(orbit.phi);
-            camera.position.z = target.z + orbit.radius * Math.cos(orbit.theta) * Math.cos(orbit.phi);
-            camera.lookAt(target);
-        }
-        updateCamera();
-
-        renderer.domElement.addEventListener('mousedown', e => {
-            isDragging = true;
-            prevMouse.x = e.clientX;
-            prevMouse.y = e.clientY;
-        });
-        window.addEventListener('mouseup', () => { isDragging = false; });
-        window.addEventListener('mousemove', e => {
-            if (!isDragging) return;
-            const dx = e.clientX - prevMouse.x;
-            const dy = e.clientY - prevMouse.y;
-            orbit.theta -= dx * 0.005;
-            orbit.phi = Math.max(0.1, Math.min(1.4, orbit.phi + dy * 0.005));
-            prevMouse.x = e.clientX;
-            prevMouse.y = e.clientY;
-            updateCamera();
-        });
-        renderer.domElement.addEventListener('wheel', e => {
-            orbit.radius = Math.max(5, Math.min(40, orbit.radius + e.deltaY * 0.02));
-            updateCamera();
-        });
-
-        // ── Resize handler ──
+        // ── Resize ──
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -302,30 +427,18 @@
         function animate() {
             requestAnimationFrame(animate);
             const dt = clock.getDelta();
-            const elapsed = clock.elapsedTime;
 
-            // Bone rotation validation — rotate spine bone on all models
-            if (boneRotating) {
-                models.forEach(({ model }) => {
-                    const spine = model.boneMap.spine;
-                    if (spine) {
-                        spine.rotation.x = Math.sin(elapsed * 2) * 0.3;
-                        spine.rotation.z = Math.sin(elapsed * 1.5) * 0.15;
-                    }
-                    // Also rotate upper legs to show leg deformation
-                    const ulL = model.boneMap.upperLeg_L;
-                    const ulR = model.boneMap.upperLeg_R;
-                    if (ulL) ulL.rotation.x = Math.sin(elapsed * 3) * 0.5;
-                    if (ulR) ulR.rotation.x = Math.sin(elapsed * 3 + Math.PI) * 0.5;
-                });
-            }
+            // Update all animation mixers
+            mixers.forEach(mixer => {
+                if (mixer) mixer.update(dt);
+            });
 
             renderer.render(scene, camera);
             updateLabels();
         }
         animate();
 
-        console.log('Phase 2 Mesh Construction Test — all modules loaded');
+        console.log('Phase 3 Animation Clips Test — all modules loaded');
     </script>
 </body>
 </html>
