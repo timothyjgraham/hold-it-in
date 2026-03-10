@@ -2,6 +2,10 @@
 // Uses ENEMY_VISUAL_CONFIG for bone positions, enabled flags, and rest poses.
 
 import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
+import { PLAYER_VISUAL_CONFIG } from '../data/playerConfig.js';
+
+// Merged config for all entity types (enemies + player)
+const ALL_VISUAL_CONFIGS = { ...ENEMY_VISUAL_CONFIG, ...PLAYER_VISUAL_CONFIG };
 
 /**
  * Create a skeleton for the given enemy type and size.
@@ -11,9 +15,9 @@ import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
  * @returns {{ bones: THREE.Bone[], rootBone: THREE.Bone, boneMap: Object.<string, THREE.Bone> }}
  */
 export function createSkeleton(enemyType, size) {
-    const config = ENEMY_VISUAL_CONFIG[enemyType];
+    const config = ALL_VISUAL_CONFIGS[enemyType];
     if (!config) {
-        throw new Error(`SkeletonFactory: unknown enemy type "${enemyType}"`);
+        throw new Error(`SkeletonFactory: unknown entity type "${enemyType}"`);
     }
 
     const bones = [];
@@ -62,8 +66,17 @@ export function createSkeleton(enemyType, size) {
         const upperArmR = makeBone('upperArm_R', chest);
 
         if (flags.forearms) {
-            makeBone('forearm_L', upperArmL);
-            makeBone('forearm_R', upperArmR);
+            const forearmL = makeBone('forearm_L', upperArmL);
+            const forearmR = makeBone('forearm_R', upperArmR);
+
+            if (flags.hands) {
+                const handL = makeBone('hand_L', forearmL);
+                const handR = makeBone('hand_R', forearmR);
+
+                if (flags.thumb) {
+                    makeBone('thumb_R', handR);
+                }
+            }
         }
     }
 

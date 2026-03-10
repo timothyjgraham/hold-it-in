@@ -122,6 +122,9 @@
         _doorParticles: [],
         _cinematicTimer: 0,
 
+        // Player character (seated on toilet)
+        playerCharacter: null,
+
         // Build mode
         selectedTower: null,
         gridHighlight: null,
@@ -488,6 +491,17 @@
             // Face the door — bowl points toward +Z (enemies approach from that direction)
             this.toilet.rotation.y = 0;
             this.scene.add(this.toilet);
+
+            // Create player character sitting on the toilet
+            this._createPlayerCharacter();
+        },
+
+        _createPlayerCharacter() {
+            if (window.PlayerCharacter) {
+                this.playerCharacter = new PlayerCharacter();
+                this.playerCharacter.create(this.scene, this.toilet.position);
+                console.log('Player character created — seated on toilet');
+            }
         },
 
         _createEnvironment() {
@@ -908,6 +922,11 @@
 
             // Launch drone delivery!
             this._startDroneDelivery(pos.x, pos.z, tower);
+
+            // Player taps phone to order the drone
+            if (this.playerCharacter) {
+                this.playerCharacter.playPhoneTap();
+            }
 
             // Clear ghost so it doesn't linger on the just-placed cell
             this._clearGhost();
@@ -2597,6 +2616,11 @@
 
             // Always update toilet glow
             updateToilet(this.toilet, this.clock.elapsedTime);
+
+            // Update player character animation
+            if (this.playerCharacter) {
+                this.playerCharacter.update(dt);
+            }
 
             // Update grid hover
             this._updateGridHover();
