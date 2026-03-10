@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Foundation Test — Skeletal Animation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a2e; overflow: hidden; font-family: monospace; color: #ccc; }
+        canvas { display: block; }
+        #info {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(0,0,0,0.7); padding: 12px 16px;
+            border-radius: 6px; font-size: 13px; line-height: 1.6;
+            max-width: 320px; z-index: 10;
+        }
+        #info h2 { color: #ffd700; margin-bottom: 6px; font-size: 15px; }
+        #info .ok { color: #2ecc71; }
+        #info .label { color: #f39c12; }
+        #labels {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
+        }
+        .type-label {
+            position: absolute; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); padding: 3px 8px;
+            border-radius: 3px; font-size: 11px; white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>Phase 1: Foundation Test</h2>
+        <div id="status">Loading modules...</div>
+    </div>
+    <div id="labels"></div>
+
+    <script type="module">
+        import { ENEMY_VISUAL_CONFIG } from './js/data/enemyConfig.js';
+        import {
+            createToonMaterial,
+            createOutlineMaterial,
+        } from './js/shaders/toonShader.js';
+        import { createSkeleton } from './js/animation/SkeletonFactory.js';
+        import { mergeGeometries } from './js/utils/geometryUtils.js';
+
+        // ── Scene setup ──
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 5, 14);
+        camera.lookAt(0, 2, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        // ── Lighting ──
+        scene.add(new THREE.AmbientLight(0x505060, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+        dirLight.position.set(10, 30, 20);
+        scene.add(dirLight);
+
+        // Ground grid for reference
+        const grid = new THREE.GridHelper(30, 30, 0x333366, 0x222244);
+        scene.add(grid);
+
+        // ── Test 1: Skeleton visualization ──
+        const types = ['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls'];
+        const spacing = 4;
+        const startX = -(types.length - 1) * spacing / 2;
+        const skeletonResults = [];
+        const statusLines = [];
+
+        types.forEach((type, i) => {
+            const config = ENEMY_VISUAL_CONFIG[type];
+            const size = config.size;
+            const result = createSkeleton(type, size);
+
+            // Position the skeleton
+            result.rootBone.position.x = startX + i * spacing;
+            scene.add(result.rootBone);
+
+            // SkeletonHelper for visualization
+            const helper = new THREE.SkeletonHelper(result.rootBone);
+            helper.material.linewidth = 2;
+            scene.add(helper);
+
+            // Color-coded bone point markers
+            const markerGeo = new THREE.SphereGeometry(0.06, 8, 8);
+            const color = new THREE.Color(config.materialColors.body);
+            result.bones.forEach(bone => {
+                const marker = new THREE.Mesh(
+                    markerGeo,
+                    new THREE.MeshBasicMaterial({ color })
+                );
+                bone.add(marker);
+            });
+
+            skeletonResults.push({ type, result, x: startX + i * spacing });
+            statusLines.push(`<span class="label">${type}</span>: ${result.bones.length} bones <span class="ok">OK</span>`);
+        });
+
+        // ── Test 2: Toon shader on sphere ──
+        let toonTestOk = false;
+        let outlineTestOk = false;
+        try {
+            const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+            const toonMat = createToonMaterial({
+                baseColor: new THREE.Color(0x3498db),
+                rimPower: 3.0,
+                rimIntensity: 0.5,
+            });
+            const sphere = new THREE.Mesh(sphereGeo, toonMat);
+            sphere.position.set(startX + types.length * spacing + 1, 1.5, 0);
+            scene.add(sphere);
+            toonTestOk = true;
+
+            // Outline on the sphere
+            const outlineMat = createOutlineMaterial({
+                outlineWidth: 0.05,
+                outlineColor: new THREE.Color(0x1a1a1a),
+            });
+            const outlineMesh = new THREE.Mesh(sphereGeo, outlineMat);
+            outlineMesh.position.copy(sphere.position);
+            scene.add(outlineMesh);
+            outlineTestOk = true;
+
+            // Second sphere with hit flash to test uniform
+            const flashMat = createToonMaterial({
+                baseColor: new THREE.Color(0xe74c3c),
+            });
+            flashMat.uniforms.uHitFlash.value = 0.8;
+            const flashSphere = new THREE.Mesh(sphereGeo, flashMat);
+            flashSphere.position.set(sphere.position.x + 2.5, 1.5, 0);
+            scene.add(flashSphere);
+
+            // Third sphere with desperate tint
+            const despMat = createToonMaterial({
+                baseColor: new THREE.Color(0xd4a574),
+                desperateTint: 1.0,
+            });
+            const despSphere = new THREE.Mesh(sphereGeo, despMat);
+            despSphere.position.set(sphere.position.x + 5, 1.5, 0);
+            scene.add(despSphere);
+
+        } catch (e) {
+            console.error('Toon shader test failed:', e);
+        }
+
+        statusLines.push(`<span class="label">Toon shader</span>: ${toonTestOk ? '<span class="ok">OK</span>' : 'FAIL'}`);
+        statusLines.push(`<span class="label">Outline shader</span>: ${outlineTestOk ? '<span class="ok">OK</span>' : 'FAIL'}`);
+
+        // ── Test 3: Geometry merge utility ──
+        let mergeTestOk = false;
+        try {
+            const box1 = new THREE.BoxGeometry(1, 1, 1);
+            const box2 = new THREE.BoxGeometry(0.5, 2, 0.5);
+            const cyl1 = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+
+            const t1 = new THREE.Matrix4(); // identity
+            const t2 = new THREE.Matrix4().makeTranslation(0, 1.5, 0);
+            const t3 = new THREE.Matrix4().makeTranslation(0.8, 0.5, 0);
+
+            const merged = mergeGeometries([box1, box2, cyl1], [t1, t2, t3]);
+
+            const expectedVerts = box1.attributes.position.count
+                + box2.attributes.position.count
+                + cyl1.attributes.position.count;
+            const expectedIdx = (box1.index ? box1.index.count : box1.attributes.position.count)
+                + (box2.index ? box2.index.count : box2.attributes.position.count)
+                + (cyl1.index ? cyl1.index.count : cyl1.attributes.position.count);
+
+            const actualVerts = merged.attributes.position.count;
+            const actualIdx = merged.index.count;
+
+            if (actualVerts === expectedVerts && actualIdx === expectedIdx) {
+                mergeTestOk = true;
+            }
+
+            // Render it
+            const mergedMat = createToonMaterial({
+                baseColor: new THREE.Color(0xe67e22),
+            });
+            const mergedMesh = new THREE.Mesh(merged, mergedMat);
+            mergedMesh.position.set(startX + types.length * spacing + 8.5, 0, 0);
+            scene.add(mergedMesh);
+
+            statusLines.push(
+                `<span class="label">Geometry merge</span>: ${actualVerts} verts, ${actualIdx} idx ` +
+                (mergeTestOk ? '<span class="ok">OK</span>' : 'MISMATCH')
+            );
+        } catch (e) {
+            console.error('Merge test failed:', e);
+            statusLines.push(`<span class="label">Geometry merge</span>: FAIL`);
+        }
+
+        // ── Update status display ──
+        document.getElementById('status').innerHTML = statusLines.join('<br>');
+
+        // ── Type labels (HTML overlay) ──
+        const labelsContainer = document.getElementById('labels');
+        function updateLabels() {
+            labelsContainer.innerHTML = '';
+            const tempVec = new THREE.Vector3();
+
+            skeletonResults.forEach(({ type, result, x }) => {
+                const config = ENEMY_VISUAL_CONFIG[type];
+                // Project the top of the skeleton to screen
+                tempVec.set(x, config.size * 2.5, 0);
+                tempVec.project(camera);
+
+                const screenX = (tempVec.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY = (-tempVec.y * 0.5 + 0.5) * window.innerHeight;
+
+                if (tempVec.z < 1) {
+                    const label = document.createElement('div');
+                    label.className = 'type-label';
+                    label.style.left = screenX + 'px';
+                    label.style.top = (screenY - 20) + 'px';
+                    label.style.color = '#' + new THREE.Color(config.materialColors.body).getHexString();
+                    label.textContent = `${type} (${result.bones.length})`;
+                    labelsContainer.appendChild(label);
+                }
+            });
+
+            // Label for toon test spheres
+            const shaderLabels = [
+                { text: 'toon', x: startX + types.length * spacing + 1 },
+                { text: 'flash', x: startX + types.length * spacing + 3.5 },
+                { text: 'desperate', x: startX + types.length * spacing + 6 },
+                { text: 'merged', x: startX + types.length * spacing + 8.5 },
+            ];
+            shaderLabels.forEach(({ text, x }) => {
+                tempVec.set(x, 3.5, 0);
+                tempVec.project(camera);
+                const screenX2 = (tempVec.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY2 = (-tempVec.y * 0.5 + 0.5) * window.innerHeight;
+                if (tempVec.z < 1) {
+                    const label = document.createElement('div');
+                    label.className = 'type-label';
+                    label.style.left = screenX2 + 'px';
+                    label.style.top = (screenY2 - 20) + 'px';
+                    label.style.color = '#f39c12';
+                    label.textContent = text;
+                    labelsContainer.appendChild(label);
+                }
+            });
+        }
+
+        // ── Simple orbit controls (mouse drag) ──
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let orbit = { theta: 0, phi: 0.35, radius: 14 };
+        const target = new THREE.Vector3(2, 2, 0);
+
+        function updateCamera() {
+            camera.position.x = target.x + orbit.radius * Math.sin(orbit.theta) * Math.cos(orbit.phi);
+            camera.position.y = target.y + orbit.radius * Math.sin(orbit.phi);
+            camera.position.z = target.z + orbit.radius * Math.cos(orbit.theta) * Math.cos(orbit.phi);
+            camera.lookAt(target);
+        }
+        updateCamera();
+
+        renderer.domElement.addEventListener('mousedown', e => {
+            isDragging = true;
+            prevMouse.x = e.clientX;
+            prevMouse.y = e.clientY;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - prevMouse.x;
+            const dy = e.clientY - prevMouse.y;
+            orbit.theta -= dx * 0.005;
+            orbit.phi = Math.max(0.1, Math.min(1.4, orbit.phi + dy * 0.005));
+            prevMouse.x = e.clientX;
+            prevMouse.y = e.clientY;
+            updateCamera();
+        });
+        renderer.domElement.addEventListener('wheel', e => {
+            orbit.radius = Math.max(5, Math.min(40, orbit.radius + e.deltaY * 0.02));
+            updateCamera();
+        });
+
+        // ── Resize handler ──
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ── Render loop ──
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            updateLabels();
+        }
+        animate();
+
+        console.log('Phase 1 Foundation Test — all modules loaded');
+    </script>
+</body>
+</html>

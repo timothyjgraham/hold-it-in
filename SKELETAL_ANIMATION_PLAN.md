@@ -128,60 +128,60 @@ root (hips)
 > No game integration. Testable in isolation. Pure infrastructure.
 
 ### 1A — Enemy Config Data
-- [ ] Create `js/data/enemyConfig.js`
-- [ ] Define `ENEMY_VISUAL_CONFIG` object with per-type entries:
-  - [ ] Bone positions relative to `size` (rest pose joint positions)
-  - [ ] Body part dimensions (torso width/height/depth, head radius, limb thickness)
-  - [ ] Material colors (body, skin, legs, outline)
-  - [ ] Animation timing parameters (walk cycle duration, bob height, swing angles)
-  - [ ] Which optional bones are enabled per type (belly, forearms, feet, shoulders)
-- [ ] Export as ES6 module
+- [x] Create `js/data/enemyConfig.js`
+- [x] Define `ENEMY_VISUAL_CONFIG` object with per-type entries:
+  - [x] Bone positions relative to `size` (rest pose joint positions)
+  - [x] Body part dimensions (torso width/height/depth, head radius, limb thickness)
+  - [x] Material colors (body, skin, legs, outline)
+  - [x] Animation timing parameters (walk cycle duration, bob height, swing angles)
+  - [x] Which optional bones are enabled per type (belly, forearms, feet, shoulders)
+- [x] Export as ES6 module
 
 ### 1B — Toon Shader
-- [ ] Create `js/shaders/` directory
-- [ ] Create `js/shaders/toonShader.js`
-- [ ] Write toon vertex shader:
-  - [ ] Include Three.js skinning chunks (`#include <skinning_pars_vertex>`, `#include <skinning_vertex>`)
-  - [ ] Pass world normal and view direction to fragment shader via varyings
-  - [ ] Pass world position for rim lighting calculation
-- [ ] Write toon fragment shader:
-  - [ ] 3-tone ramp: shadow (`dot < 0.3` → base×0.4), mid (base), light (`dot > 0.7` → base×1.2)
-  - [ ] Rim lighting: `pow(1.0 - dot(viewDir, normal), rimPower) * rimIntensity`
-  - [ ] `uHitFlash` uniform: when > 0, lerp entire output toward white
-  - [ ] `uDesperateTint` uniform: when > 0, shift color toward red
-  - [ ] `uAuraGlow` uniform: pulsing emissive for Panicker speed aura
-  - [ ] `uBaseColor` uniform: per-instance base color (vec3)
-- [ ] Write outline vertex shader:
-  - [ ] Include skinning chunks (outline must deform with skeleton)
-  - [ ] Extrude position along normal by `uOutlineWidth`
-- [ ] Write outline fragment shader:
-  - [ ] Solid `uOutlineColor` output
-- [ ] Export shader strings and default uniform definitions
+- [x] Create `js/shaders/` directory
+- [x] Create `js/shaders/toonShader.js`
+- [x] Write toon vertex shader:
+  - [x] Include Three.js skinning chunks (`#include <skinning_pars_vertex>`, `#include <skinning_vertex>`)
+  - [x] Pass world normal and view direction to fragment shader via varyings
+  - [x] Pass world position for rim lighting calculation
+- [x] Write toon fragment shader:
+  - [x] 3-tone ramp: shadow (`dot < 0.3` → base×0.4), mid (base), light (`dot > 0.7` → base×1.2)
+  - [x] Rim lighting: `pow(1.0 - dot(viewDir, normal), rimPower) * rimIntensity`
+  - [x] `uHitFlash` uniform: when > 0, lerp entire output toward white
+  - [x] `uDesperateTint` uniform: when > 0, shift color toward red
+  - [x] `uAuraGlow` uniform: pulsing emissive for Panicker speed aura
+  - [x] `uBaseColor` uniform: per-instance base color (vec3)
+- [x] Write outline vertex shader:
+  - [x] Include skinning chunks (outline must deform with skeleton)
+  - [x] Extrude position along normal by `uOutlineWidth`
+- [x] Write outline fragment shader:
+  - [x] Solid `uOutlineColor` output
+- [x] Export shader strings and default uniform definitions
 
 ### 1C — Skeleton Factory
-- [ ] Create `js/animation/` directory
-- [ ] Create `js/animation/SkeletonFactory.js`
-- [ ] Implement `createSkeleton(enemyType, size)` function:
-  - [ ] Read bone config from `ENEMY_VISUAL_CONFIG`
-  - [ ] Create `THREE.Bone` instances for each enabled bone
-  - [ ] Build parent-child hierarchy via `.add()`
-  - [ ] Set rest positions relative to `size` (e.g., spine.position.y = size * 0.5)
-  - [ ] Return `{ bones: Bone[], rootBone: Bone, boneMap: {name: Bone} }`
-- [ ] Implement type-specific rest poses:
-  - [ ] Polite Knocker: relaxed standing, slight forward lean
-  - [ ] Pee Dancer: knees together, bent forward
-  - [ ] Waddle Tank: wide stance, forward lean, belly extended
-  - [ ] Panicker: upright, arms raised
-  - [ ] Power Walker: athletic stance, arms at 90°
-  - [ ] The Girls: relaxed, slight hip cock
-- [ ] Test: create a test page that renders `THREE.SkeletonHelper` for each type to verify proportions
+- [x] Create `js/animation/` directory
+- [x] Create `js/animation/SkeletonFactory.js`
+- [x] Implement `createSkeleton(enemyType, size)` function:
+  - [x] Read bone config from `ENEMY_VISUAL_CONFIG`
+  - [x] Create `THREE.Bone` instances for each enabled bone
+  - [x] Build parent-child hierarchy via `.add()`
+  - [x] Set rest positions relative to `size` (e.g., spine.position.y = size * 0.5)
+  - [x] Return `{ bones: Bone[], rootBone: Bone, boneMap: {name: Bone} }`
+- [x] Implement type-specific rest poses:
+  - [x] Polite Knocker: relaxed standing, slight forward lean
+  - [x] Pee Dancer: knees together, bent forward
+  - [x] Waddle Tank: wide stance, forward lean, belly extended
+  - [x] Panicker: upright, arms raised
+  - [x] Power Walker: athletic stance, arms at 90°
+  - [x] The Girls: relaxed, slight hip cock
+- [x] Test: create a test page that renders `THREE.SkeletonHelper` for each type to verify proportions
 
 ### 1D — Geometry Merge Utility
-- [ ] Write a `mergeGeometries(geometries, transforms)` utility function (~40-60 lines):
-  - [ ] Accept array of `THREE.BufferGeometry` + corresponding `THREE.Matrix4` transforms
-  - [ ] Merge position, normal, and index attributes into a single `BufferGeometry`
-  - [ ] Handle index buffer re-offsetting when merging indexed geometries
-  - [ ] Place in `EnemyModelFactory.js` as a private helper or in a shared `js/utils/` file
+- [x] Write a `mergeGeometries(geometries, transforms)` utility function (~40-60 lines):
+  - [x] Accept array of `THREE.BufferGeometry` + corresponding `THREE.Matrix4` transforms
+  - [x] Merge position, normal, and index attributes into a single `BufferGeometry`
+  - [x] Handle index buffer re-offsetting when merging indexed geometries
+  - [x] Place in `EnemyModelFactory.js` as a private helper or in a shared `js/utils/` file
 
 ---
 
