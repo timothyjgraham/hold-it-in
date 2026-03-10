@@ -190,57 +190,57 @@ root (hips)
 > Build the visual models. Still no animation — static posed meshes.
 
 ### 2A — Enemy Materials
-- [ ] Create `js/models/EnemyMaterials.js`
-- [ ] Implement `createEnemyMaterials(enemyType, baseColor, isDesperate)`:
-  - [ ] `body`: `THREE.ShaderMaterial` using toon shader, `skinning: true`
-    - [ ] Set `uBaseColor` from `baseColor` param
-    - [ ] Set `uDesperateTint` if `isDesperate`
-    - [ ] Configure roughness/metalness-equivalent uniforms
-  - [ ] `skin`: Flesh-tone toon material (0xffccaa), `skinning: true`
-  - [ ] `legs`: Dark toon material (0x333333), `skinning: true`
-  - [ ] `outline`: Outline `ShaderMaterial`, `side: THREE.BackSide`, `skinning: true`
-  - [ ] Return material object
-- [ ] Implement material template caching:
-  - [ ] Store one template per type, clone for each instance
-  - [ ] Each instance gets unique uniforms (hit flash state differs per enemy)
-- [ ] Handle desperate color tinting:
-  - [ ] Boost red channel, reduce green/blue (matching current: +80/-40/-40 on RGB)
+- [x] Create `js/models/EnemyMaterials.js`
+- [x] Implement `createEnemyMaterials(enemyType, baseColor, isDesperate)`:
+  - [x] `body`: `THREE.ShaderMaterial` using toon shader, `skinning: true`
+    - [x] Set `uBaseColor` from `baseColor` param
+    - [x] Set `uDesperateTint` if `isDesperate`
+    - [x] Configure roughness/metalness-equivalent uniforms
+  - [x] `skin`: Flesh-tone toon material (0xffccaa), `skinning: true`
+  - [x] `legs`: Dark toon material (0x333333), `skinning: true`
+  - [x] `outline`: Outline `ShaderMaterial`, `side: THREE.BackSide`, `skinning: true`
+  - [x] Return material object
+- [x] Implement material template caching:
+  - [x] Store one template per type, clone for each instance
+  - [x] Each instance gets unique uniforms (hit flash state differs per enemy)
+- [x] Handle desperate color tinting:
+  - [x] Boost red channel, reduce green/blue (matching current: +80/-40/-40 on RGB)
 
 ### 2B — Enemy Model Factory
-- [ ] Create `js/models/EnemyModelFactory.js`
-- [ ] Implement `createEnemyModel(enemyType, color, isDesperate, size)`:
-  - [ ] Call `createSkeleton()` to get bone hierarchy
-  - [ ] Build body part geometries per type (see character sheets below)
-  - [ ] Apply transforms (position, rotation) to each part geometry
-  - [ ] Merge all parts into single `BufferGeometry` using merge utility
-  - [ ] Compute `skinIndex` and `skinWeight` attributes:
-    - [ ] For each vertex, find nearest 1-2 bones by distance
-    - [ ] Weight by inverse distance, normalize to sum to 1.0
-    - [ ] Override explicit regions (belly vertices → belly bone 100%)
-  - [ ] Create `THREE.SkinnedMesh(mergedGeometry, bodyMaterial)`
-  - [ ] Add root bone as child of skinned mesh
-  - [ ] Call `mesh.bind(skeleton)` and `mesh.normalizeSkinWeights()`
-  - [ ] Create outline mesh (clone geometry, apply outline material)
-  - [ ] Wrap in `THREE.Group`
-  - [ ] Return `{ group, skinnedMesh, skeleton, boneMap, outlineMesh }`
-- [ ] Implement per-type geometry builders:
-  - [ ] `_buildPoliteKnockerGeometry(size)` — rounded box torso, sphere head, cylinder limbs
-  - [ ] `_buildPeeDancerGeometry(size)` — compact torso, close-set legs, hunched posture
-  - [ ] `_buildWaddleTankGeometry(size)` — wide rounded torso, extended belly sphere, wide-set thick legs
-  - [ ] `_buildPanickerGeometry(size)` — elongated thin torso, long arms, narrow legs
-  - [ ] `_buildPowerWalkerGeometry(size)` — athletic torso, defined arms, strong legs
-  - [ ] `_buildGirlsGeometry(size)` — petite torso, ponytail sphere on head, slim limbs
-- [ ] Ensure sufficient vertex subdivisions at joints (2+ segments along limb length) for smooth deformation
+- [x] Create `js/models/EnemyModelFactory.js`
+- [x] Implement `createEnemyModel(enemyType, color, isDesperate, size)`:
+  - [x] Call `createSkeleton()` to get bone hierarchy
+  - [x] Build body part geometries per type (see character sheets below)
+  - [x] Apply transforms (position, rotation) to each part geometry
+  - [x] Merge all parts into single `BufferGeometry` using merge utility
+  - [x] Compute `skinIndex` and `skinWeight` attributes:
+    - [x] For each vertex, find nearest 1-2 bones by distance
+    - [x] Weight by inverse distance, normalize to sum to 1.0
+    - [x] Override explicit regions (belly vertices → belly bone 100%)
+  - [x] Create `THREE.SkinnedMesh(mergedGeometry, bodyMaterial)`
+  - [x] Add root bone as child of skinned mesh
+  - [x] Call `mesh.bind(skeleton)` and `mesh.normalizeSkinWeights()`
+  - [x] Create outline mesh (clone geometry, apply outline material)
+  - [x] Wrap in `THREE.Group`
+  - [x] Return `{ group, skinnedMesh, skeleton, boneMap, outlineMesh }`
+- [x] Implement per-type geometry builders:
+  - [x] `_buildPoliteKnockerGeometry(size)` — rounded box torso, sphere head, cylinder limbs
+  - [x] `_buildPeeDancerGeometry(size)` — compact torso, close-set legs, hunched posture
+  - [x] `_buildWaddleTankGeometry(size)` — wide rounded torso, extended belly sphere, wide-set thick legs
+  - [x] `_buildPanickerGeometry(size)` — elongated thin torso, long arms, narrow legs
+  - [x] `_buildPowerWalkerGeometry(size)` — athletic torso, defined arms, strong legs
+  - [x] `_buildGirlsGeometry(size)` — petite torso, ponytail sphere on head, slim limbs
+- [x] Ensure sufficient vertex subdivisions at joints (2+ segments along limb length) for smooth deformation
 
 ### 2C — Visual Validation
-- [ ] Spawn one of each enemy type in a test scene
-- [ ] Verify mesh deforms correctly when bones are manually rotated
-- [ ] Verify toon shading looks correct under game lighting
-- [ ] Verify rim lighting provides silhouette pop at the 58° camera angle
-- [ ] Verify outlines render correctly and follow bone deformation
-- [ ] Verify hit flash uniform works (set `uHitFlash` to 1.0, check white flash)
-- [ ] Verify desperate tint works
-- [ ] Compare silhouettes — each type must be instantly recognizable as a solid black fill
+- [x] Spawn one of each enemy type in a test scene
+- [x] Verify mesh deforms correctly when bones are manually rotated
+- [x] Verify toon shading looks correct under game lighting
+- [x] Verify rim lighting provides silhouette pop at the 58° camera angle
+- [x] Verify outlines render correctly and follow bone deformation
+- [x] Verify hit flash uniform works (set `uHitFlash` to 1.0, check white flash)
+- [x] Verify desperate tint works
+- [x] Compare silhouettes — each type must be instantly recognizable as a solid black fill
 
 ---
 
