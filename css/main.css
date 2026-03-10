@@ -163,6 +163,24 @@ canvas {
     right: 4px;
 }
 
+/* ===== FADE OVERLAY (cinematic) ===== */
+#fade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 90;
+    transition: opacity 1.5s ease-in;
+}
+
+#fade-overlay.active {
+    opacity: 1;
+}
+
 /* ===== GAME OVER ===== */
 #game-over-screen {
     position: absolute;

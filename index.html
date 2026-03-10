@@ -75,6 +75,9 @@
         <button id="start-btn">DEFEND THE THRONE</button>
     </div>
 
+    <!-- Fade Overlay (cinematic fade to black) -->
+    <div id="fade-overlay"></div>
+
     <!-- Game Over Screen -->
     <div id="game-over-screen">
         <h1>OCCUPIED</h1>
@@ -115,6 +118,7 @@
         waveActive: false,
         _floatingTexts: [],
         _doorParticles: [],
+        _cinematicTimer: 0,
 
         // Build mode
         selectedTower: null,
@@ -277,16 +281,36 @@
             ground.receiveShadow = true;
             this.scene.add(ground);
 
-            // Bathroom tile area (near the toilet)
+            // Bathroom tiled floor (checkerboard pattern via canvas texture)
+            const tileCanvas = document.createElement('canvas');
+            tileCanvas.width = 512;
+            tileCanvas.height = 512;
+            const tCtx = tileCanvas.getContext('2d');
+            const tilesPerRow = 8;
+            const tilePx = tileCanvas.width / tilesPerRow;
+            for (let r = 0; r < tilesPerRow; r++) {
+                for (let c = 0; c < tilesPerRow; c++) {
+                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#8999a8' : '#7a8a9a';
+                    tCtx.fillRect(c * tilePx, r * tilePx, tilePx, tilePx);
+                    tCtx.strokeStyle = '#5e6e7a';
+                    tCtx.lineWidth = 3;
+                    tCtx.strokeRect(c * tilePx + 1.5, r * tilePx + 1.5, tilePx - 3, tilePx - 3);
+                }
+            }
+            const tileTexture = new THREE.CanvasTexture(tileCanvas);
+            tileTexture.wrapS = THREE.RepeatWrapping;
+            tileTexture.wrapT = THREE.RepeatWrapping;
+            tileTexture.repeat.set(3, 4);
+
             const tileGeo = new THREE.PlaneGeometry(CONFIG.corridorWidth, CONFIG.corridorStart + 4);
             const tileMat = new THREE.MeshStandardMaterial({
-                color: CONFIG.colors.tile,
-                roughness: 0.3,
-                metalness: 0.05,
+                map: tileTexture,
+                roughness: 0.35,
+                metalness: 0.1,
             });
             const tile = new THREE.Mesh(tileGeo, tileMat);
             tile.rotation.x = -Math.PI / 2;
-            tile.position.set(0, -0.02, CONFIG.corridorStart / 2 - 2);
+            tile.position.set(0, -0.01, CONFIG.corridorStart / 2 - 2);
             tile.receiveShadow = true;
             this.scene.add(tile);
 
@@ -607,6 +631,16 @@
                 p.mesh.material.dispose();
             });
             this._doorParticles = [];
+            this._cinematicTimer = 0;
+
+            // Reset fade overlay instantly (no transition)
+            const fadeEl = document.getElementById('fade-overlay');
+            if (fadeEl) {
+                fadeEl.style.transition = 'none';
+                fadeEl.classList.remove('active');
+                void fadeEl.offsetHeight;
+                fadeEl.style.transition = '';
+            }
 
             this.selectedTower = null;
             this._updateTowerButtons();
@@ -1098,7 +1132,7 @@
                 }
 
                 // Reached the door? Start bashing it
-                const doorZ = 10; // door position (wall ends)
+                const doorZ = 9; // door position (flush with walls)
                 const bashRange = doorZ + 1.5;
                 if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0) {
                     // Stop at the door
@@ -1164,14 +1198,9 @@
 
                         this.updateHUD();
 
-                        // Door broken — game over!
+                        // Door broken — cinematic shatter sequence!
                         if (ud.doorHP <= 0) {
-                            if (ud.door) ud.door.visible = false;
-                            // Big burst of particles on break
-                            for (let b = 0; b < 3; b++) {
-                                this._spawnDoorChips((Math.random() - 0.5) * 4, doorZ);
-                            }
-                            this.gameOver();
+                            this._startDoorShatter(doorZ);
                             return;
                         }
                     }
@@ -1599,6 +1628,109 @@
         },
 
         // ============================
+        // DOOR SHATTER CINEMATIC
+        // ============================
+        _startDoorShatter(doorZ) {
+            this.state = 'cinematic';
+            this._cinematicTimer = 0;
+
+            // Hide the intact door panel and cracks
+            const ud = this.doorGroup.userData;
+            if (ud.door) ud.door.visible = false;
+            if (ud.cracks) ud.cracks.forEach(c => c.visible = false);
+
+            // === MASSIVE DOOR EXPLOSION — 50 shards blasting forward ===
+            const shardCount = 50;
+            const woodColors = [0x8B6914, 0x7A5C10, 0x9B7924, 0xA08030, 0x6B4E0C, 0xB8942A];
+
+            for (let i = 0; i < shardCount; i++) {
+                const size = 0.15 + Math.random() * 0.5;
+                const isPlank = Math.random() > 0.35;
+                const geo = isPlank
+                    ? new THREE.BoxGeometry(size * 2, size * 0.5, size * 0.15)
+                    : new THREE.TetrahedronGeometry(size * 0.6, 0);
+                // Last 5 shards are chrome handle bits
+                const isChrome = i >= shardCount - 5;
+                const mat = new THREE.MeshStandardMaterial({
+                    color: isChrome ? 0xcccccc : woodColors[Math.floor(Math.random() * woodColors.length)],
+                    roughness: isChrome ? 0.1 : 0.7,
+                    metalness: isChrome ? 0.9 : 0.05,
+                });
+                const shard = new THREE.Mesh(geo, mat);
+                shard.position.set(
+                    (Math.random() - 0.5) * 5,
+                    0.3 + Math.random() * 3.5,
+                    doorZ
+                );
+                shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                shard.castShadow = true;
+                this.scene.add(shard);
+
+                this._doorParticles.push({
+                    mesh: shard,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: 1 + Math.random() * 8,
+                    vz: -(5 + Math.random() * 12),
+                    rotSpeed: (Math.random() - 0.5) * 18,
+                    life: 2.5 + Math.random() * 1.5,
+                    maxLife: 2.5 + Math.random() * 1.5,
+                    gravity: 10 + Math.random() * 6,
+                });
+            }
+
+            // Mark all enemies as rushing the toilet
+            for (const e of this.enemies) {
+                e.bashing = false;
+                e.rushing = true;
+                e.rushSpeed = (e.speed || 3) * 3.5;
+            }
+        },
+
+        _updateCinematic(dt) {
+            this._cinematicTimer += dt;
+
+            // Screen shake (decaying over 0.6s)
+            if (this._cinematicTimer < 0.6) {
+                const intensity = 0.5 * (1 - this._cinematicTimer / 0.6);
+                this.camera.position.x = CONFIG.cameraPos.x + (Math.random() - 0.5) * intensity;
+                this.camera.position.y = CONFIG.cameraPos.y + (Math.random() - 0.5) * intensity * 0.5;
+            } else if (this._cinematicTimer < 0.65) {
+                this.camera.position.x = CONFIG.cameraPos.x;
+                this.camera.position.y = CONFIG.cameraPos.y;
+            }
+
+            // Move all rushing enemies toward the toilet
+            const tx = CONFIG.toiletPos.x;
+            const tz = CONFIG.toiletPos.z;
+            for (const e of this.enemies) {
+                if (!e.rushing || !e.mesh) continue;
+                const dx = tx - e.x;
+                const dz = tz - e.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+                if (dist > 1.0) {
+                    const speed = e.rushSpeed * dt;
+                    e.x += (dx / dist) * speed;
+                    e.z += (dz / dist) * speed;
+                    e.mesh.position.x = e.x;
+                    e.mesh.position.z = e.z;
+                }
+            }
+
+            // Fade to black starting at 1.2s
+            if (this._cinematicTimer >= 1.2) {
+                const fadeEl = document.getElementById('fade-overlay');
+                if (!fadeEl.classList.contains('active')) {
+                    fadeEl.classList.add('active');
+                }
+            }
+
+            // Game over after fade completes
+            if (this._cinematicTimer >= 3.0) {
+                this.gameOver();
+            }
+        },
+
+        // ============================
         // RENDER LOOP
         // ============================
         _animate() {
@@ -1653,6 +1785,11 @@
 
             // Game logic
             this.update(dt);
+
+            // Cinematic sequence (door shatter)
+            if (this.state === 'cinematic') {
+                this._updateCinematic(dt);
+            }
 
             // Render
             this.renderer.render(this.scene, this.camera);

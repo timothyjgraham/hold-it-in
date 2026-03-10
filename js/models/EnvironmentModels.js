@@ -542,7 +542,7 @@ export function createTrashCan() {
         group.add(ridge);
     }
 
-    group.position.set(4, 0, 9);
+    group.position.set(4, 0, 7);
 
     return group;
 }
@@ -1702,8 +1702,8 @@ export function createBathroomDoor() {
     group.userData.maxDoorHP = 100;
     group.userData.originalColor = doorColor;
 
-    // Position the door group at the wall ends
-    group.position.set(0, 0, 10);
+    // Position the door group flush with the flanking walls
+    group.position.set(0, 0, 9);
 
     return group;
 }

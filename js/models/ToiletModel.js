@@ -173,11 +173,35 @@ export function createToilet() {
     sparkles.name = 'sparkles';
     group.add(sparkles);
 
+    // === SPARKLY CLEAN PARTICLES (pristine toilet effect) ===
+    const cleanSparkleCount = 25;
+    const cleanSparkleGeo = new THREE.BufferGeometry();
+    const cleanPos = new Float32Array(cleanSparkleCount * 3);
+    for (let i = 0; i < cleanSparkleCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 0.3 + Math.random() * 1.2;
+        cleanPos[i * 3] = Math.cos(angle) * radius;
+        cleanPos[i * 3 + 1] = Math.random() * 2.5;
+        cleanPos[i * 3 + 2] = Math.sin(angle) * radius - 0.3;
+    }
+    cleanSparkleGeo.setAttribute('position', new THREE.BufferAttribute(cleanPos, 3));
+    const cleanSparkleMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+    });
+    const cleanSparkles = new THREE.Points(cleanSparkleGeo, cleanSparkleMat);
+    cleanSparkles.name = 'cleanSparkles';
+    group.add(cleanSparkles);
+
     // Scale up so it reads as a toilet, but stay proportional to enemies
     group.scale.set(1.4, 1.4, 1.4);
 
     // Store references for animation
     group.userData.sparkles = sparkles;
+    group.userData.cleanSparkles = cleanSparkles;
     group.userData.beam = beam;
     group.userData.holySpot = holySpot;
     group.userData.lightOrigin = lightOrigin;
@@ -217,5 +241,23 @@ export function updateToilet(toilet, time) {
     const beam = toilet.userData.beam;
     if (beam) {
         beam.material.opacity = 0.04 + Math.sin(time * 1.5) * 0.02;
+    }
+
+    // Sparkly clean particles — drift upward, twinkle, respawn near toilet
+    const cleanSparkles = toilet.userData.cleanSparkles;
+    if (cleanSparkles) {
+        const cpos = cleanSparkles.geometry.attributes.position;
+        for (let i = 0; i < cpos.count; i++) {
+            cpos.array[i * 3 + 1] += 0.006 + Math.sin(time * 3 + i * 2.1) * 0.003;
+            if (cpos.array[i * 3 + 1] > 3.2) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 0.3 + Math.random() * 1.2;
+                cpos.array[i * 3] = Math.cos(angle) * radius;
+                cpos.array[i * 3 + 1] = Math.random() * 0.5;
+                cpos.array[i * 3 + 2] = Math.sin(angle) * radius - 0.3;
+            }
+        }
+        cpos.needsUpdate = true;
+        cleanSparkles.material.opacity = 0.5 + Math.sin(time * 4) * 0.4;
     }
 }
