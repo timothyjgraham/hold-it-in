@@ -176,67 +176,78 @@
             },
         },
 
-        // Enemy type definitions — each forces a qualitatively different strategy
+        // Enemy type definitions — each has unique movement, silhouette, and mechanic
         ENEMY_TYPES: {
             polite: {
                 name: 'Polite Knocker',
                 baseSpeed: 3.0, speedVar: 0.5,
                 baseHP: 20, hpPerWave: 10,
-                size: 1.5, color: 0xe67e22,
+                size: 1.5, color: 0xd4a574, // warm tan — unremarkable, baseline
                 coins: 5, doorDmg: 2,
             },
-            speedwalker: {
-                name: 'Speed Walker',
+            dancer: {
+                name: 'Pee Dancer',
                 baseSpeed: 5.5, speedVar: 1.0,
-                baseHP: 14, hpPerWave: 6,
-                size: 1.2, color: 0x3498db,
-                coins: 7, doorDmg: 2,
-                slowImmune: true, // Forces DPS — wet floor signs useless
+                baseHP: 10, hpPerWave: 4,
+                size: 1.0, color: 0x3498db, // bright blue — energetic
+                coins: 3, doorDmg: 1,
             },
-            coffee: {
-                name: 'Coffee Drinker',
+            waddle: {
+                name: 'Waddle Tank',
                 baseSpeed: 2.0, speedVar: 0.3,
-                baseHP: 50, hpPerWave: 15,
-                size: 1.6, color: 0x795548,
-                coins: 10, doorDmg: 3,
-                splitsOnDeath: true, // Forces defense in depth
+                baseHP: 60, hpPerWave: 18,
+                size: 2.0, color: 0x795548, // brown — earthy, heavy
+                coins: 12, doorDmg: 4,
+                panicThreshold: 0.5, // Panics at 50% HP — speed doubles
             },
-            karen: {
-                name: 'Karen',
-                baseSpeed: 2.8, speedVar: 0.3,
-                baseHP: 70, hpPerWave: 20,
-                size: 1.8, color: 0xe74c3c,
-                coins: 15, doorDmg: 6, // Devastating at the door
-                speedAuraRange: 8, speedAuraBonus: 0.5, // Buffs nearby enemies — priority target
+            panicker: {
+                name: 'Panicker',
+                baseSpeed: 4.0, speedVar: 0.5,
+                baseHP: 40, hpPerWave: 12,
+                size: 1.6, color: 0xf1c40f, // bright yellow — WARNING
+                coins: 10, doorDmg: 2,
+                speedAuraRange: 8, speedAuraBonus: 0.5, // Panic is contagious — priority target
             },
-            espresso: {
-                name: 'Espresso Shot',
-                baseSpeed: 7, speedVar: 1.0,
-                baseHP: 12, hpPerWave: 4,
-                size: 0.4, color: 0x4fc3f7,
-                coins: 1, doorDmg: 1,
+            powerwalker: {
+                name: 'Power Walker',
+                baseSpeed: 3.5, speedVar: 0.3,
+                baseHP: 30, hpPerWave: 10,
+                size: 1.4, color: 0x1abc9c, // teal — athletic, composed
+                coins: 7, doorDmg: 2,
+                slowImmune: true, // Too much momentum — wet floor signs useless
+            },
+            girls: {
+                name: 'The Girls',
+                baseSpeed: 3.0, speedVar: 0.3,
+                baseHP: 8, hpPerWave: 3,
+                size: 0.85, color: 0xe91e8c, // hot pink — unmistakable cluster
+                coins: 2, doorDmg: 1,
             },
         },
 
-        // Curated wave compositions — each wave introduces a new challenge
+        // Curated wave compositions — one new enemy per introduction wave
         WAVE_COMPOSITIONS: [
             null, // index 0 unused
-            // Wave 1: Tutorial — polite knockers only, learn the basics
+            // Wave 1: Tutorial — polite knockers only
             { enemies: [['polite', 5]], interval: 2.5, delay: 5 },
-            // Wave 2: Speed walkers arrive — immune to slow, forces DPS placement
-            { enemies: [['polite', 4], ['speedwalker', 3]], interval: 2.0, delay: 4 },
-            // Wave 3: Coffee drinkers split on death — forces defense in depth
-            { enemies: [['polite', 4], ['speedwalker', 3], ['coffee', 2]], interval: 1.8, delay: 4 },
-            // Wave 4: Increasing pressure
-            { enemies: [['polite', 5], ['speedwalker', 4], ['coffee', 3]], interval: 1.5, delay: 3.5 },
-            // Wave 5: Karen arrives — speed aura + massive door damage, priority target
-            { enemies: [['polite', 4], ['speedwalker', 5], ['coffee', 2], ['karen', 1]], interval: 1.3, delay: 3 },
-            // Wave 6: Multiple Karens
-            { enemies: [['polite', 5], ['speedwalker', 5], ['coffee', 3], ['karen', 2]], interval: 1.2, delay: 3 },
-            // Wave 7: Heavy assault
-            { enemies: [['polite', 6], ['speedwalker', 6], ['coffee', 4], ['karen', 2]], interval: 1.0, delay: 3 },
-            // Wave 8: Swarm — transition to procedural
-            { enemies: [['polite', 8], ['speedwalker', 8], ['coffee', 4], ['karen', 3]], interval: 0.8, delay: 3 },
+            // Wave 2: More knockers, Tip Jar now available
+            { enemies: [['polite', 7]], interval: 2.0, delay: 4 },
+            // Wave 3: PEE DANCERS — fast, bouncy, come in groups
+            { enemies: [['polite', 4], ['dancer', 4]], interval: 1.8, delay: 4 },
+            // Wave 4: Harder mix, Air Freshener now available
+            { enemies: [['polite', 5], ['dancer', 5]], interval: 1.5, delay: 3.5 },
+            // Wave 5: WADDLE TANK — big, slow, panics into sprint at 50% HP
+            { enemies: [['polite', 4], ['dancer', 3], ['waddle', 2]], interval: 1.3, delay: 3 },
+            // Wave 6: More waddle tanks
+            { enemies: [['polite', 5], ['dancer', 5], ['waddle', 3]], interval: 1.2, delay: 3 },
+            // Wave 7: PANICKER — speed aura, priority target
+            { enemies: [['polite', 4], ['dancer', 4], ['waddle', 2], ['panicker', 1]], interval: 1.0, delay: 3 },
+            // Wave 8: More panickers
+            { enemies: [['polite', 5], ['dancer', 5], ['waddle', 3], ['panicker', 2]], interval: 0.9, delay: 3 },
+            // Wave 9: POWER WALKER — immune to slow
+            { enemies: [['polite', 4], ['dancer', 4], ['waddle', 2], ['panicker', 1], ['powerwalker', 3]], interval: 0.8, delay: 3 },
+            // Wave 10: THE GIRLS — lane-testing swarm cluster
+            { enemies: [['polite', 3], ['dancer', 3], ['waddle', 2], ['panicker', 1], ['powerwalker', 2], ['girls_group', 1]], interval: 0.8, delay: 3 },
         ],
 
         // ============================
@@ -1047,9 +1058,11 @@
 
             // Announce with enemy introduction on key waves
             let msg = `WAVE ${this.wave}`;
-            if (this.wave === 2) msg += ' — SPEED WALKERS!';
-            else if (this.wave === 3) msg += ' — COFFEE DRINKERS!';
-            else if (this.wave === 5) msg += ' — KAREN HAS ARRIVED';
+            if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
+            else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
+            else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
+            else if (this.wave === 9) msg += ' — POWER WALKERS!';
+            else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
             this.announceWave(msg);
             this.updateHUD();
         },
@@ -1059,9 +1072,11 @@
             const total = 10 + Math.floor(wave * 2.5);
             for (let i = 0; i < total; i++) {
                 const roll = Math.random();
-                if (roll < 0.12) queue.push('karen');
-                else if (roll < 0.30) queue.push('coffee');
-                else if (roll < 0.55) queue.push('speedwalker');
+                if (roll < 0.06) queue.push('girls_group');
+                else if (roll < 0.14) queue.push('panicker');
+                else if (roll < 0.26) queue.push('waddle');
+                else if (roll < 0.40) queue.push('powerwalker');
+                else if (roll < 0.65) queue.push('dancer');
                 else queue.push('polite');
             }
             return queue;
@@ -1071,34 +1086,55 @@
             if (this._spawnQueue.length === 0) return;
 
             const enemyType = this._spawnQueue.shift();
+
+            // The Girls — spawn as a tight cluster picking a lane
+            if (enemyType === 'girls_group') {
+                const def = this.ENEMY_TYPES.girls;
+                if (!def) return;
+                const laneOptions = [-4, 0, 4];
+                const targetLane = laneOptions[Math.floor(Math.random() * 3)];
+                const groupSize = 5 + Math.floor(Math.random() * 3); // 5-7
+                for (let g = 0; g < groupSize; g++) {
+                    this._createEnemy('girls', def, {
+                        xOverride: targetLane + (Math.random() - 0.5) * 1.5,
+                        zOffset: Math.random() * 2,
+                        targetLane: targetLane,
+                    });
+                }
+                this.enemiesSpawned++;
+                return;
+            }
+
             const def = this.ENEMY_TYPES[enemyType];
             if (!def) return;
+            this._createEnemy(enemyType, def, {});
+            this.enemiesSpawned++;
+        },
 
+        _createEnemy(enemyType, def, opts) {
             const spread = CONFIG.spawnWidth;
-            const x = (Math.random() - 0.5) * spread;
-            const z = CONFIG.spawnZoneZ + Math.random() * 2;
+            const x = opts.xOverride !== undefined ? opts.xOverride : (Math.random() - 0.5) * spread;
+            const z = CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
 
             const speed = def.baseSpeed + Math.random() * def.speedVar;
             const hp = def.baseHP + this.wave * def.hpPerWave;
             const size = def.size;
             const color = def.color;
 
-            // Create enemy mesh — simple low-poly person with type-specific details
             const group = new THREE.Group();
 
-            // Body
+            // Body dimensions vary by type
+            let bodyW = size * 0.8, bodyH = size * 1.4, bodyD = size * 0.5;
+            if (enemyType === 'waddle') { bodyW = size * 1.1; bodyD = size * 0.7; } // extra wide
+            if (enemyType === 'panicker') { bodyW = size * 0.6; } // lanky
+
             const body = new THREE.Mesh(
-                new THREE.BoxGeometry(size * 0.8, size * 1.4, size * 0.5),
+                new THREE.BoxGeometry(bodyW, bodyH, bodyD),
                 new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 })
             );
             body.position.y = size * 1.2;
             body.castShadow = true;
             group.add(body);
-
-            // Speed walker leans forward — visually "rushing"
-            if (enemyType === 'speedwalker') {
-                body.rotation.x = 0.25;
-            }
 
             // Head
             const head = new THREE.Mesh(
@@ -1109,34 +1145,67 @@
             head.castShadow = true;
             group.add(head);
 
-            // Karen — tall angry hairdo (instantly recognizable silhouette)
-            if (enemyType === 'karen') {
-                const hair = new THREE.Mesh(
-                    new THREE.ConeGeometry(size * 0.3, size * 0.7, 4),
-                    new THREE.MeshStandardMaterial({ color: 0xaa0000, roughness: 0.4 })
-                );
-                hair.position.y = size * 2.6;
-                group.add(hair);
-            }
-
-            // Coffee Drinker — coffee cup in hand
-            if (enemyType === 'coffee') {
-                const cup = new THREE.Mesh(
-                    new THREE.CylinderGeometry(size * 0.1, size * 0.08, size * 0.35, 6),
-                    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
-                );
-                cup.position.set(size * 0.55, size * 1.5, 0);
-                group.add(cup);
-            }
-
-            // Legs (two small boxes)
+            // Legs — spacing varies by type
             const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            let legSpacing = size * 0.15;
+            if (enemyType === 'waddle') legSpacing = size * 0.35; // wide stance
+            if (enemyType === 'dancer') legSpacing = size * 0.08; // knees together
+
             const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
-            leftLeg.position.set(-size * 0.15, size * 0.4, 0);
+            leftLeg.position.set(-legSpacing, size * 0.4, 0);
             group.add(leftLeg);
             const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
-            rightLeg.position.set(size * 0.15, size * 0.4, 0);
+            rightLeg.position.set(legSpacing, size * 0.4, 0);
             group.add(rightLeg);
+
+            // Type-specific visual details
+            let leftArm = null, rightArm = null, stomachHand = null;
+
+            // Pee Dancer — hunched, distressed posture
+            if (enemyType === 'dancer') {
+                body.rotation.x = -0.15;
+            }
+
+            // Waddle Tank — hunched forward, hand on stomach, wide body
+            if (enemyType === 'waddle') {
+                body.rotation.x = -0.2;
+                stomachHand = new THREE.Mesh(
+                    new THREE.BoxGeometry(size * 0.3, size * 0.2, size * 0.15),
+                    new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.5 })
+                );
+                stomachHand.position.set(0, size * 1.0, bodyD * 0.5 + size * 0.05);
+                group.add(stomachHand);
+            }
+
+            // Panicker — arms raised overhead, flailing
+            if (enemyType === 'panicker') {
+                const armMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+                leftArm = new THREE.Mesh(
+                    new THREE.BoxGeometry(size * 0.15, size * 0.6, size * 0.15), armMat
+                );
+                leftArm.position.set(-size * 0.45, size * 2.4, 0);
+                group.add(leftArm);
+                rightArm = new THREE.Mesh(
+                    new THREE.BoxGeometry(size * 0.15, size * 0.6, size * 0.15), armMat
+                );
+                rightArm.position.set(size * 0.45, size * 2.4, 0);
+                group.add(rightArm);
+            }
+
+            // Power Walker — arms at sides, bent 90°, pumping
+            if (enemyType === 'powerwalker') {
+                const armMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+                leftArm = new THREE.Mesh(
+                    new THREE.BoxGeometry(size * 0.15, size * 0.5, size * 0.15), armMat
+                );
+                leftArm.position.set(-size * 0.55, size * 1.4, 0);
+                group.add(leftArm);
+                rightArm = new THREE.Mesh(
+                    new THREE.BoxGeometry(size * 0.15, size * 0.5, size * 0.15), armMat
+                );
+                rightArm.position.set(size * 0.55, size * 1.4, 0);
+                group.add(rightArm);
+            }
 
             group.position.set(x, 0, z);
             this.scene.add(group);
@@ -1147,6 +1216,9 @@
                 body: body,
                 leftLeg: leftLeg,
                 rightLeg: rightLeg,
+                leftArm: leftArm,
+                rightArm: rightArm,
+                stomachHand: stomachHand,
                 x: x,
                 z: z,
                 speed: speed,
@@ -1160,10 +1232,11 @@
                 hitFlash: 0,
                 bodyColor: color,
                 slowImmune: def.slowImmune || false,
+                panicked: false,
+                ...(opts.targetLane !== undefined && { targetLane: opts.targetLane }),
             };
 
             this.enemies.push(enemy);
-            this.enemiesSpawned++;
         },
 
         // ============================
@@ -1224,11 +1297,11 @@
                     }
                 }
 
-                // Karen speed aura — enemies near a Karen move 50% faster
+                // Panicker speed aura — panic is contagious, nearby enemies 50% faster
                 let auraMult = 1.0;
-                if (e.type !== 'karen') {
+                if (e.type !== 'panicker') {
                     for (const other of this.enemies) {
-                        if (other.type !== 'karen' || other.bashing) continue;
+                        if (other.type !== 'panicker' || other.bashing) continue;
                         const adx = e.x - other.x;
                         const adz = e.z - other.z;
                         if (adx * adx + adz * adz < 64) { // range 8
@@ -1240,16 +1313,35 @@
 
                 // Move toward toilet (skip if bashing the door)
                 if (!e.bashing) {
+                    // Waddle Tank panic — speeds up when badly hurt
+                    if (e.type === 'waddle' && !e.panicked && e.hp < e.maxHp * 0.5) {
+                        e.panicked = true;
+                        e.speed *= 2.0;
+                        // Visual shift: upright sprint posture
+                        if (e.body) { e.body.rotation.x = 0.15; e.body.rotation.z = 0; }
+                        if (e.stomachHand) e.stomachHand.visible = false;
+                    }
+
                     const moveSpeed = e.speed * slowMult * auraMult * dt;
                     e.z -= moveSpeed;
 
-                    // Steer toward toilet x — stronger as enemies approach
-                    const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
-                    const convergeDist = 40;
-                    if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
-                        const convergeStrength = 1 - (distZ / convergeDist);
-                        const dxToToilet = CONFIG.toiletPos.x - e.x;
-                        e.x += dxToToilet * convergeStrength * dt * 0.8;
+                    // Steering — girls follow their chosen lane, others converge to toilet
+                    if (e.type === 'girls' && e.targetLane !== undefined) {
+                        const dxToLane = e.targetLane - e.x;
+                        e.x += dxToLane * dt * 2.0;
+                    } else {
+                        const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
+                        const convergeDist = 40;
+                        if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
+                            const convergeStrength = 1 - (distZ / convergeDist);
+                            const dxToToilet = CONFIG.toiletPos.x - e.x;
+                            e.x += dxToToilet * convergeStrength * dt * 0.8;
+                        }
+                    }
+
+                    // Panicker zig-zag — slight lateral wobble
+                    if (e.type === 'panicker') {
+                        e.x += Math.sin(e.walkPhase * 0.5) * dt * 0.5;
                     }
 
                     e.mesh.position.z = e.z;
@@ -1278,13 +1370,54 @@
                         }
                     }
 
-                    // Walk animation
+                    // Walk animation — type-specific movement identity
                     e.walkPhase += dt * e.speed * 2;
-                    const legSwing = Math.sin(e.walkPhase) * 0.3;
-                    if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
-                    if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
-                    // Slight body bob
-                    e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
+
+                    if (e.type === 'dancer') {
+                        // Pee dance — hopping foot to foot, knees together
+                        e.mesh.position.y = Math.abs(Math.sin(e.walkPhase * 1.5)) * 0.4;
+                        e.body.rotation.z = Math.sin(e.walkPhase) * 0.15;
+                        if (e.leftLeg) e.leftLeg.rotation.x = Math.sin(e.walkPhase * 2) * 0.15;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -Math.sin(e.walkPhase * 2) * 0.15;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase * 1.5)) * 0.15;
+                    } else if (e.type === 'waddle' && !e.panicked) {
+                        // Slow waddle — rocking side to side, tiny steps
+                        e.body.rotation.z = Math.sin(e.walkPhase) * 0.12;
+                        const wLeg = Math.sin(e.walkPhase) * 0.15;
+                        if (e.leftLeg) e.leftLeg.rotation.x = wLeg;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -wLeg;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.03;
+                    } else if (e.type === 'waddle' && e.panicked) {
+                        // Panicked sprint — frantic, fast legs
+                        const wLeg = Math.sin(e.walkPhase) * 0.5;
+                        if (e.leftLeg) e.leftLeg.rotation.x = wLeg;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -wLeg;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.08;
+                        e.body.rotation.z = 0;
+                    } else if (e.type === 'panicker') {
+                        // Frantic flailing — arms overhead, body sways
+                        const pLeg = Math.sin(e.walkPhase) * 0.4;
+                        if (e.leftLeg) e.leftLeg.rotation.x = pLeg;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -pLeg;
+                        if (e.leftArm) e.leftArm.rotation.z = Math.sin(e.walkPhase * 1.3 + 1) * 0.6;
+                        if (e.rightArm) e.rightArm.rotation.z = -Math.sin(e.walkPhase * 1.3) * 0.6;
+                        e.body.rotation.z = Math.sin(e.walkPhase * 0.7) * 0.1;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.06;
+                    } else if (e.type === 'powerwalker') {
+                        // Rigid mechanical stride — arm pumps, minimal bob
+                        const pwLeg = Math.sin(e.walkPhase) * 0.35;
+                        if (e.leftLeg) e.leftLeg.rotation.x = pwLeg;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -pwLeg;
+                        if (e.leftArm) e.leftArm.rotation.x = -pwLeg;
+                        if (e.rightArm) e.rightArm.rotation.x = pwLeg;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.02;
+                    } else {
+                        // Default walk (polite knocker, girls)
+                        const legSwing = Math.sin(e.walkPhase) * 0.3;
+                        if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
+                        if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
+                        e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
+                    }
                 }
 
                 // Hit flash effect
@@ -1309,7 +1442,7 @@
                     if (!e.bashing) {
                         e.bashing = true;
                         e.bashTimer = 0.3 + Math.random() * 0.3; // first hit comes fast
-                        e.bashCooldown = e.type === 'espresso' ? 0.6 : (e.type === 'boss' ? 1.5 : 1.0);
+                        e.bashCooldown = e.type === 'boss' ? 1.5 : 1.0;
                     }
 
                     // Bash animation: lunge forward and back
@@ -1380,49 +1513,6 @@
                     this.coins += e.coins;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
                     this._spawnCoinText(e.x, e.z, e.coins);
-
-                    // Coffee Drinker splits on death — espressos are genuinely dangerous
-                    if (e.type === 'coffee') {
-                        const espDef = this.ENEMY_TYPES.espresso;
-                        for (let s = 0; s < 2; s++) {
-                            const miniGroup = new THREE.Group();
-                            const miniBody = new THREE.Mesh(
-                                new THREE.BoxGeometry(0.25, 0.4, 0.2),
-                                new THREE.MeshStandardMaterial({ color: espDef.color })
-                            );
-                            miniBody.position.y = 0.3;
-                            miniGroup.add(miniBody);
-                            const miniHead = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.12, 6, 6),
-                                new THREE.MeshStandardMaterial({ color: 0xffccaa })
-                            );
-                            miniHead.position.y = 0.6;
-                            miniGroup.add(miniHead);
-                            miniGroup.position.set(e.x + (s === 0 ? -0.5 : 0.5), 0, e.z);
-                            this.scene.add(miniGroup);
-                            const espHP = espDef.baseHP + this.wave * espDef.hpPerWave;
-                            this.enemies.push({
-                                type: 'espresso',
-                                mesh: miniGroup,
-                                body: miniBody,
-                                leftLeg: null,
-                                rightLeg: null,
-                                x: e.x + (s === 0 ? -0.5 : 0.5),
-                                z: e.z,
-                                speed: espDef.baseSpeed + Math.random() * espDef.speedVar,
-                                hp: espHP,
-                                maxHp: espHP,
-                                size: espDef.size,
-                                coins: espDef.coins,
-                                doorDmg: espDef.doorDmg,
-                                slowed: 0,
-                                walkPhase: Math.random() * Math.PI * 2,
-                                hitFlash: 0,
-                                bodyColor: espDef.color,
-                                slowImmune: false,
-                            });
-                        }
-                    }
 
                     this.scene.remove(e.mesh);
                     this.enemies.splice(i, 1);
