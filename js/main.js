@@ -2,6 +2,7 @@
 
 import { CONFIG } from './data/config.js';
 import { createToilet, updateToilet } from './models/ToiletModel.js';
+import { AnimationController } from './animation/AnimationController.js';
 import {
     createBathroomStalls,
     createSinks,
@@ -27,6 +28,8 @@ window.createPaperTowelDispenser = createPaperTowelDispenser;
 window.createBathroomWalls = createBathroomWalls;
 window.createOfficePeek = createOfficePeek;
 window.createBathroomDoor = createBathroomDoor;
+
+window.AnimationController = AnimationController;
 
 // Initialize game
 window.Game = Game;

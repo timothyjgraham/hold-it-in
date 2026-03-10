@@ -375,50 +375,50 @@ root (hips)
 > Per-enemy state machine with blending, one-shots, and LOD.
 
 ### 4A — Core Controller
-- [ ] Create `js/animation/AnimationController.js`
-- [ ] Implement `AnimationController` class:
-  - [ ] `constructor(skinnedMesh, enemyType)`:
-    - [ ] Create `THREE.AnimationMixer` bound to skinnedMesh
-    - [ ] Initialize state to null
-    - [ ] Initialize `updateAccumulator = 0`
-  - [ ] `setState(newState)`:
-    - [ ] Get clip from `AnimationLibrary.getAnimationClip(type, state)`
-    - [ ] Create action via `mixer.clipAction(clip)`
-    - [ ] Crossfade from current action: `currentAction.crossFadeTo(newAction, 0.2)`
-    - [ ] Special case: waddle→panic_sprint uses 0.4s crossfade
-    - [ ] Store new action as `this.currentAction`
-  - [ ] `playOneShot(clipName)`:
-    - [ ] Get clip, create action
-    - [ ] `action.setLoop(THREE.LoopOnce)`
-    - [ ] `action.clampWhenFinished = true`
-    - [ ] `action.blendMode = THREE.AdditiveAnimationBlendMode`
-    - [ ] `action.play()`
-  - [ ] `setTimeScale(scale)`:
-    - [ ] Adjusts playback speed (for desperate enemies, slowed enemies)
-  - [ ] `update(dt, distanceToCamera)`:
-    - [ ] Accumulate dt
-    - [ ] Determine update interval from distance (see LOD below)
-    - [ ] If enough time accumulated, call `mixer.update(accumulated)`
-    - [ ] Reset accumulator
-  - [ ] `dispose()`:
-    - [ ] `mixer.stopAllAction()`
-    - [ ] `mixer.uncacheRoot(skinnedMesh)`
-    - [ ] Null out references
+- [x] Create `js/animation/AnimationController.js`
+- [x] Implement `AnimationController` class:
+  - [x] `constructor(skinnedMesh, enemyType)`:
+    - [x] Create `THREE.AnimationMixer` bound to skinnedMesh
+    - [x] Initialize state to null
+    - [x] Initialize `updateAccumulator = 0`
+  - [x] `setState(newState)`:
+    - [x] Get clip from `AnimationLibrary.getAnimationClip(type, state)`
+    - [x] Create action via `mixer.clipAction(clip)`
+    - [x] Crossfade from current action: `currentAction.crossFadeTo(newAction, 0.2)`
+    - [x] Special case: waddle→panic_sprint uses 0.4s crossfade
+    - [x] Store new action as `this.currentAction`
+  - [x] `playOneShot(clipName)`:
+    - [x] Get clip, create action
+    - [x] `action.setLoop(THREE.LoopOnce)`
+    - [x] `action.clampWhenFinished = true`
+    - [x] `action.blendMode = THREE.AdditiveAnimationBlendMode`
+    - [x] `action.play()`
+  - [x] `setTimeScale(scale)`:
+    - [x] Adjusts playback speed (for desperate enemies, slowed enemies)
+  - [x] `update(dt, distanceToCamera)`:
+    - [x] Accumulate dt
+    - [x] Determine update interval from distance (see LOD below)
+    - [x] If enough time accumulated, call `mixer.update(accumulated)`
+    - [x] Reset accumulator
+  - [x] `dispose()`:
+    - [x] `mixer.stopAllAction()`
+    - [x] `mixer.uncacheRoot(skinnedMesh)`
+    - [x] Null out references
 
 ### 4B — LOD Throttling
-- [ ] Implement distance-based update frequency:
-  - [ ] Distance < 20 units: every frame (interval = 0)
-  - [ ] Distance 20-40 units: ~30fps (interval = 0.033)
-  - [ ] Distance > 40 units: ~15fps (interval = 0.066)
-- [ ] Compensate for skipped frames by passing accumulated dt to mixer
+- [x] Implement distance-based update frequency:
+  - [x] Distance < 20 units: every frame (interval = 0)
+  - [x] Distance 20-40 units: ~30fps (interval = 0.033)
+  - [x] Distance > 40 units: ~15fps (interval = 0.066)
+- [x] Compensate for skipped frames by passing accumulated dt to mixer
 - [ ] Test with 50+ enemies — verify no visible animation stuttering at medium distance
 
 ### 4C — Speed Synchronization
-- [ ] Sync animation playback speed with enemy movement speed:
-  - [ ] When enemy is slowed (wet floor): `setTimeScale(0.4)` on walk action
-  - [ ] When desperate: `setTimeScale(1.5)` or higher
-  - [ ] When Panicker aura boosts speed: update time scale accordingly
-  - [ ] Waddle Tank panic: handled by state change, not time scale
+- [x] Sync animation playback speed with enemy movement speed:
+  - [x] When enemy is slowed (wet floor): `setTimeScale(0.4)` on walk action
+  - [x] When desperate: `setTimeScale(1.5)` or higher
+  - [x] When Panicker aura boosts speed: update time scale accordingly
+  - [x] Waddle Tank panic: handled by state change, not time scale
 
 ---
 
