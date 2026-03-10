@@ -68,9 +68,9 @@ export class PlayerCharacter {
         this.boneMap = model.boneMap;
 
         // Position on toilet seat
-        // Toilet group is at toiletPosition with scale 1.4x
+        // Toilet group is at toiletPosition with scale 0.85x
         // Seat is at local y=1.65 within toilet group
-        const toiletScale = 1.4;
+        const toiletScale = 0.85;
         const seatWorldY = toiletPosition.y + (1.65 + 0.05) * toiletScale;
         this.group.position.set(
             toiletPosition.x,

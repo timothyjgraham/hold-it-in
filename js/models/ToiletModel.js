@@ -197,7 +197,7 @@ export function createToilet() {
     group.add(cleanSparkles);
 
     // Scale up so it reads as a toilet, but stay proportional to enemies
-    group.scale.set(1.4, 1.4, 1.4);
+    group.scale.set(0.85, 0.85, 0.85);
 
     // Store references for animation
     group.userData.sparkles = sparkles;

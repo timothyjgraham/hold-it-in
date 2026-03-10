@@ -4,7 +4,7 @@
 
 export const PLAYER_VISUAL_CONFIG = {
     player: {
-        size: 2.0,
+        size: 1.8,
         bones: {
             neck: true,
             upperArms: true,

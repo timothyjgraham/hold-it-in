@@ -158,7 +158,7 @@ export function createSinks() {
         // Counter/shelf (wall-mounted slab)
         const counterGeo = new THREE.BoxGeometry(1.8, 0.12, 1.2);
         const counter = new THREE.Mesh(counterGeo, counterMat);
-        counter.position.set(0, 2.0, 0);
+        counter.position.set(0, 1.6, 0);
         counter.castShadow = true;
         counter.receiveShadow = true;
         sink.add(counter);
@@ -167,14 +167,14 @@ export function createSinks() {
         const edgeGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.8, 6);
         const edge = new THREE.Mesh(edgeGeo, counterMat);
         edge.rotation.z = Math.PI / 2;
-        edge.position.set(0, 1.97, 0.6);
+        edge.position.set(0, 1.57, 0.6);
         sink.add(edge);
 
         // Basin (half-sphere sunk into counter, facing up)
         const basinGeo = new THREE.SphereGeometry(0.5, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2);
         const basin = new THREE.Mesh(basinGeo, porcelainMat);
         basin.rotation.x = Math.PI; // invert so hollow faces up
-        basin.position.set(0, 2.0, 0.1);
+        basin.position.set(0, 1.6, 0.1);
         basin.castShadow = true;
         sink.add(basin);
 
@@ -182,7 +182,7 @@ export function createSinks() {
         const rimGeo = new THREE.TorusGeometry(0.5, 0.03, 6, 12);
         const rim = new THREE.Mesh(rimGeo, porcelainMat);
         rim.rotation.x = -Math.PI / 2;
-        rim.position.set(0, 2.06, 0.1);
+        rim.position.set(0, 1.66, 0.1);
         sink.add(rim);
 
         // Drain (small dark circle at bottom of basin)
@@ -193,19 +193,19 @@ export function createSinks() {
             roughness: 0.2,
         });
         const drain = new THREE.Mesh(drainGeo, drainMat);
-        drain.position.set(0, 1.56, 0.1);
+        drain.position.set(0, 1.16, 0.1);
         sink.add(drain);
 
         // Faucet base (chrome cylinder on counter)
         const faucetBaseGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.15, 8);
         const faucetBase = new THREE.Mesh(faucetBaseGeo, chromeMat);
-        faucetBase.position.set(0, 2.14, -0.25);
+        faucetBase.position.set(0, 1.74, -0.25);
         sink.add(faucetBase);
 
         // Faucet neck (vertical then curves forward)
         const neckGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8);
         const neck = new THREE.Mesh(neckGeo, chromeMat);
-        neck.position.set(0, 2.51, -0.25);
+        neck.position.set(0, 2.11, -0.25);
         neck.castShadow = true;
         sink.add(neck);
 
@@ -213,26 +213,26 @@ export function createSinks() {
         const spoutGeo = new THREE.CylinderGeometry(0.035, 0.03, 0.45, 8);
         const spout = new THREE.Mesh(spoutGeo, chromeMat);
         spout.rotation.x = Math.PI / 3;
-        spout.position.set(0, 2.75, -0.05);
+        spout.position.set(0, 2.35, -0.05);
         spout.castShadow = true;
         sink.add(spout);
 
         // Spout tip
         const tipGeo = new THREE.SphereGeometry(0.035, 6, 6);
         const tip = new THREE.Mesh(tipGeo, chromeMat);
-        tip.position.set(0, 2.6, 0.12);
+        tip.position.set(0, 2.2, 0.12);
         sink.add(tip);
 
         // Handle knobs (left and right)
         for (const side of [-1, 1]) {
             const knobStemGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 6);
             const knobStem = new THREE.Mesh(knobStemGeo, chromeMat);
-            knobStem.position.set(side * 0.25, 2.2, -0.25);
+            knobStem.position.set(side * 0.25, 1.8, -0.25);
             sink.add(knobStem);
 
             const knobGeo = new THREE.SphereGeometry(0.05, 6, 6);
             const knob = new THREE.Mesh(knobGeo, chromeMat);
-            knob.position.set(side * 0.25, 2.33, -0.25);
+            knob.position.set(side * 0.25, 1.93, -0.25);
             sink.add(knob);
         }
 
@@ -245,7 +245,7 @@ export function createSinks() {
         });
         for (const bx of [-0.7, 0.7]) {
             const bracket = new THREE.Mesh(bracketGeo, bracketMat);
-            bracket.position.set(bx, 1.65, -0.1);
+            bracket.position.set(bx, 1.25, -0.1);
             sink.add(bracket);
         }
 
@@ -277,7 +277,7 @@ export function createSinks() {
         nozzle.position.set(0, -0.22, 0.04);
         soapGroup.add(nozzle);
 
-        soapGroup.position.set(0.6, 3.2, -0.4);
+        soapGroup.position.set(0.6, 2.8, -0.4);
         sink.add(soapGroup);
 
         // Position entire sink assembly on the left wall
@@ -804,13 +804,13 @@ export function createOfficePeek() {
 
         const deskTopGeo = new THREE.BoxGeometry(3.0, 0.12, 1.5);
         const deskTop = new THREE.Mesh(deskTopGeo, deskMat);
-        deskTop.position.y = 1.9;
+        deskTop.position.y = 1.4;
         deskTop.castShadow = true;
         deskTop.receiveShadow = true;
         deskGroup.add(deskTop);
 
-        const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.84, 6);
-        for (const [lx, ly, lz] of [[-1.35,0.92,-0.6],[1.35,0.92,-0.6],[-1.35,0.92,0.6],[1.35,0.92,0.6]]) {
+        const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.34, 6);
+        for (const [lx, ly, lz] of [[-1.35,0.67,-0.6],[1.35,0.67,-0.6],[-1.35,0.67,0.6],[1.35,0.67,0.6]]) {
             const leg = new THREE.Mesh(legGeo, deskLegMat);
             leg.position.set(lx, ly, lz);
             leg.castShadow = true;
@@ -818,20 +818,20 @@ export function createOfficePeek() {
         }
 
         const kb = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.4), keyboardMat);
-        kb.position.set(-0.2, 2.0, 0.1);
+        kb.position.set(-0.2, 1.5, 0.1);
         deskGroup.add(kb);
 
         const mon = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 0.06), monitorScreenMat);
-        mon.position.set(-0.2, 2.9, -0.4);
+        mon.position.set(-0.2, 2.4, -0.4);
         mon.castShadow = true;
         deskGroup.add(mon);
 
         const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), deskLegMat);
-        stand.position.set(-0.2, 2.2, -0.4);
+        stand.position.set(-0.2, 1.7, -0.4);
         deskGroup.add(stand);
 
         const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 8), deskLegMat);
-        standBase.position.set(-0.2, 1.98, -0.4);
+        standBase.position.set(-0.2, 1.48, -0.4);
         deskGroup.add(standBase);
 
         return deskGroup;
@@ -842,18 +842,18 @@ export function createOfficePeek() {
         const chairGroup = new THREE.Group();
 
         const seat = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.15, 1.0), chairSeatMat);
-        seat.position.y = 1.2;
+        seat.position.y = 0.85;
         seat.castShadow = true;
         chairGroup.add(seat);
 
         const backrest = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.3, 0.12), chairSeatMat);
-        backrest.position.set(0, 2.0, -0.5);
+        backrest.position.set(0, 1.65, -0.5);
         backrest.rotation.x = 0.15;
         backrest.castShadow = true;
         chairGroup.add(backrest);
 
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 8), chairFrameMat2);
-        post.position.y = 0.75;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8), chairFrameMat2);
+        post.position.y = 0.50;
         chairGroup.add(post);
 
         for (let i = 0; i < 5; i++) {
@@ -901,19 +901,19 @@ export function createOfficePeek() {
     // ─── Helper: build a filing cabinet ────────────────────────────────────
     function buildFilingCabinet() {
         const fg = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.0, 0.8), filingMat);
-        body.position.y = 1.5;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.4, 0.8), filingMat);
+        body.position.y = 1.2;
         body.castShadow = true;
         body.receiveShadow = true;
         fg.add(body);
 
         for (let d = 0; d < 3; d++) {
-            const dy = 0.5 + d * 1.0;
-            const face = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.85, 0.02), filingMat);
+            const dy = 0.4 + d * 0.8;
+            const face = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.68, 0.02), filingMat);
             face.position.set(0, dy, 0.41);
             fg.add(face);
             const handle = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.06), chromeMat);
-            handle.position.set(0, dy + 0.15, 0.44);
+            handle.position.set(0, dy + 0.12, 0.44);
             fg.add(handle);
         }
         return fg;
@@ -1471,29 +1471,29 @@ export function createOfficePeek() {
         color: 0x88bbdd, metalness: 0.05, roughness: 0.1, transparent: true, opacity: 0.6,
     });
 
-    const coolerBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.0, 0.7), coolerBodyMat);
-    coolerBody.position.y = 1.0;
+    const coolerBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.7), coolerBodyMat);
+    coolerBody.position.y = 0.7;
     coolerBody.castShadow = true;
     coolerGroup.add(coolerBody);
 
     const coolerTop = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 0.75), coolerBodyMat);
-    coolerTop.position.y = 2.04;
+    coolerTop.position.y = 1.44;
     coolerGroup.add(coolerTop);
 
-    const jug = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.15, 1.3, 8), waterJugMat);
-    jug.position.y = 2.73;
+    const jug = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.15, 0.9, 8), waterJugMat);
+    jug.position.y = 1.93;
     coolerGroup.add(jug);
 
     const jugCap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8),
         new THREE.MeshStandardMaterial({ color: 0x3366aa, metalness: 0.1, roughness: 0.3 }));
-    jugCap.position.y = 3.4;
+    jugCap.position.y = 2.40;
     coolerGroup.add(jugCap);
 
     for (const [sx, color] of [[0.15, 0xcc3333], [-0.15, 0x3355cc]]) {
         const sm = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.3 });
         const spigot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6), sm);
         spigot.rotation.x = Math.PI / 2;
-        spigot.position.set(sx, 1.5, 0.38);
+        spigot.position.set(sx, 1.05, 0.38);
         coolerGroup.add(spigot);
     }
 
