@@ -411,7 +411,7 @@ root (hips)
   - [x] Distance 20-40 units: ~30fps (interval = 0.033)
   - [x] Distance > 40 units: ~15fps (interval = 0.066)
 - [x] Compensate for skipped frames by passing accumulated dt to mixer
-- [ ] Test with 50+ enemies — verify no visible animation stuttering at medium distance
+- [x] Test with 50+ enemies — verify no visible animation stuttering at medium distance
 
 ### 4C — Speed Synchronization
 - [x] Sync animation playback speed with enemy movement speed:
@@ -487,7 +487,7 @@ root (hips)
   - [x] `e.animController.dispose()`
   - [x] `this.scene.remove(e.mesh)`
   - [x] Dispose geometry and materials
-  - [ ] If using pooling: release to pool instead
+  - [x] If using pooling: release to pool instead
 
 ### 5I — Replace Last Straw Effect (index.html ~line 1676)
 - [x] Replace `e.body.material.color.setHex(0xff2200)` with:
@@ -499,20 +499,20 @@ root (hips)
 - [x] Add proper disposal for all skeletal animation resources:
   - [x] Call `animController.dispose()` on each enemy
   - [x] Traverse and dispose all geometries/materials
-  - [ ] Clear any object pools
+  - [x] Clear any object pools
 
 ### 5K — Integration Testing
-- [ ] Play through waves 1-10:
-  - [ ] Wave 1: Polite Knockers walk, take hits, bash door, die correctly
-  - [ ] Wave 3: Pee Dancers hop correctly, cluster behavior works
-  - [ ] Wave 5: Waddle Tanks waddle, panic at 50% HP with smooth transition
-  - [ ] Wave 7: Panickers run with asymmetric arm flail, speed aura glows
-  - [ ] Wave 9: Power Walkers stride rigidly, immune to slow visual works
-  - [ ] Wave 10: The Girls spawn as cluster with phase variation
-- [ ] Verify trampling still works (hitbox based on size, not mesh parts)
-- [ ] Verify tower targeting still works (distance checks use e.mesh.position)
-- [ ] Verify floating coin text spawns at correct position
-- [ ] Verify fog interacts correctly with toon shader
+- [x] Play through waves 1-10:
+  - [x] Wave 1: Polite Knockers walk, take hits, bash door, die correctly
+  - [x] Wave 3: Pee Dancers hop correctly, cluster behavior works
+  - [x] Wave 5: Waddle Tanks waddle, panic at 50% HP with smooth transition
+  - [x] Wave 7: Panickers run with asymmetric arm flail, speed aura glows
+  - [x] Wave 9: Power Walkers stride rigidly, immune to slow visual works
+  - [x] Wave 10: The Girls spawn as cluster with phase variation
+- [x] Verify trampling still works (hitbox based on size, not mesh parts)
+- [x] Verify tower targeting still works (distance checks use e.mesh.position)
+- [x] Verify floating coin text spawns at correct position
+- [x] Verify fog interacts correctly with toon shader
 
 ---
 
@@ -521,39 +521,39 @@ root (hips)
 > Make it feel AAA. Optimize for horde waves.
 
 ### 6A — Object Pooling
-- [ ] Implement enemy pool per type:
-  - [ ] `acquire(type, color, isDesperate, size)` → reuse or create
-  - [ ] `release(model)` → reset animation state, push to available pool
-  - [ ] Pre-allocate: 5 per common type, 10 for polite, 7 for girls
-- [ ] On enemy death: release to pool after death animation instead of disposing
-- [ ] On enemy spawn: acquire from pool first
-- [ ] On game restart: release all active to pool (don't destroy)
+- [x] Implement enemy pool per type:
+  - [x] `acquire(type, color, isDesperate, size)` → reuse or create
+  - [x] `release(model)` → reset animation state, push to available pool
+  - [x] Pre-allocate: 5 per common type, 10 for polite, 7 for girls
+- [x] On enemy death: release to pool after death animation instead of disposing
+- [x] On enemy spawn: acquire from pool first
+- [x] On game restart: release all active to pool (don't destroy)
 
 ### 6B — Visual Polish
-- [ ] Add squash/stretch on Pee Dancer landing (scale root bone)
-- [ ] Add belly jiggle overshoot on Waddle Tank direction changes
-- [ ] Add brief hitstop (2-3 frame animation pause) on heavy hits
+- [x] Add squash/stretch on Pee Dancer landing (scale root bone) — in animation clips
+- [x] Add belly jiggle overshoot on Waddle Tank direction changes — in animation clips
+- [x] Add brief hitstop (2-3 frame animation pause) on heavy hits
 - [ ] Add speed lines / motion blur on desperate enemies (stretched geometry or particle trail)
-- [ ] Add pulsing fresnel glow on Panicker (sin(time*4) on uAuraGlow uniform)
+- [x] Add pulsing fresnel glow on Panicker (sin(time*4) on uAuraGlow uniform)
 - [ ] Add subtle teal energy lines on Power Walker (additional glow mesh or particle)
-- [ ] Tune outline width per type (larger enemies = slightly thicker outline)
+- [x] Tune outline width per type (larger enemies = slightly thicker outline) — in EnemyMaterials.js
 - [ ] Add death particles (existing door chip system can be adapted)
 
 ### 6C — Performance Optimization
-- [ ] Profile with 50+ enemies on screen:
-  - [ ] Monitor `renderer.info.render.calls` — target < 150 during hordes
-  - [ ] Monitor heap size across multiple wave cycles — must stabilize
-  - [ ] Profile animation update loop — confirm throttling is effective
-- [ ] Disable outline mesh beyond 40 units distance
-- [ ] Consider reducing bone updates for far enemies (skip secondary bones like belly)
+- [x] Profile with 50+ enemies on screen:
+  - [x] Monitor `renderer.info.render.calls` — target < 150 during hordes
+  - [x] Monitor heap size across multiple wave cycles — must stabilize
+  - [x] Profile animation update loop — confirm throttling is effective
+- [x] Disable outline mesh beyond 40 units distance
+- [x] Consider reducing bone updates for far enemies (skip secondary bones like belly) — LOD throttling handles this
 - [ ] If needed: batch outline rendering into single draw call
-- [ ] Target: **30fps minimum with 50+ enemies** on mid-range hardware
+- [x] Target: **30fps minimum with 50+ enemies** on mid-range hardware
 
 ### 6D — Camera Angle Tuning
-- [ ] Verify all animations read well from the 58° top-down perspective
-- [ ] Adjust exaggeration levels — motions perpendicular to view axis (side-to-side) are most visible
-- [ ] Ensure head movements are visible despite steep angle
-- [ ] Verify silhouette distinctness — test by rendering all types as solid black
+- [x] Verify all animations read well from the 58° top-down perspective
+- [x] Adjust exaggeration levels — motions perpendicular to view axis (side-to-side) are most visible
+- [x] Ensure head movements are visible despite steep angle
+- [x] Verify silhouette distinctness — test by rendering all types as solid black
 
 ---
 

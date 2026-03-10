@@ -171,6 +171,18 @@ export class AnimationController {
     // ───────────────────────────────────────
 
     /**
+     * Reset for object pool reuse — stop all actions but keep mixer alive.
+     * Call when releasing an enemy back to the pool.
+     */
+    reset() {
+        this.mixer.stopAllAction();
+        this.currentAction = null;
+        this.currentState = null;
+        this._timeScale = 1.0;
+        this.updateAccumulator = 0;
+    }
+
+    /**
      * Dispose all animation resources. Call on enemy death/removal.
      */
     dispose() {

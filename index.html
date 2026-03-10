@@ -98,6 +98,7 @@
         renderer: null,
         clock: null,
         toilet: null,
+        enemyPool: null,  // Phase 6A: object pool
 
         state: 'title',  // title | playing | paused | gameover
         wave: 0,
@@ -376,6 +377,13 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
+            // Phase 6A: Initialize enemy object pool
+            if (this.USE_SKELETAL && window.EnemyPool) {
+                this.enemyPool = new EnemyPool();
+                this.enemyPool.preAllocate();
+                console.log('Enemy pool pre-allocated:', this.enemyPool.getStats().poolSizes);
+            }
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -611,6 +619,16 @@
         _setupInput() {
             // Keyboard
             window.addEventListener('keydown', (e) => {
+                // 6E: Toggle performance stats with backtick
+                if (e.code === 'Backquote') {
+                    this._showPerfStats = !this._showPerfStats;
+                    if (!this._showPerfStats && this._perfEl) {
+                        this._perfEl.remove();
+                        this._perfEl = null;
+                    }
+                    return;
+                }
+
                 if (this.state === 'title') return;
 
                 // Pause toggle
@@ -750,25 +768,29 @@
             this.waveTimer = 0;
             this.waveActive = false;
 
-            // Clear entities (5J: dispose skeletal animation resources)
-            this.enemies.forEach(e => {
-                if (e.animController) e.animController.dispose();
-                if (e.mesh) {
-                    this.scene.remove(e.mesh);
-                    e.mesh.traverse(child => {
-                        if (child.isMesh) {
-                            if (child.geometry) child.geometry.dispose();
-                            if (child.material) {
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach(m => m.dispose());
-                                } else {
-                                    child.material.dispose();
+            // Clear entities (6A: release to pool or dispose)
+            if (this.enemyPool) {
+                this.enemyPool.releaseAll(this.enemies, this.scene);
+            } else {
+                this.enemies.forEach(e => {
+                    if (e.animController) e.animController.dispose();
+                    if (e.mesh) {
+                        this.scene.remove(e.mesh);
+                        e.mesh.traverse(child => {
+                            if (child.isMesh) {
+                                if (child.geometry) child.geometry.dispose();
+                                if (child.material) {
+                                    if (Array.isArray(child.material)) {
+                                        child.material.forEach(m => m.dispose());
+                                    } else {
+                                        child.material.dispose();
+                                    }
                                 }
                             }
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
             this.towers.forEach(t => { if (t.mesh) this.scene.remove(t.mesh); });
             this.projectiles.forEach(p => { if (p.mesh) this.scene.remove(p.mesh); });
             this.enemies = [];
@@ -1282,13 +1304,20 @@
             }
 
             let group, skinnedMesh, skeleton, boneMap, outlineMesh, materials;
+            let pooledAnimController = null;
             // Legacy fields for non-skeletal fallback
             let body = null, leftLeg = null, rightLeg = null;
             let leftArm = null, rightArm = null, stomachHand = null;
 
             if (this.USE_SKELETAL && window.createEnemyModel) {
-                // === SKELETAL PATH (Phase 5) ===
-                const model = createEnemyModel(enemyType, color, isDesperate, size);
+                // === SKELETAL PATH (Phase 5 + 6A pooling) ===
+                let model;
+                if (this.enemyPool) {
+                    model = this.enemyPool.acquire(enemyType, color, isDesperate, size);
+                    pooledAnimController = model.animController;
+                } else {
+                    model = createEnemyModel(enemyType, color, isDesperate, size);
+                }
                 group = model.group;
                 skinnedMesh = model.skinnedMesh;
                 skeleton = model.skeleton;
@@ -1401,9 +1430,9 @@
                 ...(opts.targetLane !== undefined && { targetLane: opts.targetLane }),
             };
 
-            // Set up AnimationController for skeletal enemies
-            if (this.USE_SKELETAL && skinnedMesh && window.AnimationController) {
-                const ac = new AnimationController(skinnedMesh, enemyType);
+            // Set up AnimationController for skeletal enemies (6A: reuse from pool)
+            if (this.USE_SKELETAL && skinnedMesh) {
+                const ac = pooledAnimController || new AnimationController(skinnedMesh, enemyType);
                 enemy.animController = ac;
 
                 // Initial animation state per type
@@ -1420,6 +1449,11 @@
                 // Girls: random phase offset for visual variety in clusters
                 if (enemyType === 'girls') {
                     ac.mixer.time = Math.random() * 2.0;
+                }
+
+                // 6B: set initial animation speed for desperate enemies
+                if (isDesperate) {
+                    ac.setTimeScale(1.5);
                 }
             }
 
@@ -1569,10 +1603,53 @@
                         }
                     }
 
-                    // Walk animation (5D)
+                    // Walk animation (5D + 6B speed sync + 6C secondary motion + 6D effects)
                     if (e.animController) {
-                        // Skeletal: let AnimationController handle all animation
+                        // 6B: sync animation speed with movement modifiers
+                        // 6C: skip speed sync during hitstop freeze
+                        if (!e._hitstopTimer || e._hitstopTimer <= 0) {
+                            let animSpeed = slowMult * auraMult;
+                            if (e.desperate) animSpeed *= 1.5;
+                            if (e.lastStraw) animSpeed *= 2.0;
+                            e.animController.setTimeScale(animSpeed);
+                        }
+
+                        // 6D: Panicker pulsing aura glow
+                        if (e.type === 'panicker' && e.skinnedMesh) {
+                            const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
+                            const mats = e.skinnedMesh.material;
+                            if (Array.isArray(mats)) {
+                                for (const m of mats) {
+                                    if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
+                                }
+                            }
+                        }
+
+                        // 6D: Desperate tint pulsing (subtle throb / frantic flash for lastStraw)
+                        if (e.skinnedMesh && (e.desperate || e.lastStraw)) {
+                            let pulse;
+                            if (e.lastStraw) {
+                                // Frantic rapid red flash for last straw enemies
+                                pulse = 0.6 + Math.sin(this.time * 12) * 0.4;
+                            } else {
+                                // Subtle throb for regular desperate
+                                pulse = 0.7 + Math.sin(this.time * 6) * 0.3;
+                            }
+                            const mats = e.skinnedMesh.material;
+                            if (Array.isArray(mats)) {
+                                for (const m of mats) {
+                                    if (m.uniforms && m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = pulse;
+                                }
+                            }
+                        }
+
+                        // 6E: LOD — hide outline beyond 40 units
                         const camDist = e.mesh.position.distanceTo(this.camera.position);
+                        if (e.outlineMesh) {
+                            e.outlineMesh.visible = camDist < 40;
+                        }
+
+                        // Skeletal: let AnimationController handle all animation
                         e.animController.update(dt, camDist);
                         // Keep walkPhase for zig-zag movement logic
                         e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
@@ -1619,6 +1696,15 @@
                             if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
                             e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
                         }
+                    }
+                }
+
+                // 6C: hitstop timer — resume animation after brief freeze
+                if (e._hitstopTimer > 0) {
+                    e._hitstopTimer -= dt;
+                    if (e._hitstopTimer <= 0) {
+                        e._hitstopTimer = 0;
+                        // TimeScale will be corrected by 6B speed sync on next walk frame
                     }
                 }
 
@@ -1688,6 +1774,18 @@
                     } else {
                         // Skeletal: animation handles the lunge, keep mesh at door
                         const camDist = e.mesh.position.distanceTo(this.camera.position);
+                        // 6D: panicker aura glow while bashing
+                        if (e.type === 'panicker' && e.skinnedMesh) {
+                            const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
+                            const mats = e.skinnedMesh.material;
+                            if (Array.isArray(mats)) {
+                                for (const m of mats) {
+                                    if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
+                                }
+                            }
+                        }
+                        // 6E: outline LOD
+                        if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
                         e.animController.update(dt, camDist);
                     }
 
@@ -1782,31 +1880,43 @@
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
                     this._spawnCoinText(e.x, e.z, e.coins);
 
-                    // 5H: death animation or immediate removal
+                    // 5H + 6A: death animation then release to pool (or dispose)
                     if (e.animController && !e.dying) {
                         e.dying = true;
                         e.animController.playOneShot('death');
                         // Delay removal by death clip duration
                         const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
-                        const mesh = e.mesh;
-                        const ac = e.animController;
+                        const enemyRef = e;
                         setTimeout(() => {
-                            if (ac) ac.dispose();
-                            this.scene.remove(mesh);
-                            // Dispose geometry and materials
-                            mesh.traverse(child => {
-                                if (child.isMesh) {
-                                    if (child.geometry) child.geometry.dispose();
-                                    if (child.material) {
-                                        if (Array.isArray(child.material)) {
-                                            child.material.forEach(m => m.dispose());
-                                        } else {
-                                            child.material.dispose();
+                            if (this.enemyPool && enemyRef.skinnedMesh) {
+                                // 6A: release back to pool for reuse
+                                this.enemyPool.release({
+                                    group: enemyRef.mesh,
+                                    skinnedMesh: enemyRef.skinnedMesh,
+                                    skeleton: enemyRef.skeleton,
+                                    boneMap: enemyRef.boneMap,
+                                    outlineMesh: enemyRef.outlineMesh,
+                                    materials: enemyRef.materials,
+                                    animController: enemyRef.animController,
+                                    enemyType: enemyRef.type,
+                                });
+                            } else {
+                                if (enemyRef.animController) enemyRef.animController.dispose();
+                                this.scene.remove(enemyRef.mesh);
+                                enemyRef.mesh.traverse(child => {
+                                    if (child.isMesh) {
+                                        if (child.geometry) child.geometry.dispose();
+                                        if (child.material) {
+                                            if (Array.isArray(child.material)) {
+                                                child.material.forEach(m => m.dispose());
+                                            } else {
+                                                child.material.dispose();
+                                            }
                                         }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }, delay);
                         // Remove from enemies array now (no longer participates in game logic)
                         this.enemies.splice(i, 1);
@@ -1903,6 +2013,11 @@
                     nearest.hitFlash = 0.15;
                     nearest.z += t.def.knockback;
                     nearest.mesh.position.z = nearest.z;
+                    // 6C: hitstop — brief animation freeze on heavy mop hit
+                    if (nearest.animController) {
+                        nearest.animController.setTimeScale(0);
+                        nearest._hitstopTimer = 0.05; // ~3 frames at 60fps
+                    }
                     // Animate mop swing
                     t.swingAngle = 1.0;
                 } else if (t.type === 'freshener') {
@@ -2351,6 +2466,26 @@
 
             // Render
             this.renderer.render(this.scene, this.camera);
+
+            // 6E: Performance profiling (debug overlay, toggle with backtick key)
+            if (this._showPerfStats) {
+                this._perfFrameCount = (this._perfFrameCount || 0) + 1;
+                this._perfAccum = (this._perfAccum || 0) + dt;
+                if (this._perfAccum >= 1.0) {
+                    const fps = Math.round(this._perfFrameCount / this._perfAccum);
+                    const info = this.renderer.info.render;
+                    const poolStats = this.enemyPool ? this.enemyPool.getStats() : {};
+                    const statsText = `FPS: ${fps} | Draw: ${info.calls} | Tris: ${info.triangles} | Enemies: ${this.enemies.length} | Pool: ${JSON.stringify(poolStats.poolSizes || {})}`;
+                    if (!this._perfEl) {
+                        this._perfEl = document.createElement('div');
+                        this._perfEl.style.cssText = 'position:fixed;top:4px;left:4px;color:#0f0;font:12px monospace;background:rgba(0,0,0,0.7);padding:4px 8px;z-index:9999;pointer-events:none;';
+                        document.body.appendChild(this._perfEl);
+                    }
+                    this._perfEl.textContent = statsText;
+                    this._perfFrameCount = 0;
+                    this._perfAccum = 0;
+                }
+            }
         },
     };
     </script>

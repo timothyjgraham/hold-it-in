@@ -5,6 +5,7 @@ import { createToilet, updateToilet } from './models/ToiletModel.js';
 import { AnimationController } from './animation/AnimationController.js';
 import { getAnimationClip } from './animation/AnimationLibrary.js';
 import { createEnemyModel } from './models/EnemyModelFactory.js';
+import { EnemyPool } from './systems/EnemyPool.js';
 import {
     createBathroomStalls,
     createSinks,
@@ -34,6 +35,7 @@ window.createBathroomDoor = createBathroomDoor;
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;
 window.createEnemyModel = createEnemyModel;
+window.EnemyPool = EnemyPool;
 
 // Initialize game
 window.Game = Game;
