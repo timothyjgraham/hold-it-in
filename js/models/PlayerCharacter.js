@@ -6,6 +6,7 @@ import { createPlayerModel } from './PlayerModelFactory.js';
 import { buildRotationTrack } from '../animation/AnimationLibrary.js';
 
 const AXIS_X = new THREE.Vector3(1, 0, 0);
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const AXIS_Z = new THREE.Vector3(0, 0, 1);
 
 // ─── Local animation helpers ───
@@ -42,7 +43,12 @@ export class PlayerCharacter {
         this.boneMap = null;
         this.mixer = null;
         this.phoneMesh = null;
-        this.tapClip = null;
+        // Manual phone tap state (bypasses broken additive blending in r128)
+        this._isTapping = false;
+        this._tapElapsed = 0;
+        this._tapQ = new THREE.Quaternion();
+        // Rest quaternions for MANUAL bones (not reset by idle mixer each frame)
+        this._restQuats = {};
     }
 
     /**
@@ -72,10 +78,23 @@ export class PlayerCharacter {
             toiletPosition.z + 0.1 * toiletScale  // nudged forward for camera visibility
         );
 
+        // No rotation — character faces +Z (toward door), same as toilet.
+        // Phone visibility comes from the screen glow + arm motion during tap.
+
         scene.add(this.group);
 
         // Create phone attached to hand bone
         this._createPhone(config, s);
+
+        // Save rest quaternions for MANUAL bones (mixer doesn't have quaternion
+        // tracks for these, so multiply() would accumulate every frame).
+        // Only right arm moves during tap — left arm stays untouched.
+        const manualBones = ['upperArm_R', 'hand_R'];
+        for (const name of manualBones) {
+            if (this.boneMap[name]) {
+                this._restQuats[name] = this.boneMap[name].quaternion.clone();
+            }
+        }
 
         // Animation mixer
         this.mixer = new THREE.AnimationMixer(this.skinnedMesh);
@@ -84,24 +103,15 @@ export class PlayerCharacter {
         const idleClip = this._buildIdleSitting(config);
         const idleAction = this.mixer.clipAction(idleClip);
         idleAction.play();
-
-        // Prepare one-shot phone tap clip
-        this.tapClip = this._buildPhoneTap(config);
     }
 
     /**
      * Trigger phone tap animation (called when player places a tower).
      */
     playPhoneTap() {
-        if (!this.mixer || !this.tapClip) return;
-
-        const action = this.mixer.clipAction(this.tapClip);
-        action.setLoop(THREE.LoopOnce);
-        action.clampWhenFinished = false;
-        action.blendMode = THREE.AdditiveAnimationBlendMode;
-        action.reset();
-        action.setEffectiveWeight(1);
-        action.play();
+        if (!this.boneMap) return;
+        this._isTapping = true;
+        this._tapElapsed = 0;
     }
 
     /**
@@ -112,10 +122,98 @@ export class PlayerCharacter {
         if (this.mixer) {
             this.mixer.update(dt);
         }
+
+        // Manual phone tap overlay — applied AFTER mixer sets idle bone rotations.
+        // Multiplies small extra rotations onto just the tap-relevant bones.
+        // (Three.js r128 AdditiveAnimationBlendMode doesn't reliably apply
+        //  quaternion deltas, so we do manual additive blending here.)
+        if (this._isTapping) {
+            this._tapElapsed += dt;
+            const duration = 0.5;
+
+            if (this._tapElapsed >= duration) {
+                this._isTapping = false;
+                // Reset MANUAL bones to rest quaternions
+                for (const [name, restQ] of Object.entries(this._restQuats)) {
+                    if (this.boneMap[name]) {
+                        this.boneMap[name].quaternion.copy(restQ);
+                    }
+                }
+            } else {
+                this._applyTapOverlay(this._tapElapsed / duration);
+            }
+        }
+
         // Pulse phone screen glow (bright enough to see from above)
         if (this.phoneMesh && this.phoneMesh.children[0]) {
             const t = Date.now() * 0.001;
-            this.phoneMesh.children[0].material.emissiveIntensity = 1.0 + Math.sin(t * 2) * 0.4;
+            // Flash brighter during tap
+            const tapBoost = this._isTapping ? 0.8 : 0;
+            this.phoneMesh.children[0].material.emissiveIntensity =
+                1.0 + Math.sin(t * 2) * 0.4 + tapBoost;
+        }
+    }
+
+    /**
+     * Apply phone tap overlay.
+     *
+     * Left arm/hand are NOT touched — they hold the phone and stay still.
+     * Only the RIGHT arm reaches across to tap the phone screen.
+     *
+     * IDLE bones (spine, forearm_R, head, thumb_R) — mixer resets their
+     * quaternions each frame, so multiply() is safe/additive.
+     *
+     * MANUAL bones (upperArm_R, hand_R) — no idle quaternion tracks,
+     * must copy-from-rest before multiply each frame.
+     *
+     * @param {number} t — normalized time 0..1
+     */
+    _applyTapOverlay(t) {
+        // Quick reach, tap, pull back
+        let e;
+        if (t < 0.15) {
+            e = t / 0.15;                              // snap in
+        } else if (t < 0.40) {
+            e = 1.0;                                    // hold
+        } else {
+            e = Math.max(0, (1.0 - t) / 0.60);         // ease out
+        }
+
+        const q = this._tapQ;
+        const bm = this.boneMap;
+
+        // ── IDLE bones (safe to multiply — mixer resets each frame) ──
+
+        // Spine leans forward slightly into the tap
+        q.setFromAxisAngle(AXIS_X, e * 0.12);
+        bm.spine.quaternion.multiply(q);
+
+        // Right forearm reaches across toward phone (inward + down)
+        q.setFromEuler(new THREE.Euler(e * -0.25, e * -0.50, 0));
+        bm.forearm_R.quaternion.multiply(q);
+
+        // Head nods down (glancing at phone during tap)
+        q.setFromAxisAngle(AXIS_X, e * 0.08);
+        bm.head.quaternion.multiply(q);
+
+        // Thumb presses on screen
+        q.setFromAxisAngle(AXIS_X, e * 0.35);
+        bm.thumb_R.quaternion.multiply(q);
+
+        // ── MANUAL bones (copy rest quat first, then multiply) ──
+
+        // Right upper arm swings inward across body toward the phone
+        if (this._restQuats.upperArm_R) {
+            bm.upperArm_R.quaternion.copy(this._restQuats.upperArm_R);
+            q.setFromEuler(new THREE.Euler(e * -0.60, e * -0.35, e * 0.20));
+            bm.upperArm_R.quaternion.multiply(q);
+        }
+
+        // Right hand angles down to tap on phone screen
+        if (this._restQuats.hand_R) {
+            bm.hand_R.quaternion.copy(this._restQuats.hand_R);
+            q.setFromEuler(new THREE.Euler(e * -0.30, e * -0.20, 0));
+            bm.hand_R.quaternion.multiply(q);
         }
     }
 
@@ -149,11 +247,14 @@ export class PlayerCharacter {
         screen.position.z = phoneD * 0.51;
         this.phoneMesh.add(screen);
 
-        // Attach to right hand bone — angled so screen faces upward (visible from top-down camera)
-        if (this.boneMap.hand_R) {
-            this.phoneMesh.position.set(0.04 * s, -0.02 * s, 0.02 * s);
-            this.phoneMesh.rotation.x = -0.8; // tilted more horizontal so screen faces camera
-            this.boneMap.hand_R.add(this.phoneMesh);
+        // Attach to LEFT hand bone (left hand holds phone, right hand taps it)
+        // Offset pushes phone out to the left and up so it's visible from
+        // the top-down camera (not hidden behind the body).
+        // rotation.x = -1.4 makes screen nearly horizontal (faces up toward camera).
+        if (this.boneMap.hand_L) {
+            this.phoneMesh.position.set(0.05 * s, 0.12 * s, 0.04 * s);
+            this.phoneMesh.rotation.set(-1.4, 0, -0.08);
+            this.boneMap.hand_L.add(this.phoneMesh);
         }
     }
 
@@ -198,36 +299,6 @@ export class PlayerCharacter {
             buildRotationTrack('forearm_L', t, [0, -0.03, 0, -0.05, 0], AXIS_X),
             // Thumb scrolling motion
             buildRotationTrack('thumb_R', t, [0, 0.15, 0, 0.22, 0], AXIS_X),
-        ]);
-    }
-
-    _buildPhoneTap(config) {
-        const dur = 0.8;
-        const s = config.size;
-        const t = [0, 0.10, 0.20, 0.35, 0.55, dur];
-
-        return new THREE.AnimationClip('player_phone_tap', dur, [
-            // Thumb presses down hard then releases
-            buildRotationTrack('thumb_R', t, [0, 0.25, 0.60, 0.25, 0.08, 0], AXIS_X),
-            // Whole character lurches forward (visible from above as body shifts toward door)
-            _posTrack('root', t, [
-                [0, 0, 0],
-                [0, 0, 0.03 * s],
-                [0, -0.02 * s, 0.08 * s],
-                [0, -0.01 * s, 0.04 * s],
-                [0, 0, 0.01 * s],
-                [0, 0, 0],
-            ]),
-            // Upper body lean forward
-            buildRotationTrack('spine', t, [0, -0.03, -0.15, -0.08, -0.02, 0], AXIS_X),
-            // Head dips to look at phone
-            buildRotationTrack('head', t, [0, -0.10, -0.22, -0.10, -0.03, 0], AXIS_X),
-            // Both forearms pivot forward (elbows extend out as hands push phone)
-            buildRotationTrack('forearm_R', t, [0, -0.08, -0.20, -0.10, -0.03, 0], AXIS_X),
-            buildRotationTrack('forearm_L', t, [0, -0.05, -0.12, -0.06, -0.02, 0], AXIS_X),
-            // Upper arms pull inward slightly during tap (visible as arms move)
-            buildRotationTrack('upperArm_R', t, [0, 0.02, 0.08, 0.04, 0.01, 0], AXIS_Z),
-            buildRotationTrack('upperArm_L', t, [0, -0.02, -0.08, -0.04, -0.01, 0], AXIS_Z),
         ]);
     }
 }

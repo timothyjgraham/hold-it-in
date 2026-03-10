@@ -186,14 +186,41 @@ function _buildPlayerGeometry(size, config, bp) {
         d.limbThickness * s * 0.48, d.limbThickness * s * 0.40, 6,
         bp.forearm_R, bp.hand_R, 0);
 
-    // ─── HANDS (skin 1) — bigger for visibility ───
-    const handGeo = new THREE.BoxGeometry(
-        d.handSize * s * 1.2, d.handSize * s * 1.4, d.handSize * s, 2, 2, 2
-    );
-    const handLM = new THREE.Matrix4().makeTranslation(bp.hand_L.x, bp.hand_L.y, bp.hand_L.z);
-    const handRM = new THREE.Matrix4().makeTranslation(bp.hand_R.x, bp.hand_R.y, bp.hand_R.z);
-    geometries.push(handGeo); transforms.push(handLM); materialIndices.push(1);
-    geometries.push(handGeo); transforms.push(handRM); materialIndices.push(1);
+    // ─── HANDS (skin 1) — palm sphere + finger nub + thumb ───
+    const hs = d.handSize * s;
+
+    // Palm — rounded sphere (reads as hand, not brick)
+    const palmGeo = new THREE.SphereGeometry(hs * 0.50, 8, 6);
+    geometries.push(palmGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(bp.hand_L.x, bp.hand_L.y, bp.hand_L.z));
+    materialIndices.push(1);
+    geometries.push(palmGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(bp.hand_R.x, bp.hand_R.y, bp.hand_R.z));
+    materialIndices.push(1);
+
+    // Fingers — thin rounded box extending forward from palm
+    const fingerGeo = new THREE.BoxGeometry(hs * 0.45, hs * 0.22, hs * 0.55, 2, 2, 2);
+    geometries.push(fingerGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(
+        bp.hand_L.x, bp.hand_L.y - hs * 0.06, bp.hand_L.z + hs * 0.45));
+    materialIndices.push(1);
+    geometries.push(fingerGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(
+        bp.hand_R.x, bp.hand_R.y - hs * 0.06, bp.hand_R.z + hs * 0.45));
+    materialIndices.push(1);
+
+    // Thumbs — small sphere offset to outer side of each hand
+    const thumbGeo = new THREE.SphereGeometry(hs * 0.18, 6, 4);
+    // Left thumb — toward -X (away from body center)
+    geometries.push(thumbGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(
+        bp.hand_L.x - hs * 0.42, bp.hand_L.y + hs * 0.05, bp.hand_L.z + hs * 0.2));
+    materialIndices.push(1);
+    // Right thumb — toward +X, positioned at thumb_R bone for animation
+    geometries.push(thumbGeo);
+    transforms.push(new THREE.Matrix4().makeTranslation(
+        bp.hand_R.x + hs * 0.42, bp.hand_R.y + hs * 0.05, bp.hand_R.z + hs * 0.2));
+    materialIndices.push(1);
 
     // ─── THIGHS (legs 2) — oriented forward (seated) ───
     _addOrientedCylinder(geometries, transforms, materialIndices,

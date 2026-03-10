@@ -22,14 +22,13 @@ export const PLAYER_VISUAL_CONFIG = {
             chest:       { x: 0,     y: 0.28,  z: -0.01 },
             neck:        { x: 0,     y: 0.18,  z: 0 },
             head:        { x: 0,     y: 0.20,  z: -0.03 },
-            // Arms — elbows out wide, forearms angled inward to hold phone
-            // Must stay at shoulder Y level so they're visible from top-down camera
-            upperArm_L:  { x: -0.55, y: 0.02,  z: 0.02 },
-            upperArm_R:  { x: 0.55,  y: 0.02,  z: 0.02 },
-            forearm_L:   { x: 0.15,  y: -0.02, z: 0.30 },
-            forearm_R:   { x: -0.15, y: -0.02, z: 0.30 },
-            hand_L:      { x: 0.15,  y: -0.02, z: 0.12 },
-            hand_R:      { x: -0.15, y: -0.02, z: 0.12 },
+            // Arms — longer, thinner, reaching forward to hold phone
+            upperArm_L:  { x: -0.38, y: 0.02,  z: 0.02 },
+            upperArm_R:  { x: 0.38,  y: 0.02,  z: 0.02 },
+            forearm_L:   { x: 0.18,  y: -0.08, z: 0.40 },
+            forearm_R:   { x: -0.18, y: -0.08, z: 0.40 },
+            hand_L:      { x: 0.08,  y: -0.04, z: 0.28 },
+            hand_R:      { x: -0.08, y: -0.04, z: 0.28 },
             thumb_R:     { x: -0.02, y: 0.01,  z: 0.04 },
             // Legs — seated: thigh extends forward, shin hangs down
             upperLeg_L:  { x: -0.14, y: -0.03, z: 0 },
@@ -40,13 +39,13 @@ export const PLAYER_VISUAL_CONFIG = {
             foot_R:      { x: 0,     y: -0.33, z: 0.02 },
         },
         bodyDimensions: {
-            torsoWidth: 0.80,
-            torsoHeight: 0.55,
-            torsoDepth: 0.50,
-            headRadius: 0.30,
-            limbThickness: 0.28,
+            torsoWidth: 0.50,       // was 0.80 — narrower (old was wider than arms were long!)
+            torsoHeight: 0.65,      // was 0.55 — taller
+            torsoDepth: 0.32,       // was 0.50 — thinner front-to-back
+            headRadius: 0.26,       // was 0.30 — slightly smaller
+            limbThickness: 0.18,    // was 0.28 — arms were wider than they were long!
             legSpacing: 0.14,
-            handSize: 0.13,
+            handSize: 0.10,         // was 0.13
         },
         materialColors: {
             body: 0x4a86c8,    // blue hoodie
