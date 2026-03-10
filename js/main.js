@@ -3,6 +3,8 @@
 import { CONFIG } from './data/config.js';
 import { createToilet, updateToilet } from './models/ToiletModel.js';
 import { AnimationController } from './animation/AnimationController.js';
+import { getAnimationClip } from './animation/AnimationLibrary.js';
+import { createEnemyModel } from './models/EnemyModelFactory.js';
 import {
     createBathroomStalls,
     createSinks,
@@ -30,6 +32,8 @@ window.createOfficePeek = createOfficePeek;
 window.createBathroomDoor = createBathroomDoor;
 
 window.AnimationController = AnimationController;
+window.getAnimationClip = getAnimationClip;
+window.createEnemyModel = createEnemyModel;
 
 // Initialize game
 window.Game = Game;

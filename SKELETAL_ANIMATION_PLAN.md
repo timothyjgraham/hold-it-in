@@ -427,78 +427,78 @@ root (hips)
 > Wire everything into the live game behind a feature flag.
 
 ### 5A — Feature Flag Setup
-- [ ] Add `Game.USE_SKELETAL = true` flag in index.html init
-- [ ] Branch `_createEnemy()` based on flag
-- [ ] Branch animation update section based on flag
-- [ ] This allows instant rollback if issues arise
+- [x] Add `Game.USE_SKELETAL = true` flag in index.html init
+- [x] Branch `_createEnemy()` based on flag
+- [x] Branch animation update section based on flag
+- [x] This allows instant rollback if issues arise
 
 ### 5B — Module Wiring
-- [ ] Modify `js/main.js`:
-  - [ ] Import `createEnemyModel` from `EnemyModelFactory.js`
-  - [ ] Import `AnimationController` from `AnimationController.js`
-  - [ ] Import `getAnimationClip` from `AnimationLibrary.js`
-  - [ ] Expose all via `window.*` assignments
+- [x] Modify `js/main.js`:
+  - [x] Import `createEnemyModel` from `EnemyModelFactory.js`
+  - [x] Import `AnimationController` from `AnimationController.js`
+  - [x] Import `getAnimationClip` from `AnimationLibrary.js`
+  - [x] Expose all via `window.*` assignments
 
 ### 5C — Replace `_createEnemy()` (index.html ~line 1229)
-- [ ] New code path when `USE_SKELETAL` is true:
-  - [ ] Call `createEnemyModel(enemyType, color, isDesperate, size)`
-  - [ ] Store `skinnedMesh`, `skeleton`, `outlineMesh`, `boneMap` on enemy object
-  - [ ] Create `AnimationController` instance, store as `e.animController`
-  - [ ] Set initial animation state based on type:
-    - [ ] polite → 'walk'
-    - [ ] dancer → 'hop_walk'
-    - [ ] waddle → 'waddle'
-    - [ ] panicker → 'panic_run'
-    - [ ] powerwalker → 'power_walk'
-    - [ ] girls → 'walk_chat'
-  - [ ] For girls: apply random phase offset to mixer time
-- [ ] Remove old fields from enemy object: `e.body`, `e.leftLeg`, `e.rightLeg`, `e.leftArm`, `e.rightArm`, `e.stomachHand`
+- [x] New code path when `USE_SKELETAL` is true:
+  - [x] Call `createEnemyModel(enemyType, color, isDesperate, size)`
+  - [x] Store `skinnedMesh`, `skeleton`, `outlineMesh`, `boneMap` on enemy object
+  - [x] Create `AnimationController` instance, store as `e.animController`
+  - [x] Set initial animation state based on type:
+    - [x] polite → 'walk'
+    - [x] dancer → 'hop_walk'
+    - [x] waddle → 'waddle'
+    - [x] panicker → 'panic_run'
+    - [x] powerwalker → 'power_walk'
+    - [x] girls → 'walk_chat'
+  - [x] For girls: apply random phase offset to mixer time
+- [x] Remove old fields from enemy object: `e.body`, `e.leftLeg`, `e.rightLeg`, `e.leftArm`, `e.rightArm`, `e.stomachHand`
 
 ### 5D — Replace Animation Update (index.html ~line 1528)
-- [ ] Replace the entire `sin/cos` procedural animation block with:
+- [x] Replace the entire `sin/cos` procedural animation block with:
   ```javascript
   const camDist = e.mesh.position.distanceTo(this.camera.position);
   e.animController.update(dt, camDist);
   ```
-- [ ] Remove all per-type walk phase manipulation (hopping, rocking, flailing, rigid stride, etc.)
-- [ ] Keep `e.walkPhase` update if still needed for non-animation purposes (zig-zag movement logic)
+- [x] Remove all per-type walk phase manipulation (hopping, rocking, flailing, rigid stride, etc.)
+- [x] Keep `e.walkPhase` update if still needed for non-animation purposes (zig-zag movement logic)
 
 ### 5E — Replace Hit Flash (index.html ~line 1577)
-- [ ] Replace `e.body.material.emissive` manipulation with:
+- [x] Replace `e.body.material.emissive` manipulation with:
   ```javascript
   e.skinnedMesh.material.uniforms.uHitFlash.value = Math.max(0, e.hitFlash / 0.15);
   ```
 
 ### 5F — Replace Waddle Panic Transition (index.html ~line 1471)
-- [ ] Replace manual body rotation/visibility changes with:
+- [x] Replace manual body rotation/visibility changes with:
   ```javascript
   e.animController.setState('panic_sprint');
   ```
-- [ ] Remove: `e.body.rotation.x = 0.15`, `e.stomachHand.visible = false`, etc.
+- [x] Remove: `e.body.rotation.x = 0.15`, `e.stomachHand.visible = false`, etc.
 
 ### 5G — Replace Bash Door Animation (index.html ~line 1596)
-- [ ] On first bash frame: `e.animController.setState('bash_door')`
-- [ ] Remove manual lunge position animation (z-offset hack)
+- [x] On first bash frame: `e.animController.setState('bash_door')`
+- [x] Remove manual lunge position animation (z-offset hack)
 
 ### 5H — Replace Death Handling (index.html ~line 1674)
-- [ ] Trigger death animation: `e.animController.playOneShot('death')`
-- [ ] Delay mesh removal by clip duration (~0.5-0.8s depending on type)
-- [ ] In delayed callback:
-  - [ ] `e.animController.dispose()`
-  - [ ] `this.scene.remove(e.mesh)`
-  - [ ] Dispose geometry and materials
+- [x] Trigger death animation: `e.animController.playOneShot('death')`
+- [x] Delay mesh removal by clip duration (~0.5-0.8s depending on type)
+- [x] In delayed callback:
+  - [x] `e.animController.dispose()`
+  - [x] `this.scene.remove(e.mesh)`
+  - [x] Dispose geometry and materials
   - [ ] If using pooling: release to pool instead
 
 ### 5I — Replace Last Straw Effect (index.html ~line 1676)
-- [ ] Replace `e.body.material.color.setHex(0xff2200)` with:
+- [x] Replace `e.body.material.color.setHex(0xff2200)` with:
   ```javascript
   e.skinnedMesh.material.uniforms.uDesperateTint.value = 1.0;
   ```
 
 ### 5J — Fix Restart Cleanup (index.html ~line 751)
-- [ ] Add proper disposal for all skeletal animation resources:
-  - [ ] Call `animController.dispose()` on each enemy
-  - [ ] Traverse and dispose all geometries/materials
+- [x] Add proper disposal for all skeletal animation resources:
+  - [x] Call `animController.dispose()` on each enemy
+  - [x] Traverse and dispose all geometries/materials
   - [ ] Clear any object pools
 
 ### 5K — Integration Testing
