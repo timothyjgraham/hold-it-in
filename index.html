@@ -116,6 +116,7 @@
         spawnInterval: 1.5,
         waveDelay: 5.0,
         waveActive: false,
+        _spawnQueue: [],
         _floatingTexts: [],
         _doorParticles: [],
         _cinematicTimer: 0,
@@ -174,6 +175,69 @@
                 hotkey: 'Digit4',
             },
         },
+
+        // Enemy type definitions — each forces a qualitatively different strategy
+        ENEMY_TYPES: {
+            polite: {
+                name: 'Polite Knocker',
+                baseSpeed: 3.0, speedVar: 0.5,
+                baseHP: 20, hpPerWave: 10,
+                size: 1.5, color: 0xe67e22,
+                coins: 5, doorDmg: 2,
+            },
+            speedwalker: {
+                name: 'Speed Walker',
+                baseSpeed: 5.5, speedVar: 1.0,
+                baseHP: 14, hpPerWave: 6,
+                size: 1.2, color: 0x3498db,
+                coins: 7, doorDmg: 2,
+                slowImmune: true, // Forces DPS — wet floor signs useless
+            },
+            coffee: {
+                name: 'Coffee Drinker',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 50, hpPerWave: 15,
+                size: 1.6, color: 0x795548,
+                coins: 10, doorDmg: 3,
+                splitsOnDeath: true, // Forces defense in depth
+            },
+            karen: {
+                name: 'Karen',
+                baseSpeed: 2.8, speedVar: 0.3,
+                baseHP: 70, hpPerWave: 20,
+                size: 1.8, color: 0xe74c3c,
+                coins: 15, doorDmg: 6, // Devastating at the door
+                speedAuraRange: 8, speedAuraBonus: 0.5, // Buffs nearby enemies — priority target
+            },
+            espresso: {
+                name: 'Espresso Shot',
+                baseSpeed: 7, speedVar: 1.0,
+                baseHP: 12, hpPerWave: 4,
+                size: 0.4, color: 0x4fc3f7,
+                coins: 1, doorDmg: 1,
+            },
+        },
+
+        // Curated wave compositions — each wave introduces a new challenge
+        WAVE_COMPOSITIONS: [
+            null, // index 0 unused
+            // Wave 1: Tutorial — polite knockers only, learn the basics
+            { enemies: [['polite', 5]], interval: 2.5, delay: 5 },
+            // Wave 2: Speed walkers arrive — immune to slow, forces DPS placement
+            { enemies: [['polite', 4], ['speedwalker', 3]], interval: 2.0, delay: 4 },
+            // Wave 3: Coffee drinkers split on death — forces defense in depth
+            { enemies: [['polite', 4], ['speedwalker', 3], ['coffee', 2]], interval: 1.8, delay: 4 },
+            // Wave 4: Increasing pressure
+            { enemies: [['polite', 5], ['speedwalker', 4], ['coffee', 3]], interval: 1.5, delay: 3.5 },
+            // Wave 5: Karen arrives — speed aura + massive door damage, priority target
+            { enemies: [['polite', 4], ['speedwalker', 5], ['coffee', 2], ['karen', 1]], interval: 1.3, delay: 3 },
+            // Wave 6: Multiple Karens
+            { enemies: [['polite', 5], ['speedwalker', 5], ['coffee', 3], ['karen', 2]], interval: 1.2, delay: 3 },
+            // Wave 7: Heavy assault
+            { enemies: [['polite', 6], ['speedwalker', 6], ['coffee', 4], ['karen', 2]], interval: 1.0, delay: 3 },
+            // Wave 8: Swarm — transition to procedural
+            { enemies: [['polite', 8], ['speedwalker', 8], ['coffee', 4], ['karen', 3]], interval: 0.8, delay: 3 },
+        ],
 
         // ============================
         // INIT
@@ -826,42 +890,88 @@
                 topCoin.name = 'topCoin';
                 group.add(topCoin);
             } else if (type === 'wetfloor') {
-                // Triangle sign shape
-                const cone = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.6, 1.5, 4),
-                    mat
+                // A-frame "Caution: Wet Floor" sign
+                const signMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.4 });
+                // Left panel (angled)
+                const panelL = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.9, 1.3, 0.06),
+                    signMat
                 );
-                cone.position.y = 0.75;
-                group.add(cone);
-                // Exclamation mark
-                const dot = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.12, 6, 6),
-                    new THREE.MeshBasicMaterial({ color: 0x000000 })
+                panelL.position.set(0, 0.75, 0.15);
+                panelL.rotation.x = 0.25;
+                group.add(panelL);
+                // Right panel (angled opposite)
+                const panelR = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.9, 1.3, 0.06),
+                    signMat
                 );
-                dot.position.set(0, 0.5, 0.45);
-                group.add(dot);
+                panelR.position.set(0, 0.75, -0.15);
+                panelR.rotation.x = -0.25;
+                group.add(panelR);
+                // Black warning stripe across front panel
+                const stripe = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.7, 0.15, 0.065),
+                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                );
+                stripe.position.set(0, 0.55, 0.18);
+                stripe.rotation.x = 0.25;
+                group.add(stripe);
+                // Exclamation mark on front — line
+                const exLine = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.08, 0.35, 0.065),
+                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                );
+                exLine.position.set(0, 1.0, 0.2);
+                exLine.rotation.x = 0.25;
+                group.add(exLine);
+                // Exclamation mark — dot
+                const exDot = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.1, 0.1, 0.065),
+                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                );
+                exDot.position.set(0, 0.75, 0.19);
+                exDot.rotation.x = 0.25;
+                group.add(exDot);
             } else if (type === 'mop') {
-                // Handle
+                // Mop bucket (grey cylinder)
+                const bucket = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.45, 0.35, 0.6, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.4, metalness: 0.3 })
+                );
+                bucket.position.y = 0.3;
+                group.add(bucket);
+                // Water in bucket (blue disc)
+                const water = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.4, 0.4, 0.05, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x5599cc, roughness: 0.1, metalness: 0.1 })
+                );
+                water.position.y = 0.55;
+                group.add(water);
+                // Mop handle (brown stick, angled)
                 const handle = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.05, 0.05, 2.0, 6),
+                    new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6),
                     new THREE.MeshStandardMaterial({ color: 0x8B4513 })
                 );
-                handle.position.y = 1.0;
+                handle.position.set(0.15, 1.2, 0);
+                handle.rotation.z = -0.15;
                 group.add(handle);
-                // Mop head
-                const head = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.8, 0.3, 0.8),
+                // Mop head (shaggy strands — wide flat shape at bottom of handle)
+                const mopHead = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.5, 0.25, 0.5),
                     mat
                 );
-                head.position.y = 0.15;
-                group.add(head);
-                // Base
-                const base = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.4, 0.5, 0.3, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x555555 })
-                );
-                base.position.y = 0.15;
-                group.add(base);
+                mopHead.position.set(0.25, 0.25, 0);
+                group.add(mopHead);
+                // Mop strand details (smaller boxes hanging down)
+                const strandMat = new THREE.MeshStandardMaterial({ color: 0x9b59b6, roughness: 0.8 });
+                for (let si = -1; si <= 1; si++) {
+                    const strand = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.12, 0.15, 0.4),
+                        strandMat
+                    );
+                    strand.position.set(0.25 + si * 0.15, 0.1, 0);
+                    group.add(strand);
+                }
             } else if (type === 'freshener') {
                 // Can body
                 const can = new THREE.Mesh(
@@ -910,56 +1020,70 @@
             this.waveActive = true;
             this.enemiesSpawned = 0;
 
-            // Scale difficulty — wave 1 is a teaching wave
-            this.enemiesPerWave = 3 + Math.floor(this.wave * 2);
-            this.spawnInterval = Math.max(0.5, 2.5 - this.wave * 0.1);
+            // Build spawn queue from composition or procedural generation
+            const comp = this.WAVE_COMPOSITIONS[this.wave];
+            this._spawnQueue = [];
 
+            if (comp) {
+                for (const [type, count] of comp.enemies) {
+                    for (let i = 0; i < count; i++) {
+                        this._spawnQueue.push(type);
+                    }
+                }
+                this.spawnInterval = comp.interval;
+            } else {
+                this._spawnQueue = this._generateProceduralWave(this.wave);
+                this.spawnInterval = Math.max(0.4, 1.5 - (this.wave - 8) * 0.05);
+            }
+
+            // Shuffle queue for variety within each wave
+            for (let i = this._spawnQueue.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this._spawnQueue[i], this._spawnQueue[j]] = [this._spawnQueue[j], this._spawnQueue[i]];
+            }
+
+            this.enemiesPerWave = this._spawnQueue.length;
             this.spawnTimer = 0;
-            this.announceWave(`WAVE ${this.wave}`);
+
+            // Announce with enemy introduction on key waves
+            let msg = `WAVE ${this.wave}`;
+            if (this.wave === 2) msg += ' — SPEED WALKERS!';
+            else if (this.wave === 3) msg += ' — COFFEE DRINKERS!';
+            else if (this.wave === 5) msg += ' — KAREN HAS ARRIVED';
+            this.announceWave(msg);
             this.updateHUD();
         },
 
+        _generateProceduralWave(wave) {
+            const queue = [];
+            const total = 10 + Math.floor(wave * 2.5);
+            for (let i = 0; i < total; i++) {
+                const roll = Math.random();
+                if (roll < 0.12) queue.push('karen');
+                else if (roll < 0.30) queue.push('coffee');
+                else if (roll < 0.55) queue.push('speedwalker');
+                else queue.push('polite');
+            }
+            return queue;
+        },
+
         _spawnEnemy() {
+            if (this._spawnQueue.length === 0) return;
+
+            const enemyType = this._spawnQueue.shift();
+            const def = this.ENEMY_TYPES[enemyType];
+            if (!def) return;
+
             const spread = CONFIG.spawnWidth;
             const x = (Math.random() - 0.5) * spread;
-            const z = CONFIG.spawnZoneZ + Math.random() * 2; // spawn just behind the exit doors
+            const z = CONFIG.spawnZoneZ + Math.random() * 2;
 
-            // Enemy type varies with wave
-            let speed = 2.5 + Math.random() * 1.0;
-            let hp = 15 + this.wave * 8;
-            let size = 1.5;
-            let color = 0xe67e22;
-            let coins = 6;
-            let enemyType = 'polite';
+            const speed = def.baseSpeed + Math.random() * def.speedVar;
+            const hp = def.baseHP + this.wave * def.hpPerWave;
+            const size = def.size;
+            const color = def.color;
 
-            const roll = Math.random();
-            if (this.wave >= 3 && roll < 0.3) {
-                // Speed Walker
-                enemyType = 'speedwalker';
-                speed = 4.5 + Math.random() * 2;
-                hp = 12 + this.wave * 5;
-                size = 1.2;
-                color = 0x3498db;
-                coins = 8;
-            } else if (this.wave >= 6 && roll < 0.15) {
-                // Karen
-                enemyType = 'karen';
-                speed = 2.5;
-                hp = 60 + this.wave * 15;
-                size = 1.8;
-                color = 0xe74c3c;
-                coins = 16;
-            } else if (this.wave >= 5 && roll < 0.25) {
-                // Coffee Drinker
-                enemyType = 'coffee';
-                speed = 1.8;
-                hp = 45 + this.wave * 12;
-                size = 1.6;
-                color = 0x795548;
-                coins = 12;
-            }
-
-            // Create enemy mesh — simple low-poly person
+            // Create enemy mesh — simple low-poly person with type-specific details
             const group = new THREE.Group();
 
             // Body
@@ -971,6 +1095,11 @@
             body.castShadow = true;
             group.add(body);
 
+            // Speed walker leans forward — visually "rushing"
+            if (enemyType === 'speedwalker') {
+                body.rotation.x = 0.25;
+            }
+
             // Head
             const head = new THREE.Mesh(
                 new THREE.SphereGeometry(size * 0.35, 6, 6),
@@ -979,6 +1108,26 @@
             head.position.y = size * 2.1;
             head.castShadow = true;
             group.add(head);
+
+            // Karen — tall angry hairdo (instantly recognizable silhouette)
+            if (enemyType === 'karen') {
+                const hair = new THREE.Mesh(
+                    new THREE.ConeGeometry(size * 0.3, size * 0.7, 4),
+                    new THREE.MeshStandardMaterial({ color: 0xaa0000, roughness: 0.4 })
+                );
+                hair.position.y = size * 2.6;
+                group.add(hair);
+            }
+
+            // Coffee Drinker — coffee cup in hand
+            if (enemyType === 'coffee') {
+                const cup = new THREE.Mesh(
+                    new THREE.CylinderGeometry(size * 0.1, size * 0.08, size * 0.35, 6),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+                );
+                cup.position.set(size * 0.55, size * 1.5, 0);
+                group.add(cup);
+            }
 
             // Legs (two small boxes)
             const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
@@ -1004,11 +1153,13 @@
                 hp: hp,
                 maxHp: hp,
                 size: size,
-                coins: coins,
+                coins: def.coins,
+                doorDmg: def.doorDmg,
                 slowed: 0,
                 walkPhase: Math.random() * Math.PI * 2,
                 hitFlash: 0,
                 bodyColor: color,
+                slowImmune: def.slowImmune || false,
             };
 
             this.enemies.push(enemy);
@@ -1040,7 +1191,8 @@
                 // Wave complete when all enemies spawned and cleared
                 if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length === 0) {
                     this.waveActive = false;
-                    this.waveTimer = this.waveDelay;
+                    const nextComp = this.WAVE_COMPOSITIONS[this.wave + 1];
+                    this.waveTimer = nextComp ? nextComp.delay : Math.max(2, 4 - this.wave * 0.1);
                     // Bonus coins for surviving the wave
                     const waveBonus = 15 + this.wave * 5;
                     this.coins += waveBonus;
@@ -1054,11 +1206,11 @@
             for (let i = this.enemies.length - 1; i >= 0; i--) {
                 const e = this.enemies[i];
 
-                // Check slow from Wet Floor Signs
+                // Check slow from Wet Floor Signs (speed walkers are immune)
                 let slowMult = 1.0;
                 if (e.slowed > 0) {
                     e.slowed -= dt;
-                } else {
+                } else if (!e.slowImmune) {
                     // Check proximity to slow towers
                     for (const t of this.towers) {
                         if (t.type !== 'wetfloor') continue;
@@ -1072,9 +1224,23 @@
                     }
                 }
 
+                // Karen speed aura — enemies near a Karen move 50% faster
+                let auraMult = 1.0;
+                if (e.type !== 'karen') {
+                    for (const other of this.enemies) {
+                        if (other.type !== 'karen' || other.bashing) continue;
+                        const adx = e.x - other.x;
+                        const adz = e.z - other.z;
+                        if (adx * adx + adz * adz < 64) { // range 8
+                            auraMult = 1.5;
+                            break;
+                        }
+                    }
+                }
+
                 // Move toward toilet (skip if bashing the door)
                 if (!e.bashing) {
-                    const moveSpeed = e.speed * slowMult * dt;
+                    const moveSpeed = e.speed * slowMult * auraMult * dt;
                     e.z -= moveSpeed;
 
                     // Steer toward toilet x — stronger as enemies approach
@@ -1161,7 +1327,7 @@
                         e.bashTimer = e.bashCooldown;
 
                         const ud = this.doorGroup.userData;
-                        const dmg = e.type === 'boss' ? 8 : (e.type === 'coffee' ? 4 : (e.type === 'espresso' ? 1 : 3));
+                        const dmg = e.doorDmg || 3;
                         ud.doorHP = Math.max(0, ud.doorHP - dmg);
 
                         // Spawn wood chip particles at impact point
@@ -1215,13 +1381,14 @@
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
                     this._spawnCoinText(e.x, e.z, e.coins);
 
-                    // Coffee Drinker splits on death
+                    // Coffee Drinker splits on death — espressos are genuinely dangerous
                     if (e.type === 'coffee') {
+                        const espDef = this.ENEMY_TYPES.espresso;
                         for (let s = 0; s < 2; s++) {
                             const miniGroup = new THREE.Group();
                             const miniBody = new THREE.Mesh(
                                 new THREE.BoxGeometry(0.25, 0.4, 0.2),
-                                new THREE.MeshStandardMaterial({ color: 0x4fc3f7 })
+                                new THREE.MeshStandardMaterial({ color: espDef.color })
                             );
                             miniBody.position.y = 0.3;
                             miniGroup.add(miniBody);
@@ -1233,6 +1400,7 @@
                             miniGroup.add(miniHead);
                             miniGroup.position.set(e.x + (s === 0 ? -0.5 : 0.5), 0, e.z);
                             this.scene.add(miniGroup);
+                            const espHP = espDef.baseHP + this.wave * espDef.hpPerWave;
                             this.enemies.push({
                                 type: 'espresso',
                                 mesh: miniGroup,
@@ -1241,15 +1409,17 @@
                                 rightLeg: null,
                                 x: e.x + (s === 0 ? -0.5 : 0.5),
                                 z: e.z,
-                                speed: 7,
-                                hp: 10,
-                                maxHp: 10,
-                                size: 0.3,
-                                coins: 1,
+                                speed: espDef.baseSpeed + Math.random() * espDef.speedVar,
+                                hp: espHP,
+                                maxHp: espHP,
+                                size: espDef.size,
+                                coins: espDef.coins,
+                                doorDmg: espDef.doorDmg,
                                 slowed: 0,
                                 walkPhase: Math.random() * Math.PI * 2,
                                 hitFlash: 0,
-                                bodyColor: 0x4fc3f7,
+                                bodyColor: espDef.color,
+                                slowImmune: false,
                             });
                         }
                     }
@@ -1278,8 +1448,7 @@
                 if (t.hitShake > 0.1) {
                     // Immediate hit flash
                     t.mesh.traverse(child => {
-                        if (child.isMesh) {
-                            child.material.emissive = child.material.emissive || new THREE.Color();
+                        if (child.isMesh && child.material.emissive) {
                             child.material.emissive.setHex(0xff4444);
                             child.material.emissiveIntensity = 0.4;
                         }
@@ -1288,8 +1457,7 @@
                     // Persistent damage tint
                     const dmgPct = 1 - t.hp / t.maxHp;
                     t.mesh.traverse(child => {
-                        if (child.isMesh) {
-                            child.material.emissive = child.material.emissive || new THREE.Color();
+                        if (child.isMesh && child.material.emissive) {
                             child.material.emissive.setHex(0xff0000);
                             child.material.emissiveIntensity = dmgPct * 0.2;
                         }
