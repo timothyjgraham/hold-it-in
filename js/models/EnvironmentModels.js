@@ -281,15 +281,14 @@ export function createSinks() {
         sink.add(soapGroup);
 
         // Position entire sink assembly on the left wall
-        sink.position.set(-7.5, 0, zPos);
+        sink.position.set(-5.5, 0, zPos);
         // Rotate to face right (toward center of bathroom)
         sink.rotation.y = Math.PI / 2;
 
         return sink;
     }
 
-    group.add(buildSink(2));
-    group.add(buildSink(6));
+    group.add(buildSink(4));
 
     return group;
 }
@@ -363,7 +362,7 @@ export function createMirror() {
     group.add(backing);
 
     // Position on left wall, facing right (+x direction)
-    group.position.set(-7.9, 3.2, 4);
+    group.position.set(-5.9, 2.5, 3);
     group.rotation.y = Math.PI / 2;
 
     return group;
@@ -458,7 +457,7 @@ export function createHandDryer() {
     group.add(mount);
 
     // Position on right wall, facing left (-x direction)
-    group.position.set(7.9, 2.5, 4);
+    group.position.set(5.9, 2.2, 3);
     group.rotation.y = -Math.PI / 2;
 
     return group;
@@ -543,7 +542,7 @@ export function createTrashCan() {
         group.add(ridge);
     }
 
-    group.position.set(6, 0, 12);
+    group.position.set(4, 0, 9);
 
     return group;
 }
@@ -632,7 +631,7 @@ export function createPaperTowelDispenser() {
     group.add(keyhole);
 
     // Position on right wall, facing left
-    group.position.set(7.9, 2.5, 7);
+    group.position.set(5.9, 2.2, 6);
     group.rotation.y = -Math.PI / 2;
 
     return group;
@@ -644,7 +643,7 @@ export function createBathroomWalls() {
     const group = new THREE.Group();
     group.name = 'bathroomWalls';
 
-    const wallHeight = 6;
+    const wallHeight = 3.5;
     const tileColor1 = 0xe8e4df; // warm off-white
     const tileColor2 = 0xddd8d2; // slightly darker off-white
 
@@ -685,36 +684,45 @@ export function createBathroomWalls() {
 
     // === Back wall REMOVED — camera at (0, 14, -15) needs clear view of toilet ===
 
-    // === Left wall: at x=-8, z=-2 to z=12, height 6 ===
-    const leftWall = buildTiledWall(14, wallHeight, 0.3, false);
-    leftWall.position.set(-8, 0, 5);
+    // === Left wall: at x=-6, z=-1 to z=9, height 3.5 ===
+    const leftWall = buildTiledWall(10, wallHeight, 0.3, false);
+    leftWall.position.set(-6, 0, 4);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.name = 'leftWall';
     group.add(leftWall);
 
     // Left wall baseboard
-    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 14);
+    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 10);
     const bbLeft = new THREE.Mesh(bbLeftGeo, baseboardMat);
-    bbLeft.position.set(-7.85, 0.125, 5);
+    bbLeft.position.set(-5.85, 0.125, 4);
     bbLeft.receiveShadow = true;
     group.add(bbLeft);
 
-    // === Right wall: at x=8, z=-2 to z=12, height 6 ===
-    const rightWall = buildTiledWall(14, wallHeight, 0.3, false);
-    rightWall.position.set(8, 0, 5);
+    // === Right wall: at x=6, z=-1 to z=9, height 3.5 ===
+    const rightWall = buildTiledWall(10, wallHeight, 0.3, false);
+    rightWall.position.set(6, 0, 4);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.name = 'rightWall';
     group.add(rightWall);
 
     // Right wall baseboard
-    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 14);
+    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 10);
     const bbRight = new THREE.Mesh(bbRightGeo, baseboardMat);
-    bbRight.position.set(7.85, 0.125, 5);
+    bbRight.position.set(5.85, 0.125, 4);
     bbRight.receiveShadow = true;
     group.add(bbRight);
 
-    // === Front wall at z=14 REMOVED for clear view of playing field ===
-    // The door (createBathroomDoor) floats at z=14 as a gameplay element only
+    // === Front flanking walls at z=9 (transparent, either side of door) ===
+    // Door is 5.0 wide (x=-2.5 to 2.5), side walls at x=±6, so flanks are 3.5 wide each
+    const leftFlank = buildTiledWall(3.5, wallHeight, 0.3, true);
+    leftFlank.position.set(-4.25, 0, 9);
+    leftFlank.name = 'leftFlank';
+    group.add(leftFlank);
+
+    const rightFlank = buildTiledWall(3.5, wallHeight, 0.3, true);
+    rightFlank.position.set(4.25, 0, 9);
+    rightFlank.name = 'rightFlank';
+    group.add(rightFlank);
 
     return group;
 }
@@ -1079,14 +1087,193 @@ export function createOfficePeek() {
     rightOfficeWall.receiveShadow = true;
     group.add(rightOfficeWall);
 
-    // Back office wall (far end, will be mostly fogged)
-    const backOfficeWall = new THREE.Mesh(
-        new THREE.BoxGeometry(72, 6, 0.2),
+    // Back office wall (far end) — split with a wide corridor doorway in the center
+    const exitDoorWidth = 12;
+    const wallTotalWidth = 72;
+    const halfSectionWidth = (wallTotalWidth - exitDoorWidth) / 2;
+
+    // Left section of back wall
+    const backWallLeft = new THREE.Mesh(
+        new THREE.BoxGeometry(halfSectionWidth, 6, 0.2),
         officeWallMat
     );
-    backOfficeWall.position.set(0, 3, 68);
-    backOfficeWall.receiveShadow = true;
-    group.add(backOfficeWall);
+    backWallLeft.position.set(-(exitDoorWidth / 2 + halfSectionWidth / 2), 3, 68);
+    backWallLeft.receiveShadow = true;
+    group.add(backWallLeft);
+
+    // Right section of back wall
+    const backWallRight = new THREE.Mesh(
+        new THREE.BoxGeometry(halfSectionWidth, 6, 0.2),
+        officeWallMat
+    );
+    backWallRight.position.set(exitDoorWidth / 2 + halfSectionWidth / 2, 3, 68);
+    backWallRight.receiveShadow = true;
+    group.add(backWallRight);
+
+    // Door header (lintel above the doorway)
+    const doorHeader = new THREE.Mesh(
+        new THREE.BoxGeometry(exitDoorWidth + 0.4, 1.0, 0.25),
+        officeWallMat
+    );
+    doorHeader.position.set(0, 5.5, 68);
+    group.add(doorHeader);
+
+    // Door frame — vertical posts
+    const doorFrameMat = new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        metalness: 0.3,
+        roughness: 0.4,
+    });
+    for (const side of [-1, 1]) {
+        const post = new THREE.Mesh(
+            new THREE.BoxGeometry(0.25, 6, 0.3),
+            doorFrameMat
+        );
+        post.position.set(side * (exitDoorWidth / 2 + 0.12), 3, 68);
+        group.add(post);
+    }
+
+    // Double doors — start closed, enemies push them open (spring physics)
+    const exitDoorMat = new THREE.MeshStandardMaterial({
+        color: 0x8B7355,
+        metalness: 0.05,
+        roughness: 0.7,
+    });
+    const exitDoorHalf = exitDoorWidth / 2;
+
+    // Left door — pivot on left edge (hinge at x = -exitDoorHalf)
+    const leftDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(exitDoorHalf - 0.1, 5.0, 0.12),
+        exitDoorMat.clone()
+    );
+    leftDoor.castShadow = true;
+    const leftDoorPivot = new THREE.Group();
+    leftDoorPivot.position.set(-exitDoorHalf, 0, 68);
+    leftDoor.position.set(exitDoorHalf / 2, 2.5, 0);
+    leftDoorPivot.add(leftDoor);
+    leftDoorPivot.rotation.y = 0; // starts closed
+    group.add(leftDoorPivot);
+
+    // Right door — pivot on right edge (hinge at x = +exitDoorHalf)
+    const rightDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(exitDoorHalf - 0.1, 5.0, 0.12),
+        exitDoorMat.clone()
+    );
+    rightDoor.castShadow = true;
+    const rightDoorPivot = new THREE.Group();
+    rightDoorPivot.position.set(exitDoorHalf, 0, 68);
+    rightDoor.position.set(-exitDoorHalf / 2, 2.5, 0);
+    rightDoorPivot.add(rightDoor);
+    rightDoorPivot.rotation.y = 0; // starts closed
+    group.add(rightDoorPivot);
+
+    // Push-bar handles (chrome, on each door — the side facing the corridor)
+    for (const door of [leftDoor, rightDoor]) {
+        const handleBar = new THREE.Mesh(
+            new THREE.BoxGeometry(1.5, 0.08, 0.08),
+            chromeMat
+        );
+        handleBar.position.set(0, 0, 0.1);
+        door.add(handleBar);
+
+        for (const mx of [-0.6, 0.6]) {
+            const mount = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.04, 0.04, 0.1, 6),
+                chromeMat
+            );
+            mount.rotation.x = Math.PI / 2;
+            mount.position.set(mx, 0, 0.06);
+            door.add(mount);
+        }
+    }
+
+    // Store door physics state for the update loop
+    group.userData.exitDoors = {
+        leftPivot: leftDoorPivot,
+        rightPivot: rightDoorPivot,
+        leftAngle: 0,    // current angle (positive = open inward, toward -z)
+        rightAngle: 0,
+        leftAngVel: 0,   // angular velocity
+        rightAngVel: 0,
+        doorZ: 68,
+        halfWidth: exitDoorHalf,
+        springK: 8,       // spring stiffness (pulls door closed)
+        dampK: 3,         // damping (reduces oscillation, but allows bouncing)
+        pushImpulse: 5,   // base angular impulse per enemy push
+        maxAngle: 1.4,    // max open angle (~80 degrees)
+        minAngle: -0.15,  // slight backward bounce allowed
+    };
+
+    // EXIT sign above the door
+    const exitSignGroup = new THREE.Group();
+    exitSignGroup.name = 'exitSign';
+
+    // Sign box (red background)
+    const signBoxGeo = new THREE.BoxGeometry(2.4, 0.7, 0.1);
+    const signBoxMat = new THREE.MeshStandardMaterial({
+        color: 0xcc0000,
+        metalness: 0.1,
+        roughness: 0.4,
+        emissive: 0xcc0000,
+        emissiveIntensity: 0.6,
+    });
+    const signBox = new THREE.Mesh(signBoxGeo, signBoxMat);
+    exitSignGroup.add(signBox);
+
+    // "EXIT" text — four individual letter blocks (simple geometric approximation)
+    const letterMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8,
+    });
+
+    // E
+    const eGroup = new THREE.Group();
+    eGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.05), letterMat));
+    eGroup.children[0].position.set(-0.1, 0, 0.06);
+    eGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.05), letterMat));
+    eGroup.children[1].position.set(0, 0.15, 0.06);
+    eGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, 0.05), letterMat));
+    eGroup.children[2].position.set(-0.02, 0, 0.06);
+    eGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.05), letterMat));
+    eGroup.children[3].position.set(0, -0.15, 0.06);
+    eGroup.position.x = -0.65;
+    exitSignGroup.add(eGroup);
+
+    // X
+    const xGroup = new THREE.Group();
+    const xBar1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.4, 0.05), letterMat);
+    xBar1.rotation.z = 0.5;
+    xBar1.position.z = 0.06;
+    xGroup.add(xBar1);
+    const xBar2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.4, 0.05), letterMat);
+    xBar2.rotation.z = -0.5;
+    xBar2.position.z = 0.06;
+    xGroup.add(xBar2);
+    xGroup.position.x = -0.25;
+    exitSignGroup.add(xGroup);
+
+    // I
+    const iBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.05), letterMat);
+    iBar.position.set(0.1, 0, 0.06);
+    exitSignGroup.add(iBar);
+
+    // T
+    const tGroup = new THREE.Group();
+    tGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.05), letterMat));
+    tGroup.children[0].position.set(0, 0, 0.06);
+    tGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.05), letterMat));
+    tGroup.children[1].position.set(0, 0.15, 0.06);
+    tGroup.position.x = 0.5;
+    exitSignGroup.add(tGroup);
+
+    // Small red glow light under the sign
+    const exitLight = new THREE.PointLight(0xff3333, 0.4, 8, 2);
+    exitLight.position.set(0, -0.6, 0.3);
+    exitSignGroup.add(exitLight);
+
+    exitSignGroup.position.set(0, 6.2, 68.05);
+    group.add(exitSignGroup);
 
     // ════════════════════════════════════════════════════════════════════════
     // DESKS + CHAIRS — populate the office in rows
@@ -1349,15 +1536,15 @@ export function createOfficePeek() {
     // OFFICE LIGHTING — subtle PointLights only, no visible fixtures
     // ════════════════════════════════════════════════════════════════════════
 
-    const officeLight1 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
+    const officeLight1 = new THREE.PointLight(0xeee8dd, 0.6, 25, 2);
     officeLight1.position.set(-20, 5.5, 30);
     group.add(officeLight1);
 
-    const officeLight2 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
+    const officeLight2 = new THREE.PointLight(0xeee8dd, 0.6, 25, 2);
     officeLight2.position.set(20, 5.5, 30);
     group.add(officeLight2);
 
-    const officeLight3 = new THREE.PointLight(0xeee8dd, 0.4, 25, 2);
+    const officeLight3 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
     officeLight3.position.set(0, 5.5, 45);
     group.add(officeLight3);
 
@@ -1370,7 +1557,7 @@ export function createOfficePeek() {
         new THREE.BoxGeometry(6.0, 0.04, 0.15),
         new THREE.MeshStandardMaterial({ color: 0x998877, metalness: 0.5, roughness: 0.3 })
     );
-    transitionStrip.position.set(0, 0.02, 14.5);
+    transitionStrip.position.set(0, 0.02, 10.5);
     transitionStrip.receiveShadow = true;
     group.add(transitionStrip);
 
@@ -1406,68 +1593,32 @@ export function createBathroomDoor() {
     const chromeMat = chrome();
 
     // ─── Door panel ────────────────────────────────────────────────────────
-    // Fills the doorway between posts at x=-3.2 to x=3.2, y=0 to y=6, at z=14
-    const doorGeo = new THREE.BoxGeometry(6.0, 5.8, 0.15);
+    // Sized to match compact bathroom (walls at x=+-6, height 3.5)
+    const doorGeo = new THREE.BoxGeometry(5.0, 3.3, 0.15);
     const doorPanel = new THREE.Mesh(doorGeo, doorMat);
-    doorPanel.position.set(0, 3.0, 0); // centered vertically (5.8/2 + 0.1 gap at bottom)
+    doorPanel.position.set(0, 1.75, 0); // centered vertically
     doorPanel.castShadow = false;
     doorPanel.receiveShadow = false;
     group.add(doorPanel);
-
-    // ─── Decorative raised panels (two rectangular frames on the door face) ─
-    const panelFrameMat = new THREE.MeshStandardMaterial({
-        color: 0x7A5C10,
-        metalness: 0.05,
-        roughness: 0.65,
-        transparent: true,
-        opacity: 0.15,
-        depthWrite: false,
-    });
-
-    // Upper panel frame
-    const upperPanelGeo = new THREE.BoxGeometry(4.0, 1.8, 0.03);
-    const upperPanel = new THREE.Mesh(upperPanelGeo, panelFrameMat);
-    upperPanel.position.set(0, 4.2, 0.09);
-    group.add(upperPanel);
-
-    // Lower panel frame
-    const lowerPanelGeo = new THREE.BoxGeometry(4.0, 2.2, 0.03);
-    const lowerPanel = new THREE.Mesh(lowerPanelGeo, panelFrameMat);
-    lowerPanel.position.set(0, 1.6, 0.09);
-    group.add(lowerPanel);
-
-    // ─── Small rectangular window/panel at top ─────────────────────────────
-    const windowMat = new THREE.MeshStandardMaterial({
-        color: 0x9B7924,
-        metalness: 0.08,
-        roughness: 0.5,
-        transparent: true,
-        opacity: 0.15,
-        depthWrite: false,
-    });
-    const windowGeo = new THREE.BoxGeometry(2.5, 0.6, 0.02);
-    const windowPanel = new THREE.Mesh(windowGeo, windowMat);
-    windowPanel.position.set(0, 4.5, 0.09);
-    group.add(windowPanel);
 
     // ─── Door handle (right side) ──────────────────────────────────────────
     // Handle base (chrome sphere)
     const handleBaseGeo = new THREE.SphereGeometry(0.12, 8, 8);
     const handleBase = new THREE.Mesh(handleBaseGeo, chromeMat);
-    handleBase.position.set(2.2, 2.5, 0.12);
+    handleBase.position.set(1.8, 1.7, 0.12);
     group.add(handleBase);
 
     // Handle lever (chrome cylinder)
     const handleLeverGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.35, 8);
     const handleLever = new THREE.Mesh(handleLeverGeo, chromeMat);
     handleLever.rotation.z = Math.PI / 2;
-    handleLever.position.set(2.2, 2.5, 0.2);
+    handleLever.position.set(1.8, 1.7, 0.2);
     group.add(handleLever);
 
     // Handle escutcheon (back plate on the other side)
     const handleBackGeo = new THREE.SphereGeometry(0.1, 8, 8);
     const handleBack = new THREE.Mesh(handleBackGeo, chromeMat);
-    handleBack.position.set(2.2, 2.5, -0.12);
+    handleBack.position.set(1.8, 1.7, -0.12);
     group.add(handleBack);
 
     // ─── Crack / damage overlay meshes (initially invisible) ───────────────
@@ -1488,12 +1639,12 @@ export function createBathroomDoor() {
         return crackGroup;
     }
 
-    // Crack 0 — upper left area
+    // Crack 0 — upper left area (scaled to 5.0x3.3 door)
     const crack0 = buildCrack([
-        { x: -1.5, y: 4.0, w: 0.6, h: 0.04, rot: 0.3 },
-        { x: -1.2, y: 3.85, w: 0.4, h: 0.04, rot: -0.5 },
-        { x: -1.0, y: 3.7, w: 0.35, h: 0.04, rot: 0.15 },
-        { x: -1.35, y: 4.1, w: 0.3, h: 0.04, rot: -0.8 },
+        { x: -1.25, y: 2.3, w: 0.5, h: 0.04, rot: 0.3 },
+        { x: -1.0, y: 2.2, w: 0.35, h: 0.04, rot: -0.5 },
+        { x: -0.83, y: 2.1, w: 0.3, h: 0.04, rot: 0.15 },
+        { x: -1.12, y: 2.35, w: 0.25, h: 0.04, rot: -0.8 },
     ]);
     crack0.name = 'crack_0';
     group.add(crack0);
@@ -1501,10 +1652,10 @@ export function createBathroomDoor() {
 
     // Crack 1 — center-right area
     const crack1 = buildCrack([
-        { x: 1.0, y: 3.2, w: 0.7, h: 0.04, rot: -0.2 },
-        { x: 1.3, y: 3.05, w: 0.5, h: 0.04, rot: 0.6 },
-        { x: 0.8, y: 3.35, w: 0.3, h: 0.04, rot: -0.4 },
-        { x: 1.1, y: 2.9, w: 0.45, h: 0.04, rot: 0.1 },
+        { x: 0.83, y: 1.82, w: 0.6, h: 0.04, rot: -0.2 },
+        { x: 1.08, y: 1.74, w: 0.4, h: 0.04, rot: 0.6 },
+        { x: 0.67, y: 1.9, w: 0.25, h: 0.04, rot: -0.4 },
+        { x: 0.92, y: 1.65, w: 0.38, h: 0.04, rot: 0.1 },
     ]);
     crack1.name = 'crack_1';
     group.add(crack1);
@@ -1512,11 +1663,11 @@ export function createBathroomDoor() {
 
     // Crack 2 — lower center
     const crack2 = buildCrack([
-        { x: -0.3, y: 1.5, w: 0.8, h: 0.05, rot: 0.1 },
-        { x: 0.1, y: 1.3, w: 0.6, h: 0.04, rot: -0.35 },
-        { x: -0.1, y: 1.7, w: 0.4, h: 0.04, rot: 0.5 },
-        { x: 0.3, y: 1.15, w: 0.35, h: 0.04, rot: -0.15 },
-        { x: -0.5, y: 1.4, w: 0.3, h: 0.04, rot: 0.7 },
+        { x: -0.25, y: 0.85, w: 0.65, h: 0.05, rot: 0.1 },
+        { x: 0.08, y: 0.74, w: 0.5, h: 0.04, rot: -0.35 },
+        { x: -0.08, y: 0.97, w: 0.35, h: 0.04, rot: 0.5 },
+        { x: 0.25, y: 0.65, w: 0.3, h: 0.04, rot: -0.15 },
+        { x: -0.42, y: 0.8, w: 0.25, h: 0.04, rot: 0.7 },
     ]);
     crack2.name = 'crack_2';
     group.add(crack2);
@@ -1524,9 +1675,9 @@ export function createBathroomDoor() {
 
     // Crack 3 — upper right
     const crack3 = buildCrack([
-        { x: 1.8, y: 4.5, w: 0.5, h: 0.04, rot: -0.6 },
-        { x: 1.6, y: 4.3, w: 0.45, h: 0.04, rot: 0.25 },
-        { x: 2.0, y: 4.35, w: 0.35, h: 0.04, rot: -0.1 },
+        { x: 1.5, y: 2.56, w: 0.4, h: 0.04, rot: -0.6 },
+        { x: 1.33, y: 2.45, w: 0.38, h: 0.04, rot: 0.25 },
+        { x: 1.67, y: 2.48, w: 0.3, h: 0.04, rot: -0.1 },
     ]);
     crack3.name = 'crack_3';
     group.add(crack3);
@@ -1534,11 +1685,11 @@ export function createBathroomDoor() {
 
     // Crack 4 — lower left
     const crack4 = buildCrack([
-        { x: -1.8, y: 1.8, w: 0.55, h: 0.05, rot: 0.4 },
-        { x: -2.0, y: 2.0, w: 0.4, h: 0.04, rot: -0.3 },
-        { x: -1.6, y: 1.6, w: 0.5, h: 0.04, rot: 0.6 },
-        { x: -1.9, y: 2.15, w: 0.3, h: 0.04, rot: -0.7 },
-        { x: -1.5, y: 1.9, w: 0.35, h: 0.04, rot: 0.2 },
+        { x: -1.5, y: 1.02, w: 0.45, h: 0.05, rot: 0.4 },
+        { x: -1.67, y: 1.14, w: 0.35, h: 0.04, rot: -0.3 },
+        { x: -1.33, y: 0.91, w: 0.4, h: 0.04, rot: 0.6 },
+        { x: -1.58, y: 1.22, w: 0.25, h: 0.04, rot: -0.7 },
+        { x: -1.25, y: 1.08, w: 0.3, h: 0.04, rot: 0.2 },
     ]);
     crack4.name = 'crack_4';
     group.add(crack4);
@@ -1552,7 +1703,7 @@ export function createBathroomDoor() {
     group.userData.originalColor = doorColor;
 
     // Position the door group at the wall ends
-    group.position.set(0, 0, 12);
+    group.position.set(0, 0, 10);
 
     return group;
 }

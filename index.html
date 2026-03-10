@@ -131,6 +131,7 @@
                 name: 'Tip Jar',
                 cost: 10,
                 range: 0,
+                hp: 1,              // Glass jar — shatters on contact
                 color: 0xf39c12,
                 effect: 'income',
                 incomeAmount: 2,
@@ -141,6 +142,7 @@
                 name: 'Wet Floor Sign',
                 cost: 15,
                 range: 6,
+                hp: 4,              // Plastic sign — takes a beating
                 color: 0xf1c40f,
                 effect: 'slow',
                 slowFactor: 0.4,
@@ -150,6 +152,7 @@
                 name: 'Mop Turret',
                 cost: 25,
                 range: 5,
+                hp: 6,              // Sturdy — actively fighting back
                 color: 0x8e44ad,
                 damage: 20,
                 attackRate: 1.0,
@@ -160,6 +163,7 @@
                 name: 'Air Freshener',
                 cost: 35,
                 range: 9,
+                hp: 2,              // Fragile canister — place at the back
                 color: 0x2ecc71,
                 damage: 12,
                 attackRate: 0.6,
@@ -195,9 +199,9 @@
 
             // Scene
             this.scene = new THREE.Scene();
-            this.scene.fog = new THREE.Fog(0x1a1a2e, 50, 100);
+            this.scene.fog = new THREE.Fog(0x1a1a2e, 60, 110);
 
-            // Camera — low-angle perspective (dramatic, shows toilet profile)
+            // Camera — steep TD angle for clear playing field visibility
             const aspect = window.innerWidth / window.innerHeight;
             this.camera = new THREE.PerspectiveCamera(CONFIG.cameraFOV, aspect, 0.1, 250);
             this.camera.position.set(CONFIG.cameraPos.x, CONFIG.cameraPos.y, CONFIG.cameraPos.z);
@@ -248,10 +252,10 @@
             dirLight.shadow.mapSize.height = 2048;
             dirLight.shadow.camera.near = 0.5;
             dirLight.shadow.camera.far = 100;
-            dirLight.shadow.camera.left = -40;
-            dirLight.shadow.camera.right = 40;
+            dirLight.shadow.camera.left = -35;
+            dirLight.shadow.camera.right = 35;
             dirLight.shadow.camera.top = 70;
-            dirLight.shadow.camera.bottom = -10;
+            dirLight.shadow.camera.bottom = -5;
             this.scene.add(dirLight);
 
             // Subtle blue fill from opposite side
@@ -312,8 +316,7 @@
             // Bathroom walls (back, sides, door frame)
             this.scene.add(createBathroomWalls());
 
-            // Stall dividers flanking the toilet
-            this.scene.add(createBathroomStalls());
+            // Single-toilet room — no stall dividers needed
 
             // Sinks on left wall
             this.scene.add(createSinks());
@@ -331,7 +334,8 @@
             this.scene.add(createTrashCan());
 
             // Office elements visible through the doorway
-            this.scene.add(createOfficePeek());
+            this.officeGroup = createOfficePeek();
+            this.scene.add(this.officeGroup);
 
             // Bathroom door — enemies must beat it down
             this.doorGroup = createBathroomDoor();
@@ -339,7 +343,7 @@
 
             // Bathroom overhead light (actual illumination for the room)
             const bathroomLight = new THREE.PointLight(0xeee8dd, 0.4, 20, 2);
-            bathroomLight.position.set(0, 5.5, 6);
+            bathroomLight.position.set(0, 4.0, 4);
             this.scene.add(bathroomLight);
         },
 
@@ -356,7 +360,7 @@
             const lineMat = new THREE.LineBasicMaterial({
                 color: CONFIG.colors.grid,
                 transparent: true,
-                opacity: 0.08,
+                opacity: 0.15,
             });
 
             // Vertical lines (along Z)
@@ -379,35 +383,60 @@
 
             this.scene.add(gridGroup);
             this._buildGrid = gridGroup;
+            this._buildGrid.visible = false; // Only show when tower selected
 
-            // Grid hover highlight
+            // Grid hover highlight (cell square)
             const highlightGeo = new THREE.PlaneGeometry(gridSize, gridSize);
             const highlightMat = new THREE.MeshBasicMaterial({
                 color: 0xffd700,
                 transparent: true,
-                opacity: 0.25,
+                opacity: 0.4,
                 depthWrite: false,
+                depthTest: false,
             });
             this.gridHighlight = new THREE.Mesh(highlightGeo, highlightMat);
             this.gridHighlight.rotation.x = -Math.PI / 2;
-            this.gridHighlight.position.y = 0.02;
+            this.gridHighlight.position.y = 0.05;
             this.gridHighlight.visible = false;
+            this.gridHighlight.renderOrder = 1;
             this.scene.add(this.gridHighlight);
 
-            // Range circle indicator (reused for hover)
-            const rangeGeo = new THREE.RingGeometry(0.9, 1.0, 48);
+            // Range circle — filled semi-transparent disc
+            const rangeGeo = new THREE.CircleGeometry(1.0, 64);
             const rangeMat = new THREE.MeshBasicMaterial({
                 color: 0x00ff00,
                 transparent: true,
-                opacity: 0.35,
+                opacity: 0.12,
                 side: THREE.DoubleSide,
                 depthWrite: false,
+                depthTest: false,
             });
             this.rangeCircle = new THREE.Mesh(rangeGeo, rangeMat);
             this.rangeCircle.rotation.x = -Math.PI / 2;
-            this.rangeCircle.position.y = 0.015;
+            this.rangeCircle.position.y = 0.04;
             this.rangeCircle.visible = false;
+            this.rangeCircle.renderOrder = 1;
             this.scene.add(this.rangeCircle);
+
+            // Range circle edge ring (crisp border)
+            const rangeEdgeGeo = new THREE.RingGeometry(0.97, 1.0, 64);
+            const rangeEdgeMat = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                depthTest: false,
+            });
+            this.rangeEdge = new THREE.Mesh(rangeEdgeGeo, rangeEdgeMat);
+            this.rangeEdge.rotation.x = -Math.PI / 2;
+            this.rangeEdge.position.y = 0.045;
+            this.rangeEdge.visible = false;
+            this.rangeEdge.renderOrder = 2;
+            this.scene.add(this.rangeEdge);
+
+            // Ghost tower preview (transparent preview of what will be placed)
+            this.ghostPreview = null;
         },
 
         // ============================
@@ -626,7 +655,7 @@
             // Bounds check — must be in buildable area
             const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
             const minZ = CONFIG.corridorStart + 2;
-            const maxZ = CONFIG.laneLength - 2;
+            const maxZ = CONFIG.laneLength - 4; // leave clearance before exit doors
 
             if (gx < -halfW || gx > halfW || gz < minZ || gz > maxZ) return null;
             return { x: gx, z: gz };
@@ -659,7 +688,70 @@
             this.scene.add(tower.mesh);
             this.towers.push(tower);
 
+            // Placement pop animation — scale from 0 → overshoot → settle
+            tower.mesh.scale.set(0, 0, 0);
+            const startTime = Date.now();
+            const popDuration = 350;
+            const animatePop = () => {
+                const t = Math.min(1, (Date.now() - startTime) / popDuration);
+                // Elastic ease-out
+                const s = t < 0.5
+                    ? 2 * t * t
+                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                const scale = s * (1 + (1 - t) * 0.3); // overshoot then settle
+                tower.mesh.scale.set(scale, scale, scale);
+                if (t < 1) requestAnimationFrame(animatePop);
+                else tower.mesh.scale.set(1, 1, 1);
+            };
+            animatePop();
+
+            // Clear ghost so it doesn't linger on the just-placed cell
+            this._clearGhost();
+
             this.updateHUD();
+        },
+
+        _destroyTower(index) {
+            const t = this.towers[index];
+            t.dying = true;
+
+            // Destruction animation — tumble, shrink, fade
+            const mesh = t.mesh;
+            const startTime = Date.now();
+            const duration = 400;
+            const tumbleDir = (Math.random() - 0.5) * 2; // random tumble direction
+
+            const animateDeath = () => {
+                const elapsed = Date.now() - startTime;
+                const p = Math.min(1, elapsed / duration);
+
+                // Tumble over
+                mesh.rotation.z = tumbleDir * p * (Math.PI / 2);
+                mesh.rotation.x = (1 - Math.abs(tumbleDir)) * p * (Math.PI / 3);
+
+                // Shrink and sink
+                const scale = 1 - p * p; // ease-in shrink
+                mesh.scale.set(scale, scale, scale);
+                mesh.position.y = -p * 0.5;
+
+                // Fade out all materials
+                mesh.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        child.material.transparent = true;
+                        child.material.opacity = Math.max(0, 1 - p * 1.5);
+                    }
+                });
+
+                if (p < 1) {
+                    requestAnimationFrame(animateDeath);
+                } else {
+                    this.scene.remove(mesh);
+                }
+            };
+            animateDeath();
+
+            // Remove from towers array immediately so it can't be interacted with
+            this.towers.splice(index, 1);
         },
 
         _createTowerMesh(type, def) {
@@ -766,7 +858,10 @@
                 gridX: 0,
                 gridZ: 0,
                 def: def,
+                hp: def.hp,
+                maxHp: def.hp,
                 attackTimer: 0,
+                hitShake: 0,
                 // Tower-specific state
                 ...(type === 'mop' && { swingAngle: 0 }),
                 ...(type === 'tipjar' && { incomeTimer: def.incomeInterval }),
@@ -793,7 +888,7 @@
         _spawnEnemy() {
             const spread = CONFIG.spawnWidth;
             const x = (Math.random() - 0.5) * spread;
-            const z = CONFIG.spawnZoneZ + Math.random() * 4;
+            const z = CONFIG.spawnZoneZ + Math.random() * 2; // spawn just behind the exit doors
 
             // Enemy type varies with wave
             let speed = 2.5 + Math.random() * 1.0;
@@ -933,8 +1028,8 @@
                     // Check proximity to slow towers
                     for (const t of this.towers) {
                         if (t.type !== 'wetfloor') continue;
-                        const dx = e.x - t.mesh.position.x;
-                        const dz = e.z - t.mesh.position.z;
+                        const dx = e.x - t.gridX;
+                        const dz = e.z - t.gridZ;
                         const dist = Math.sqrt(dx * dx + dz * dz);
                         if (dist < t.def.range) {
                             slowMult = t.def.slowFactor;
@@ -960,6 +1055,29 @@
                     e.mesh.position.z = e.z;
                     e.mesh.position.x = e.x;
 
+                    // Trample towers — enemies kick/shove past any tower in their path
+                    // Each enemy tracks which towers it already hit to avoid multi-damage
+                    if (!e.trampledTowers) e.trampledTowers = new Set();
+                    const trampleRadius = 0.8 + e.size * 0.3; // bigger enemies = wider trample
+                    for (let ti = this.towers.length - 1; ti >= 0; ti--) {
+                        const t = this.towers[ti];
+                        if (t.dying) continue;
+                        // Unique key per tower placement
+                        const tKey = t.gridX + ',' + t.gridZ;
+                        if (e.trampledTowers.has(tKey)) continue; // already kicked this one
+                        const dx = e.x - t.gridX;
+                        const dz = e.z - t.gridZ;
+                        const dist = Math.sqrt(dx * dx + dz * dz);
+                        if (dist < trampleRadius) {
+                            e.trampledTowers.add(tKey);
+                            t.hp -= 1;
+                            t.hitShake = 0.2;
+                            if (t.hp <= 0) {
+                                this._destroyTower(ti);
+                            }
+                        }
+                    }
+
                     // Walk animation
                     e.walkPhase += dt * e.speed * 2;
                     const legSwing = Math.sin(e.walkPhase) * 0.3;
@@ -980,7 +1098,7 @@
                 }
 
                 // Reached the door? Start bashing it
-                const doorZ = 12; // door position (wall ends)
+                const doorZ = 10; // door position (wall ends)
                 const bashRange = doorZ + 1.5;
                 if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0) {
                     // Stop at the door
@@ -1020,7 +1138,7 @@
                         this.camera.position.y += (Math.random() - 0.5) * 0.1;
                         setTimeout(() => {
                             this.camera.position.x = 0;
-                            this.camera.position.y = 14;
+                            this.camera.position.y = 26;
                         }, 80);
 
                         // Update crack visibility at thresholds
@@ -1114,8 +1232,41 @@
                 }
             }
 
-            // --- Update towers (attack) ---
+            // --- Update towers (attack + damage feedback) ---
             for (const t of this.towers) {
+                // Hit shake animation
+                if (t.hitShake > 0) {
+                    t.hitShake -= dt;
+                    const shakeIntensity = t.hitShake / 0.2;
+                    t.mesh.position.x = t.gridX + (Math.random() - 0.5) * 0.15 * shakeIntensity;
+                    t.mesh.position.z = t.gridZ + (Math.random() - 0.5) * 0.15 * shakeIntensity;
+                } else {
+                    t.mesh.position.x = t.gridX;
+                    t.mesh.position.z = t.gridZ;
+                }
+
+                // Damage tint — flash red on hit, tint toward red as HP decreases
+                if (t.hitShake > 0.1) {
+                    // Immediate hit flash
+                    t.mesh.traverse(child => {
+                        if (child.isMesh) {
+                            child.material.emissive = child.material.emissive || new THREE.Color();
+                            child.material.emissive.setHex(0xff4444);
+                            child.material.emissiveIntensity = 0.4;
+                        }
+                    });
+                } else if (t.hp < t.maxHp) {
+                    // Persistent damage tint
+                    const dmgPct = 1 - t.hp / t.maxHp;
+                    t.mesh.traverse(child => {
+                        if (child.isMesh) {
+                            child.material.emissive = child.material.emissive || new THREE.Color();
+                            child.material.emissive.setHex(0xff0000);
+                            child.material.emissiveIntensity = dmgPct * 0.2;
+                        }
+                    });
+                }
+
                 // Tip Jar — passive income
                 if (t.type === 'tipjar') {
                     t.incomeTimer -= dt;
@@ -1146,8 +1297,8 @@
                 let nearest = null;
                 let nearestDist = Infinity;
                 for (const e of this.enemies) {
-                    const dx = e.x - t.mesh.position.x;
-                    const dz = e.z - t.mesh.position.z;
+                    const dx = e.x - t.gridX;
+                    const dz = e.z - t.gridZ;
                     const dist = Math.sqrt(dx * dx + dz * dz);
                     if (dist < t.def.range && dist < nearestDist) {
                         nearest = e;
@@ -1209,11 +1360,49 @@
                     }
                 }
             }
+
+            // --- Exit door spring physics ---
+            if (this.officeGroup && this.officeGroup.userData.exitDoors) {
+                const doors = this.officeGroup.userData.exitDoors;
+                const { springK, dampK, pushImpulse, maxAngle, minAngle, doorZ, halfWidth } = doors;
+
+                // Check each enemy for door push (one impulse per enemy)
+                for (const e of this.enemies) {
+                    if (e.pushedExitDoor) continue;
+                    // Enemy crossing the door threshold (within 1 unit of doorZ)
+                    if (e.z < doorZ + 1 && e.z > doorZ - 2) {
+                        // Check if enemy is within the doorway width
+                        if (Math.abs(e.x) < halfWidth) {
+                            e.pushedExitDoor = true;
+                            // Push based on enemy speed — faster = harder slam
+                            const force = pushImpulse * (e.speed / 3);
+                            // Push the door on the enemy's side (or both if near center)
+                            if (e.x <= 1) doors.leftAngVel += force;
+                            if (e.x >= -1) doors.rightAngVel += force;
+                        }
+                    }
+                }
+
+                // Spring physics for left door
+                // Positive angle = swung open inward (toward playing field)
+                doors.leftAngVel += (-springK * doors.leftAngle - dampK * doors.leftAngVel) * dt;
+                doors.leftAngle += doors.leftAngVel * dt;
+                doors.leftAngle = Math.max(minAngle, Math.min(maxAngle, doors.leftAngle));
+                // Left door: positive rotation.y swings free edge toward -z (into the room)
+                doors.leftPivot.rotation.y = doors.leftAngle;
+
+                // Spring physics for right door
+                doors.rightAngVel += (-springK * doors.rightAngle - dampK * doors.rightAngVel) * dt;
+                doors.rightAngle += doors.rightAngVel * dt;
+                doors.rightAngle = Math.max(minAngle, Math.min(maxAngle, doors.rightAngle));
+                // Right door: negative rotation.y swings free edge toward -z (into the room)
+                doors.rightPivot.rotation.y = -doors.rightAngle;
+            }
         },
 
         _fireProjectile(tower, target) {
-            const dx = target.x - tower.mesh.position.x;
-            const dz = target.z - tower.mesh.position.z;
+            const dx = target.x - tower.gridX;
+            const dz = target.z - tower.gridZ;
             const dist = Math.sqrt(dx * dx + dz * dz);
             const speed = 20;
 
@@ -1221,13 +1410,13 @@
                 new THREE.SphereGeometry(0.15, 6, 6),
                 new THREE.MeshBasicMaterial({ color: 0x00ff88 })
             );
-            mesh.position.set(tower.mesh.position.x, 0.8, tower.mesh.position.z);
+            mesh.position.set(tower.gridX, 0.8, tower.gridZ);
             this.scene.add(mesh);
 
             this.projectiles.push({
                 mesh: mesh,
-                x: tower.mesh.position.x,
-                z: tower.mesh.position.z,
+                x: tower.gridX,
+                z: tower.gridZ,
                 vx: (dx / dist) * speed,
                 vz: (dz / dist) * speed,
                 damage: tower.def.damage,
@@ -1239,9 +1428,16 @@
         // GRID HOVER
         // ============================
         _updateGridHover() {
-            if (!this.selectedTower || (this.state !== 'playing' && this.state !== 'paused')) {
+            const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused');
+
+            // Show/hide grid lines based on whether we're placing
+            if (this._buildGrid) this._buildGrid.visible = !!active;
+
+            if (!active) {
                 this.gridHighlight.visible = false;
                 this.rangeCircle.visible = false;
+                this.rangeEdge.visible = false;
+                this._clearGhost();
                 return;
             }
 
@@ -1249,27 +1445,82 @@
             if (!pos) {
                 this.gridHighlight.visible = false;
                 this.rangeCircle.visible = false;
+                this.rangeEdge.visible = false;
+                this._clearGhost();
                 return;
             }
 
-            this.gridHighlight.position.set(pos.x, 0.02, pos.z);
+            // Pulse animation for highlight
+            const pulse = 0.85 + Math.sin(Date.now() * 0.006) * 0.15;
+
+            this.gridHighlight.position.set(pos.x, 0.05, pos.z);
+            this.gridHighlight.scale.set(pulse, pulse, pulse);
             this.gridHighlight.visible = true;
 
             // Color: green if can place, red if occupied or can't afford
             const def = this.TOWERS[this.selectedTower];
             const canPlace = !this._isCellOccupied(pos.x, pos.z) && this.coins >= def.cost;
-            const hoverColor = canPlace ? 0x00ff00 : 0xff0000;
+            const hoverColor = canPlace ? 0x00ff00 : 0xff4444;
             this.gridHighlight.material.color.setHex(hoverColor);
+            this.gridHighlight.material.opacity = canPlace ? 0.4 : 0.25;
 
             // Range circle (hide for towers with no range like Tip Jar)
             const range = def.range;
             if (range > 0) {
                 this.rangeCircle.scale.set(range, range, range);
-                this.rangeCircle.position.set(pos.x, 0.015, pos.z);
+                this.rangeCircle.position.set(pos.x, 0.04, pos.z);
                 this.rangeCircle.material.color.setHex(hoverColor);
                 this.rangeCircle.visible = true;
+
+                this.rangeEdge.scale.set(range, range, range);
+                this.rangeEdge.position.set(pos.x, 0.045, pos.z);
+                this.rangeEdge.material.color.setHex(hoverColor);
+                this.rangeEdge.visible = true;
             } else {
                 this.rangeCircle.visible = false;
+                this.rangeEdge.visible = false;
+            }
+
+            // Ghost tower preview
+            this._updateGhost(pos, canPlace);
+        },
+
+        _updateGhost(pos, canPlace) {
+            const def = this.TOWERS[this.selectedTower];
+            // Recreate ghost if tower type changed
+            if (this._ghostType !== this.selectedTower) {
+                this._clearGhost();
+                const ghost = this._createTowerMesh(this.selectedTower, def);
+                this.ghostPreview = ghost.mesh;
+                this.ghostPreview.traverse(child => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.4;
+                        child.material.depthWrite = false;
+                    }
+                });
+                this.scene.add(this.ghostPreview);
+                this._ghostType = this.selectedTower;
+            }
+            if (this.ghostPreview) {
+                const bob = Math.sin(Date.now() * 0.004) * 0.1;
+                this.ghostPreview.position.set(pos.x, bob, pos.z);
+                this.ghostPreview.visible = true;
+                // Tint ghost red/green
+                this.ghostPreview.traverse(child => {
+                    if (child.isMesh) {
+                        child.material.opacity = canPlace ? 0.45 : 0.2;
+                    }
+                });
+            }
+        },
+
+        _clearGhost() {
+            if (this.ghostPreview) {
+                this.scene.remove(this.ghostPreview);
+                this.ghostPreview = null;
+                this._ghostType = null;
             }
         },
 
