@@ -13,9 +13,12 @@
     <!-- HUD -->
     <div id="hud">
         <div id="hud-left">
-            <div class="hud-stat">
-                <span class="icon">🧻</span>
-                <span class="value" id="hygiene-display">5</span>
+            <div class="hud-stat" id="door-hp-stat">
+                <span class="icon">🚪</span>
+                <span class="value" id="door-hp-display">100%</span>
+                <div id="door-hp-bar-bg" style="width:60px;height:8px;background:#333;border-radius:4px;margin-left:6px;overflow:hidden;display:inline-block;vertical-align:middle;">
+                    <div id="door-hp-bar" style="width:100%;height:100%;background:#4caf50;border-radius:4px;transition:width 0.3s,background 0.3s;"></div>
+                </div>
             </div>
             <div class="hud-stat">
                 <span class="icon">🪙</span>
@@ -43,18 +46,23 @@
 
     <!-- Tower Build Panel -->
     <div id="tower-panel">
-        <div class="tower-btn" data-tower="wetfloor" title="Wet Floor Sign — Slows enemies">
+        <div class="tower-btn" data-tower="tipjar" title="Tip Jar — Generates 2 coins every 3s">
             <span class="hotkey">1</span>
+            <span class="label">Tip Jar</span>
+            <span class="cost">10</span>
+        </div>
+        <div class="tower-btn" data-tower="wetfloor" title="Wet Floor Sign — Slows enemies">
+            <span class="hotkey">2</span>
             <span class="label">Wet Floor</span>
             <span class="cost">15</span>
         </div>
         <div class="tower-btn" data-tower="mop" title="Mop Turret — Attacks + knockback">
-            <span class="hotkey">2</span>
+            <span class="hotkey">3</span>
             <span class="label">Mop</span>
             <span class="cost">25</span>
         </div>
         <div class="tower-btn" data-tower="freshener" title="Air Freshener — Ranged DPS">
-            <span class="hotkey">3</span>
+            <span class="hotkey">4</span>
             <span class="label">Freshener</span>
             <span class="cost">35</span>
         </div>
@@ -70,7 +78,7 @@
     <!-- Game Over Screen -->
     <div id="game-over-screen">
         <h1>OCCUPIED</h1>
-        <div class="subtitle">They got to your toilet.</div>
+        <div class="subtitle" id="game-over-subtitle">They broke through the door!</div>
         <div class="stats" id="game-over-stats"></div>
         <button id="restart-btn">TRY AGAIN</button>
     </div>
@@ -87,10 +95,10 @@
 
         state: 'title',  // title | playing | paused | gameover
         wave: 0,
-        hygiene: 5,
         coins: 50,
         score: 0,
         time: 0,
+        doorGroup: null,
 
         // Entity arrays
         enemies: [],
@@ -103,8 +111,9 @@
         enemiesSpawned: 0,
         enemiesPerWave: 8,
         spawnInterval: 1.5,
-        waveDelay: 3.0,
+        waveDelay: 5.0,
         waveActive: false,
+        _floatingTexts: [],
 
         // Build mode
         selectedTower: null,
@@ -117,33 +126,43 @@
 
         // Tower definitions
         TOWERS: {
+            tipjar: {
+                name: 'Tip Jar',
+                cost: 10,
+                range: 0,
+                color: 0xf39c12,
+                effect: 'income',
+                incomeAmount: 2,
+                incomeInterval: 2.5,
+                hotkey: 'Digit1',
+            },
             wetfloor: {
                 name: 'Wet Floor Sign',
                 cost: 15,
-                range: 5,
+                range: 6,
                 color: 0xf1c40f,
                 effect: 'slow',
                 slowFactor: 0.4,
-                hotkey: 'Digit1',
+                hotkey: 'Digit2',
             },
             mop: {
                 name: 'Mop Turret',
                 cost: 25,
-                range: 4,
+                range: 5,
                 color: 0x8e44ad,
-                damage: 15,
-                attackRate: 1.2,
+                damage: 20,
+                attackRate: 1.0,
                 knockback: 2.0,
-                hotkey: 'Digit2',
+                hotkey: 'Digit3',
             },
             freshener: {
                 name: 'Air Freshener',
                 cost: 35,
-                range: 8,
+                range: 9,
                 color: 0x2ecc71,
-                damage: 10,
+                damage: 12,
                 attackRate: 0.6,
-                hotkey: 'Digit3',
+                hotkey: 'Digit4',
             },
         },
 
@@ -175,12 +194,13 @@
 
             // Scene
             this.scene = new THREE.Scene();
-            this.scene.fog = new THREE.Fog(0x1a1a2e, 60, 100);
+            this.scene.fog = new THREE.Fog(0x1a1a2e, 50, 100);
 
-            // Camera — 35 degree top-down perspective
-            this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
-            this.camera.position.set(0, CONFIG.cameraHeight, CONFIG.cameraOffsetZ);
-            this.camera.lookAt(0, 0, CONFIG.cameraLookZ);
+            // Camera — low-angle perspective (dramatic, shows toilet profile)
+            const aspect = window.innerWidth / window.innerHeight;
+            this.camera = new THREE.PerspectiveCamera(CONFIG.cameraFOV, aspect, 0.1, 250);
+            this.camera.position.set(CONFIG.cameraPos.x, CONFIG.cameraPos.y, CONFIG.cameraPos.z);
+            this.camera.lookAt(CONFIG.cameraLookAt.x, CONFIG.cameraLookAt.y, CONFIG.cameraLookAt.z);
 
             // Clock
             this.clock = new THREE.Clock();
@@ -189,6 +209,7 @@
             this._createLighting();
             this._createGround();
             this._createToilet();
+            this._createEnvironment();
             this._createGrid();
 
             // Input
@@ -214,22 +235,22 @@
         // SCENE SETUP
         // ============================
         _createLighting() {
-            // Ambient
-            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            // Ambient — slightly warm, enough to see bathroom walls
+            const ambient = new THREE.AmbientLight(0x505060, 0.7);
             this.scene.add(ambient);
 
             // Main directional light (slightly warm, from above-right)
             const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
-            dirLight.position.set(10, 30, -5);
+            dirLight.position.set(10, 30, 20);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
             dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 80;
+            dirLight.shadow.camera.far = 100;
             dirLight.shadow.camera.left = -40;
             dirLight.shadow.camera.right = 40;
-            dirLight.shadow.camera.top = 40;
-            dirLight.shadow.camera.bottom = -40;
+            dirLight.shadow.camera.top = 70;
+            dirLight.shadow.camera.bottom = -10;
             this.scene.add(dirLight);
 
             // Subtle blue fill from opposite side
@@ -281,7 +302,44 @@
         _createToilet() {
             this.toilet = createToilet();
             this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
+            // Face the camera so you see the bowl/seat, not the back of the tank
+            this.toilet.rotation.y = Math.PI;
             this.scene.add(this.toilet);
+        },
+
+        _createEnvironment() {
+            // Bathroom walls (back, sides, door frame)
+            this.scene.add(createBathroomWalls());
+
+            // Stall dividers flanking the toilet
+            this.scene.add(createBathroomStalls());
+
+            // Sinks on left wall
+            this.scene.add(createSinks());
+
+            // Mirror above sinks
+            this.scene.add(createMirror());
+
+            // Hand dryer on right wall
+            this.scene.add(createHandDryer());
+
+            // Paper towel dispenser on right wall
+            this.scene.add(createPaperTowelDispenser());
+
+            // Trash can near the door
+            this.scene.add(createTrashCan());
+
+            // Office elements visible through the doorway
+            this.scene.add(createOfficePeek());
+
+            // Bathroom door — enemies must beat it down
+            this.doorGroup = createBathroomDoor();
+            this.scene.add(this.doorGroup);
+
+            // Bathroom overhead light (actual illumination for the room)
+            const bathroomLight = new THREE.PointLight(0xeee8dd, 0.8, 20, 2);
+            bathroomLight.position.set(0, 5.5, 6);
+            this.scene.add(bathroomLight);
         },
 
         _createGrid() {
@@ -334,6 +392,21 @@
             this.gridHighlight.position.y = 0.02;
             this.gridHighlight.visible = false;
             this.scene.add(this.gridHighlight);
+
+            // Range circle indicator (reused for hover)
+            const rangeGeo = new THREE.RingGeometry(0.9, 1.0, 48);
+            const rangeMat = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.35,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            this.rangeCircle = new THREE.Mesh(rangeGeo, rangeMat);
+            this.rangeCircle.rotation.x = -Math.PI / 2;
+            this.rangeCircle.position.y = 0.015;
+            this.rangeCircle.visible = false;
+            this.scene.add(this.rangeCircle);
         },
 
         // ============================
@@ -426,7 +499,20 @@
         },
 
         updateHUD() {
-            document.getElementById('hygiene-display').textContent = this.hygiene;
+            // Door HP display
+            if (this.doorGroup) {
+                const hp = this.doorGroup.userData.doorHP;
+                const max = this.doorGroup.userData.maxDoorHP;
+                const pct = Math.max(0, Math.round((hp / max) * 100));
+                document.getElementById('door-hp-display').textContent = pct + '%';
+                const bar = document.getElementById('door-hp-bar');
+                bar.style.width = pct + '%';
+                // Color shifts: green → yellow → orange → red
+                if (pct > 60) bar.style.background = '#4caf50';
+                else if (pct > 40) bar.style.background = '#ff9800';
+                else if (pct > 20) bar.style.background = '#ff5722';
+                else bar.style.background = '#f44336';
+            }
             document.getElementById('coins-display').textContent = this.coins;
             document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
             document.getElementById('score-display').textContent = this.score;
@@ -445,8 +531,24 @@
         start() {
             this.state = 'playing';
             this.wave = 0;
-            this.hygiene = CONFIG.startingHygiene;
             this.coins = CONFIG.startingCoins;
+
+            // Reset door HP and visuals
+            if (this.doorGroup) {
+                const ud = this.doorGroup.userData;
+                ud.doorHP = ud.maxDoorHP;
+                // Reset door color
+                if (ud.door) {
+                    ud.door.material.color.setHex(ud.originalColor);
+                    ud.door.material.emissive.setHex(0x000000);
+                    ud.door.material.emissiveIntensity = 0;
+                    ud.door.visible = true;
+                }
+                // Hide all cracks
+                if (ud.cracks) {
+                    ud.cracks.forEach(c => { c.visible = false; });
+                }
+            }
             this.score = 0;
             this.time = 0;
             this.waveTimer = 0;
@@ -460,12 +562,21 @@
             this.towers = [];
             this.projectiles = [];
 
+            // Clear floating texts
+            this._floatingTexts.forEach(ft => {
+                this.scene.remove(ft.sprite);
+                ft.sprite.material.map.dispose();
+                ft.sprite.material.dispose();
+            });
+            this._floatingTexts = [];
+
             this.selectedTower = null;
             this._updateTowerButtons();
             this.updateHUD();
 
-            // Start first wave after a brief delay
-            this.waveTimer = 2.0;
+            // 8 second build phase before wave 1
+            this.waveTimer = 8.0;
+            this.announceWave('PLACE TIP JARS [1] FOR INCOME!');
 
             this.clock.start();
             console.log('Game started — defend the throne!');
@@ -550,7 +661,36 @@
                 metalness: 0.1,
             });
 
-            if (type === 'wetfloor') {
+            if (type === 'tipjar') {
+                // Glass jar
+                const jar = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.35, 0.45, 0.8, 8),
+                    new THREE.MeshStandardMaterial({
+                        color: 0xaaddff,
+                        roughness: 0.1,
+                        metalness: 0.2,
+                        transparent: true,
+                        opacity: 0.6,
+                    })
+                );
+                jar.position.y = 0.4;
+                group.add(jar);
+                // Coins inside
+                const coins = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.3, 0.25, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 })
+                );
+                coins.position.y = 0.25;
+                group.add(coins);
+                // Coin on top (bobs in animation)
+                const topCoin = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1, emissive: 0xffa500, emissiveIntensity: 0.2 })
+                );
+                topCoin.position.y = 0.85;
+                topCoin.name = 'topCoin';
+                group.add(topCoin);
+            } else if (type === 'wetfloor') {
                 // Triangle sign shape
                 const cone = new THREE.Mesh(
                     new THREE.ConeGeometry(0.6, 1.5, 4),
@@ -620,6 +760,7 @@
                 attackTimer: 0,
                 // Tower-specific state
                 ...(type === 'mop' && { swingAngle: 0 }),
+                ...(type === 'tipjar' && { incomeTimer: def.incomeInterval }),
             };
         },
 
@@ -631,9 +772,9 @@
             this.waveActive = true;
             this.enemiesSpawned = 0;
 
-            // Scale difficulty
-            this.enemiesPerWave = 8 + Math.floor(this.wave * 2.5);
-            this.spawnInterval = Math.max(0.3, 1.5 - this.wave * 0.05);
+            // Scale difficulty — wave 1 is a teaching wave
+            this.enemiesPerWave = 3 + Math.floor(this.wave * 2);
+            this.spawnInterval = Math.max(0.5, 2.5 - this.wave * 0.1);
 
             this.spawnTimer = 0;
             this.announceWave(`WAVE ${this.wave}`);
@@ -646,38 +787,38 @@
             const z = CONFIG.spawnZoneZ + Math.random() * 4;
 
             // Enemy type varies with wave
-            let speed = 3.0 + Math.random() * 1.5;
-            let hp = 30 + this.wave * 8;
-            let size = 0.5;
+            let speed = 2.5 + Math.random() * 1.0;
+            let hp = 15 + this.wave * 8;
+            let size = 1.5;
             let color = 0xe67e22;
-            let coins = 3;
+            let coins = 6;
             let enemyType = 'polite';
 
             const roll = Math.random();
             if (this.wave >= 3 && roll < 0.3) {
                 // Speed Walker
                 enemyType = 'speedwalker';
-                speed = 5.5 + Math.random() * 2;
-                hp = 20 + this.wave * 4;
-                size = 0.4;
+                speed = 4.5 + Math.random() * 2;
+                hp = 12 + this.wave * 5;
+                size = 1.2;
                 color = 0x3498db;
-                coins = 4;
+                coins = 8;
             } else if (this.wave >= 6 && roll < 0.15) {
                 // Karen
                 enemyType = 'karen';
-                speed = 3.0;
-                hp = 80 + this.wave * 15;
-                size = 0.6;
+                speed = 2.5;
+                hp = 60 + this.wave * 15;
+                size = 1.8;
                 color = 0xe74c3c;
-                coins = 8;
+                coins = 16;
             } else if (this.wave >= 5 && roll < 0.25) {
                 // Coffee Drinker
                 enemyType = 'coffee';
-                speed = 2.0;
-                hp = 60 + this.wave * 12;
-                size = 0.55;
+                speed = 1.8;
+                hp = 45 + this.wave * 12;
+                size = 1.6;
                 color = 0x795548;
-                coins = 6;
+                coins = 12;
             }
 
             // Create enemy mesh — simple low-poly person
@@ -728,6 +869,8 @@
                 coins: coins,
                 slowed: 0,
                 walkPhase: Math.random() * Math.PI * 2,
+                hitFlash: 0,
+                bodyColor: color,
             };
 
             this.enemies.push(enemy);
@@ -761,8 +904,11 @@
                     this.waveActive = false;
                     this.waveTimer = this.waveDelay;
                     // Bonus coins for surviving the wave
-                    this.coins += 10 + this.wave * 2;
+                    const waveBonus = 15 + this.wave * 5;
+                    this.coins += waveBonus;
                     this.updateHUD();
+                    this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
+                    this._spawnCoinText(0, 30, waveBonus);
                 }
             }
 
@@ -788,10 +934,19 @@
                     }
                 }
 
-                // Move toward toilet
-                const targetZ = CONFIG.toiletPos.z;
+                // Move toward toilet — converge on it as they get closer
                 const moveSpeed = e.speed * slowMult * dt;
                 e.z -= moveSpeed;
+
+                // Steer toward toilet x — stronger as enemies approach
+                const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
+                const convergeDist = 40;
+                if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
+                    const convergeStrength = 1 - (distZ / convergeDist);
+                    const dxToToilet = CONFIG.toiletPos.x - e.x;
+                    e.x += dxToToilet * convergeStrength * dt * 0.8;
+                }
+
                 e.mesh.position.z = e.z;
                 e.mesh.position.x = e.x;
 
@@ -803,14 +958,57 @@
                 // Slight body bob
                 e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
 
-                // Reached the toilet?
-                if (e.z <= targetZ + 2) {
-                    this.hygiene--;
+                // Hit flash effect
+                if (e.hitFlash > 0) {
+                    e.hitFlash -= dt;
+                    e.body.material.emissive.setHex(0xffffff);
+                    e.body.material.emissiveIntensity = Math.max(0, e.hitFlash / 0.15);
+                } else {
+                    e.body.material.emissive.setHex(0x000000);
+                    e.body.material.emissiveIntensity = 0;
+                }
+
+                // Reached the door? Deal damage to it
+                const doorZ = 14; // door position
+                if (e.z <= doorZ + 1) {
+                    if (this.doorGroup) {
+                        const ud = this.doorGroup.userData;
+                        // Damage based on enemy type — bigger enemies hit harder
+                        const dmg = e.type === 'boss' ? 25 : (e.type === 'coffee' ? 12 : (e.type === 'espresso' ? 3 : 8));
+                        ud.doorHP = Math.max(0, ud.doorHP - dmg);
+
+                        // Update crack visibility at thresholds
+                        if (ud.cracks) {
+                            const pct = ud.doorHP / ud.maxDoorHP;
+                            ud.cracks[0].visible = pct <= 0.80;
+                            ud.cracks[1].visible = pct <= 0.60;
+                            ud.cracks[2].visible = pct <= 0.40;
+                            ud.cracks[3].visible = pct <= 0.20;
+                            ud.cracks[4].visible = pct <= 0.10;
+                        }
+
+                        // Tint door color toward red as HP decreases
+                        if (ud.door) {
+                            const pct = ud.doorHP / ud.maxDoorHP;
+                            const r = Math.min(1.0, 0.55 + (1 - pct) * 0.45);
+                            const g = 0.41 * pct;
+                            const b = 0.08 * pct;
+                            ud.door.material.color.setRGB(r, g, b);
+                            ud.door.material.emissive.setHex(0xff0000);
+                            ud.door.material.emissiveIntensity = (1 - pct) * 0.3;
+                        }
+                    }
+
                     this.scene.remove(e.mesh);
                     this.enemies.splice(i, 1);
                     this.updateHUD();
 
-                    if (this.hygiene <= 0) {
+                    // Door broken — game over!
+                    if (this.doorGroup && this.doorGroup.userData.doorHP <= 0) {
+                        // Hide the door panel to show it's broken
+                        if (this.doorGroup.userData.door) {
+                            this.doorGroup.userData.door.visible = false;
+                        }
                         this.gameOver();
                         return;
                     }
@@ -822,6 +1020,7 @@
                     this.score += 10;
                     this.coins += e.coins;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
+                    this._spawnCoinText(e.x, e.z, e.coins);
 
                     // Coffee Drinker splits on death
                     if (e.type === 'coffee') {
@@ -856,6 +1055,8 @@
                                 coins: 1,
                                 slowed: 0,
                                 walkPhase: Math.random() * Math.PI * 2,
+                                hitFlash: 0,
+                                bodyColor: 0x4fc3f7,
                             });
                         }
                     }
@@ -869,6 +1070,27 @@
 
             // --- Update towers (attack) ---
             for (const t of this.towers) {
+                // Tip Jar — passive income
+                if (t.type === 'tipjar') {
+                    t.incomeTimer -= dt;
+                    if (t.incomeTimer <= 0) {
+                        t.incomeTimer = t.def.incomeInterval;
+                        this.coins += t.def.incomeAmount;
+                        this.updateHUD();
+                        this._spawnCoinText(t.mesh.position.x, t.mesh.position.z, t.def.incomeAmount);
+                        // Pulse the top coin as feedback
+                        const topCoin = t.mesh.getObjectByName('topCoin');
+                        if (topCoin) topCoin.scale.set(1.5, 1.5, 1.5);
+                    }
+                    // Animate top coin bob + scale decay
+                    const topCoin = t.mesh.getObjectByName('topCoin');
+                    if (topCoin) {
+                        topCoin.position.y = 0.85 + Math.sin(this.time * 3 + t.gridX) * 0.05;
+                        topCoin.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                    }
+                    continue;
+                }
+
                 if (t.type === 'wetfloor') continue; // passive, no attack
 
                 t.attackTimer -= dt;
@@ -894,6 +1116,7 @@
                 if (t.type === 'mop') {
                     // Melee attack — direct damage + knockback
                     nearest.hp -= t.def.damage;
+                    nearest.hitFlash = 0.15;
                     nearest.z += t.def.knockback;
                     nearest.mesh.position.z = nearest.z;
                     // Animate mop swing
@@ -933,6 +1156,7 @@
                     const dist = Math.sqrt(dx * dx + dz * dz);
                     if (dist < e.size + 0.3) {
                         e.hp -= p.damage;
+                        e.hitFlash = 0.15;
                         this.scene.remove(p.mesh);
                         this.projectiles.splice(i, 1);
                         break;
@@ -971,12 +1195,14 @@
         _updateGridHover() {
             if (!this.selectedTower || (this.state !== 'playing' && this.state !== 'paused')) {
                 this.gridHighlight.visible = false;
+                this.rangeCircle.visible = false;
                 return;
             }
 
             const pos = this._getGridPos();
             if (!pos) {
                 this.gridHighlight.visible = false;
+                this.rangeCircle.visible = false;
                 return;
             }
 
@@ -986,7 +1212,53 @@
             // Color: green if can place, red if occupied or can't afford
             const def = this.TOWERS[this.selectedTower];
             const canPlace = !this._isCellOccupied(pos.x, pos.z) && this.coins >= def.cost;
-            this.gridHighlight.material.color.setHex(canPlace ? 0x00ff00 : 0xff0000);
+            const hoverColor = canPlace ? 0x00ff00 : 0xff0000;
+            this.gridHighlight.material.color.setHex(hoverColor);
+
+            // Range circle (hide for towers with no range like Tip Jar)
+            const range = def.range;
+            if (range > 0) {
+                this.rangeCircle.scale.set(range, range, range);
+                this.rangeCircle.position.set(pos.x, 0.015, pos.z);
+                this.rangeCircle.material.color.setHex(hoverColor);
+                this.rangeCircle.visible = true;
+            } else {
+                this.rangeCircle.visible = false;
+            }
+        },
+
+        // ============================
+        // FLOATING COIN TEXT
+        // ============================
+        _spawnCoinText(x, z, amount) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'bold 40px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const text = `+${amount}`;
+            // Black outline
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeText(text, 64, 32);
+            // Gold fill
+            ctx.fillStyle = '#ffd700';
+            ctx.fillText(text, 64, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(x, 3, z);
+            sprite.scale.set(2.5, 1.25, 1);
+            this.scene.add(sprite);
+
+            this._floatingTexts.push({ sprite, life: 1.2 });
         },
 
         // ============================
@@ -1002,6 +1274,20 @@
 
             // Update grid hover
             this._updateGridHover();
+
+            // Update floating texts
+            for (let i = this._floatingTexts.length - 1; i >= 0; i--) {
+                const ft = this._floatingTexts[i];
+                ft.life -= dt;
+                ft.sprite.position.y += 2.5 * dt;
+                ft.sprite.material.opacity = Math.max(0, ft.life / 0.5);
+                if (ft.life <= 0) {
+                    this.scene.remove(ft.sprite);
+                    ft.sprite.material.map.dispose();
+                    ft.sprite.material.dispose();
+                    this._floatingTexts.splice(i, 1);
+                }
+            }
 
             // Game logic
             this.update(dt);

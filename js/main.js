@@ -2,11 +2,31 @@
 
 import { CONFIG } from './data/config.js';
 import { createToilet, updateToilet } from './models/ToiletModel.js';
+import {
+    createBathroomStalls,
+    createSinks,
+    createMirror,
+    createHandDryer,
+    createTrashCan,
+    createPaperTowelDispenser,
+    createBathroomWalls,
+    createOfficePeek,
+    createBathroomDoor,
+} from './models/EnvironmentModels.js';
 
 // Expose to window for Game object in index.html
 window.CONFIG = CONFIG;
 window.createToilet = createToilet;
 window.updateToilet = updateToilet;
+window.createBathroomStalls = createBathroomStalls;
+window.createSinks = createSinks;
+window.createMirror = createMirror;
+window.createHandDryer = createHandDryer;
+window.createTrashCan = createTrashCan;
+window.createPaperTowelDispenser = createPaperTowelDispenser;
+window.createBathroomWalls = createBathroomWalls;
+window.createOfficePeek = createOfficePeek;
+window.createBathroomDoor = createBathroomDoor;
 
 // Initialize game
 window.Game = Game;

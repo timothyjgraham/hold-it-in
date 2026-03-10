@@ -13,14 +13,14 @@ export const CONFIG = {
     // Toilet
     toiletPos: { x: 0, y: 0, z: 0 },
 
-    // Camera
-    cameraHeight: 32,
-    cameraOffsetZ: -28,
-    cameraLookZ: 18,
+    // Camera — low-angle perspective (Clash Royale style)
+    cameraPos: { x: 0, y: 14, z: -15 },
+    cameraLookAt: { x: 0, y: 0, z: 25 },
+    cameraFOV: 50,
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 50,          // Starting currency
+    startingCoins: 100,         // Starting currency — enough for economy + first defense
 
     // Spawn
     spawnZoneZ: 65,             // Where enemies appear
