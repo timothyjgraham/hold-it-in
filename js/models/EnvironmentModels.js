@@ -1069,23 +1069,149 @@ export function createOfficePeek() {
     // OFFICE WALLS — enclose the space at far left/right
     // ════════════════════════════════════════════════════════════════════════
 
-    // Left office wall
-    const leftOfficeWall = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 6, 55),
-        officeWallMat
-    );
-    leftOfficeWall.position.set(-36, 3, 40);
-    leftOfficeWall.receiveShadow = true;
-    group.add(leftOfficeWall);
+    // Office walls with windows — drones fly through these!
+    const windowDefs = [
+        { z: 24, width: 5, height: 2.5, sillY: 1.5 },
+        { z: 35, width: 5, height: 2.5, sillY: 1.5 },
+        { z: 46, width: 5, height: 2.5, sillY: 1.5 },
+        { z: 57, width: 5, height: 2.5, sillY: 1.5 },
+    ];
+    const wallZStart = 12.5;
+    const wallZEnd = 67.5;
+    const wallHeight = 6;
+    const windowFrameMat = new THREE.MeshStandardMaterial({
+        color: 0x888899,
+        metalness: 0.3,
+        roughness: 0.4,
+    });
+    const windowGlassMat = new THREE.MeshStandardMaterial({
+        color: 0x88bbdd,
+        metalness: 0.1,
+        roughness: 0.05,
+        transparent: true,
+        opacity: 0.15,
+    });
 
-    // Right office wall
-    const rightOfficeWall = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 6, 55),
-        officeWallMat
-    );
-    rightOfficeWall.position.set(36, 3, 40);
-    rightOfficeWall.receiveShadow = true;
-    group.add(rightOfficeWall);
+    // Store window center positions for drone spawning
+    const windowPositions = [];
+
+    for (const wallX of [-36, 36]) {
+        // Bottom strip (below windows)
+        const bottomStrip = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, windowDefs[0].sillY, wallZEnd - wallZStart),
+            officeWallMat
+        );
+        bottomStrip.position.set(wallX, windowDefs[0].sillY / 2, (wallZStart + wallZEnd) / 2);
+        bottomStrip.receiveShadow = true;
+        group.add(bottomStrip);
+
+        // Top strip (above windows)
+        const topY = windowDefs[0].sillY + windowDefs[0].height;
+        const topH = wallHeight - topY;
+        const topStrip = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, topH, wallZEnd - wallZStart),
+            officeWallMat
+        );
+        topStrip.position.set(wallX, topY + topH / 2, (wallZStart + wallZEnd) / 2);
+        topStrip.receiveShadow = true;
+        group.add(topStrip);
+
+        // Pillars between windows (at window height)
+        const pillarH = windowDefs[0].height;
+        const pillarY = windowDefs[0].sillY + pillarH / 2;
+        const sorted = [...windowDefs].sort((a, b) => a.z - b.z);
+        let prevEnd = wallZStart;
+        for (const w of sorted) {
+            const wStart = w.z - w.width / 2;
+            if (wStart > prevEnd + 0.01) {
+                const pillarLen = wStart - prevEnd;
+                const pillar = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.2, pillarH, pillarLen),
+                    officeWallMat
+                );
+                pillar.position.set(wallX, pillarY, prevEnd + pillarLen / 2);
+                pillar.receiveShadow = true;
+                group.add(pillar);
+            }
+            prevEnd = w.z + w.width / 2;
+        }
+        // Final pillar after last window
+        if (prevEnd < wallZEnd - 0.01) {
+            const pillarLen = wallZEnd - prevEnd;
+            const pillar = new THREE.Mesh(
+                new THREE.BoxGeometry(0.2, pillarH, pillarLen),
+                officeWallMat
+            );
+            pillar.position.set(wallX, pillarY, prevEnd + pillarLen / 2);
+            pillar.receiveShadow = true;
+            group.add(pillar);
+        }
+
+        // Window frames + glass
+        for (const w of windowDefs) {
+            const cy = w.sillY + w.height / 2;
+
+            // Glass pane
+            const glass = new THREE.Mesh(
+                new THREE.BoxGeometry(0.05, w.height - 0.1, w.width - 0.1),
+                windowGlassMat
+            );
+            glass.position.set(wallX, cy, w.z);
+            group.add(glass);
+
+            // Frame — top
+            const ft = new THREE.Mesh(
+                new THREE.BoxGeometry(0.25, 0.1, w.width + 0.2),
+                windowFrameMat
+            );
+            ft.position.set(wallX, w.sillY + w.height, w.z);
+            group.add(ft);
+
+            // Frame — sill (wider, for visual weight)
+            const fs = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4, 0.1, w.width + 0.3),
+                windowFrameMat
+            );
+            fs.position.set(wallX, w.sillY, w.z);
+            group.add(fs);
+
+            // Frame — left post
+            const fl = new THREE.Mesh(
+                new THREE.BoxGeometry(0.25, w.height, 0.1),
+                windowFrameMat
+            );
+            fl.position.set(wallX, cy, w.z - w.width / 2);
+            group.add(fl);
+
+            // Frame — right post
+            const fr = new THREE.Mesh(
+                new THREE.BoxGeometry(0.25, w.height, 0.1),
+                windowFrameMat
+            );
+            fr.position.set(wallX, cy, w.z + w.width / 2);
+            group.add(fr);
+
+            // Cross dividers (muntin bars)
+            const crossH = new THREE.Mesh(
+                new THREE.BoxGeometry(0.22, 0.05, w.width),
+                windowFrameMat
+            );
+            crossH.position.set(wallX, cy, w.z);
+            group.add(crossH);
+            const crossV = new THREE.Mesh(
+                new THREE.BoxGeometry(0.22, w.height, 0.05),
+                windowFrameMat
+            );
+            crossV.position.set(wallX, cy, w.z);
+            group.add(crossV);
+
+            // Store window center for drone system
+            windowPositions.push({ x: wallX, y: cy, z: w.z });
+        }
+    }
+
+    // Attach window positions to group for drone spawning
+    group.userData.windowPositions = windowPositions;
 
     // Back office wall (far end) — split with a wide corridor doorway in the center
     const exitDoorWidth = 12;

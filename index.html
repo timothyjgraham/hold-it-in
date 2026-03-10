@@ -374,6 +374,13 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
+            // Drone delivery system
+            this.activeDrones = [];
+            this.windowPositions = [];
+            if (this.officeGroup && this.officeGroup.userData.windowPositions) {
+                this.windowPositions = this.officeGroup.userData.windowPositions;
+            }
+
             // Phase 6A: Initialize enemy object pool
             if (window.EnemyPool) {
                 this.enemyPool = new EnemyPool();
@@ -895,27 +902,12 @@
             const tower = this._createTowerMesh(this.selectedTower, def);
             tower.gridX = pos.x;
             tower.gridZ = pos.z;
-            tower.mesh.position.set(pos.x, 0, pos.z);
             tower.mesh.castShadow = true;
-            this.scene.add(tower.mesh);
+            tower.delivering = true; // Tower is inactive until drone delivers it
             this.towers.push(tower);
 
-            // Placement pop animation — scale from 0 → overshoot → settle
-            tower.mesh.scale.set(0, 0, 0);
-            const startTime = Date.now();
-            const popDuration = 350;
-            const animatePop = () => {
-                const t = Math.min(1, (Date.now() - startTime) / popDuration);
-                // Elastic ease-out
-                const s = t < 0.5
-                    ? 2 * t * t
-                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                const scale = s * (1 + (1 - t) * 0.3); // overshoot then settle
-                tower.mesh.scale.set(scale, scale, scale);
-                if (t < 1) requestAnimationFrame(animatePop);
-                else tower.mesh.scale.set(1, 1, 1);
-            };
-            animatePop();
+            // Launch drone delivery!
+            this._startDroneDelivery(pos.x, pos.z, tower);
 
             // Clear ghost so it doesn't linger on the just-placed cell
             this._clearGhost();
@@ -964,6 +956,363 @@
 
             // Remove from towers array immediately so it can't be interacted with
             this.towers.splice(index, 1);
+        },
+
+        // ============================
+        // DRONE DELIVERY SYSTEM
+        // ============================
+        _createDroneModel() {
+            const drone = new THREE.Group();
+            drone.name = 'deliveryDrone';
+
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: 0x2a2a2a, metalness: 0.5, roughness: 0.4,
+            });
+            const armMat = new THREE.MeshStandardMaterial({
+                color: 0x3a3a3a, metalness: 0.3, roughness: 0.5,
+            });
+            const rotorMat = new THREE.MeshStandardMaterial({
+                color: 0x777777, metalness: 0.2, roughness: 0.3,
+                transparent: true, opacity: 0.5, side: THREE.DoubleSide,
+            });
+
+            // Central body
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(0.7, 0.18, 0.7),
+                bodyMat
+            );
+            drone.add(body);
+
+            // Top cover (slightly rounded look)
+            const cover = new THREE.Mesh(
+                new THREE.BoxGeometry(0.5, 0.08, 0.5),
+                new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.4, roughness: 0.3 })
+            );
+            cover.position.y = 0.13;
+            drone.add(cover);
+
+            // Camera/sensor on bottom
+            const sensor = new THREE.Mesh(
+                new THREE.SphereGeometry(0.07, 8, 6),
+                new THREE.MeshStandardMaterial({
+                    color: 0x111111, emissive: 0x440000, emissiveIntensity: 0.8,
+                })
+            );
+            sensor.position.y = -0.12;
+            drone.add(sensor);
+
+            // X-shaped arms
+            const arm1 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.04, 0.06), armMat);
+            arm1.rotation.y = Math.PI / 4;
+            arm1.position.y = 0.02;
+            drone.add(arm1);
+
+            const arm2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.04, 0.06), armMat);
+            arm2.rotation.y = -Math.PI / 4;
+            arm2.position.y = 0.02;
+            drone.add(arm2);
+
+            // 4 rotors at arm tips + motor mounts
+            const rotorPositions = [
+                { x:  0.6, z:  0.6 },
+                { x:  0.6, z: -0.6 },
+                { x: -0.6, z:  0.6 },
+                { x: -0.6, z: -0.6 },
+            ];
+            const rotors = [];
+            for (const rp of rotorPositions) {
+                // Motor mount
+                const mount = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.06, 0.1, 8),
+                    bodyMat
+                );
+                mount.position.set(rp.x, 0.07, rp.z);
+                drone.add(mount);
+
+                // Rotor disc (transparent spinning disc)
+                const rotor = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.3, 0.015, 16),
+                    rotorMat
+                );
+                rotor.position.set(rp.x, 0.14, rp.z);
+                drone.add(rotor);
+                rotors.push(rotor);
+
+                // Rotor ring (visible edge)
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.3, 0.012, 6, 16),
+                    armMat
+                );
+                ring.rotation.x = Math.PI / 2;
+                ring.position.set(rp.x, 0.14, rp.z);
+                drone.add(ring);
+            }
+            drone.userData.rotors = rotors;
+
+            // LED lights — green front, red back
+            const greenLed = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 6, 6),
+                new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1.5 })
+            );
+            greenLed.position.set(0, 0.02, 0.38);
+            drone.add(greenLed);
+
+            const redLed = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 6, 6),
+                new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.5 })
+            );
+            redLed.position.set(0, 0.02, -0.38);
+            drone.add(redLed);
+
+            // Package hook (thin line hanging below)
+            const hook = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4),
+                new THREE.MeshStandardMaterial({ color: 0x333333 })
+            );
+            hook.position.y = -0.25;
+            hook.name = 'hook';
+            drone.add(hook);
+
+            return drone;
+        },
+
+        _createPackageModel() {
+            const pkg = new THREE.Group();
+            pkg.name = 'package';
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: 0xB5834A, roughness: 0.8, metalness: 0.0,
+            });
+            const box = new THREE.Mesh(
+                new THREE.BoxGeometry(0.6, 0.4, 0.6),
+                boxMat
+            );
+            pkg.add(box);
+
+            // Tape stripe on top
+            const tape = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.005, 0.62),
+                new THREE.MeshStandardMaterial({ color: 0xCCB077, roughness: 0.6 })
+            );
+            tape.position.y = 0.201;
+            pkg.add(tape);
+
+            return pkg;
+        },
+
+        _startDroneDelivery(targetX, targetZ, tower) {
+            if (this.windowPositions.length === 0) {
+                // Fallback: no windows, just place directly
+                tower.mesh.position.set(targetX, 0, targetZ);
+                this.scene.add(tower.mesh);
+                tower.mesh.scale.set(1, 1, 1);
+                tower.delivering = false;
+                return;
+            }
+
+            // Pick entry window (prefer side closer to target, or random)
+            const leftWindows = this.windowPositions.filter(w => w.x < 0);
+            const rightWindows = this.windowPositions.filter(w => w.x > 0);
+            const useLeft = targetX <= 0 ? Math.random() < 0.7 : Math.random() < 0.3;
+            const entryPool = useLeft ? leftWindows : rightWindows;
+            const entry = entryPool[Math.floor(Math.random() * entryPool.length)];
+
+            // Pick exit window (opposite side for dramatic cross)
+            const exitPool = entry.x < 0 ? rightWindows : leftWindows;
+            const exit = exitPool[Math.floor(Math.random() * exitPool.length)];
+
+            // Create drone
+            const droneModel = this._createDroneModel();
+            const pkg = this._createPackageModel();
+            pkg.position.y = -0.55;
+            droneModel.add(pkg);
+
+            // Starting position — just outside the window
+            const outsideX = entry.x + (entry.x < 0 ? -2 : 2);
+            droneModel.position.set(outsideX, entry.y, entry.z);
+            this.scene.add(droneModel);
+
+            // Build flight path using CatmullRomCurve3
+            const flyHeight = 7;
+            const hoverHeight = 2.0;
+
+            // Inbound path: outside window → above target
+            const inboundCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(outsideX, entry.y, entry.z),
+                new THREE.Vector3(entry.x, entry.y + 1, entry.z),
+                new THREE.Vector3(entry.x * 0.4, flyHeight, (entry.z + targetZ) / 2),
+                new THREE.Vector3(targetX, flyHeight, targetZ),
+            ], false, 'catmullrom', 0.3);
+
+            // Outbound path: above target → outside exit window
+            const exitOutsideX = exit.x + (exit.x < 0 ? -2 : 2);
+            const outboundCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(targetX, flyHeight, targetZ),
+                new THREE.Vector3(exit.x * 0.4, flyHeight, (targetZ + exit.z) / 2),
+                new THREE.Vector3(exit.x, exit.y + 1, exit.z),
+                new THREE.Vector3(exitOutsideX, exit.y, exit.z),
+            ], false, 'catmullrom', 0.3);
+
+            // Drone state machine
+            const droneData = {
+                model: droneModel,
+                pkg: pkg,
+                tower: tower,
+                targetX: targetX,
+                targetZ: targetZ,
+                state: 'entering',  // entering → descending → dropping → ascending → exiting → done
+                time: 0,
+                inboundCurve: inboundCurve,
+                outboundCurve: outboundCurve,
+                flyHeight: flyHeight,
+                hoverHeight: hoverHeight,
+                // Phase durations (seconds)
+                enterDuration: 0.6,
+                descendDuration: 0.25,
+                dropDuration: 0.15,
+                ascendDuration: 0.2,
+                exitDuration: 0.5,
+                // Previous position for tilt calculation
+                prevPos: new THREE.Vector3(outsideX, entry.y, entry.z),
+                rotorSpin: 0,
+            };
+
+            this.activeDrones.push(droneData);
+        },
+
+        _updateDrones(dt) {
+            for (let i = this.activeDrones.length - 1; i >= 0; i--) {
+                const d = this.activeDrones[i];
+                d.time += dt;
+
+                const model = d.model;
+                let pos = new THREE.Vector3();
+                let done = false;
+
+                if (d.state === 'entering') {
+                    const t = Math.min(1, d.time / d.enterDuration);
+                    // Ease-in-out for smooth arc
+                    const et = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                    d.inboundCurve.getPoint(et, pos);
+                    model.position.copy(pos);
+
+                    if (t >= 1) {
+                        d.state = 'descending';
+                        d.time = 0;
+                    }
+                } else if (d.state === 'descending') {
+                    const t = Math.min(1, d.time / d.descendDuration);
+                    const et = t * t; // ease-in (accelerating down)
+                    const y = d.flyHeight + (d.hoverHeight - d.flyHeight) * et;
+                    model.position.set(d.targetX, y, d.targetZ);
+
+                    if (t >= 1) {
+                        d.state = 'dropping';
+                        d.time = 0;
+                    }
+                } else if (d.state === 'dropping') {
+                    const t = Math.min(1, d.time / d.dropDuration);
+                    model.position.set(d.targetX, d.hoverHeight, d.targetZ);
+
+                    if (t >= 1) {
+                        // Drop the package — place the tower!
+                        if (d.pkg.parent) d.pkg.parent.remove(d.pkg);
+                        // Remove hook visual
+                        const hook = model.getObjectByName('hook');
+                        if (hook) hook.visible = false;
+
+                        // Place tower mesh in scene
+                        d.tower.mesh.position.set(d.targetX, 0, d.targetZ);
+                        this.scene.add(d.tower.mesh);
+                        d.tower.delivering = false;
+
+                        // Pop animation on the tower
+                        d.tower.mesh.scale.set(0, 0, 0);
+                        const startTime = Date.now();
+                        const popDuration = 350;
+                        const towerMesh = d.tower.mesh;
+                        const animatePop = () => {
+                            const pt = Math.min(1, (Date.now() - startTime) / popDuration);
+                            const s = pt < 0.5
+                                ? 2 * pt * pt
+                                : 1 - Math.pow(-2 * pt + 2, 3) / 2;
+                            const scale = s * (1 + (1 - pt) * 0.3);
+                            towerMesh.scale.set(scale, scale, scale);
+                            if (pt < 1) requestAnimationFrame(animatePop);
+                            else towerMesh.scale.set(1, 1, 1);
+                        };
+                        animatePop();
+
+                        d.state = 'ascending';
+                        d.time = 0;
+                    }
+                } else if (d.state === 'ascending') {
+                    const t = Math.min(1, d.time / d.ascendDuration);
+                    const et = 1 - (1 - t) * (1 - t); // ease-out
+                    const y = d.hoverHeight + (d.flyHeight - d.hoverHeight) * et;
+                    model.position.set(d.targetX, y, d.targetZ);
+
+                    if (t >= 1) {
+                        d.state = 'exiting';
+                        d.time = 0;
+                    }
+                } else if (d.state === 'exiting') {
+                    const t = Math.min(1, d.time / d.exitDuration);
+                    const et = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                    d.outboundCurve.getPoint(et, pos);
+                    model.position.copy(pos);
+
+                    if (t >= 1) {
+                        done = true;
+                    }
+                }
+
+                // Drone tilt based on movement direction
+                const velocity = model.position.clone().sub(d.prevPos);
+                if (velocity.length() > 0.001) {
+                    // Pitch forward when moving forward (in flight direction)
+                    const speed = velocity.length() / Math.max(dt, 0.001);
+                    const tiltAmount = Math.min(0.4, speed * 0.03);
+
+                    // Bank into horizontal movement
+                    const horizDir = new THREE.Vector2(velocity.x, velocity.z);
+                    if (horizDir.length() > 0.001) {
+                        horizDir.normalize();
+                        // Face direction of travel
+                        model.rotation.y = Math.atan2(horizDir.x, horizDir.y);
+                        // Pitch forward
+                        model.rotation.x = -tiltAmount;
+                        // Roll based on lateral acceleration (simplified)
+                        model.rotation.z = -velocity.x * 0.15;
+                    }
+                } else {
+                    // Hovering — slight wobble
+                    model.rotation.x = Math.sin(Date.now() * 0.003) * 0.02;
+                    model.rotation.z = Math.cos(Date.now() * 0.0025) * 0.02;
+                }
+                d.prevPos.copy(model.position);
+
+                // Spin rotors
+                d.rotorSpin += dt * 40; // fast spin
+                const rotors = model.userData.rotors;
+                if (rotors) {
+                    for (let r = 0; r < rotors.length; r++) {
+                        rotors[r].rotation.y = d.rotorSpin + r * Math.PI / 2;
+                    }
+                }
+
+                // Cleanup when done
+                if (done) {
+                    this.scene.remove(model);
+                    // Dispose drone geometry
+                    model.traverse(child => {
+                        if (child.isMesh) {
+                            child.geometry.dispose();
+                            if (child.material.dispose) child.material.dispose();
+                        }
+                    });
+                    this.activeDrones.splice(i, 1);
+                }
+            }
         },
 
         _createTowerMesh(type, def) {
@@ -1433,7 +1782,7 @@
                 } else if (!e.slowImmune) {
                     // Check proximity to slow towers
                     for (const t of this.towers) {
-                        if (t.type !== 'wetfloor') continue;
+                        if (t.type !== 'wetfloor' || t.delivering) continue;
                         const dx = e.x - t.gridX;
                         const dz = e.z - t.gridZ;
                         const dist = Math.sqrt(dx * dx + dz * dz);
@@ -1498,7 +1847,7 @@
                     const trampleRadius = 0.8 + e.size * 0.3; // bigger enemies = wider trample
                     for (let ti = this.towers.length - 1; ti >= 0; ti--) {
                         const t = this.towers[ti];
-                        if (t.dying) continue;
+                        if (t.dying || t.delivering) continue;
                         // Unique key per tower placement
                         const tKey = t.gridX + ',' + t.gridZ;
                         if (e.trampledTowers.has(tKey)) continue; // already kicked this one
@@ -1766,6 +2115,8 @@
 
             // --- Update towers (attack + damage feedback) ---
             for (const t of this.towers) {
+                if (t.delivering) continue; // Still in-flight via drone
+
                 // Hit shake animation
                 if (t.hitShake > 0) {
                     t.hitShake -= dt;
@@ -2288,6 +2639,9 @@
                     this._doorParticles.splice(i, 1);
                 }
             }
+
+            // Update active drones
+            this._updateDrones(dt);
 
             // Game logic
             this.update(dt);
