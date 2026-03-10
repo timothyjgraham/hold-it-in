@@ -98,9 +98,9 @@ export function createToilet() {
     group.add(handleKnob);
 
     // === HOLY SPOTLIGHT FROM UPPER-RIGHT (angled, dramatic) ===
-    const lightOrigin = { x: 5, y: 12, z: -3 };
+    const lightOrigin = { x: -5, y: 12, z: 3 };
 
-    const holySpot = new THREE.SpotLight(0xffd700, 3.5, 30, Math.PI / 5, 0.4, 1.2);
+    const holySpot = new THREE.SpotLight(0xffd700, 1.8, 30, Math.PI / 5, 0.4, 1.2);
     holySpot.position.set(lightOrigin.x, lightOrigin.y, lightOrigin.z);
     holySpot.castShadow = true;
     holySpot.shadow.mapSize.width = 1024;
@@ -114,13 +114,13 @@ export function createToilet() {
     holySpot.target = spotTarget;
 
     // Secondary warm fill from the other side (subtle)
-    const fillLight = new THREE.PointLight(0xfff4b0, 0.8, 10, 2);
-    fillLight.position.set(-3, 4, 2);
+    const fillLight = new THREE.PointLight(0xfff4b0, 0.4, 10, 2);
+    fillLight.position.set(3, 4, -2);
     group.add(fillLight);
 
     // Rim light from behind (outlines the toilet against the dark background)
     const rimLight = new THREE.PointLight(0x6688aa, 0.6, 8, 2);
-    rimLight.position.set(0, 3, -3);
+    rimLight.position.set(0, 3, 3);
     group.add(rimLight);
 
     // === ANGLED LIGHT BEAM (cone from spotlight to toilet) ===
@@ -192,7 +192,7 @@ export function updateToilet(toilet, time) {
     // Pulse the spotlight intensity
     const spot = toilet.userData.holySpot;
     if (spot) {
-        spot.intensity = 3.5 + Math.sin(time * 2) * 0.8;
+        spot.intensity = 1.8 + Math.sin(time * 2) * 0.4;
     }
 
     // Drift sparkles upward and along the beam

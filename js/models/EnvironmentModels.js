@@ -663,7 +663,7 @@ export function createBathroomWalls() {
                 metalness: 0.05,
                 roughness: 0.35,
                 transparent: !!transparent,
-                opacity: transparent ? 0.3 : 1.0,
+                opacity: transparent ? 0.12 : 1.0,
                 side: transparent ? THREE.DoubleSide : THREE.FrontSide,
             });
             const stripGeo = new THREE.BoxGeometry(width, stripHeight - 0.02, depth);
@@ -685,121 +685,36 @@ export function createBathroomWalls() {
 
     // === Back wall REMOVED — camera at (0, 14, -15) needs clear view of toilet ===
 
-    // === Left wall: at x=-8, z=-2 to z=14, height 6 ===
-    const leftWall = buildTiledWall(16, wallHeight, 0.3, false);
-    leftWall.position.set(-8, 0, 6);
+    // === Left wall: at x=-8, z=-2 to z=12, height 6 ===
+    const leftWall = buildTiledWall(14, wallHeight, 0.3, false);
+    leftWall.position.set(-8, 0, 5);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.name = 'leftWall';
     group.add(leftWall);
 
     // Left wall baseboard
-    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 16);
+    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 14);
     const bbLeft = new THREE.Mesh(bbLeftGeo, baseboardMat);
-    bbLeft.position.set(-7.85, 0.125, 6);
+    bbLeft.position.set(-7.85, 0.125, 5);
     bbLeft.receiveShadow = true;
     group.add(bbLeft);
 
-    // === Right wall: at x=8, z=-2 to z=14, height 6 ===
-    const rightWall = buildTiledWall(16, wallHeight, 0.3, false);
-    rightWall.position.set(8, 0, 6);
+    // === Right wall: at x=8, z=-2 to z=12, height 6 ===
+    const rightWall = buildTiledWall(14, wallHeight, 0.3, false);
+    rightWall.position.set(8, 0, 5);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.name = 'rightWall';
     group.add(rightWall);
 
     // Right wall baseboard
-    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 16);
+    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 14);
     const bbRight = new THREE.Mesh(bbRightGeo, baseboardMat);
-    bbRight.position.set(7.85, 0.125, 6);
+    bbRight.position.set(7.85, 0.125, 5);
     bbRight.receiveShadow = true;
     group.add(bbRight);
 
-    // === Door frame at z=14 (front opening) ===
-    const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x666666,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
-
-    // Left door post
-    const postGeo = new THREE.BoxGeometry(0.4, wallHeight, 0.4);
-    const leftPost = new THREE.Mesh(postGeo, frameMat);
-    leftPost.position.set(-3.2, wallHeight / 2, 14);
-    leftPost.castShadow = true;
-    group.add(leftPost);
-
-    // Right door post
-    const rightPost = new THREE.Mesh(postGeo, frameMat);
-    rightPost.position.set(3.2, wallHeight / 2, 14);
-    rightPost.castShadow = true;
-    group.add(rightPost);
-
-    // Lintel (horizontal beam across top)
-    const lintelGeo = new THREE.BoxGeometry(6.8, 0.4, 0.4);
-    const lintel = new THREE.Mesh(lintelGeo, frameMat);
-    lintel.position.set(0, wallHeight, 14);
-    lintel.castShadow = true;
-    group.add(lintel);
-
-    // Door frame inner trim (chrome strips on the inside edges)
-    const trimMat = chrome();
-    const trimGeoV = new THREE.BoxGeometry(0.04, wallHeight, 0.04);
-    const trimGeoH = new THREE.BoxGeometry(6.4, 0.04, 0.04);
-
-    const trimLeft = new THREE.Mesh(trimGeoV, trimMat);
-    trimLeft.position.set(-3.0, wallHeight / 2, 14.2);
-    group.add(trimLeft);
-
-    const trimRight = new THREE.Mesh(trimGeoV, trimMat);
-    trimRight.position.set(3.0, wallHeight / 2, 14.2);
-    group.add(trimRight);
-
-    const trimTop = new THREE.Mesh(trimGeoH, trimMat);
-    trimTop.position.set(0, wallHeight - 0.2, 14.2);
-    group.add(trimTop);
-
-    // Wall sections flanking the door — SEMI-TRANSPARENT so enemies visible approaching
-    const flankWidth = 4.6;
-
-    const leftFlank = buildTiledWall(flankWidth, wallHeight, 0.3, true);
-    leftFlank.position.set(-8 + flankWidth / 2, 0, 14);
-    leftFlank.name = 'leftFlankWall';
-    group.add(leftFlank);
-
-    const rightFlank = buildTiledWall(flankWidth, wallHeight, 0.3, true);
-    rightFlank.position.set(8 - flankWidth / 2, 0, 14);
-    rightFlank.name = 'rightFlankWall';
-    group.add(rightFlank);
-
-    // Overhead fluorescent light fixture (centered on ceiling)
-    const lightFixtureGroup = new THREE.Group();
-    lightFixtureGroup.name = 'ceilingLight';
-
-    const fixtureBaseMat = new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.4,
-        roughness: 0.3,
-    });
-    const fixtureBaseGeo = new THREE.BoxGeometry(1.2, 0.08, 4.0);
-    const fixtureBase = new THREE.Mesh(fixtureBaseGeo, fixtureBaseMat);
-    lightFixtureGroup.add(fixtureBase);
-
-    // Fluorescent tube covers (translucent white)
-    const tubeCoverMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: 0xe8e6e0,
-        emissiveIntensity: 0.4,
-        transparent: true,
-        opacity: 0.9,
-        metalness: 0.0,
-        roughness: 0.2,
-    });
-    const tubeCoverGeo = new THREE.BoxGeometry(0.9, 0.04, 3.6);
-    const tubeCover = new THREE.Mesh(tubeCoverGeo, tubeCoverMat);
-    tubeCover.position.y = -0.06;
-    lightFixtureGroup.add(tubeCover);
-
-    lightFixtureGroup.position.set(0, wallHeight - 0.1, 6);
-    group.add(lightFixtureGroup);
+    // === Front wall at z=14 REMOVED for clear view of playing field ===
+    // The door (createBathroomDoor) floats at z=14 as a gameplay element only
 
     return group;
 }
@@ -831,12 +746,54 @@ export function createOfficePeek() {
         metalness: 0.3,
         roughness: 0.4,
     });
+    const officeWallMat = new THREE.MeshStandardMaterial({
+        color: 0xd0ccc5,
+        metalness: 0.02,
+        roughness: 0.7,
+    });
+    const filingMat = new THREE.MeshStandardMaterial({
+        color: 0x777788,
+        metalness: 0.4,
+        roughness: 0.4,
+    });
+    const chromeMat = chrome();
+    const keyboardMat = new THREE.MeshStandardMaterial({
+        color: 0x2a2a2a,
+        metalness: 0.1,
+        roughness: 0.6,
+    });
+    const monitorScreenMat = new THREE.MeshStandardMaterial({
+        color: 0x222244,
+        metalness: 0.1,
+        roughness: 0.3,
+        emissive: 0x111133,
+        emissiveIntensity: 0.3,
+    });
+    const chairSeatMat = new THREE.MeshStandardMaterial({
+        color: 0x334466,
+        metalness: 0.05,
+        roughness: 0.7,
+    });
+    const chairFrameMat2 = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        metalness: 0.3,
+        roughness: 0.4,
+    });
+    const potMat = new THREE.MeshStandardMaterial({
+        color: 0x8B5E3C,
+        metalness: 0.05,
+        roughness: 0.7,
+    });
+    const leafMat = new THREE.MeshStandardMaterial({
+        color: 0x44aa44,
+        metalness: 0.0,
+        roughness: 0.6,
+    });
 
     // ─── Helper: build a desk with monitor ─────────────────────────────────
     function buildDesk() {
         const deskGroup = new THREE.Group();
 
-        // Desktop surface
         const deskTopGeo = new THREE.BoxGeometry(3.0, 0.12, 1.5);
         const deskTop = new THREE.Mesh(deskTopGeo, deskMat);
         deskTop.position.y = 1.9;
@@ -844,54 +801,28 @@ export function createOfficePeek() {
         deskTop.receiveShadow = true;
         deskGroup.add(deskTop);
 
-        // Desk legs (4 thin cylinders)
         const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.84, 6);
-        const legPositions = [
-            [-1.35, 0.92, -0.6],
-            [1.35, 0.92, -0.6],
-            [-1.35, 0.92, 0.6],
-            [1.35, 0.92, 0.6],
-        ];
-        for (const [lx, ly, lz] of legPositions) {
+        for (const [lx, ly, lz] of [[-1.35,0.92,-0.6],[1.35,0.92,-0.6],[-1.35,0.92,0.6],[1.35,0.92,0.6]]) {
             const leg = new THREE.Mesh(legGeo, deskLegMat);
             leg.position.set(lx, ly, lz);
             leg.castShadow = true;
             deskGroup.add(leg);
         }
 
-        // Keyboard on desk
-        const keyboardGeo = new THREE.BoxGeometry(1.0, 0.04, 0.4);
-        const keyboardMat = new THREE.MeshStandardMaterial({
-            color: 0x2a2a2a,
-            metalness: 0.1,
-            roughness: 0.6,
-        });
-        const keyboard = new THREE.Mesh(keyboardGeo, keyboardMat);
-        keyboard.position.set(-0.2, 2.0, 0.1);
-        deskGroup.add(keyboard);
+        const kb = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.4), keyboardMat);
+        kb.position.set(-0.2, 2.0, 0.1);
+        deskGroup.add(kb);
 
-        // Monitor
-        const monitorScreenGeo = new THREE.BoxGeometry(1.4, 1.0, 0.06);
-        const monitorScreenMat = new THREE.MeshStandardMaterial({
-            color: 0x222244,
-            metalness: 0.1,
-            roughness: 0.3,
-            emissive: 0x111133,
-            emissiveIntensity: 0.3,
-        });
-        const monitorScreen = new THREE.Mesh(monitorScreenGeo, monitorScreenMat);
-        monitorScreen.position.set(-0.2, 2.9, -0.4);
-        monitorScreen.castShadow = true;
-        deskGroup.add(monitorScreen);
+        const mon = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 0.06), monitorScreenMat);
+        mon.position.set(-0.2, 2.9, -0.4);
+        mon.castShadow = true;
+        deskGroup.add(mon);
 
-        // Monitor stand
-        const standGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6);
-        const stand = new THREE.Mesh(standGeo, deskLegMat);
+        const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), deskLegMat);
         stand.position.set(-0.2, 2.2, -0.4);
         deskGroup.add(stand);
 
-        const standBaseGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.04, 8);
-        const standBase = new THREE.Mesh(standBaseGeo, deskLegMat);
+        const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 8), deskLegMat);
         standBase.position.set(-0.2, 1.98, -0.4);
         deskGroup.add(standBase);
 
@@ -902,86 +833,30 @@ export function createOfficePeek() {
     function buildChair() {
         const chairGroup = new THREE.Group();
 
-        const chairSeatMat = new THREE.MeshStandardMaterial({
-            color: 0x334466,
-            metalness: 0.05,
-            roughness: 0.7,
-        });
-        const chairFrameMat = new THREE.MeshStandardMaterial({
-            color: 0x222222,
-            metalness: 0.3,
-            roughness: 0.4,
-        });
-
-        // Seat cushion
-        const seatGeo = new THREE.BoxGeometry(1.1, 0.15, 1.0);
-        const seat = new THREE.Mesh(seatGeo, chairSeatMat);
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.15, 1.0), chairSeatMat);
         seat.position.y = 1.2;
         seat.castShadow = true;
         chairGroup.add(seat);
 
-        // Seat cushion bevel
-        const seatEdgeGeo = new THREE.CylinderGeometry(0.075, 0.075, 1.1, 6);
-        const seatEdge = new THREE.Mesh(seatEdgeGeo, chairSeatMat);
-        seatEdge.rotation.z = Math.PI / 2;
-        seatEdge.position.set(0, 1.2, 0.5);
-        chairGroup.add(seatEdge);
-
-        // Backrest
-        const backrestGeo = new THREE.BoxGeometry(1.0, 1.3, 0.12);
-        const backrest = new THREE.Mesh(backrestGeo, chairSeatMat);
+        const backrest = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.3, 0.12), chairSeatMat);
         backrest.position.set(0, 2.0, -0.5);
         backrest.rotation.x = 0.15;
         backrest.castShadow = true;
         chairGroup.add(backrest);
 
-        // Central post
-        const postGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.8, 8);
-        const post = new THREE.Mesh(postGeo, chairFrameMat);
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 8), chairFrameMat2);
         post.position.y = 0.75;
         chairGroup.add(post);
 
-        // Gas cylinder shroud
-        const shroudGeo = new THREE.CylinderGeometry(0.1, 0.08, 0.3, 8);
-        const shroud = new THREE.Mesh(shroudGeo, chairFrameMat);
-        shroud.position.y = 0.5;
-        chairGroup.add(shroud);
-
-        // Star base with 5 legs
         for (let i = 0; i < 5; i++) {
             const angle = (i / 5) * Math.PI * 2;
-            const baseLegGeo = new THREE.BoxGeometry(0.06, 0.06, 0.6);
-            const baseLeg = new THREE.Mesh(baseLegGeo, chairFrameMat);
-            baseLeg.position.set(
-                Math.sin(angle) * 0.3,
-                0.08,
-                Math.cos(angle) * 0.3
-            );
+            const baseLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.6), chairFrameMat2);
+            baseLeg.position.set(Math.sin(angle)*0.3, 0.08, Math.cos(angle)*0.3);
             baseLeg.rotation.y = angle;
             chairGroup.add(baseLeg);
-
-            // Caster wheel
-            const wheelGeo = new THREE.SphereGeometry(0.06, 6, 6);
-            const wheel = new THREE.Mesh(wheelGeo, chairFrameMat);
-            wheel.position.set(
-                Math.sin(angle) * 0.55,
-                0.06,
-                Math.cos(angle) * 0.55
-            );
+            const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), chairFrameMat2);
+            wheel.position.set(Math.sin(angle)*0.55, 0.06, Math.cos(angle)*0.55);
             chairGroup.add(wheel);
-        }
-
-        // Armrests
-        for (const side of [-1, 1]) {
-            const armPostGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 6);
-            const armPost = new THREE.Mesh(armPostGeo, chairFrameMat);
-            armPost.position.set(side * 0.55, 1.5, -0.1);
-            chairGroup.add(armPost);
-
-            const armPadGeo = new THREE.BoxGeometry(0.12, 0.06, 0.5);
-            const armPad = new THREE.Mesh(armPadGeo, chairFrameMat);
-            armPad.position.set(side * 0.55, 1.72, -0.1);
-            chairGroup.add(armPad);
         }
 
         return chairGroup;
@@ -991,30 +866,22 @@ export function createOfficePeek() {
     function buildCubiclePartition(width, height) {
         const partitionGroup = new THREE.Group();
 
-        // Main panel
-        const panelGeo = new THREE.BoxGeometry(width, height, 0.12);
-        const panel = new THREE.Mesh(panelGeo, cubicleWallMat);
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.12), cubicleWallMat);
         panel.position.y = height / 2;
         panel.castShadow = true;
         panel.receiveShadow = true;
         partitionGroup.add(panel);
 
-        // Top metal trim
-        const trimGeo = new THREE.BoxGeometry(width + 0.04, 0.06, 0.14);
-        const trim = new THREE.Mesh(trimGeo, cubicleFrameMat);
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.06, 0.14), cubicleFrameMat);
         trim.position.y = height + 0.03;
         partitionGroup.add(trim);
 
-        // Bottom metal rail
-        const railGeo = new THREE.BoxGeometry(width + 0.04, 0.06, 0.14);
-        const rail = new THREE.Mesh(railGeo, cubicleFrameMat);
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.06, 0.14), cubicleFrameMat);
         rail.position.y = 0.03;
         partitionGroup.add(rail);
 
-        // Support feet (two L-shaped feet at each end)
         for (const sx of [-1, 1]) {
-            const footGeo = new THREE.BoxGeometry(0.08, 0.04, 0.5);
-            const foot = new THREE.Mesh(footGeo, cubicleFrameMat);
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.5), cubicleFrameMat);
             foot.position.set(sx * (width / 2 - 0.1), 0.02, 0.2);
             foot.receiveShadow = true;
             partitionGroup.add(foot);
@@ -1023,383 +890,495 @@ export function createOfficePeek() {
         return partitionGroup;
     }
 
+    // ─── Helper: build a filing cabinet ────────────────────────────────────
+    function buildFilingCabinet() {
+        const fg = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 3.0, 0.8), filingMat);
+        body.position.y = 1.5;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        fg.add(body);
+
+        for (let d = 0; d < 3; d++) {
+            const dy = 0.5 + d * 1.0;
+            const face = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.85, 0.02), filingMat);
+            face.position.set(0, dy, 0.41);
+            fg.add(face);
+            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.06), chromeMat);
+            handle.position.set(0, dy + 0.15, 0.44);
+            fg.add(handle);
+        }
+        return fg;
+    }
+
+    // ─── Helper: build a potted plant ──────────────────────────────────────
+    function buildPlant() {
+        const pg = new THREE.Group();
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.8, 8), potMat);
+        pot.position.y = 0.4;
+        pot.castShadow = true;
+        pg.add(pot);
+
+        const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.06, 8),
+            new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 }));
+        soil.position.y = 0.8;
+        pg.add(soil);
+
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6B4226, roughness: 0.8 });
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.7, 6), trunkMat);
+        trunk.position.y = 1.1;
+        pg.add(trunk);
+
+        for (const [lx,ly,lz,lr] of [[0,1.5,0,0.4],[0.2,1.7,0.15,0.3],[-0.15,1.8,-0.1,0.28],[0.1,1.3,-0.15,0.25],[-0.2,1.4,0.1,0.22]]) {
+            const leaf = new THREE.Mesh(new THREE.SphereGeometry(lr, 6, 6), leafMat);
+            leaf.position.set(lx, ly, lz);
+            leaf.castShadow = true;
+            pg.add(leaf);
+        }
+        return pg;
+    }
+
+    // ─── Helper: build a printer/copier ────────────────────────────────────
+    function buildPrinter() {
+        const pg = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.05, roughness: 0.4 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 1.5), bodyMat);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        pg.add(body);
+
+        // Top lid / scanner
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 1.5),
+            new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.1, roughness: 0.3 }));
+        lid.position.y = 1.23;
+        pg.add(lid);
+
+        // Front panel (dark)
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 0.02),
+            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 }));
+        panel.position.set(0, 0.9, 0.76);
+        pg.add(panel);
+
+        // Paper tray sticking out
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.6), bodyMat);
+        tray.position.set(0, 0.15, 1.0);
+        pg.add(tray);
+
+        // Status LED
+        const led = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6),
+            new THREE.MeshStandardMaterial({ color: 0x00ff44, emissive: 0x00ff44, emissiveIntensity: 0.8 }));
+        led.position.set(0.6, 0.95, 0.76);
+        pg.add(led);
+
+        return pg;
+    }
+
+    // ─── Helper: build a whiteboard ────────────────────────────────────────
+    function buildWhiteboard() {
+        const wg = new THREE.Group();
+        const boardMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, metalness: 0.1, roughness: 0.15 });
+        const wbFrameMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.5, roughness: 0.3 });
+
+        const board = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.08), boardMat);
+        board.castShadow = true;
+        wg.add(board);
+
+        const fh = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.06, 0.1), wbFrameMat);
+        fh.position.y = 1.03;
+        wg.add(fh);
+        const fb = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.06, 0.1), wbFrameMat);
+        fb.position.y = -1.03;
+        wg.add(fb);
+        const fl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.12, 0.1), wbFrameMat);
+        fl.position.x = -1.53;
+        wg.add(fl);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.12, 0.1), wbFrameMat);
+        fr.position.x = 1.53;
+        wg.add(fr);
+
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.15), wbFrameMat);
+        tray.position.set(0, -1.08, 0.08);
+        wg.add(tray);
+
+        const markerColors = [0xcc2222, 0x2244cc, 0x222222];
+        for (let m = 0; m < 3; m++) {
+            const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6),
+                new THREE.MeshStandardMaterial({ color: markerColors[m], metalness: 0.1, roughness: 0.5 }));
+            marker.rotation.z = Math.PI / 2;
+            marker.position.set(-0.4 + m * 0.4, -1.03, 0.1);
+            wg.add(marker);
+        }
+        return wg;
+    }
+
+    // ─── Helper: build a bookshelf ─────────────────────────────────────────
+    function buildBookshelf() {
+        const bg = new THREE.Group();
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, metalness: 0.05, roughness: 0.7 });
+
+        // Frame (back, sides, top, bottom)
+        const back = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.0, 0.06), woodMat);
+        back.position.set(0, 2.0, -0.35);
+        back.castShadow = true;
+        bg.add(back);
+
+        for (const sx of [-1, 1]) {
+            const side = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.0, 0.7), woodMat);
+            side.position.set(sx * 1.2, 2.0, 0);
+            side.castShadow = true;
+            bg.add(side);
+        }
+
+        // 4 shelves
+        for (let s = 0; s < 4; s++) {
+            const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.32, 0.06, 0.68), woodMat);
+            shelf.position.set(0, 0.03 + s * 1.3, 0);
+            shelf.receiveShadow = true;
+            bg.add(shelf);
+        }
+
+        // Books on each shelf (colored blocks)
+        const bookColors = [0x8B2222, 0x22448B, 0x2E8B57, 0x8B8B00, 0x6B3FA0, 0xCC6633, 0x336699];
+        for (let s = 0; s < 3; s++) {
+            const shelfY = 0.06 + s * 1.3;
+            let bx = -1.0;
+            for (let b = 0; b < 5 + Math.floor(Math.random() * 3); b++) {
+                const bw = 0.12 + Math.random() * 0.15;
+                const bh = 0.8 + Math.random() * 0.4;
+                const book = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.5),
+                    new THREE.MeshStandardMaterial({ color: bookColors[b % bookColors.length], roughness: 0.6 }));
+                book.position.set(bx + bw / 2, shelfY + bh / 2, 0);
+                bg.add(book);
+                bx += bw + 0.02;
+                if (bx > 1.0) break;
+            }
+        }
+        return bg;
+    }
+
     // ════════════════════════════════════════════════════════════════════════
-    // LEFT SIDE — desk + chair at approximately x=-18, z=30
+    // OFFICE WALLS — enclose the space at far left/right
     // ════════════════════════════════════════════════════════════════════════
 
-    const leftDesk = buildDesk();
-    leftDesk.name = 'officeDeskLeft';
-    leftDesk.position.set(-18, 0, 30);
-    leftDesk.rotation.y = Math.PI / 2; // face inward toward the lane
-    group.add(leftDesk);
+    // Left office wall
+    const leftOfficeWall = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 6, 55),
+        officeWallMat
+    );
+    leftOfficeWall.position.set(-36, 3, 40);
+    leftOfficeWall.receiveShadow = true;
+    group.add(leftOfficeWall);
 
-    const leftChair = buildChair();
-    leftChair.name = 'officeChairLeft';
-    leftChair.position.set(-16.5, 0, 30);
-    leftChair.rotation.y = -0.4;
-    group.add(leftChair);
+    // Right office wall
+    const rightOfficeWall = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 6, 55),
+        officeWallMat
+    );
+    rightOfficeWall.position.set(36, 3, 40);
+    rightOfficeWall.receiveShadow = true;
+    group.add(rightOfficeWall);
+
+    // Back office wall (far end, will be mostly fogged)
+    const backOfficeWall = new THREE.Mesh(
+        new THREE.BoxGeometry(72, 6, 0.2),
+        officeWallMat
+    );
+    backOfficeWall.position.set(0, 3, 68);
+    backOfficeWall.receiveShadow = true;
+    group.add(backOfficeWall);
 
     // ════════════════════════════════════════════════════════════════════════
-    // RIGHT SIDE — water cooler + second desk at approximately x=18, z=25
+    // DESKS + CHAIRS — populate the office in rows
     // ════════════════════════════════════════════════════════════════════════
 
-    // Water cooler (right side)
+    // Left row (x = -20, facing right)
+    const leftDeskPositions = [22, 30, 38, 46];
+    for (const z of leftDeskPositions) {
+        const d = buildDesk();
+        d.position.set(-20, 0, z);
+        d.rotation.y = Math.PI / 2;
+        group.add(d);
+
+        const c = buildChair();
+        c.position.set(-18, 0, z);
+        c.rotation.y = -0.3 + Math.random() * 0.6;
+        group.add(c);
+    }
+
+    // Left outer row (x = -28, facing right)
+    for (const z of [22, 30, 38, 46]) {
+        const d = buildDesk();
+        d.position.set(-28, 0, z);
+        d.rotation.y = Math.PI / 2;
+        group.add(d);
+
+        const c = buildChair();
+        c.position.set(-26, 0, z);
+        c.rotation.y = -0.2 + Math.random() * 0.4;
+        group.add(c);
+    }
+
+    // Right row (x = 20, facing left)
+    const rightDeskPositions = [22, 30, 38, 46];
+    for (const z of rightDeskPositions) {
+        const d = buildDesk();
+        d.position.set(20, 0, z);
+        d.rotation.y = -Math.PI / 2;
+        group.add(d);
+
+        const c = buildChair();
+        c.position.set(18, 0, z);
+        c.rotation.y = Math.PI + (-0.3 + Math.random() * 0.6);
+        group.add(c);
+    }
+
+    // Right outer row (x = 28, facing left)
+    for (const z of [22, 30, 38, 46]) {
+        const d = buildDesk();
+        d.position.set(28, 0, z);
+        d.rotation.y = -Math.PI / 2;
+        group.add(d);
+
+        const c = buildChair();
+        c.position.set(26, 0, z);
+        c.rotation.y = Math.PI + (-0.2 + Math.random() * 0.4);
+        group.add(c);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // WATER COOLER
+    // ════════════════════════════════════════════════════════════════════════
+
     const coolerGroup = new THREE.Group();
     coolerGroup.name = 'waterCooler';
 
-    const coolerBodyMat = new THREE.MeshStandardMaterial({
-        color: 0xdddddd,
-        metalness: 0.05,
-        roughness: 0.4,
-    });
+    const coolerBodyMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.05, roughness: 0.4 });
     const waterJugMat = new THREE.MeshStandardMaterial({
-        color: 0x88bbdd,
-        metalness: 0.05,
-        roughness: 0.1,
-        transparent: true,
-        opacity: 0.6,
+        color: 0x88bbdd, metalness: 0.05, roughness: 0.1, transparent: true, opacity: 0.6,
     });
 
-    // Cooler body
-    const coolerBodyGeo = new THREE.BoxGeometry(0.7, 2.0, 0.7);
-    const coolerBody = new THREE.Mesh(coolerBodyGeo, coolerBodyMat);
+    const coolerBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.0, 0.7), coolerBodyMat);
     coolerBody.position.y = 1.0;
     coolerBody.castShadow = true;
     coolerGroup.add(coolerBody);
 
-    // Cooler top platform
-    const coolerTopGeo = new THREE.BoxGeometry(0.75, 0.08, 0.75);
-    const coolerTop = new THREE.Mesh(coolerTopGeo, coolerBodyMat);
+    const coolerTop = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 0.75), coolerBodyMat);
     coolerTop.position.y = 2.04;
     coolerGroup.add(coolerTop);
 
-    // Water jug
-    const jugGeo = new THREE.CylinderGeometry(0.25, 0.15, 1.3, 8);
-    const jug = new THREE.Mesh(jugGeo, waterJugMat);
+    const jug = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.15, 1.3, 8), waterJugMat);
     jug.position.y = 2.73;
-    jug.castShadow = true;
     coolerGroup.add(jug);
 
-    // Jug cap
-    const jugCapGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8);
-    const jugCapMat = new THREE.MeshStandardMaterial({
-        color: 0x3366aa,
-        metalness: 0.1,
-        roughness: 0.3,
-    });
-    const jugCap = new THREE.Mesh(jugCapGeo, jugCapMat);
+    const jugCap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3366aa, metalness: 0.1, roughness: 0.3 }));
     jugCap.position.y = 3.4;
     coolerGroup.add(jugCap);
 
-    // Spigots (red=hot, blue=cold)
     for (const [sx, color] of [[0.15, 0xcc3333], [-0.15, 0x3355cc]]) {
-        const spigotMat = new THREE.MeshStandardMaterial({
-            color: color,
-            metalness: 0.3,
-            roughness: 0.3,
-        });
-        const spigotGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6);
-        const spigot = new THREE.Mesh(spigotGeo, spigotMat);
+        const sm = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.3 });
+        const spigot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6), sm);
         spigot.rotation.x = Math.PI / 2;
         spigot.position.set(sx, 1.5, 0.38);
         coolerGroup.add(spigot);
-
-        const handleGeo = new THREE.BoxGeometry(0.08, 0.06, 0.04);
-        const handle = new THREE.Mesh(handleGeo, spigotMat);
-        handle.position.set(sx, 1.5, 0.45);
-        coolerGroup.add(handle);
     }
 
-    // Drip tray
-    const dripTrayGeo = new THREE.BoxGeometry(0.5, 0.04, 0.15);
-    const dripTrayMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        metalness: 0.3,
-        roughness: 0.3,
-    });
-    const dripTray = new THREE.Mesh(dripTrayGeo, dripTrayMat);
-    dripTray.position.set(0, 1.2, 0.42);
-    coolerGroup.add(dripTray);
-
-    // Cup dispenser
-    const cupDispenserGeo = new THREE.CylinderGeometry(0.1, 0.06, 0.3, 8);
-    const cupDispenserMat = new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.2,
-        roughness: 0.3,
-    });
-    const cupDispenser = new THREE.Mesh(cupDispenserGeo, cupDispenserMat);
-    cupDispenser.position.set(0.45, 1.7, 0);
-    coolerGroup.add(cupDispenser);
-
-    coolerGroup.position.set(18, 0, 23);
-    coolerGroup.rotation.y = -Math.PI / 2; // face inward toward the lane
+    coolerGroup.position.set(16, 0, 18);
+    coolerGroup.rotation.y = -Math.PI / 2;
     group.add(coolerGroup);
 
-    // Second desk (right side)
-    const rightDesk = buildDesk();
-    rightDesk.name = 'officeDeskRight';
-    rightDesk.position.set(18, 0, 27);
-    rightDesk.rotation.y = -Math.PI / 2; // face inward toward the lane
-    group.add(rightDesk);
+    // Second water cooler on far left
+    const cooler2 = coolerGroup.clone();
+    cooler2.position.set(-16, 0, 50);
+    cooler2.rotation.y = Math.PI / 2;
+    group.add(cooler2);
 
     // ════════════════════════════════════════════════════════════════════════
-    // EXTRA OFFICE DRESSING
+    // FILING CABINETS — scattered around
     // ════════════════════════════════════════════════════════════════════════
 
-    // --- Filing cabinet (left side, near the desk) ---
-    const filingGroup = new THREE.Group();
-    filingGroup.name = 'filingCabinet';
-
-    const filingMat = new THREE.MeshStandardMaterial({
-        color: 0x777788,
-        metalness: 0.4,
-        roughness: 0.4,
-    });
-    const chromeMat = chrome();
-
-    // Cabinet body
-    const cabinetGeo = new THREE.BoxGeometry(1.0, 3.0, 0.8);
-    const cabinet = new THREE.Mesh(cabinetGeo, filingMat);
-    cabinet.position.y = 1.5;
-    cabinet.castShadow = true;
-    cabinet.receiveShadow = true;
-    filingGroup.add(cabinet);
-
-    // Drawer faces (3 drawers)
-    for (let d = 0; d < 3; d++) {
-        const drawerY = 0.5 + d * 1.0;
-
-        // Drawer face (slightly proud of cabinet)
-        const drawerGeo = new THREE.BoxGeometry(0.92, 0.85, 0.02);
-        const drawer = new THREE.Mesh(drawerGeo, filingMat);
-        drawer.position.set(0, drawerY, 0.41);
-        filingGroup.add(drawer);
-
-        // Drawer handle
-        const handleGeo = new THREE.BoxGeometry(0.3, 0.04, 0.06);
-        const handle = new THREE.Mesh(handleGeo, chromeMat);
-        handle.position.set(0, drawerY + 0.15, 0.44);
-        filingGroup.add(handle);
-
-        // Label holder (small rectangle below handle)
-        const labelGeo = new THREE.BoxGeometry(0.2, 0.12, 0.02);
-        const labelMat = new THREE.MeshStandardMaterial({
-            color: 0xccccbb,
-            metalness: 0.1,
-            roughness: 0.3,
-        });
-        const label = new THREE.Mesh(labelGeo, labelMat);
-        label.position.set(0, drawerY - 0.1, 0.42);
-        filingGroup.add(label);
-    }
-
-    filingGroup.position.set(-18, 0, 35);
-    filingGroup.rotation.y = Math.PI / 2;
-    group.add(filingGroup);
-
-    // --- Potted plant (right side, decorative) ---
-    const plantGroup = new THREE.Group();
-    plantGroup.name = 'pottedPlant';
-
-    // Pot (tapered cylinder)
-    const potMat = new THREE.MeshStandardMaterial({
-        color: 0x8B5E3C,
-        metalness: 0.05,
-        roughness: 0.7,
-    });
-    const potGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.8, 8);
-    const pot = new THREE.Mesh(potGeo, potMat);
-    pot.position.y = 0.4;
-    pot.castShadow = true;
-    plantGroup.add(pot);
-
-    // Pot rim
-    const potRimGeo = new THREE.TorusGeometry(0.42, 0.04, 6, 8);
-    const potRim = new THREE.Mesh(potRimGeo, potMat);
-    potRim.rotation.x = -Math.PI / 2;
-    potRim.position.y = 0.82;
-    plantGroup.add(potRim);
-
-    // Soil (dark disc)
-    const soilGeo = new THREE.CylinderGeometry(0.37, 0.37, 0.06, 8);
-    const soilMat = new THREE.MeshStandardMaterial({
-        color: 0x3a2a1a,
-        metalness: 0.0,
-        roughness: 0.9,
-    });
-    const soil = new THREE.Mesh(soilGeo, soilMat);
-    soil.position.y = 0.8;
-    plantGroup.add(soil);
-
-    // Foliage (clusters of green spheres)
-    const leafMat = new THREE.MeshStandardMaterial({
-        color: 0x44aa44,
-        metalness: 0.0,
-        roughness: 0.6,
-    });
-    const leafPositions = [
-        [0, 1.5, 0, 0.4],
-        [0.2, 1.7, 0.15, 0.3],
-        [-0.15, 1.8, -0.1, 0.28],
-        [0.1, 1.3, -0.15, 0.25],
-        [-0.2, 1.4, 0.1, 0.22],
+    const fcPositions = [
+        { x: -20, z: 26, ry: Math.PI / 2 },
+        { x: -28, z: 35, ry: Math.PI / 2 },
+        { x: 20, z: 26, ry: -Math.PI / 2 },
+        { x: 28, z: 42, ry: -Math.PI / 2 },
+        { x: -20, z: 50, ry: Math.PI / 2 },
+        { x: 20, z: 50, ry: -Math.PI / 2 },
     ];
-    for (const [lx, ly, lz, lr] of leafPositions) {
-        const leafGeo = new THREE.SphereGeometry(lr, 6, 6);
-        const leaf = new THREE.Mesh(leafGeo, leafMat);
-        leaf.position.set(lx, ly, lz);
-        leaf.castShadow = true;
-        plantGroup.add(leaf);
+    for (const fp of fcPositions) {
+        const fc = buildFilingCabinet();
+        fc.position.set(fp.x, 0, fp.z);
+        fc.rotation.y = fp.ry;
+        group.add(fc);
     }
-
-    // Trunk/stem
-    const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.7, 6);
-    const trunkMat = new THREE.MeshStandardMaterial({
-        color: 0x6B4226,
-        metalness: 0.0,
-        roughness: 0.8,
-    });
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 1.1;
-    plantGroup.add(trunk);
-
-    plantGroup.position.set(18, 0, 20);
-    group.add(plantGroup);
-
-    // --- Whiteboard section (left side, on the "wall" behind the desk) ---
-    const whiteboardGroup = new THREE.Group();
-    whiteboardGroup.name = 'whiteboard';
-
-    // Board surface
-    const boardGeo = new THREE.BoxGeometry(3.0, 2.0, 0.08);
-    const boardMat = new THREE.MeshStandardMaterial({
-        color: 0xf5f5f0,
-        metalness: 0.1,
-        roughness: 0.15,
-    });
-    const board = new THREE.Mesh(boardGeo, boardMat);
-    board.castShadow = true;
-    whiteboardGroup.add(board);
-
-    // Frame (aluminum look)
-    const wbFrameMat = new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa,
-        metalness: 0.5,
-        roughness: 0.3,
-    });
-
-    // Top/bottom frame
-    const wbFrameHGeo = new THREE.BoxGeometry(3.1, 0.06, 0.1);
-    const wbFrameTop = new THREE.Mesh(wbFrameHGeo, wbFrameMat);
-    wbFrameTop.position.y = 1.03;
-    whiteboardGroup.add(wbFrameTop);
-    const wbFrameBot = new THREE.Mesh(wbFrameHGeo, wbFrameMat);
-    wbFrameBot.position.y = -1.03;
-    whiteboardGroup.add(wbFrameBot);
-
-    // Side frames
-    const wbFrameVGeo = new THREE.BoxGeometry(0.06, 2.12, 0.1);
-    const wbFrameL = new THREE.Mesh(wbFrameVGeo, wbFrameMat);
-    wbFrameL.position.x = -1.53;
-    whiteboardGroup.add(wbFrameL);
-    const wbFrameR = new THREE.Mesh(wbFrameVGeo, wbFrameMat);
-    wbFrameR.position.x = 1.53;
-    whiteboardGroup.add(wbFrameR);
-
-    // Marker tray
-    const trayGeo = new THREE.BoxGeometry(2.0, 0.06, 0.15);
-    const tray = new THREE.Mesh(trayGeo, wbFrameMat);
-    tray.position.set(0, -1.08, 0.08);
-    whiteboardGroup.add(tray);
-
-    // A couple of marker pens on the tray
-    const markerColors = [0xcc2222, 0x2244cc, 0x222222];
-    for (let m = 0; m < 3; m++) {
-        const markerGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6);
-        const markerMat = new THREE.MeshStandardMaterial({
-            color: markerColors[m],
-            metalness: 0.1,
-            roughness: 0.5,
-        });
-        const marker = new THREE.Mesh(markerGeo, markerMat);
-        marker.rotation.z = Math.PI / 2;
-        marker.position.set(-0.4 + m * 0.4, -1.03, 0.1);
-        whiteboardGroup.add(marker);
-    }
-
-    whiteboardGroup.position.set(-20, 3.5, 30);
-    whiteboardGroup.rotation.y = Math.PI / 2; // face inward
-    group.add(whiteboardGroup);
 
     // ════════════════════════════════════════════════════════════════════════
-    // CUBICLE WALL PARTITIONS — frame the lane edges
+    // POTTED PLANTS — decorative touches
+    // ════════════════════════════════════════════════════════════════════════
+
+    const plantPositions = [
+        { x: 16, z: 20 },
+        { x: -16, z: 18 },
+        { x: -33, z: 25 },
+        { x: 33, z: 25 },
+        { x: -33, z: 45 },
+        { x: 33, z: 45 },
+        { x: 0, z: 55 },
+    ];
+    for (const pp of plantPositions) {
+        const plant = buildPlant();
+        plant.position.set(pp.x, 0, pp.z);
+        group.add(plant);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // WHITEBOARDS — on the office walls
+    // ════════════════════════════════════════════════════════════════════════
+
+    const wb1 = buildWhiteboard();
+    wb1.position.set(-35.8, 3.5, 30);
+    wb1.rotation.y = Math.PI / 2;
+    group.add(wb1);
+
+    const wb2 = buildWhiteboard();
+    wb2.position.set(35.8, 3.5, 30);
+    wb2.rotation.y = -Math.PI / 2;
+    group.add(wb2);
+
+    const wb3 = buildWhiteboard();
+    wb3.position.set(-35.8, 3.5, 45);
+    wb3.rotation.y = Math.PI / 2;
+    group.add(wb3);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PRINTERS — in the aisles
+    // ════════════════════════════════════════════════════════════════════════
+
+    const printer1 = buildPrinter();
+    printer1.position.set(-24, 0, 34);
+    printer1.rotation.y = Math.PI / 2;
+    group.add(printer1);
+
+    const printer2 = buildPrinter();
+    printer2.position.set(24, 0, 42);
+    printer2.rotation.y = -Math.PI / 2;
+    group.add(printer2);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // BOOKSHELVES — against the office walls
+    // ════════════════════════════════════════════════════════════════════════
+
+    const bs1 = buildBookshelf();
+    bs1.position.set(-35.5, 0, 38);
+    bs1.rotation.y = Math.PI / 2;
+    group.add(bs1);
+
+    const bs2 = buildBookshelf();
+    bs2.position.set(35.5, 0, 36);
+    bs2.rotation.y = -Math.PI / 2;
+    group.add(bs2);
+
+    const bs3 = buildBookshelf();
+    bs3.position.set(35.5, 0, 50);
+    bs3.rotation.y = -Math.PI / 2;
+    group.add(bs3);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CUBICLE WALL PARTITIONS — frame the lane and create cubicle rows
     // ════════════════════════════════════════════════════════════════════════
 
     const partitionHeight = 3.5;
 
-    // Left side partitions (along x ~ -15.5, at various z positions)
-    const leftPartition1 = buildCubiclePartition(6.0, partitionHeight);
-    leftPartition1.name = 'cubiclePartitionL1';
-    leftPartition1.position.set(-15.5, 0, 25);
-    leftPartition1.rotation.y = Math.PI / 2;
-    group.add(leftPartition1);
+    // Inner lane partitions (x = ±15.5) — frame the gameplay lane
+    for (const z of [25, 38, 51]) {
+        const lp = buildCubiclePartition(6.0, partitionHeight);
+        lp.position.set(-15.5, 0, z);
+        lp.rotation.y = Math.PI / 2;
+        group.add(lp);
 
-    const leftPartition2 = buildCubiclePartition(6.0, partitionHeight);
-    leftPartition2.name = 'cubiclePartitionL2';
-    leftPartition2.position.set(-15.5, 0, 38);
-    leftPartition2.rotation.y = Math.PI / 2;
-    group.add(leftPartition2);
+        const rp = buildCubiclePartition(6.0, partitionHeight);
+        rp.position.set(15.5, 0, z);
+        rp.rotation.y = Math.PI / 2;
+        group.add(rp);
+    }
 
-    const leftPartition3 = buildCubiclePartition(6.0, partitionHeight);
-    leftPartition3.name = 'cubiclePartitionL3';
-    leftPartition3.position.set(-15.5, 0, 51);
-    leftPartition3.rotation.y = Math.PI / 2;
-    group.add(leftPartition3);
+    // Middle row partitions (x = ±24) — divide the desk rows
+    for (const z of [20, 33, 46]) {
+        const lp = buildCubiclePartition(6.0, partitionHeight);
+        lp.position.set(-24, 0, z);
+        lp.rotation.y = Math.PI / 2;
+        group.add(lp);
 
-    // Right side partitions (along x ~ 15.5)
-    const rightPartition1 = buildCubiclePartition(6.0, partitionHeight);
-    rightPartition1.name = 'cubiclePartitionR1';
-    rightPartition1.position.set(15.5, 0, 25);
-    rightPartition1.rotation.y = Math.PI / 2;
-    group.add(rightPartition1);
+        const rp = buildCubiclePartition(6.0, partitionHeight);
+        rp.position.set(24, 0, z);
+        rp.rotation.y = Math.PI / 2;
+        group.add(rp);
+    }
 
-    const rightPartition2 = buildCubiclePartition(6.0, partitionHeight);
-    rightPartition2.name = 'cubiclePartitionR2';
-    rightPartition2.position.set(15.5, 0, 38);
-    rightPartition2.rotation.y = Math.PI / 2;
-    group.add(rightPartition2);
+    // Outer row partitions (x = ±32) — near the walls
+    for (const z of [22, 38, 54]) {
+        const lp = buildCubiclePartition(6.0, partitionHeight);
+        lp.position.set(-32, 0, z);
+        lp.rotation.y = Math.PI / 2;
+        group.add(lp);
 
-    const rightPartition3 = buildCubiclePartition(6.0, partitionHeight);
-    rightPartition3.name = 'cubiclePartitionR3';
-    rightPartition3.position.set(15.5, 0, 51);
-    rightPartition3.rotation.y = Math.PI / 2;
-    group.add(rightPartition3);
+        const rp = buildCubiclePartition(6.0, partitionHeight);
+        rp.position.set(32, 0, z);
+        rp.rotation.y = Math.PI / 2;
+        group.add(rp);
+    }
+
+    // Cross-partitions (run along X) to create cubicle cells
+    for (const x of [-20, -28]) {
+        for (const z of [26, 34, 42]) {
+            const cp = buildCubiclePartition(4.0, partitionHeight);
+            cp.position.set(x, 0, z);
+            group.add(cp);
+        }
+    }
+    for (const x of [20, 28]) {
+        for (const z of [26, 34, 42]) {
+            const cp = buildCubiclePartition(4.0, partitionHeight);
+            cp.position.set(x, 0, z);
+            group.add(cp);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // OFFICE LIGHTING — subtle PointLights only, no visible fixtures
+    // ════════════════════════════════════════════════════════════════════════
+
+    const officeLight1 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
+    officeLight1.position.set(-20, 5.5, 30);
+    group.add(officeLight1);
+
+    const officeLight2 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
+    officeLight2.position.set(20, 5.5, 30);
+    group.add(officeLight2);
+
+    const officeLight3 = new THREE.PointLight(0xeee8dd, 0.4, 25, 2);
+    officeLight3.position.set(0, 5.5, 45);
+    group.add(officeLight3);
 
     // ════════════════════════════════════════════════════════════════════════
     // FLOOR ELEMENTS
     // ════════════════════════════════════════════════════════════════════════
 
     // Carpet transition strip on the floor at the doorway
-    const stripGeo = new THREE.BoxGeometry(6.0, 0.04, 0.15);
-    const stripMat = new THREE.MeshStandardMaterial({
-        color: 0x998877,
-        metalness: 0.5,
-        roughness: 0.3,
-    });
-    const transitionStrip = new THREE.Mesh(stripGeo, stripMat);
+    const transitionStrip = new THREE.Mesh(
+        new THREE.BoxGeometry(6.0, 0.04, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0x998877, metalness: 0.5, roughness: 0.3 })
+    );
     transitionStrip.position.set(0, 0.02, 14.5);
     transitionStrip.receiveShadow = true;
     group.add(transitionStrip);
 
-    // Office carpet floor patch (wider to cover the lane area)
-    const carpetGeo = new THREE.BoxGeometry(36, 0.05, 55);
-    const carpetMat = new THREE.MeshStandardMaterial({
-        color: 0x556677,
-        metalness: 0.0,
-        roughness: 0.95,
-    });
-    const carpet = new THREE.Mesh(carpetGeo, carpetMat);
+    // Office carpet — wide enough to cover entire visible area
+    const carpet = new THREE.Mesh(
+        new THREE.BoxGeometry(80, 0.05, 60),
+        new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.0, roughness: 0.95 })
+    );
     carpet.position.set(0, 0.01, 42);
     carpet.receiveShadow = true;
     group.add(carpet);
@@ -1419,6 +1398,10 @@ export function createBathroomDoor() {
         color: doorColor,
         metalness: 0.05,
         roughness: 0.7,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide,
+        depthWrite: false,
     });
     const chromeMat = chrome();
 
@@ -1427,8 +1410,8 @@ export function createBathroomDoor() {
     const doorGeo = new THREE.BoxGeometry(6.0, 5.8, 0.15);
     const doorPanel = new THREE.Mesh(doorGeo, doorMat);
     doorPanel.position.set(0, 3.0, 0); // centered vertically (5.8/2 + 0.1 gap at bottom)
-    doorPanel.castShadow = true;
-    doorPanel.receiveShadow = true;
+    doorPanel.castShadow = false;
+    doorPanel.receiveShadow = false;
     group.add(doorPanel);
 
     // ─── Decorative raised panels (two rectangular frames on the door face) ─
@@ -1436,6 +1419,9 @@ export function createBathroomDoor() {
         color: 0x7A5C10,
         metalness: 0.05,
         roughness: 0.65,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false,
     });
 
     // Upper panel frame
@@ -1455,6 +1441,9 @@ export function createBathroomDoor() {
         color: 0x9B7924,
         metalness: 0.08,
         roughness: 0.5,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false,
     });
     const windowGeo = new THREE.BoxGeometry(2.5, 0.6, 0.02);
     const windowPanel = new THREE.Mesh(windowGeo, windowMat);
@@ -1482,7 +1471,7 @@ export function createBathroomDoor() {
     group.add(handleBack);
 
     // ─── Crack / damage overlay meshes (initially invisible) ───────────────
-    const crackMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+    const crackMat = new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.6 });
     const cracks = [];
 
     // Helper: build a jagged crack pattern from thin boxes
@@ -1562,8 +1551,8 @@ export function createBathroomDoor() {
     group.userData.maxDoorHP = 100;
     group.userData.originalColor = doorColor;
 
-    // Position the door group at the doorway
-    group.position.set(0, 0, 14);
+    // Position the door group at the wall ends
+    group.position.set(0, 0, 12);
 
     return group;
 }

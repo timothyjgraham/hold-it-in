@@ -114,6 +114,7 @@
         waveDelay: 5.0,
         waveActive: false,
         _floatingTexts: [],
+        _doorParticles: [],
 
         // Build mode
         selectedTower: null,
@@ -302,8 +303,8 @@
         _createToilet() {
             this.toilet = createToilet();
             this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
-            // Face the camera so you see the bowl/seat, not the back of the tank
-            this.toilet.rotation.y = Math.PI;
+            // Face the door — bowl points toward +Z (enemies approach from that direction)
+            this.toilet.rotation.y = 0;
             this.scene.add(this.toilet);
         },
 
@@ -337,7 +338,7 @@
             this.scene.add(this.doorGroup);
 
             // Bathroom overhead light (actual illumination for the room)
-            const bathroomLight = new THREE.PointLight(0xeee8dd, 0.8, 20, 2);
+            const bathroomLight = new THREE.PointLight(0xeee8dd, 0.4, 20, 2);
             bathroomLight.position.set(0, 5.5, 6);
             this.scene.add(bathroomLight);
         },
@@ -569,6 +570,14 @@
                 ft.sprite.material.dispose();
             });
             this._floatingTexts = [];
+
+            // Clear door particles
+            this._doorParticles.forEach(p => {
+                this.scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+            });
+            this._doorParticles = [];
 
             this.selectedTower = null;
             this._updateTowerButtons();
@@ -934,29 +943,31 @@
                     }
                 }
 
-                // Move toward toilet — converge on it as they get closer
-                const moveSpeed = e.speed * slowMult * dt;
-                e.z -= moveSpeed;
+                // Move toward toilet (skip if bashing the door)
+                if (!e.bashing) {
+                    const moveSpeed = e.speed * slowMult * dt;
+                    e.z -= moveSpeed;
 
-                // Steer toward toilet x — stronger as enemies approach
-                const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
-                const convergeDist = 40;
-                if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
-                    const convergeStrength = 1 - (distZ / convergeDist);
-                    const dxToToilet = CONFIG.toiletPos.x - e.x;
-                    e.x += dxToToilet * convergeStrength * dt * 0.8;
+                    // Steer toward toilet x — stronger as enemies approach
+                    const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
+                    const convergeDist = 40;
+                    if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
+                        const convergeStrength = 1 - (distZ / convergeDist);
+                        const dxToToilet = CONFIG.toiletPos.x - e.x;
+                        e.x += dxToToilet * convergeStrength * dt * 0.8;
+                    }
+
+                    e.mesh.position.z = e.z;
+                    e.mesh.position.x = e.x;
+
+                    // Walk animation
+                    e.walkPhase += dt * e.speed * 2;
+                    const legSwing = Math.sin(e.walkPhase) * 0.3;
+                    if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
+                    if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
+                    // Slight body bob
+                    e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
                 }
-
-                e.mesh.position.z = e.z;
-                e.mesh.position.x = e.x;
-
-                // Walk animation
-                e.walkPhase += dt * e.speed * 2;
-                const legSwing = Math.sin(e.walkPhase) * 0.3;
-                if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
-                if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
-                // Slight body bob
-                e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
 
                 // Hit flash effect
                 if (e.hitFlash > 0) {
@@ -968,14 +979,49 @@
                     e.body.material.emissiveIntensity = 0;
                 }
 
-                // Reached the door? Deal damage to it
-                const doorZ = 14; // door position
-                if (e.z <= doorZ + 1) {
-                    if (this.doorGroup) {
+                // Reached the door? Start bashing it
+                const doorZ = 12; // door position (wall ends)
+                const bashRange = doorZ + 1.5;
+                if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0) {
+                    // Stop at the door
+                    e.z = Math.max(e.z, bashRange);
+                    e.mesh.position.z = e.z;
+
+                    // Initialize bashing state
+                    if (!e.bashing) {
+                        e.bashing = true;
+                        e.bashTimer = 0.3 + Math.random() * 0.3; // first hit comes fast
+                        e.bashCooldown = e.type === 'espresso' ? 0.6 : (e.type === 'boss' ? 1.5 : 1.0);
+                    }
+
+                    // Bash animation: lunge forward and back
+                    e.bashTimer -= dt;
+                    const bashPhase = e.bashTimer / e.bashCooldown;
+                    if (bashPhase < 0.15 && bashPhase > 0) {
+                        // Lunge forward (toward door)
+                        e.mesh.position.z = e.z - (1 - bashPhase / 0.15) * 0.8;
+                    } else {
+                        e.mesh.position.z = e.z;
+                    }
+
+                    // Time to bash!
+                    if (e.bashTimer <= 0) {
+                        e.bashTimer = e.bashCooldown;
+
                         const ud = this.doorGroup.userData;
-                        // Damage based on enemy type — bigger enemies hit harder
-                        const dmg = e.type === 'boss' ? 25 : (e.type === 'coffee' ? 12 : (e.type === 'espresso' ? 3 : 8));
+                        const dmg = e.type === 'boss' ? 8 : (e.type === 'coffee' ? 4 : (e.type === 'espresso' ? 1 : 3));
                         ud.doorHP = Math.max(0, ud.doorHP - dmg);
+
+                        // Spawn wood chip particles at impact point
+                        this._spawnDoorChips(e.x, doorZ);
+
+                        // Screen shake (subtle)
+                        this.camera.position.x += (Math.random() - 0.5) * 0.15;
+                        this.camera.position.y += (Math.random() - 0.5) * 0.1;
+                        setTimeout(() => {
+                            this.camera.position.x = 0;
+                            this.camera.position.y = 14;
+                        }, 80);
 
                         // Update crack visibility at thresholds
                         if (ud.cracks) {
@@ -997,22 +1043,22 @@
                             ud.door.material.emissive.setHex(0xff0000);
                             ud.door.material.emissiveIntensity = (1 - pct) * 0.3;
                         }
-                    }
 
-                    this.scene.remove(e.mesh);
-                    this.enemies.splice(i, 1);
-                    this.updateHUD();
+                        this.updateHUD();
 
-                    // Door broken — game over!
-                    if (this.doorGroup && this.doorGroup.userData.doorHP <= 0) {
-                        // Hide the door panel to show it's broken
-                        if (this.doorGroup.userData.door) {
-                            this.doorGroup.userData.door.visible = false;
+                        // Door broken — game over!
+                        if (ud.doorHP <= 0) {
+                            if (ud.door) ud.door.visible = false;
+                            // Big burst of particles on break
+                            for (let b = 0; b < 3; b++) {
+                                this._spawnDoorChips((Math.random() - 0.5) * 4, doorZ);
+                            }
+                            this.gameOver();
+                            return;
                         }
-                        this.gameOver();
-                        return;
                     }
-                    continue;
+
+                    // Bashing enemies can still be killed — skip movement but don't skip death check
                 }
 
                 // Dead?
@@ -1262,6 +1308,46 @@
         },
 
         // ============================
+        // DOOR BASH PARTICLES
+        // ============================
+        _spawnDoorChips(x, z) {
+            const chipCount = 8 + Math.floor(Math.random() * 6);
+            const chipColors = [0x8B6914, 0x7A5C10, 0x9B7924, 0xA08030, 0x6B4E0C, 0xB8942A];
+
+            for (let i = 0; i < chipCount; i++) {
+                const size = 0.08 + Math.random() * 0.15;
+                const geo = Math.random() > 0.5
+                    ? new THREE.BoxGeometry(size, size * 0.5, size * 0.3)
+                    : new THREE.TetrahedronGeometry(size * 0.6, 0);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: chipColors[Math.floor(Math.random() * chipColors.length)],
+                    roughness: 0.7,
+                    metalness: 0.05,
+                });
+                const chip = new THREE.Mesh(geo, mat);
+                chip.position.set(
+                    x + (Math.random() - 0.5) * 2,
+                    1.5 + Math.random() * 3,
+                    z
+                );
+                chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                chip.castShadow = true;
+                this.scene.add(chip);
+
+                this._doorParticles.push({
+                    mesh: chip,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: 3 + Math.random() * 5,
+                    vz: -(2 + Math.random() * 4), // fly toward camera
+                    rotSpeed: (Math.random() - 0.5) * 12,
+                    life: 0.8 + Math.random() * 0.6,
+                    maxLife: 0.8 + Math.random() * 0.6,
+                    gravity: 12 + Math.random() * 4,
+                });
+            }
+        },
+
+        // ============================
         // RENDER LOOP
         // ============================
         _animate() {
@@ -1286,6 +1372,31 @@
                     ft.sprite.material.map.dispose();
                     ft.sprite.material.dispose();
                     this._floatingTexts.splice(i, 1);
+                }
+            }
+
+            // Update door particles (wood chips flying)
+            for (let i = this._doorParticles.length - 1; i >= 0; i--) {
+                const p = this._doorParticles[i];
+                p.life -= dt;
+                p.vy -= p.gravity * dt;
+                p.mesh.position.x += p.vx * dt;
+                p.mesh.position.y += p.vy * dt;
+                p.mesh.position.z += p.vz * dt;
+                p.mesh.rotation.x += p.rotSpeed * dt;
+                p.mesh.rotation.z += p.rotSpeed * 0.7 * dt;
+                // Fade out in last 30% of life
+                const fade = Math.min(1, p.life / (p.maxLife * 0.3));
+                p.mesh.material.opacity = fade;
+                p.mesh.material.transparent = true;
+                // Scale down as dying
+                const s = Math.max(0.1, fade);
+                p.mesh.scale.set(s, s, s);
+                if (p.life <= 0 || p.mesh.position.y < -1) {
+                    this.scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    this._doorParticles.splice(i, 1);
                 }
             }
 
