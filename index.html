@@ -250,6 +250,70 @@
             { enemies: [['polite', 3], ['dancer', 3], ['waddle', 2], ['panicker', 1], ['powerwalker', 2], ['girls_group', 1]], interval: 0.8, delay: 3 },
         ],
 
+        // Themed horde event waves — pure chaos milestones
+        WAVE_EVENTS: {
+            15: {
+                name: 'TACO TUESDAY',
+                announcement: "IT'S TACO TUESDAY!",
+                enemyMult: 2.5,
+                spawnMult: 0.5,
+                weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.10, girls_group: 0.05 },
+            },
+            20: {
+                name: 'THE LUNCH RUSH',
+                announcement: 'THE LUNCH RUSH!',
+                enemyMult: 3.0,
+                spawnMult: 0.4,
+                weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.20, panicker: 0.10, waddle: 0.05, girls_group: 0.05 },
+            },
+            25: {
+                name: 'COFFEE KICKED IN',
+                announcement: 'THE COFFEE JUST KICKED IN!',
+                enemyMult: 2.5,
+                spawnMult: 0.35,
+                speedMult: 1.4,
+                desperateChance: 0.6,
+            },
+            30: {
+                name: 'FOOD POISONING',
+                announcement: 'FOOD POISONING IN THE BREAK ROOM!',
+                enemyMult: 3.5,
+                spawnMult: 0.3,
+                weights: { waddle: 0.30, panicker: 0.25, dancer: 0.20, polite: 0.15, girls_group: 0.10 },
+            },
+            35: {
+                name: 'WING NIGHT',
+                announcement: 'HALF-PRICE WING NIGHT!',
+                enemyMult: 3.0,
+                spawnMult: 0.3,
+                speedMult: 1.3,
+                weights: { waddle: 0.40, polite: 0.20, powerwalker: 0.15, dancer: 0.15, panicker: 0.10 },
+            },
+            40: {
+                name: 'FIRE DRILL',
+                announcement: 'FIRE DRILL — EVERYONE OUT!',
+                enemyMult: 4.0,
+                spawnMult: 0.2,
+                speedMult: 1.5,
+                desperateChance: 0.8,
+            },
+            45: {
+                name: 'CHILI COOK-OFF',
+                announcement: 'THE CHILI COOK-OFF!',
+                enemyMult: 4.0,
+                spawnMult: 0.25,
+                weights: { waddle: 0.35, panicker: 0.30, powerwalker: 0.15, dancer: 0.10, girls_group: 0.10 },
+            },
+            50: {
+                name: 'BLACK FRIDAY',
+                announcement: 'BLACK FRIDAY!',
+                enemyMult: 5.0,
+                spawnMult: 0.15,
+                speedMult: 1.6,
+                desperateChance: 0.5,
+            },
+        },
+
         // ============================
         // INIT
         // ============================
@@ -1035,6 +1099,15 @@
             const comp = this.WAVE_COMPOSITIONS[this.wave];
             this._spawnQueue = [];
 
+            // Check for event wave (defined or recurring after wave 50)
+            let event = this.WAVE_EVENTS[this.wave] || null;
+            if (!event && this.wave > 50 && this.wave % 5 === 0) {
+                const keys = Object.keys(this.WAVE_EVENTS);
+                const base = this.WAVE_EVENTS[keys[Math.floor(Math.random() * keys.length)]];
+                const scale = 1 + (this.wave - 50) * 0.05;
+                event = { ...base, enemyMult: (base.enemyMult || 1) * scale };
+            }
+
             if (comp) {
                 for (const [type, count] of comp.enemies) {
                     for (let i = 0; i < count; i++) {
@@ -1042,9 +1115,24 @@
                     }
                 }
                 this.spawnInterval = comp.interval;
+                this._burstSize = 1;
+                this._eventSpeedMult = 1.0;
+                this._eventDesperateChance = 0;
             } else {
-                this._spawnQueue = this._generateProceduralWave(this.wave);
-                this.spawnInterval = Math.max(0.4, 1.5 - (this.wave - 8) * 0.05);
+                this._spawnQueue = this._generateProceduralWave(this.wave, event);
+
+                // Base spawn interval — accelerates with wave number
+                let interval = Math.max(0.25, 1.5 - (this.wave - 8) * 0.06);
+                if (event && event.spawnMult) interval *= event.spawnMult;
+                this.spawnInterval = Math.max(0.1, interval);
+
+                // Burst spawning — multiple enemies per spawn tick
+                this._burstSize = Math.min(8, 1 + Math.floor(this.wave / 8));
+                if (event) this._burstSize = Math.min(12, this._burstSize * 2);
+
+                // Event modifiers for enemy creation
+                this._eventSpeedMult = (event && event.speedMult) || 1.0;
+                this._eventDesperateChance = (event && event.desperateChance) || 0;
             }
 
             // Shuffle queue for variety within each wave
@@ -1058,7 +1146,9 @@
 
             // Announce with enemy introduction on key waves
             let msg = `WAVE ${this.wave}`;
-            if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
+            if (event) {
+                msg += ` — ${event.announcement}`;
+            } else if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
             else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
             else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
             else if (this.wave === 9) msg += ' — POWER WALKERS!';
@@ -1067,17 +1157,42 @@
             this.updateHUD();
         },
 
-        _generateProceduralWave(wave) {
+        _generateProceduralWave(wave, event) {
             const queue = [];
-            const total = 10 + Math.floor(wave * 2.5);
+
+            // Quadratic enemy count — accelerating growth
+            let total = 10 + Math.floor(wave * 2.5 + Math.pow(wave, 1.5) * 0.3);
+            if (event && event.enemyMult) total = Math.floor(total * event.enemyMult);
+
+            // Enemy type weights — event-specific or escalating defaults
+            const defaultWeights = [
+                ['girls_group', 0.06],
+                ['panicker', Math.min(0.14, 0.08 + wave * 0.002)],
+                ['waddle', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['powerwalker', Math.min(0.18, 0.14 + wave * 0.001)],
+                ['dancer', 0.25],
+                // remainder = polite (fallback)
+            ];
+
             for (let i = 0; i < total; i++) {
                 const roll = Math.random();
-                if (roll < 0.06) queue.push('girls_group');
-                else if (roll < 0.14) queue.push('panicker');
-                else if (roll < 0.26) queue.push('waddle');
-                else if (roll < 0.40) queue.push('powerwalker');
-                else if (roll < 0.65) queue.push('dancer');
-                else queue.push('polite');
+                let type = 'polite';
+
+                if (event && event.weights) {
+                    let cumulative = 0;
+                    for (const [etype, weight] of Object.entries(event.weights)) {
+                        cumulative += weight;
+                        if (roll < cumulative) { type = etype; break; }
+                    }
+                } else {
+                    let cumulative = 0;
+                    for (const [etype, weight] of defaultWeights) {
+                        cumulative += weight;
+                        if (roll < cumulative) { type = etype; break; }
+                    }
+                }
+
+                queue.push(type);
             }
             return queue;
         },
@@ -1116,10 +1231,35 @@
             const x = opts.xOverride !== undefined ? opts.xOverride : (Math.random() - 0.5) * spread;
             const z = CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
 
-            const speed = def.baseSpeed + Math.random() * def.speedVar;
-            const hp = def.baseHP + this.wave * def.hpPerWave;
+            // Polynomial HP scaling — linear base with exponential multiplier (hockey stick)
+            const linearHP = def.baseHP + this.wave * def.hpPerWave;
+            let hp = Math.round(linearHP * Math.pow(1.04, this.wave));
+
+            // Speed creep — enemies get faster each wave + event modifier
+            const speedCreep = 1 + this.wave * 0.015;
+            const eventSpeedMult = this._eventSpeedMult || 1.0;
+            let speed = (def.baseSpeed + Math.random() * def.speedVar) * speedCreep * eventSpeedMult;
+
+            // Desperate modifier — frantic, faster, less durable
+            const desperateChance = Math.max(
+                this._eventDesperateChance || 0,
+                this.wave >= 12 ? Math.min(0.4, (this.wave - 12) * 0.025) : 0
+            );
+            const isDesperate = Math.random() < desperateChance;
+            if (isDesperate) {
+                speed *= 1.5;
+                hp = Math.round(hp * 0.75);
+            }
+
             const size = def.size;
-            const color = def.color;
+            let color = def.color;
+            if (isDesperate) {
+                // Tint toward red — visible urgency
+                const r = Math.min(255, ((color >> 16) & 0xff) + 80);
+                const g = Math.max(0, ((color >> 8) & 0xff) - 40);
+                const b = Math.max(0, (color & 0xff) - 40);
+                color = (r << 16) | (g << 8) | b;
+            }
 
             const group = new THREE.Group();
 
@@ -1207,6 +1347,11 @@
                 group.add(rightArm);
             }
 
+            // Desperate — extra forward lean for urgency
+            if (isDesperate) {
+                body.rotation.x -= 0.2;
+            }
+
             group.position.set(x, 0, z);
             this.scene.add(group);
 
@@ -1233,6 +1378,7 @@
                 bodyColor: color,
                 slowImmune: def.slowImmune || false,
                 panicked: false,
+                desperate: isDesperate,
                 ...(opts.targetLane !== undefined && { targetLane: opts.targetLane }),
             };
 
@@ -1254,20 +1400,28 @@
                     this._startWave();
                 }
             } else {
-                // Spawn enemies
+                // Spawn enemies — burst spawning at higher waves
                 this.spawnTimer -= dt;
                 if (this.spawnTimer <= 0 && this.enemiesSpawned < this.enemiesPerWave) {
-                    this._spawnEnemy();
+                    const burst = Math.min(this._burstSize || 1, this.enemiesPerWave - this.enemiesSpawned);
+                    for (let b = 0; b < burst; b++) {
+                        this._spawnEnemy();
+                    }
                     this.spawnTimer = this.spawnInterval;
                 }
 
-                // Wave complete when all enemies spawned and cleared
-                if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length === 0) {
+                // Wave complete — all spawned + cleared (or overlap threshold met)
+                const overlapThreshold = this.wave >= 20 ? 10 : (this.wave >= 15 ? 5 : 0);
+                if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length <= overlapThreshold) {
                     this.waveActive = false;
                     const nextComp = this.WAVE_COMPOSITIONS[this.wave + 1];
-                    this.waveTimer = nextComp ? nextComp.delay : Math.max(2, 4 - this.wave * 0.1);
-                    // Bonus coins for surviving the wave
-                    const waveBonus = 15 + this.wave * 5;
+                    // Inter-wave delay shrinks at higher waves
+                    let delay = nextComp ? nextComp.delay : Math.max(1.5, 4 - this.wave * 0.12);
+                    if (this.wave >= 20) delay = Math.min(delay, 2.0);
+                    if (this.wave >= 30) delay = Math.min(delay, 1.5);
+                    this.waveTimer = delay;
+                    // Bonus coins — caps at wave 10 to pressure late-game economy
+                    const waveBonus = 15 + Math.min(this.wave, 10) * 5;
                     this.coins += waveBonus;
                     this.updateHUD();
                     this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
@@ -1371,7 +1525,7 @@
                     }
 
                     // Walk animation — type-specific movement identity
-                    e.walkPhase += dt * e.speed * 2;
+                    e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
 
                     if (e.type === 'dancer') {
                         // Pee dance — hopping foot to foot, knees together
@@ -1507,8 +1661,28 @@
                     // Bashing enemies can still be killed — skip movement but don't skip death check
                 }
 
+                // Last straw timer — desperate final lunge expires
+                if (e.lastStraw) {
+                    e.lastStrawTimer -= dt;
+                    if (e.lastStrawTimer <= 0) {
+                        e.hp = 0;
+                        e.lastStraw = false;
+                    }
+                }
+
                 // Dead?
                 if (e.hp <= 0) {
+                    // Last straw — 20% chance of desperate final lunge near the toilet
+                    if (!e.lastStrawUsed && e.z < 25 && Math.random() < 0.2) {
+                        e.lastStrawUsed = true;
+                        e.lastStraw = true;
+                        e.hp = 1;
+                        e.speed *= 3.0;
+                        e.lastStrawTimer = 1.0;
+                        e.body.material.color.setHex(0xff2200);
+                        continue;
+                    }
+
                     this.score += 10;
                     this.coins += e.coins;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
