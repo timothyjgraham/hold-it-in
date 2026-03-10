@@ -1,4 +1,7 @@
-// AnimationLibrary.js — 25 keyframe clips for 6 enemy types
+// AnimationLibrary.js — AAA keyframe clips for 6 enemy types
+// 25 clips: walk/bash/hit/death per type + waddle panic_sprint
+// Rich multi-bone animation with proper weight shift, secondary motion,
+// and unique character personality in every movement.
 // Clip cache + lazy construction. Quaternion/keyframe helpers.
 
 import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
@@ -11,9 +14,6 @@ const AXIS_X = new THREE.Vector3(1, 0, 0);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const AXIS_Z = new THREE.Vector3(0, 0, 1);
 
-/**
- * Create a flat [x,y,z,w] quaternion from axis-angle.
- */
 export function quatFromAxisAngle(axis, angle) {
     const q = new THREE.Quaternion();
     q.setFromAxisAngle(axis, angle);
@@ -26,9 +26,6 @@ function quatFromEuler(x, y, z) {
     return [q.x, q.y, q.z, q.w];
 }
 
-/**
- * Build a QuaternionKeyframeTrack from single-axis rotations.
- */
 export function buildRotationTrack(boneName, times, angles, axis) {
     const values = [];
     for (const a of angles) {
@@ -62,9 +59,10 @@ function scaleTrack(boneName, times, scales) {
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// POLITE KNOCKER — baseline, measured stride, civilized
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// POLITE KNOCKER — civilized gentleman stride, measured composure
+// Personality: patient, proper, waits his turn... but still needs to GO
+// ═══════════════════════════════════════════════════════════════════════
 
 function _politeWalk() {
     const c = ENEMY_VISUAL_CONFIG.polite;
@@ -76,22 +74,36 @@ function _politeWalk() {
     const lean = -c.animationParams.spineForwardLean;
     const dur = c.animationParams.walkDuration;
     const t = [0, 0.25, 0.5, 0.75, dur];
-    const twist = 0.05;
+
+    // Spine counter-twist: shoulders rotate opposite to hips
+    const twist = 0.09;
+    // Lateral sway toward planted foot
+    const sway = 0.04;
 
     return new THREE.AnimationClip('polite_walk', dur, [
+        // Root: bob down at contact, up at passing position
         posTrack('root', t, [
             [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
+        // Spine: forward lean + counter-twist + weight-shift sway
         eulerTrack('spine', t, [
-            [lean, twist, 0], [lean, 0, 0], [lean, -twist, 0], [lean, 0, 0], [lean, twist, 0]
+            [lean, twist, sway], [lean, 0, 0], [lean, -twist, -sway],
+            [lean, 0, 0], [lean, twist, sway]
         ]),
-        buildRotationTrack('head', t, [-twist * 0.7, 0, twist * 0.7, 0, -twist * 0.7], AXIS_Y),
-        buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0.1, 0, 0, -0.4, 0.1], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.4, 0.1, 0, 0], AXIS_X),
+        // Head: counter-twist stabilization + subtle downward gaze
+        eulerTrack('head', t, [
+            [-0.04, -twist * 0.6, 0], [0, 0, 0], [-0.04, twist * 0.6, 0],
+            [0, 0, 0], [-0.04, -twist * 0.6, 0]
+        ]),
+        // Arms: natural opposition to legs, civilized swing
         buildRotationTrack('upperArm_L', t, [-asw, 0, asw, 0, -asw], AXIS_X),
         buildRotationTrack('upperArm_R', t, [asw, 0, -asw, 0, asw], AXIS_X),
+        // Upper legs: measured stride
+        buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
+        // Lower legs: proper knee bend — flex peaks during swing-through
+        buildRotationTrack('lowerLeg_L', t, [-0.10, -0.55, -0.15, -0.65, -0.10], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.65, -0.10, -0.55, -0.15], AXIS_X),
     ]);
 }
 
@@ -101,55 +113,105 @@ function _politeBash() {
     const ry = c.bonePositions.root.y * s;
     const lean = -c.animationParams.spineForwardLean;
     const dur = 0.8;
-    const t = [0, 0.2, 0.35, 0.45, 0.8];
+
+    // Three polite knocks: wind → knock × 3, with pauses to listen
+    const t = [0, 0.10, 0.18, 0.30, 0.38, 0.50, 0.58, 0.68, dur];
 
     return new THREE.AnimationClip('polite_bash_door', dur, [
+        // Root: subtle forward weight shift on each knock
         posTrack('root', t, [
-            [0, ry, 0], [0, ry, -0.15 * s], [0, ry, 0.2 * s], [0, ry, 0.2 * s], [0, ry, 0]
+            [0, ry, 0], [0, ry, -0.05 * s], [0, ry, 0.08 * s], [0, ry, 0.04 * s],
+            [0, ry, -0.05 * s], [0, ry, 0.08 * s], [0, ry, 0.04 * s],
+            [0, ry, 0.08 * s], [0, ry, 0]
         ]),
+        // Spine: flexes forward on each knock impact
         eulerTrack('spine', t, [
-            [lean, 0, 0], [lean + 0.2, 0, 0], [lean - 0.3, 0, 0], [lean - 0.3, 0, 0], [lean, 0, 0]
+            [lean, 0, 0], [lean + 0.15, 0, 0], [lean - 0.20, 0, 0], [lean - 0.05, 0, 0],
+            [lean + 0.12, 0, 0], [lean - 0.20, 0, 0], [lean - 0.05, 0, 0],
+            [lean - 0.20, 0, 0], [lean, 0, 0]
         ]),
-        buildRotationTrack('upperArm_L', t, [0, -0.2, 1.2, 1.2, 0], AXIS_X),
-        buildRotationTrack('upperArm_R', t, [0, -0.2, 1.2, 1.2, 0], AXIS_X),
-        buildRotationTrack('upperLeg_L', t, [0, -0.1, 0.15, 0.15, 0], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [0, -0.1, 0.15, 0.15, 0], AXIS_X),
+        // Right arm: polite knocking (raise fist → tap the door)
+        buildRotationTrack('upperArm_R', t,
+            [0.3, 1.3, 0.4, 0.5, 1.2, 0.4, 0.5, 0.4, 0.2], AXIS_X),
+        // Left arm: at side, slight sympathetic shift
+        buildRotationTrack('upperArm_L', t,
+            [0, 0.05, 0.12, 0.06, 0.05, 0.12, 0.06, 0.12, 0], AXIS_X),
+        // Head: tilts to listen between knocks
+        eulerTrack('head', t, [
+            [0, 0, 0], [0, 0, 0], [-0.05, 0, 0.10], [-0.03, 0.14, 0.06],
+            [0, 0, 0], [-0.05, 0, -0.10], [-0.03, -0.12, -0.06],
+            [-0.05, 0, 0.08], [0, 0, 0]
+        ]),
+        // Legs: shift weight forward on each knock
+        buildRotationTrack('upperLeg_L', t,
+            [0, -0.06, 0.10, 0.05, -0.06, 0.10, 0.05, 0.10, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, -0.06, 0.10, 0.05, -0.06, 0.10, 0.05, 0.10, 0], AXIS_X),
+        // Knees absorb lean
+        buildRotationTrack('lowerLeg_L', t,
+            [0, 0.04, -0.15, -0.08, 0.04, -0.15, -0.08, -0.15, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t,
+            [0, 0.04, -0.15, -0.08, 0.04, -0.15, -0.08, -0.15, 0], AXIS_X),
     ]);
 }
 
 function _politeHitReact() {
     const dur = 0.3;
-    const t = [0, 0.05, 0.15, dur];
+    const t = [0, 0.04, 0.12, 0.22, dur];
     return new THREE.AnimationClip('polite_hit_react', dur, [
-        posTrack('root', t, [[0,0,0], [0,-0.05,-0.12], [0,-0.02,-0.05], [0,0,0]]),
-        buildRotationTrack('spine', t, [0, 0.15, 0.05, 0], AXIS_X),
+        // Stumble backward
+        posTrack('root', t, [[0, 0, 0], [0, -0.06, -0.15], [0, -0.02, -0.08], [0, -0.01, -0.03], [0, 0, 0]]),
+        // Spine flinch forward + slight lateral
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0.18, 0, 0.06], [0.06, 0, 0.02], [0.02, 0, 0], [0, 0, 0]
+        ]),
+        // Arms flail outward briefly
+        buildRotationTrack('upperArm_L', t, [0, -0.4, -0.15, -0.05, 0], AXIS_Z),
+        buildRotationTrack('upperArm_R', t, [0, 0.4, 0.15, 0.05, 0], AXIS_Z),
     ]);
 }
 
 function _politeDeath() {
     const c = ENEMY_VISUAL_CONFIG.polite;
     const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
     const dur = 0.6;
-    const t = [0, 0.1, 0.3, 0.4, 0.6];
+    const t = [0, 0.10, 0.25, 0.38, 0.50, dur];
+
     return new THREE.AnimationClip('polite_death', dur, [
+        // Staggers, sinks to knees, tips forward
         posTrack('root', t, [
-            [0,ry,0], [0,ry-0.1,0], [0,ry*0.3,0.1], [0,ry*0.1,0.15], [0,0,0.2]
+            [0, ry, 0], [0, ry - 0.05, -0.08 * s], [0.05 * s, ry * 0.6, -0.04 * s],
+            [0.03 * s, ry * 0.25, 0.05 * s], [0, ry * 0.1, 0.12 * s], [0, 0, 0.15 * s]
         ]),
+        // Tries to stay upright, then collapses forward
         eulerTrack('spine', t, [
-            [-0.087,0,0], [-0.2,0,0], [-0.8,0,0.1], [-1.2,0,0.15], [-1.5,0,0.2]
+            [-0.087, 0, 0], [-0.15, 0, 0.05], [-0.5, 0, 0.10],
+            [-0.9, 0, 0.12], [-1.3, 0, 0.08], [-1.5, 0, 0.05]
         ]),
-        buildRotationTrack('upperLeg_L', t, [0, 0.3, 0.6, 0.8, 1.0], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.5, 0.7, 0.9], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0, -0.3, -0.8, -1.2, -1.5], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.4, -0.9, -1.3, -1.4], AXIS_X),
-        scaleTrack('root', [0, 0.4, 0.6], [[1,1,1], [1,1,1], [0.01,0.01,0.01]]),
+        // Arms reach out then go limp (multi-axis)
+        eulerTrack('upperArm_L', t, [
+            [0, 0, 0], [0.3, 0, -0.15], [0.6, 0, -0.35],
+            [0.3, 0, -0.40], [0.1, 0, -0.30], [-0.2, 0, -0.20]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0, 0, 0], [0.2, 0, 0.15], [0.5, 0, 0.35],
+            [0.2, 0, 0.40], [0, 0, 0.30], [-0.3, 0, 0.20]
+        ]),
+        // Legs buckle
+        buildRotationTrack('upperLeg_L', t, [0, 0.3, 0.7, 0.9, 1.0, 1.1], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.5, 0.8, 0.95, 1.0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [0, -0.3, -0.8, -1.2, -1.5, -1.6], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [0, -0.2, -0.7, -1.1, -1.4, -1.5], AXIS_X),
+        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// PEE DANCER — frantic hopping, squash & stretch
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// PEE DANCER — frantic hopping, knees together, desperate urgency
+// Personality: tiny, fast, bouncing from foot to foot, GOTTA GO
+// ═══════════════════════════════════════════════════════════════════════
 
 function _dancerHopWalk() {
     const c = ENEMY_VISUAL_CONFIG.dancer;
@@ -158,30 +220,46 @@ function _dancerHopWalk() {
     const bob = c.animationParams.bobHeight;
     const rock = c.animationParams.bodyRock;
     const lsw = c.animationParams.legSwing;
-    const spineLean = -0.15;
     const dur = c.animationParams.walkDuration;
     const t = [0, 0.1, 0.2, 0.3, dur];
 
     return new THREE.AnimationClip('dancer_hop_walk', dur, [
+        // Root: BIG vertical hops — airborne between steps
         posTrack('root', t, [
-            [0,ry,0], [0,ry+bob,0], [0,ry,0], [0,ry+bob,0], [0,ry,0]
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
+        // Strong squash on landing, stretch on jump
         scaleTrack('root', t, [
-            [1.1,0.85,1.1], [0.95,1.1,0.95], [1.1,0.85,1.1], [0.95,1.1,0.95], [1.1,0.85,1.1]
+            [1.14, 0.80, 1.14], [0.90, 1.16, 0.90], [1.14, 0.80, 1.14],
+            [0.90, 1.16, 0.90], [1.14, 0.80, 1.14]
         ]),
+        // Spine: hunched forward, dramatic side-to-side desperation rock
         eulerTrack('spine', t, [
-            [spineLean,0,-rock], [spineLean,0,0], [spineLean,0,rock], [spineLean,0,0], [spineLean,0,-rock]
+            [-0.22, 0, -rock], [-0.16, 0, 0], [-0.22, 0, rock],
+            [-0.16, 0, 0], [-0.22, 0, -rock]
         ]),
+        // Chest: delayed follow-through on rock (secondary motion)
+        eulerTrack('chest', t, [
+            [0, 0, 0], [0, 0, -rock * 0.4], [0, 0, 0],
+            [0, 0, rock * 0.4], [0, 0, 0]
+        ]),
+        // Head: bobbing hard + slight frantic shake
         eulerTrack('head', t, [
-            [0.1,0,rock*0.3], [-0.05,0,0], [0.1,0,-rock*0.3], [-0.05,0,0], [0.1,0,rock*0.3]
+            [0.12, 0.06, rock * 0.3], [-0.06, -0.08, 0],
+            [0.12, -0.06, -rock * 0.3], [-0.06, 0.08, 0],
+            [0.12, 0.06, rock * 0.3]
         ]),
+        // Legs: knees together, tiny desperate micro-steps
         buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
         buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
+        // Lower legs: turned inward (knees pressed together — gotta go!)
         eulerTrack('lowerLeg_L', t, [
-            [-0.2,0,0.15], [-0.1,0,0.15], [-0.2,0,0.15], [-0.1,0,0.15], [-0.2,0,0.15]
+            [-0.25, 0, 0.20], [-0.12, 0, 0.20], [-0.25, 0, 0.20],
+            [-0.12, 0, 0.20], [-0.25, 0, 0.20]
         ]),
         eulerTrack('lowerLeg_R', t, [
-            [-0.2,0,-0.15], [-0.1,0,-0.15], [-0.2,0,-0.15], [-0.1,0,-0.15], [-0.2,0,-0.15]
+            [-0.25, 0, -0.20], [-0.12, 0, -0.20], [-0.25, 0, -0.20],
+            [-0.12, 0, -0.20], [-0.25, 0, -0.20]
         ]),
     ]);
 }
@@ -189,30 +267,60 @@ function _dancerHopWalk() {
 function _dancerBash() {
     const c = ENEMY_VISUAL_CONFIG.dancer;
     const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
     const dur = 0.6;
-    const t = [0, 0.1, 0.2, 0.3, 0.4, 0.5, dur];
+
+    // Rapid-fire whole-body door slams
+    const t = [0, 0.07, 0.14, 0.22, 0.30, 0.38, 0.46, 0.54, dur];
+
     return new THREE.AnimationClip('dancer_bash_door', dur, [
+        // Root: lunges into door, bounces back, repeat
         posTrack('root', t, [
-            [0,ry,0], [0,ry+0.08,0.05], [0,ry,0], [0,ry+0.08,0.05],
-            [0,ry,0], [0,ry+0.08,0.05], [0,ry,0]
+            [0, ry, 0], [0, ry, 0.12 * s], [0, ry - 0.04, 0], [0, ry + 0.06, 0],
+            [0, ry, 0.14 * s], [0, ry - 0.04, 0], [0, ry + 0.05, 0],
+            [0, ry, 0.12 * s], [0, ry, 0]
         ]),
-        eulerTrack('spine', t, [
-            [-0.15,0,0], [-0.3,0,0], [-0.15,0,0], [-0.3,0,0],
-            [-0.15,0,0], [-0.3,0,0], [-0.15,0,0]
-        ]),
+        // Squash on every impact, stretch on recoil
         scaleTrack('root', t, [
-            [1.05,0.9,1.05], [0.97,1.05,0.97], [1.05,0.9,1.05], [0.97,1.05,0.97],
-            [1.05,0.9,1.05], [0.97,1.05,0.97], [1.05,0.9,1.05]
+            [1, 1, 1], [1.18, 0.78, 1.18], [0.88, 1.15, 0.88], [1, 1, 1],
+            [1.20, 0.76, 1.20], [0.86, 1.16, 0.86], [1, 1, 1],
+            [1.16, 0.80, 1.16], [1, 1, 1]
         ]),
+        // Spine: slams forward, wobbles on recoil
+        eulerTrack('spine', t, [
+            [-0.15, 0, 0], [-0.42, 0, 0], [0.05, 0, 0.12], [-0.10, 0, -0.08],
+            [-0.48, 0, 0], [0.08, 0, -0.12], [-0.10, 0, 0.06],
+            [-0.42, 0, 0], [-0.15, 0, 0]
+        ]),
+        // Head: shaking in desperation between slams
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.15, 0, 0], [-0.08, 0.14, 0], [0, 0, 0],
+            [0.18, 0, 0], [-0.06, -0.14, 0], [0, 0, 0],
+            [0.12, 0, 0], [0, 0, 0]
+        ]),
+        // Legs: stomping in frustration between slams
+        buildRotationTrack('upperLeg_L', t,
+            [0, 0.22, -0.10, 0.18, 0.25, -0.10, 0.20, 0.22, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, 0.25, -0.10, 0.20, 0.22, -0.10, 0.18, 0.25, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t,
+            [0, -0.25, -0.40, -0.15, -0.28, -0.42, -0.15, -0.25, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t,
+            [0, -0.28, -0.42, -0.15, -0.25, -0.40, -0.15, -0.28, 0], AXIS_X),
     ]);
 }
 
 function _dancerHitReact() {
     const dur = 0.25;
-    const t = [0, 0.04, 0.12, dur];
+    const t = [0, 0.03, 0.10, 0.18, dur];
     return new THREE.AnimationClip('dancer_hit_react', dur, [
-        posTrack('root', t, [[0,0,0], [0,-0.03,-0.06], [0,-0.01,-0.02], [0,0,0]]),
-        buildRotationTrack('spine', t, [0, 0.1, 0.03, 0], AXIS_X),
+        // Bounces upward then slams down
+        posTrack('root', t, [[0, 0, 0], [0, 0.10, -0.08], [0, -0.05, -0.03], [0, 0.02, -0.01], [0, 0, 0]]),
+        // Big squash on hit
+        scaleTrack('root', t, [
+            [1, 1, 1], [1.22, 0.68, 1.22], [0.88, 1.14, 0.88], [1.05, 0.97, 1.05], [1, 1, 1]
+        ]),
+        buildRotationTrack('spine', t, [0, 0.12, 0.04, 0.01, 0], AXIS_X),
     ]);
 }
 
@@ -220,26 +328,36 @@ function _dancerDeath() {
     const c = ENEMY_VISUAL_CONFIG.dancer;
     const ry = c.bonePositions.root.y * c.size;
     const dur = 0.5;
-    const t = [0, 0.1, 0.25, 0.35, 0.5];
+    const t = [0, 0.08, 0.18, 0.30, 0.42, dur];
+
     return new THREE.AnimationClip('dancer_death', dur, [
+        // Squats down, deflates, splats
         posTrack('root', t, [
-            [0,ry,0], [0,ry*0.7,0], [0,ry*0.2,0.05], [0,ry*0.05,0.05], [0,0,0.05]
+            [0, ry, 0], [0, ry * 0.75, 0], [0.04, ry * 0.3, 0.03],
+            [0.06, ry * 0.1, 0.04], [0.05, ry * 0.02, 0.04], [0.05, 0, 0.04]
         ]),
+        // Extreme squash → deflate → splat
         scaleTrack('root', t, [
-            [1,1,1], [1.1,0.8,1.1], [1.3,0.5,1.3], [1.4,0.2,1.4], [0.01,0.01,0.01]
+            [1, 1, 1], [1.25, 0.65, 1.25], [1.38, 0.42, 1.38],
+            [1.42, 0.22, 1.42], [1.45, 0.10, 1.45], [0.01, 0.01, 0.01]
         ]),
+        // Spine crumples
         eulerTrack('spine', t, [
-            [-0.15,0,0], [-0.5,0,0.2], [-1.0,0,0.3], [-1.3,0,0.2], [-1.5,0,0.1]
+            [-0.15, 0, 0], [-0.4, 0, 0.15], [-0.8, 0, 0.25],
+            [-1.1, 0, 0.18], [-1.3, 0, 0.10], [-1.5, 0, 0.05]
         ]),
-        buildRotationTrack('upperLeg_L', t, [0, 0.3, 0.5, 0.6, 0.7], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.4, 0.5, 0.6], AXIS_X),
+        buildRotationTrack('upperLeg_L', t, [0, 0.3, 0.5, 0.6, 0.7, 0.7], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.4, 0.5, 0.6, 0.6], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [0, -0.3, -0.6, -0.8, -0.9, -0.9], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [0, -0.2, -0.5, -0.7, -0.8, -0.8], AXIS_X),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// WADDLE TANK — heavy lateral rock, belly jiggle, panic mode
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// WADDLE TANK — heavy penguin waddle, belly jiggle, unstoppable mass
+// Personality: huge, slow, heavy, belly leads the way, shakes the earth
+// ═══════════════════════════════════════════════════════════════════════
 
 function _waddleWaddle() {
     const c = ENEMY_VISUAL_CONFIG.waddle;
@@ -249,58 +367,113 @@ function _waddleWaddle() {
     const bodyRock = c.animationParams.bodyRock;
     const lsw = c.animationParams.legSwing;
     const asw = c.animationParams.armSwing;
-    const spineRest = -0.20;
     const dur = c.animationParams.walkDuration;
     const t = [0, 0.35, 0.7, 1.05, dur];
 
+    // Belly follow-through overshoot
+    const bellyRock = bodyRock * c.animationParams.bellyOvershoot;
+
     return new THREE.AnimationClip('waddle_waddle', dur, [
+        // Root: MASSIVE lateral rock — the defining trait
         eulerTrack('root', t, [
-            [0,0,-bodyRock], [0,0,0], [0,0,bodyRock], [0,0,0], [0,0,-bodyRock]
+            [0, 0, -bodyRock], [0, 0, 0], [0, 0, bodyRock], [0, 0, 0], [0, 0, -bodyRock]
         ]),
+        // Root bob: heavy body barely lifts
         posTrack('root', t, [
-            [0,ry,0], [0,ry+bob,0], [0,ry,0], [0,ry+bob,0], [0,ry,0]
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
+        // Spine: deep forward lean + counter-sway to keep head stable
         eulerTrack('spine', t, [
-            [spineRest,0,bodyRock*0.6], [spineRest,0,0],
-            [spineRest,0,-bodyRock*0.6], [spineRest,0,0], [spineRest,0,bodyRock*0.6]
+            [-0.24, 0, bodyRock * 0.6], [-0.24, 0, 0],
+            [-0.24, 0, -bodyRock * 0.6], [-0.24, 0, 0], [-0.24, 0, bodyRock * 0.6]
         ]),
-        // Belly: delayed follow + 20% overshoot (secondary motion)
+        // Belly: secondary motion — follows body rock with phase delay + overshoot
         eulerTrack('belly', t, [
-            [0,0,0], [0,0,bodyRock*0.6*1.2], [0,0,0], [0,0,-bodyRock*0.6*1.2], [0,0,0]
+            [0.05, 0, 0], [0.05, 0, bellyRock], [0.05, 0, 0],
+            [0.05, 0, -bellyRock], [0.05, 0, 0]
         ]),
+        // Belly jiggle on each step (scale bounce)
+        scaleTrack('belly', t, [
+            [1, 1, 1], [1.08, 0.94, 1.10], [1, 1, 1], [1.08, 0.94, 1.10], [1, 1, 1]
+        ]),
+        // Head: counter-rocks opposite to body (vestibular stabilization)
+        eulerTrack('head', t, [
+            [0, 0, bodyRock * 0.7], [0, 0, 0], [0, 0, -bodyRock * 0.7],
+            [0, 0, 0], [0, 0, bodyRock * 0.7]
+        ]),
+        // Arms: splayed outward for balance (Z abduction) + small swing
+        eulerTrack('upperArm_L', t, [
+            [-asw, 0, -0.28], [0, 0, -0.28], [asw, 0, -0.28], [0, 0, -0.28], [-asw, 0, -0.28]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [asw, 0, 0.28], [0, 0, 0.28], [-asw, 0, 0.28], [0, 0, 0.28], [asw, 0, 0.28]
+        ]),
+        // Forearms: slight lag follow-through
+        buildRotationTrack('forearm_L', t, [0.10, -0.12, 0.10, -0.12, 0.10], AXIS_X),
+        buildRotationTrack('forearm_R', t, [-0.12, 0.10, -0.12, 0.10, -0.12], AXIS_X),
+        // Legs: wide short steps
         buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
         buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0, 0, 0, -0.3, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.3, 0, 0, 0], AXIS_X),
-        buildRotationTrack('upperArm_L', t, [0, 0, 0, 0, 0], AXIS_X),
-        buildRotationTrack('upperArm_R', t, [-asw, 0, asw, 0, -asw], AXIS_X),
-        buildRotationTrack('head', t, [bodyRock*0.8, 0, -bodyRock*0.8, 0, bodyRock*0.8], AXIS_Z),
+        // Lower legs: barely bend (heavy, stiff, ponderous)
+        buildRotationTrack('lowerLeg_L', t, [-0.08, -0.22, -0.08, -0.26, -0.08], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.08, -0.26, -0.08, -0.22, -0.08], AXIS_X),
+        // Feet: flat-footed planting (no heel-toe, just slams down)
+        buildRotationTrack('foot_L', t, [-0.08, 0.06, -0.08, 0, -0.08], AXIS_X),
+        buildRotationTrack('foot_R', t, [-0.08, 0, -0.08, 0.06, -0.08], AXIS_X),
     ]);
 }
 
 function _waddlePanicSprint() {
     const c = ENEMY_VISUAL_CONFIG.waddle;
     const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
     const dur = 0.5;
     const t = [0, 0.125, 0.25, 0.375, dur];
 
     return new THREE.AnimationClip('waddle_panic_sprint', dur, [
+        // Root: fast bob, lower stance (leaning into sprint)
         posTrack('root', t, [
-            [0,ry,0], [0,ry+0.1,0], [0,ry,0], [0,ry+0.1,0], [0,ry,0]
+            [0, ry - 0.05, 0], [0, ry + 0.08, 0], [0, ry - 0.05, 0],
+            [0, ry + 0.08, 0], [0, ry - 0.05, 0]
         ]),
+        // Body rocks more violently in panic
+        eulerTrack('root', t, [
+            [0, 0, -0.14], [0, 0, 0], [0, 0, 0.14], [0, 0, 0], [0, 0, -0.14]
+        ]),
+        // Spine: WAY forward (panicked desperate lean)
         eulerTrack('spine', t, [
-            [-0.08,0,0], [-0.05,0,0], [-0.08,0,0], [-0.05,0,0], [-0.08,0,0]
+            [-0.38, 0, 0.10], [-0.32, 0, 0], [-0.38, 0, -0.10],
+            [-0.32, 0, 0], [-0.38, 0, 0.10]
         ]),
-        buildRotationTrack('upperLeg_L', t, [0.87, 0, -0.87, 0, 0.87], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [-0.87, 0, 0.87, 0, -0.87], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0, 0, 0, -0.6, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.6, 0, 0, 0], AXIS_X),
-        buildRotationTrack('upperArm_L', t, [0.8, -0.3, -0.8, 0.3, 0.8], AXIS_X),
-        buildRotationTrack('upperArm_R', t, [-0.8, 0.3, 0.8, -0.3, -0.8], AXIS_X),
+        // Belly: WILD jiggle from panicked running
+        scaleTrack('belly', t, [
+            [1.12, 0.88, 1.14], [0.90, 1.10, 0.88], [1.12, 0.88, 1.14],
+            [0.90, 1.10, 0.88], [1.12, 0.88, 1.14]
+        ]),
         eulerTrack('belly', t, [
-            [0.15,0,0], [-0.15,0,0], [0.15,0,0], [-0.15,0,0], [0.15,0,0]
+            [0.20, 0, 0.12], [-0.18, 0, -0.10], [0.20, 0, -0.12],
+            [-0.18, 0, 0.10], [0.20, 0, 0.12]
         ]),
-        buildRotationTrack('head', t, [0.1, -0.1, 0.1, -0.1, 0.1], AXIS_X),
+        // Arms: pumping wildly (no balance, pure panic!)
+        buildRotationTrack('upperArm_L', t, [0.95, -0.45, -0.95, 0.45, 0.95], AXIS_X),
+        buildRotationTrack('upperArm_R', t, [-0.95, 0.45, 0.95, -0.45, -0.95], AXIS_X),
+        // Forearms: flapping
+        buildRotationTrack('forearm_L', t, [-0.45, 0.35, -0.45, 0.35, -0.45], AXIS_X),
+        buildRotationTrack('forearm_R', t, [0.35, -0.45, 0.35, -0.45, 0.35], AXIS_X),
+        // Legs: desperate longer stride
+        buildRotationTrack('upperLeg_L', t, [0.92, 0, -0.92, 0, 0.92], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [-0.92, 0, 0.92, 0, -0.92], AXIS_X),
+        // Lower legs: proper flex during swing
+        buildRotationTrack('lowerLeg_L', t, [-0.10, -0.60, -0.15, -0.70, -0.10], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.70, -0.10, -0.60, -0.15], AXIS_X),
+        // Feet: desperate stomping
+        buildRotationTrack('foot_L', t, [-0.18, 0.12, -0.18, 0.08, -0.18], AXIS_X),
+        buildRotationTrack('foot_R', t, [-0.18, 0.08, -0.18, 0.12, -0.18], AXIS_X),
+        // Head: looking around panicked
+        eulerTrack('head', t, [
+            [0.10, 0.18, 0], [-0.06, -0.12, 0], [0.10, -0.18, 0],
+            [-0.06, 0.12, 0], [0.10, 0.18, 0]
+        ]),
     ]);
 }
 
@@ -309,35 +482,77 @@ function _waddleBash() {
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const dur = 1.0;
-    const t = [0, 0.3, 0.5, 0.6, 0.7, 1.0];
+
+    // Wind-up → CHARGE → IMPACT → belly bounce cascade → settle
+    const t = [0, 0.22, 0.38, 0.46, 0.54, 0.64, 0.78, dur];
 
     return new THREE.AnimationClip('waddle_bash_door', dur, [
+        // Root: steps BACK (wind-up), then SLAMS forward
         posTrack('root', t, [
-            [0,ry,0], [0,ry+0.05,-0.25*s], [0,ry-0.05,0.3*s],
-            [0,ry-0.1,0.3*s], [0,ry,0.15*s], [0,ry,0]
+            [0, ry, 0], [0, ry + 0.04, -0.22 * s], [0, ry - 0.06, 0.32 * s],
+            [0, ry - 0.10, 0.26 * s], [0, ry - 0.04, 0.15 * s],
+            [0, ry, 0.08 * s], [0, ry, 0.03 * s], [0, ry, 0]
         ]),
+        // Spine: arches back (anticipation), slams forward (charge)
         eulerTrack('spine', t, [
-            [-0.20,0,0], [0.3,0,0], [-0.6,0,0], [-0.6,0,0], [-0.3,0,0], [-0.20,0,0]
+            [-0.20, 0, 0], [0.22, 0, 0], [-0.58, 0, 0],
+            [-0.48, 0, 0.08], [-0.32, 0, -0.05],
+            [-0.24, 0, 0.03], [-0.20, 0, 0], [-0.20, 0, 0]
         ]),
+        // Belly: compresses on wind-up, EXPLODES on impact, multi-bounce settle
         scaleTrack('belly', t, [
-            [1,1,1], [1,1,0.9], [1.2,0.9,1.3], [0.9,1.1,0.8], [1.05,0.97,1.05], [1,1,1]
+            [1, 1, 1], [0.88, 1.06, 0.84], [1.35, 0.78, 1.42],
+            [0.86, 1.16, 0.78], [1.14, 0.90, 1.18],
+            [0.94, 1.04, 0.93], [1.03, 0.99, 1.02], [1, 1, 1]
         ]),
-        buildRotationTrack('upperArm_L', t, [0, 0.5, -0.3, -0.3, 0, 0], AXIS_X),
-        buildRotationTrack('upperArm_R', t, [0, 0.5, -0.3, -0.3, 0, 0], AXIS_X),
+        // Belly rotation follows body with overshoot
+        eulerTrack('belly', t, [
+            [0, 0, 0], [-0.12, 0, 0], [0.28, 0, 0],
+            [-0.14, 0, 0], [0.08, 0, 0],
+            [-0.04, 0, 0], [0.02, 0, 0], [0, 0, 0]
+        ]),
+        // Arms: fly forward on impact (follow-through momentum)
+        buildRotationTrack('upperArm_L', t,
+            [0, 0.6, -0.55, -0.35, -0.15, 0.05, 0, 0], AXIS_X),
+        buildRotationTrack('upperArm_R', t,
+            [0, 0.6, -0.55, -0.35, -0.15, 0.05, 0, 0], AXIS_X),
+        // Forearms: flail forward on impact
+        buildRotationTrack('forearm_L', t,
+            [0, 0.3, -0.8, -0.4, -0.2, 0, 0, 0], AXIS_X),
+        buildRotationTrack('forearm_R', t,
+            [0, 0.3, -0.8, -0.4, -0.2, 0, 0, 0], AXIS_X),
+        // Head: rocks with impact, stabilizes
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.12, 0, 0], [-0.22, 0, 0.08],
+            [0.10, 0, -0.05], [-0.06, 0, 0.03],
+            [0.03, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Legs: brace for impact
+        buildRotationTrack('upperLeg_L', t,
+            [0, -0.15, 0.28, 0.22, 0.12, 0.05, 0, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, -0.15, 0.28, 0.22, 0.12, 0.05, 0, 0], AXIS_X),
     ]);
 }
 
 function _waddleHitReact() {
     const dur = 0.35;
-    const t = [0, 0.06, 0.15, 0.25, dur];
+    const t = [0, 0.05, 0.12, 0.22, 0.30, dur];
     return new THREE.AnimationClip('waddle_hit_react', dur, [
+        // Tank barely flinches
         posTrack('root', t, [
-            [0,0,0], [0,0,-0.15], [0,0,-0.08], [0,0,-0.03], [0,0,0]
+            [0, 0, 0], [0, 0, -0.06], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0], [0, 0, 0]
         ]),
-        scaleTrack('belly', [0, 0.06, 0.12, 0.2, 0.28, dur], [
-            [1,1,1], [1.15,0.9,1.2], [0.9,1.1,0.85], [1.05,0.97,1.05], [0.98,1.02,0.98], [1,1,1]
+        // But belly JIGGLES gloriously (absorbs the hit like a champ)
+        scaleTrack('belly', t, [
+            [1, 1, 1], [1.22, 0.82, 1.28], [0.86, 1.14, 0.80],
+            [1.10, 0.94, 1.10], [0.96, 1.03, 0.96], [1, 1, 1]
         ]),
-        buildRotationTrack('spine', t, [0, 0.1, 0.05, 0.02, 0], AXIS_X),
+        eulerTrack('belly', t, [
+            [0, 0, 0], [0.14, 0, 0.06], [-0.08, 0, -0.03],
+            [0.04, 0, 0.01], [-0.01, 0, 0], [0, 0, 0]
+        ]),
+        buildRotationTrack('spine', t, [0, 0.05, 0.02, 0.01, 0, 0], AXIS_X),
     ]);
 }
 
@@ -346,28 +561,50 @@ function _waddleDeath() {
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const dur = 0.8;
-    const t = [0, 0.15, 0.35, 0.55, 0.7, dur];
+    const t = [0, 0.12, 0.30, 0.48, 0.60, 0.72, dur];
 
     return new THREE.AnimationClip('waddle_death', dur, [
+        // Timber fall to the side — slow, heavy, inevitable
         posTrack('root', t, [
-            [0,ry,0], [0.1*s,ry*0.9,0], [0.3*s,ry*0.5,0],
-            [0.5*s,ry*0.2,0], [0.6*s,ry*0.05,0], [0.6*s,0,0]
+            [0, ry, 0], [0.06 * s, ry * 0.95, 0], [0.22 * s, ry * 0.7, 0],
+            [0.42 * s, ry * 0.35, 0], [0.56 * s, ry * 0.1, 0],
+            [0.60 * s, ry * 0.02, 0], [0.60 * s, 0, 0]
         ]),
-        buildRotationTrack('root', t, [0, -0.3, -0.8, -1.2, -1.5, -1.57], AXIS_Z),
+        // Root tilts sideways gradually
+        buildRotationTrack('root', t, [0, -0.15, -0.50, -0.95, -1.30, -1.50, -1.57], AXIS_Z),
+        // Spine curls forward during fall
         eulerTrack('spine', t, [
-            [-0.20,0,0], [-0.3,0,0], [-0.5,0,-0.2], [-0.7,0,-0.3], [-0.8,0,-0.3], [-0.9,0,-0.3]
+            [-0.20, 0, 0], [-0.28, 0, 0.05], [-0.42, 0, 0.12],
+            [-0.58, 0, 0.20], [-0.68, 0, 0.24], [-0.72, 0, 0.26], [-0.78, 0, 0.26]
+        ]),
+        // Belly bounces from the fall (secondary motion)
+        scaleTrack('belly', t, [
+            [1, 1, 1], [1, 1, 1], [1.06, 0.94, 1.06],
+            [1.18, 0.84, 1.20], [0.88, 1.12, 0.86],
+            [1.06, 0.96, 1.04], [1, 1, 1]
         ]),
         eulerTrack('belly', t, [
-            [0,0,0], [0.1,0,0], [0.2,0,0.1], [0.15,0,0.2], [0.1,0,0.15], [0,0,0.1]
+            [0, 0, 0], [0.05, 0, 0], [0.12, 0, 0.06],
+            [0.22, 0, 0.16], [0.14, 0, 0.22], [0.06, 0, 0.14], [0, 0, 0.08]
         ]),
-        scaleTrack('root', [0, 0.6, dur], [[1,1,1], [1,1,1], [0.01,0.01,0.01]]),
+        // Arms reach out as they topple
+        eulerTrack('upperArm_L', t, [
+            [0, 0, -0.25], [0.2, 0, -0.38], [0.4, 0, -0.48],
+            [0.3, 0, -0.55], [0.1, 0, -0.42], [0, 0, -0.32], [0, 0, -0.25]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0, 0, 0.25], [0.3, 0, 0.42], [0.6, 0, 0.58],
+            [0.5, 0, 0.68], [0.3, 0, 0.56], [0.1, 0, 0.42], [0, 0, 0.30]
+        ]),
+        scaleTrack('root', [0, 0.60, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// PANICKER — frantic, asymmetric arm flailing, spine twist
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// PANICKER — absolute chaos, wild asymmetric arm flailing, spine twist
+// Personality: loud, frantic, EVERYONE PANIC, arms windmill overhead
+// ═══════════════════════════════════════════════════════════════════════
 
 function _panickerPanicRun() {
     const c = ENEMY_VISUAL_CONFIG.panicker;
@@ -381,34 +618,52 @@ function _panickerPanicRun() {
     const t = [0, 0.125, 0.25, 0.375, dur];
     const PI = Math.PI;
 
+    // Left arm at 1.3x frequency — different timing creates asymmetric flailing
+    const tArmL = [0, 0.077, 0.154, 0.231, 0.308, 0.385, dur];
+
     return new THREE.AnimationClip('panicker_panic_run', dur, [
+        // Root: bob with lateral chaos (slightly different each step)
         posTrack('root', t, [
-            [0,ry,0], [0,ry+bob,0], [0,ry,0], [0,ry+bob,0], [0,ry,0]
+            [0.02 * s, ry, 0], [-0.03 * s, ry + bob, 0], [0.03 * s, ry, 0],
+            [-0.02 * s, ry + bob, 0], [0.02 * s, ry, 0]
         ]),
-        buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw*0.9, 0, lsw], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [-lsw*0.9, 0, lsw, 0, -lsw*0.9], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0, 0, 0, -0.5, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.5, 0, 0, 0], AXIS_X),
+        // Spine: big forward lean + wild twist + lateral chaos
         eulerTrack('spine', t, [
-            [spineRest, spineTwist, 0], [spineRest, 0, 0],
-            [spineRest, -spineTwist, 0], [spineRest, 0, 0], [spineRest, spineTwist, 0]
+            [spineRest - 0.06, spineTwist, 0.04],
+            [spineRest, 0, -0.05],
+            [spineRest - 0.06, -spineTwist, 0.06],
+            [spineRest, 0, -0.04],
+            [spineRest - 0.06, spineTwist, 0.04]
         ]),
+        // Head: whipping around frantically (very visible from top-down!)
         eulerTrack('head', t, [
-            [0,0,0], [0,spineTwist*0.5,0], [0,0,0], [0,-spineTwist*0.5,0], [0,0,0]
+            [0.06, 0.28, 0.08], [-0.05, -0.18, -0.06],
+            [0.08, -0.32, 0.06], [-0.04, 0.22, -0.08],
+            [0.06, 0.28, 0.08]
         ]),
-        // Left arm: wide asymmetric arc (1.3x feel — different pattern than right)
-        eulerTrack('upperArm_L', [0, 0.1, 0.2, 0.3, 0.4, 0.5], [
-            [PI+0.5, 0, 0.3], [PI-0.4, 0, -0.2], [PI+0.3, 0, 0.4],
-            [PI-0.6, 0, -0.3], [PI+0.4, 0, 0.2], [PI+0.5, 0, 0.3]
+        // Left arm: WILD overhead arc at faster frequency (7 keyframes)
+        eulerTrack('upperArm_L', tArmL, [
+            [PI + 0.7, 0, 0.38], [PI - 0.6, 0, -0.28], [PI + 0.5, 0, 0.48],
+            [PI - 0.8, 0, -0.38], [PI + 0.6, 0, 0.32],
+            [PI - 0.5, 0, -0.22], [PI + 0.7, 0, 0.38]
         ]),
-        // Right arm: different arc, different timing
+        // Right arm: different pattern, normal frequency
         eulerTrack('upperArm_R', t, [
-            [PI-0.3, 0, -0.2], [PI+0.5, 0, 0.3],
-            [PI-0.3, 0, -0.2], [PI+0.5, 0, 0.3], [PI-0.3, 0, -0.2]
+            [PI - 0.5, 0, -0.32], [PI + 0.7, 0, 0.38],
+            [PI - 0.6, 0, -0.28], [PI + 0.8, 0, 0.42],
+            [PI - 0.5, 0, -0.32]
         ]),
-        buildRotationTrack('forearm_L', [0, 0.1, 0.2, 0.3, 0.4, 0.5],
-            [0.3, -0.4, 0.5, -0.3, 0.4, 0.3], AXIS_X),
-        buildRotationTrack('forearm_R', t, [0.2, -0.3, 0.2, -0.3, 0.2], AXIS_X),
+        // Forearms: chaotic follow-through (different phases per arm)
+        buildRotationTrack('forearm_L', tArmL,
+            [0.5, -0.6, 0.7, -0.5, 0.6, -0.4, 0.5], AXIS_X),
+        buildRotationTrack('forearm_R', t,
+            [0.4, -0.5, 0.4, -0.5, 0.4], AXIS_X),
+        // Legs: HIGH knees, fast frantic pumping
+        buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw * 0.85, 0, lsw], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [-lsw * 0.85, 0, lsw, 0, -lsw * 0.85], AXIS_X),
+        // Lower legs: deep flex during swing (high-knee running form)
+        buildRotationTrack('lowerLeg_L', t, [-0.12, -0.78, -0.18, -0.82, -0.12], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.18, -0.82, -0.12, -0.78, -0.18], AXIS_X),
     ]);
 }
 
@@ -417,33 +672,79 @@ function _panickerBash() {
     const ry = c.bonePositions.root.y * c.size;
     const dur = 0.5;
     const PI = Math.PI;
-    const t = [0, 0.1, 0.2, 0.3, 0.4, dur];
+
+    // Frantic pounding: R slam, L slam, both + kick, flail
+    const t = [0, 0.07, 0.14, 0.22, 0.30, 0.38, 0.44, dur];
 
     return new THREE.AnimationClip('panicker_bash_door', dur, [
+        // Root: lurches with each wild pound
         posTrack('root', t, [
-            [0,ry,0], [0,ry,0.05], [0,ry,0], [0,ry,0.05], [0,ry,0], [0,ry,0]
+            [0, ry, 0], [0.03, ry, 0.06], [-0.03, ry, 0.06],
+            [0, ry, 0.08], [0.02, ry, 0.04], [-0.02, ry, 0.06],
+            [0, ry, 0.04], [0, ry, 0]
         ]),
-        buildRotationTrack('upperArm_L', t,
-            [PI-0.3, PI+0.5, PI-0.3, PI+0.5, PI-0.3, PI-0.3], AXIS_X),
-        buildRotationTrack('upperArm_R', t,
-            [PI+0.5, PI-0.3, PI+0.5, PI-0.3, PI+0.5, PI+0.5], AXIS_X),
-        buildRotationTrack('forearm_L', t, [0.5, -0.6, 0.5, -0.6, 0.5, 0.5], AXIS_X),
-        buildRotationTrack('forearm_R', t, [-0.6, 0.5, -0.6, 0.5, -0.6, -0.6], AXIS_X),
+        // Spine: twisting wildly with each hit
         eulerTrack('spine', t, [
-            [-0.087,0,0], [-0.15,0,0.05], [-0.087,0,-0.05],
-            [-0.15,0,0.05], [-0.087,0,-0.05], [-0.087,0,0]
+            [-0.10, 0, 0], [-0.22, 0.18, 0.06], [-0.22, -0.18, -0.06],
+            [-0.28, 0, 0], [-0.16, 0.12, 0.08], [-0.22, -0.14, -0.06],
+            [-0.16, 0, 0], [-0.10, 0, 0]
         ]),
+        // Arms: alternating overhead slams — pure chaos
+        eulerTrack('upperArm_R', t, [
+            [PI, 0, 0], [PI * 0.35, 0, -0.22], [PI + 0.3, 0, 0],
+            [PI * 0.28, 0, -0.18], [PI + 0.2, 0, 0.12], [PI * 0.45, 0, -0.12],
+            [PI + 0.4, 0, 0], [PI, 0, 0]
+        ]),
+        eulerTrack('upperArm_L', t, [
+            [PI + 0.3, 0, 0], [PI, 0, 0.22], [PI * 0.35, 0, 0.22],
+            [PI * 0.28, 0, 0.18], [PI + 0.3, 0, -0.12], [PI * 0.45, 0, 0.12],
+            [PI, 0, 0], [PI + 0.3, 0, 0]
+        ]),
+        // Forearms: flail on every hit
+        buildRotationTrack('forearm_R', t,
+            [0.3, -0.85, 0.4, -0.92, 0.3, -0.65, 0.4, 0.3], AXIS_X),
+        buildRotationTrack('forearm_L', t,
+            [0.4, 0.3, -0.85, -0.92, 0.4, -0.72, 0.3, 0.4], AXIS_X),
+        // Head: whipping around desperately
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.12, 0.22, 0], [-0.06, -0.28, 0],
+            [0.10, 0, 0.12], [-0.04, 0.18, -0.08], [0.06, -0.22, 0],
+            [-0.05, 0.12, 0.06], [0, 0, 0]
+        ]),
+        // Legs: KICKING the door too!
+        buildRotationTrack('upperLeg_L', t,
+            [0, 0.06, 0.32, 0.12, 0.06, 0.28, 0.08, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, 0.32, 0.06, 0.12, 0.30, 0.06, 0.08, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t,
+            [0, -0.10, -0.48, -0.16, -0.08, -0.42, -0.12, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t,
+            [0, -0.48, -0.10, -0.16, -0.44, -0.08, -0.12, 0], AXIS_X),
     ]);
 }
 
 function _panickerHitReact() {
     const dur = 0.3;
-    const t = [0, 0.05, 0.12, 0.2, dur];
+    const t = [0, 0.04, 0.10, 0.18, 0.25, dur];
     return new THREE.AnimationClip('panicker_hit_react', dur, [
-        posTrack('root', t, [[0,0,0], [0,-0.05,-0.15], [0,-0.02,-0.08], [0,-0.01,-0.03], [0,0,0]]),
-        buildRotationTrack('upperArm_L', t, [0, -0.5, -0.2, -0.1, 0], AXIS_Z),
-        buildRotationTrack('upperArm_R', t, [0, 0.5, 0.2, 0.1, 0], AXIS_Z),
-        buildRotationTrack('spine', t, [0, 0.2, 0.08, 0.03, 0], AXIS_X),
+        // Dramatic flinch backward
+        posTrack('root', t, [
+            [0, 0, 0], [0, -0.06, -0.18], [0, -0.02, -0.10],
+            [0, -0.01, -0.04], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        // Arms fly out sideways dramatically (very visible from above)
+        buildRotationTrack('upperArm_L', t, [0, -0.75, -0.30, -0.10, -0.03, 0], AXIS_Z),
+        buildRotationTrack('upperArm_R', t, [0, 0.75, 0.30, 0.10, 0.03, 0], AXIS_Z),
+        // Spine twists on flinch
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0.24, 0.14, 0.08], [0.08, 0.05, 0.03],
+            [0.03, 0.02, 0.01], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head whips to side
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.12, -0.22, 0], [0.04, -0.08, 0],
+            [0.01, -0.03, 0], [0, 0, 0], [0, 0, 0]
+        ]),
     ]);
 }
 
@@ -452,30 +753,49 @@ function _panickerDeath() {
     const ry = c.bonePositions.root.y * c.size;
     const PI = Math.PI;
     const dur = 0.6;
-    const t = [0, 0.1, 0.25, 0.4, 0.5, dur];
+    const t = [0, 0.08, 0.18, 0.30, 0.42, 0.52, dur];
 
     return new THREE.AnimationClip('panicker_death', dur, [
+        // Zigzag spiral descent
         posTrack('root', t, [
-            [0,ry,0], [0,ry*0.8,0], [0,ry*0.3,0.1], [0,ry*0.1,0.15], [0,0,0.2], [0,0,0.2]
+            [0, ry, 0], [0.04, ry * 0.85, 0], [-0.06, ry * 0.55, 0.05],
+            [0.05, ry * 0.25, 0.10], [-0.03, ry * 0.08, 0.15],
+            [0, ry * 0.02, 0.18], [0, 0, 0.20]
         ]),
+        // Spine: twisting wildly as they spiral down
         eulerTrack('spine', t, [
-            [-0.087,0,0], [-0.3,0,0], [-0.8,0,0.2], [-1.3,0,0.3], [-1.5,0,0.2], [-1.5,0,0.2]
+            [-0.087, 0, 0], [-0.28, 0.18, 0.10], [-0.58, -0.22, -0.14],
+            [-0.88, 0.28, 0.16], [-1.18, -0.18, -0.10],
+            [-1.42, 0.10, 0.08], [-1.5, 0, 0]
         ]),
-        buildRotationTrack('upperLeg_L', t, [0, 0.4, 0.8, 1.0, 1.1, 1.1], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [0, 0.3, 0.7, 0.9, 1.0, 1.0], AXIS_X),
-        // Arms go limp LAST — follow-through (heaviest parts settle last)
-        buildRotationTrack('upperArm_L', t,
-            [PI, PI, PI*0.8, PI*0.3, 0.5, 0.3], AXIS_X),
-        buildRotationTrack('upperArm_R', t,
-            [PI, PI, PI*0.9, PI*0.4, 0.6, 0.4], AXIS_X),
-        scaleTrack('root', [0, 0.4, dur], [[1,1,1], [1,1,1], [0.01,0.01,0.01]]),
+        // Arms: windmill all the way down (from overhead to limp)
+        eulerTrack('upperArm_L', t, [
+            [PI, 0, 0.22], [PI + 0.8, 0, 0.42], [PI - 0.6, 0, -0.32],
+            [PI * 0.6, 0, 0.48], [PI * 0.3, 0, -0.22], [0.5, 0, 0.30], [0.3, 0, 0.20]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [PI, 0, -0.22], [PI - 0.7, 0, -0.42], [PI + 0.5, 0, 0.32],
+            [PI * 0.7, 0, -0.48], [PI * 0.4, 0, 0.22], [0.6, 0, -0.30], [0.4, 0, -0.20]
+        ]),
+        // Forearms: flailing all the way down
+        buildRotationTrack('forearm_L', t,
+            [0.3, -0.65, 0.55, -0.72, 0.42, -0.30, -0.20], AXIS_X),
+        buildRotationTrack('forearm_R', t,
+            [-0.3, 0.55, -0.65, 0.62, -0.50, 0.22, 0.15], AXIS_X),
+        // Legs buckle and flail
+        buildRotationTrack('upperLeg_L', t, [0, 0.5, 0.8, 1.0, 1.1, 1.1, 1.1], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.4, 0.7, 0.9, 1.0, 1.0, 1.0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [0, -0.4, -0.9, -1.2, -1.4, -1.5, -1.5], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [0, -0.3, -0.8, -1.1, -1.3, -1.4, -1.4], AXIS_X),
+        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // POWER WALKER — eerily smooth, rigid, mechanical precision
-// ═══════════════════════════════════════════════════════════
+// Personality: robotic, unnervingly still head, 90° arm pumps, zero sway
+// ═══════════════════════════════════════════════════════════════════════
 
 function _powerwalkerPowerWalk() {
     const c = ENEMY_VISUAL_CONFIG.powerwalker;
@@ -488,32 +808,42 @@ function _powerwalkerPowerWalk() {
     const t5 = [0, dur * 0.25, dur * 0.5, dur * 0.75, dur];
     const armRest = -Math.PI / 2;
 
-    // 9-keyframe legs for flat spots at extremes (firm planting)
-    const t9 = [0, 0.05, dur*0.25, dur*0.43, dur*0.5, dur*0.57, dur*0.75, dur*0.93, dur];
+    // 9-keyframe legs for flat spots at extremes (firm mechanical planting)
+    const d8 = dur / 8;
+    const tLegs = [0, d8, d8 * 2, d8 * 3, d8 * 4, d8 * 5, d8 * 6, d8 * 7, dur];
 
     return new THREE.AnimationClip('powerwalker_power_walk', dur, [
+        // Root: minimal bob — eerily smooth, almost floating
         posTrack('root', t5, [
-            [0,ry,0], [0,ry+bob,0], [0,ry,0], [0,ry+bob,0], [0,ry,0]
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
-        // Spine: perfectly upright, zero sway
-        buildRotationTrack('spine', t5, [0, 0, 0, 0, 0], AXIS_X),
-        // Head: does NOT bob — eerily still
-        buildRotationTrack('head', t5, [0, 0, 0, 0, 0], AXIS_X),
-        // Legs: deliberate swing with holds at extremes
-        buildRotationTrack('upperLeg_L', t9,
-            [lsw, lsw, 0, -lsw, -lsw, -lsw, 0, lsw, lsw], AXIS_X),
-        buildRotationTrack('upperLeg_R', t9,
-            [-lsw, -lsw, 0, lsw, lsw, lsw, 0, -lsw, -lsw], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t5, [0.05, 0, 0, -0.4, 0.05], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t5, [0, -0.4, 0.05, 0, 0], AXIS_X),
-        // Feet: heel-strike at extremes
-        buildRotationTrack('foot_L', t5, [-0.2, 0, 0.15, 0, -0.2], AXIS_X),
-        buildRotationTrack('foot_R', t5, [0.15, 0, -0.2, 0, 0.15], AXIS_X),
-        // Arms: 90° pump in perfect sync with opposite leg
+        // Spine: PERFECTLY upright. ZERO twist. ZERO sway. Unnervingly still.
+        eulerTrack('spine', t5, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head: does NOT bob, does NOT turn — staring straight ahead, empty
+        eulerTrack('head', t5, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Arms: precise 90° pump, perfectly mirrored opposition to legs
         buildRotationTrack('upperArm_L', t5,
-            [armRest-asw, armRest, armRest+asw, armRest, armRest-asw], AXIS_X),
+            [armRest - asw, armRest, armRest + asw, armRest, armRest - asw], AXIS_X),
         buildRotationTrack('upperArm_R', t5,
-            [armRest+asw, armRest, armRest-asw, armRest, armRest+asw], AXIS_X),
+            [armRest + asw, armRest, armRest - asw, armRest, armRest + asw], AXIS_X),
+        // Forearms: LOCKED at 90° — zero flop, zero lag. Pure machine.
+        buildRotationTrack('forearm_L', t5, [-0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        buildRotationTrack('forearm_R', t5, [-0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        // Legs: deliberate swing with FLAT SPOTS at extremes (held mechanical poses)
+        buildRotationTrack('upperLeg_L', tLegs,
+            [lsw, lsw, 0, -lsw, -lsw, -lsw, 0, lsw, lsw], AXIS_X),
+        buildRotationTrack('upperLeg_R', tLegs,
+            [-lsw, -lsw, 0, lsw, lsw, lsw, 0, -lsw, -lsw], AXIS_X),
+        // Lower legs: crisp, precise knee bend
+        buildRotationTrack('lowerLeg_L', t5, [-0.05, -0.48, -0.05, -0.52, -0.05], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t5, [-0.05, -0.52, -0.05, -0.48, -0.05], AXIS_X),
+        // Feet: deliberate heel-strike → toe-off
+        buildRotationTrack('foot_L', t5, [-0.24, 0, 0.20, 0, -0.24], AXIS_X),
+        buildRotationTrack('foot_R', t5, [0.20, 0, -0.24, 0, 0.20], AXIS_X),
     ]);
 }
 
@@ -523,28 +853,55 @@ function _powerwalkerBash() {
     const ry = c.bonePositions.root.y * s;
     const armRest = -Math.PI / 2;
     const dur = 0.7;
-    const t = [0, 0.15, 0.3, 0.4, 0.55, dur];
+
+    // Calculated: measure → rotate → drive → impact → reset (precise, mechanical)
+    const t = [0, 0.18, 0.32, 0.42, 0.50, 0.60, dur];
 
     return new THREE.AnimationClip('powerwalker_bash_door', dur, [
+        // Root: one precise step back, then calculated forward drive
         posTrack('root', t, [
-            [0,ry,0], [0,ry,-0.08*s], [0,ry,0.15*s], [0,ry,0.15*s], [0,ry,0.05*s], [0,ry,0]
+            [0, ry, 0], [0, ry, -0.12 * s], [0, ry, 0.20 * s],
+            [0, ry, 0.16 * s], [0, ry, 0.08 * s], [0, ry, 0.03 * s], [0, ry, 0]
         ]),
+        // Spine: Y-rotate to load right shoulder, then drive forward
         eulerTrack('spine', t, [
-            [0,0,0], [0,-0.15,0], [0,0.2,-0.1], [0,0.2,-0.1], [0,0.1,-0.05], [0,0,0]
+            [0, 0, 0], [0, -0.28, 0], [0, 0.22, -0.10],
+            [0, 0.16, -0.08], [0, 0.08, -0.04], [0, 0.03, 0], [0, 0, 0]
         ]),
+        // Arms: stay LOCKED at 90° throughout — no personality break
         buildRotationTrack('upperArm_L', t,
-            [armRest, armRest+0.3, armRest-0.2, armRest-0.2, armRest, armRest], AXIS_X),
+            [armRest, armRest + 0.15, armRest - 0.10, armRest - 0.08, armRest, armRest, armRest], AXIS_X),
         buildRotationTrack('upperArm_R', t,
-            [armRest, armRest-0.2, armRest+0.3, armRest+0.3, armRest, armRest], AXIS_X),
+            [armRest, armRest - 0.10, armRest + 0.22, armRest + 0.16, armRest + 0.06, armRest, armRest], AXIS_X),
+        // Forearms: LOCKED. Not even a wobble. Machine.
+        buildRotationTrack('forearm_L', t,
+            [-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        buildRotationTrack('forearm_R', t,
+            [-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        // Head: stays PERFECTLY forward throughout. Creepy.
+        eulerTrack('head', t, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Legs: precise step
+        buildRotationTrack('upperLeg_L', t,
+            [0, -0.12, 0.16, 0.12, 0.06, 0, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, -0.12, 0.16, 0.12, 0.06, 0, 0], AXIS_X),
+        // Feet: firm plant on drive
+        buildRotationTrack('foot_L', t,
+            [0, 0.12, -0.14, -0.10, 0, 0, 0], AXIS_X),
+        buildRotationTrack('foot_R', t,
+            [0, 0.12, -0.14, -0.10, 0, 0, 0], AXIS_X),
     ]);
 }
 
 function _powerwalkerHitReact() {
     const dur = 0.3;
-    const t = [0, 0.05, 0.15, dur];
+    const t = [0, 0.04, 0.12, dur];
+    // BARELY reacts — eerily resilient. Terrifying.
     return new THREE.AnimationClip('powerwalker_hit_react', dur, [
-        posTrack('root', t, [[0,0,0], [0,0,-0.04], [0,0,-0.01], [0,0,0]]),
-        buildRotationTrack('spine', t, [0, 0.03, 0.01, 0], AXIS_X),
+        posTrack('root', t, [[0, 0, 0], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0]]),
+        buildRotationTrack('spine', t, [0, 0.02, 0.005, 0], AXIS_X),
     ]);
 }
 
@@ -553,29 +910,44 @@ function _powerwalkerDeath() {
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const dur = 0.6;
-    const t = [0, 0.15, 0.35, 0.5, dur];
+    const t = [0, 0.12, 0.28, 0.42, 0.55, dur];
     const armRest = -Math.PI / 2;
 
     return new THREE.AnimationClip('powerwalker_death', dur, [
+        // Falls FORWARD like a rigid plank — perfect timber fall
         posTrack('root', t, [
-            [0,ry,0], [0,ry,0.1*s], [0,ry*0.6,0.4*s], [0,ry*0.2,0.7*s], [0,0,0.9*s]
+            [0, ry, 0], [0, ry, 0.08 * s], [0, ry * 0.65, 0.35 * s],
+            [0, ry * 0.25, 0.65 * s], [0, ry * 0.05, 0.85 * s], [0, 0, 0.95 * s]
         ]),
-        // Falls stiffly forward like a tree
-        buildRotationTrack('root', t, [0, -0.2, -0.8, -1.3, -1.57], AXIS_X),
-        // Spine stays STIFF — key personality trait
-        buildRotationTrack('spine', t, [0, 0, 0, 0, 0], AXIS_X),
+        // Root tips forward — perfectly rigid like a falling tree
+        buildRotationTrack('root', t, [0, -0.15, -0.55, -1.05, -1.40, -1.57], AXIS_X),
+        // Spine: PERFECTLY straight even in death — defining character trait
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Arms: LOCKED at 90° even in death — commitment to character
         buildRotationTrack('upperArm_L', t,
-            [armRest, armRest, armRest, armRest, armRest], AXIS_X),
+            [armRest, armRest, armRest, armRest, armRest, armRest], AXIS_X),
         buildRotationTrack('upperArm_R', t,
-            [armRest, armRest, armRest, armRest, armRest], AXIS_X),
-        scaleTrack('root', [0, 0.4, dur], [[1,1,1], [1,1,1], [0.01,0.01,0.01]]),
+            [armRest, armRest, armRest, armRest, armRest, armRest], AXIS_X),
+        // Forearms: locked to the end
+        buildRotationTrack('forearm_L', t,
+            [-0.5, -0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        buildRotationTrack('forearm_R', t,
+            [-0.5, -0.5, -0.5, -0.5, -0.5, -0.5], AXIS_X),
+        // Head: perfectly still. Even. In. Death.
+        eulerTrack('head', t, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// THE GIRLS — casual, chatty, hip sway, head turns
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// THE GIRLS — casual hip sway, chatty head turns, unbothered strut
+// Personality: social, impatient, synchronized, "OMG hurry UP"
+// ═══════════════════════════════════════════════════════════════════════
 
 function _girlsWalkChat() {
     const c = ENEMY_VISUAL_CONFIG.girls;
@@ -588,24 +960,34 @@ function _girlsWalkChat() {
     const t = [0, dur * 0.25, dur * 0.5, dur * 0.75, dur];
 
     return new THREE.AnimationClip('girls_walk_chat', dur, [
+        // Root: hip sway — the signature trait (very visible from top-down)
         eulerTrack('root', t, [
-            [0,0,-hipSway], [0,0,0], [0,0,hipSway], [0,0,0], [0,0,-hipSway]
+            [0, 0, -hipSway], [0, 0, 0], [0, 0, hipSway], [0, 0, 0], [0, 0, -hipSway]
         ]),
+        // Light bouncy bob
         posTrack('root', t, [
-            [0,ry,0], [0,ry+bob,0], [0,ry,0], [0,ry+bob,0], [0,ry,0]
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
+        // Spine: counter-sway + very slight lean
         eulerTrack('spine', t, [
-            [-0.05,0,hipSway*0.5], [-0.05,0,0], [-0.05,0,-hipSway*0.5],
-            [-0.05,0,0], [-0.05,0,hipSway*0.5]
+            [-0.05, 0, hipSway * 0.55], [-0.05, 0, 0], [-0.05, 0, -hipSway * 0.55],
+            [-0.05, 0, 0], [-0.05, 0, hipSway * 0.55]
         ]),
-        // Head turns side to side — chatting with friends
+        // Chest: delayed follow-through on sway (secondary motion)
+        eulerTrack('chest', t, [
+            [0, 0, 0], [0, 0, hipSway * 0.3], [0, 0, 0], [0, 0, -hipSway * 0.3], [0, 0, 0]
+        ]),
+        // Head: turns side to side chatting + slight bounce (ponytail effect)
         eulerTrack('head', t, [
-            [0,0.15,0], [0,0.05,0], [0,-0.15,0], [0,-0.05,0], [0,0.15,0]
+            [0.04, 0.25, 0], [-0.03, 0.08, 0], [0.04, -0.25, 0],
+            [-0.03, -0.08, 0], [0.04, 0.25, 0]
         ]),
+        // Legs: relaxed casual stride
         buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
         buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [0, 0, 0, -0.3, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [0, -0.3, 0, 0, 0], AXIS_X),
+        // Lower legs: springy natural bend
+        buildRotationTrack('lowerLeg_L', t, [-0.08, -0.42, -0.10, -0.48, -0.08], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.10, -0.48, -0.08, -0.42, -0.10], AXIS_X),
     ]);
 }
 
@@ -614,27 +996,61 @@ function _girlsBash() {
     const ry = c.bonePositions.root.y * c.size;
     const s = c.size;
     const dur = 0.7;
-    const t = [0, 0.15, 0.25, 0.35, 0.55, dur];
+
+    // Impatient: rapid knocking + head turns (talking) + foot stomp
+    const t = [0, 0.08, 0.16, 0.26, 0.36, 0.46, 0.56, dur];
 
     return new THREE.AnimationClip('girls_bash_door', dur, [
+        // Root: bouncing impatiently + hip shift on stomp
         posTrack('root', t, [
-            [0,ry,0], [0,ry,0.05*s], [0,ry,0], [0,ry,0.05*s], [0,ry,0], [0,ry,0]
+            [0, ry, 0], [0, ry, 0.05 * s], [0, ry, 0],
+            [0, ry, 0.05 * s], [0, ry, 0],
+            [0, ry + 0.03, 0], [0, ry, 0.04 * s], [0, ry, 0]
         ]),
+        // Hip shift (foot stomp emphasis at phase 5)
+        eulerTrack('root', t, [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0],
+            [0, 0, 0], [0, 0, 0],
+            [0, 0, -0.14], [0, 0, 0.06], [0, 0, 0]
+        ]),
+        // Spine: lean forward on knocks, back between
         eulerTrack('spine', t, [
-            [-0.05,0,0], [-0.15,0,0], [-0.05,0,0], [-0.15,0,0], [-0.05,0,0], [-0.05,0,0]
+            [-0.05, 0, 0], [-0.20, 0, 0], [-0.05, 0, 0],
+            [-0.20, 0, 0], [-0.05, 0, 0],
+            [-0.02, 0, 0], [-0.18, 0, 0], [-0.05, 0, 0]
         ]),
+        // Head: turns to chat with friends, looks back at door — "OMG HURRY UP"
         eulerTrack('head', t, [
-            [0,0.2,0], [0,0,0], [0,-0.2,0], [0,-0.1,0], [0,0.15,0], [0,0.2,0]
+            [0, 0.22, 0], [0, 0, 0], [0, -0.25, 0],
+            [-0.05, -0.10, 0], [0, 0.20, 0],
+            [0, 0.28, 0.08], [0, 0, 0], [0, 0.22, 0]
         ]),
+        // Legs: stomping between knocks
+        buildRotationTrack('upperLeg_L', t,
+            [0, 0.12, 0, 0.14, 0, 0.28, 0.10, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, 0.14, 0, 0.12, 0, 0, 0.12, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t,
+            [0, -0.16, 0, -0.20, 0, -0.42, -0.14, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t,
+            [0, -0.20, 0, -0.16, 0, 0, -0.16, 0], AXIS_X),
     ]);
 }
 
 function _girlsHitReact() {
     const dur = 0.25;
-    const t = [0, 0.04, 0.12, dur];
+    const t = [0, 0.04, 0.10, 0.18, dur];
     return new THREE.AnimationClip('girls_hit_react', dur, [
-        posTrack('root', t, [[0,0,0], [0,0.1,-0.03], [0,0.03,-0.01], [0,0,0]]),
-        buildRotationTrack('spine', t, [0, -0.1, -0.03, 0], AXIS_X),
+        // Dramatic stumble back (gasp!)
+        posTrack('root', t, [[0, 0, 0], [0, 0.08, -0.06], [0, 0.03, -0.03], [0, 0.01, -0.01], [0, 0, 0]]),
+        // Spine arches back dramatically
+        eulerTrack('spine', t, [
+            [0, 0, 0], [-0.16, 0, 0.06], [-0.06, 0, 0.02], [-0.02, 0, 0], [0, 0, 0]
+        ]),
+        // Head tilts back (shocked gasp)
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.18, 0.12, 0], [-0.06, 0.04, 0], [-0.02, 0.01, 0], [0, 0, 0]
+        ]),
     ]);
 }
 
@@ -642,25 +1058,36 @@ function _girlsDeath() {
     const c = ENEMY_VISUAL_CONFIG.girls;
     const ry = c.bonePositions.root.y * c.size;
     const dur = 0.5;
-    const t = [0, 0.1, 0.25, 0.4, dur];
+    const t = [0, 0.08, 0.20, 0.32, 0.44, dur];
 
     return new THREE.AnimationClip('girls_death', dur, [
+        // Swoon backward then crumple to the side
         posTrack('root', t, [
-            [0,ry,0], [0,ry*0.6,0], [0,ry*0.2,0.05], [0,ry*0.05,0.05], [0,0,0.05]
+            [0, ry, 0], [0, ry + 0.05, -0.03], [0.03, ry * 0.6, -0.05],
+            [0.05, ry * 0.25, -0.06], [0.04, ry * 0.05, -0.04], [0.04, 0, -0.03]
         ]),
+        // Spine arches backward then curls (swooning faint)
         eulerTrack('spine', t, [
-            [-0.05,0,0], [-0.3,0,0.1], [-0.8,0,0.2], [-1.0,0,0.15], [-1.2,0,0.1]
+            [-0.05, 0, 0], [-0.22, 0, 0], [-0.62, 0, 0.16],
+            [-1.02, 0, 0.22], [-1.22, 0, 0.16], [-1.32, 0, 0.10]
         ]),
-        buildRotationTrack('upperLeg_L', t, [0, 0.3, 0.6, 0.8, 0.9], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.5, 0.7, 0.8], AXIS_X),
-        scaleTrack('root', [0, 0.3, dur], [[1,1,1], [1,1,1], [0.01,0.01,0.01]]),
+        // Head: dramatic tilt back then rolls to side
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.28, 0.10, 0.08], [-0.16, 0.22, 0.16],
+            [-0.06, 0.16, 0.22], [0, 0.10, 0.16], [0, 0.06, 0.12]
+        ]),
+        buildRotationTrack('upperLeg_L', t, [0, 0.2, 0.5, 0.75, 0.85, 0.90], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.15, 0.4, 0.65, 0.75, 0.80], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [0, -0.15, -0.40, -0.65, -0.80, -0.85], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [0, -0.10, -0.35, -0.55, -0.70, -0.75], AXIS_X),
+        scaleTrack('root', [0, 0.35, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // CLIP REGISTRY & CACHE
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 
 const _clipBuilders = {
     polite_walk:        _politeWalk,

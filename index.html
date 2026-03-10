@@ -405,9 +405,9 @@
             const ambient = new THREE.AmbientLight(0x505060, 0.7);
             this.scene.add(ambient);
 
-            // Main directional light (slightly warm, from above-right)
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
-            dirLight.position.set(10, 30, 20);
+            // Main directional light (slightly warm, more overhead to avoid side wash)
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+            dirLight.position.set(3, 35, 18);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
@@ -447,7 +447,7 @@
             const tilePx = tileCanvas.width / tilesPerRow;
             for (let r = 0; r < tilesPerRow; r++) {
                 for (let c = 0; c < tilesPerRow; c++) {
-                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#8999a8' : '#7a8a9a';
+                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#748494' : '#687888';
                     tCtx.fillRect(c * tilePx, r * tilePx, tilePx, tilePx);
                     tCtx.strokeStyle = '#5e6e7a';
                     tCtx.lineWidth = 3;
@@ -462,8 +462,8 @@
             const tileGeo = new THREE.PlaneGeometry(CONFIG.corridorWidth, CONFIG.corridorStart + 4);
             const tileMat = new THREE.MeshStandardMaterial({
                 map: tileTexture,
-                roughness: 0.35,
-                metalness: 0.1,
+                roughness: 0.65,
+                metalness: 0.05,
             });
             const tile = new THREE.Mesh(tileGeo, tileMat);
             tile.rotation.x = -Math.PI / 2;
@@ -2089,7 +2089,7 @@
                     // Death animation then release to pool (or dispose)
                     if (!e.dying) {
                         e.dying = true;
-                        e.animController.playOneShot('death');
+                        e.animController.playDeath('death');
                         // Delay removal by death clip duration
                         const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
@@ -2216,6 +2216,10 @@
                     nearest.hitFlash = 0.15;
                     nearest.z += t.def.knockback;
                     nearest.mesh.position.z = nearest.z;
+                    // Hit react animation (additive layer)
+                    if (nearest.animController && !nearest.dying) {
+                        nearest.animController.playOneShot('hit_react');
+                    }
                     // 6C: hitstop — brief animation freeze on heavy mop hit
                     if (nearest.animController) {
                         nearest.animController.setTimeScale(0);
@@ -2259,6 +2263,10 @@
                     if (dist < e.size + 0.3) {
                         e.hp -= p.damage;
                         e.hitFlash = 0.15;
+                        // Hit react animation (additive layer)
+                        if (e.animController && !e.dying) {
+                            e.animController.playOneShot('hit_react');
+                        }
                         this.scene.remove(p.mesh);
                         this.projectiles.splice(i, 1);
                         break;

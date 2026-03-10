@@ -104,6 +104,32 @@ export class AnimationController {
         action.play();
     }
 
+    /**
+     * Play death animation as a non-additive state transition.
+     * Crossfades from current walk/bash into the death clip.
+     * Unlike playOneShot, this REPLACES the current animation.
+     * @param {string} clipName — animation clip name (e.g. 'death')
+     */
+    playDeath(clipName) {
+        const clip = getAnimationClip(this.type, clipName);
+        const action = this.mixer.clipAction(clip);
+
+        action.setLoop(THREE.LoopOnce);
+        action.clampWhenFinished = true;
+        action.blendMode = THREE.NormalAnimationBlendMode;
+
+        if (this.currentAction) {
+            action.reset();
+            action.play();
+            this.currentAction.crossFadeTo(action, 0.12, true);
+        } else {
+            action.play();
+        }
+
+        this.currentState = 'death';
+        this.currentAction = action;
+    }
+
     // ───────────────────────────────────────
     // 4C — Speed synchronization
     // ───────────────────────────────────────
