@@ -119,7 +119,7 @@ function _createPlayerMaterials(config) {
             rimIntensity: 0.3,
         }),
         outline: createOutlineMaterial({
-            outlineWidth: 0.025,
+            outlineWidth: 0.035,
             outlineColor: new THREE.Color(colors.outline),
             skinning: true,
         }),
@@ -154,25 +154,41 @@ function _buildPlayerGeometry(size, config, bp) {
     const hairM = new THREE.Matrix4().makeTranslation(bp.head.x, bp.head.y + d.headRadius * s * 0.05, bp.head.z - d.headRadius * s * 0.05);
     geometries.push(hair); transforms.push(hairM); materialIndices.push(0);
 
-    // ─── UPPER ARMS (body 0) ───
+    // ─── SHOULDER JOINTS (body 0) — spheres connecting torso to arms ───
+    const shoulderR = d.limbThickness * s * 0.50;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 8, 6);
+    const shoulderLM = new THREE.Matrix4().makeTranslation(bp.upperArm_L.x, bp.upperArm_L.y, bp.upperArm_L.z);
+    const shoulderRM = new THREE.Matrix4().makeTranslation(bp.upperArm_R.x, bp.upperArm_R.y, bp.upperArm_R.z);
+    geometries.push(shoulderGeo); transforms.push(shoulderLM); materialIndices.push(0);
+    geometries.push(shoulderGeo); transforms.push(shoulderRM); materialIndices.push(0);
+
+    // ─── UPPER ARMS (body 0) — chunky hoodie sleeves ───
     _addOrientedCylinder(geometries, transforms, materialIndices,
-        d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, 6,
+        d.limbThickness * s * 0.55, d.limbThickness * s * 0.48, 6,
         bp.upperArm_L, bp.forearm_L, 0);
     _addOrientedCylinder(geometries, transforms, materialIndices,
-        d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, 6,
+        d.limbThickness * s * 0.55, d.limbThickness * s * 0.48, 6,
         bp.upperArm_R, bp.forearm_R, 0);
+
+    // ─── ELBOW JOINTS (body 0) — spheres at forearm positions ───
+    const elbowR = d.limbThickness * s * 0.45;
+    const elbowGeo = new THREE.SphereGeometry(elbowR, 8, 6);
+    const elbowLM = new THREE.Matrix4().makeTranslation(bp.forearm_L.x, bp.forearm_L.y, bp.forearm_L.z);
+    const elbowRM = new THREE.Matrix4().makeTranslation(bp.forearm_R.x, bp.forearm_R.y, bp.forearm_R.z);
+    geometries.push(elbowGeo); transforms.push(elbowLM); materialIndices.push(0);
+    geometries.push(elbowGeo); transforms.push(elbowRM); materialIndices.push(0);
 
     // ─── FOREARMS (body 0 — hoodie sleeves) ───
     _addOrientedCylinder(geometries, transforms, materialIndices,
-        d.limbThickness * s * 0.35, d.limbThickness * s * 0.30, 6,
+        d.limbThickness * s * 0.48, d.limbThickness * s * 0.40, 6,
         bp.forearm_L, bp.hand_L, 0);
     _addOrientedCylinder(geometries, transforms, materialIndices,
-        d.limbThickness * s * 0.35, d.limbThickness * s * 0.30, 6,
+        d.limbThickness * s * 0.48, d.limbThickness * s * 0.40, 6,
         bp.forearm_R, bp.hand_R, 0);
 
-    // ─── HANDS (skin 1) ───
+    // ─── HANDS (skin 1) — bigger for visibility ───
     const handGeo = new THREE.BoxGeometry(
-        d.handSize * s, d.handSize * s * 1.2, d.handSize * s * 0.8, 2, 2, 2
+        d.handSize * s * 1.2, d.handSize * s * 1.4, d.handSize * s, 2, 2, 2
     );
     const handLM = new THREE.Matrix4().makeTranslation(bp.hand_L.x, bp.hand_L.y, bp.hand_L.z);
     const handRM = new THREE.Matrix4().makeTranslation(bp.hand_R.x, bp.hand_R.y, bp.hand_R.z);

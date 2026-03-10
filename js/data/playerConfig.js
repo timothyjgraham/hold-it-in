@@ -4,7 +4,7 @@
 
 export const PLAYER_VISUAL_CONFIG = {
     player: {
-        size: 1.2,
+        size: 2.0,
         bones: {
             neck: true,
             upperArms: true,
@@ -22,30 +22,31 @@ export const PLAYER_VISUAL_CONFIG = {
             chest:       { x: 0,     y: 0.28,  z: -0.01 },
             neck:        { x: 0,     y: 0.18,  z: 0 },
             head:        { x: 0,     y: 0.20,  z: -0.03 },
-            // Arms — positioned to hold phone in lap area
-            upperArm_L:  { x: -0.35, y: 0,     z: 0.05 },
-            upperArm_R:  { x: 0.35,  y: 0,     z: 0.05 },
-            forearm_L:   { x: 0.08,  y: -0.18, z: 0.10 },
-            forearm_R:   { x: -0.08, y: -0.18, z: 0.10 },
-            hand_L:      { x: 0.04,  y: -0.10, z: 0.03 },
-            hand_R:      { x: -0.04, y: -0.10, z: 0.03 },
+            // Arms — elbows out wide, forearms angled inward to hold phone
+            // Must stay at shoulder Y level so they're visible from top-down camera
+            upperArm_L:  { x: -0.55, y: 0.02,  z: 0.02 },
+            upperArm_R:  { x: 0.55,  y: 0.02,  z: 0.02 },
+            forearm_L:   { x: 0.15,  y: -0.02, z: 0.30 },
+            forearm_R:   { x: -0.15, y: -0.02, z: 0.30 },
+            hand_L:      { x: 0.15,  y: -0.02, z: 0.12 },
+            hand_R:      { x: -0.15, y: -0.02, z: 0.12 },
             thumb_R:     { x: -0.02, y: 0.01,  z: 0.04 },
             // Legs — seated: thigh extends forward, shin hangs down
-            upperLeg_L:  { x: -0.12, y: -0.03, z: 0 },
-            upperLeg_R:  { x: 0.12,  y: -0.03, z: 0 },
+            upperLeg_L:  { x: -0.14, y: -0.03, z: 0 },
+            upperLeg_R:  { x: 0.14,  y: -0.03, z: 0 },
             lowerLeg_L:  { x: 0,     y: -0.02, z: 0.33 },
             lowerLeg_R:  { x: 0,     y: -0.02, z: 0.33 },
             foot_L:      { x: 0,     y: -0.33, z: 0.02 },
             foot_R:      { x: 0,     y: -0.33, z: 0.02 },
         },
         bodyDimensions: {
-            torsoWidth: 0.70,
-            torsoHeight: 0.50,
-            torsoDepth: 0.40,
-            headRadius: 0.27,
-            limbThickness: 0.16,
-            legSpacing: 0.12,
-            handSize: 0.07,
+            torsoWidth: 0.80,
+            torsoHeight: 0.55,
+            torsoDepth: 0.50,
+            headRadius: 0.30,
+            limbThickness: 0.28,
+            legSpacing: 0.14,
+            handSize: 0.13,
         },
         materialColors: {
             body: 0x4a86c8,    // blue hoodie
