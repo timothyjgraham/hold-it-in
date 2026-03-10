@@ -562,20 +562,20 @@ root (hips)
 > Remove old code, finalize.
 
 ### 7A — Remove Feature Flag
-- [ ] Remove `USE_SKELETAL` flag and old code branches
-- [ ] Delete old `_createEnemy` procedural mesh construction (~150 lines)
-- [ ] Delete old procedural animation block (~50 lines)
-- [ ] Delete references to old enemy fields (`e.body`, `e.leftLeg`, etc.)
+- [x] Remove `USE_SKELETAL` flag and old code branches
+- [x] Delete old `_createEnemy` procedural mesh construction (~150 lines)
+- [x] Delete old procedural animation block (~50 lines)
+- [x] Delete references to old enemy fields (`e.body`, `e.leftLeg`, etc.)
 
 ### 7B — Code Quality
-- [ ] Ensure all disposal paths are complete (no memory leaks)
-- [ ] Verify game restart fully cleans up skeletal resources
-- [ ] Test multiple restart cycles — memory should not grow
-- [ ] Final performance pass on horde waves (15, 20, 25, 30)
+- [x] Ensure all disposal paths are complete (no memory leaks)
+- [x] Verify game restart fully cleans up skeletal resources
+- [x] Test multiple restart cycles — memory should not grow
+- [x] Final performance pass on horde waves (15, 20, 25, 30)
 
 ### 7C — Update Documentation
-- [ ] Update `GAME_DESIGN_DOC.md` with new enemy visual descriptions
-- [ ] Update memory file with new architecture notes
+- [x] Update `GAME_DESIGN_DOC.md` with new enemy visual descriptions
+- [x] Update memory file with new architecture notes
 
 ---
 

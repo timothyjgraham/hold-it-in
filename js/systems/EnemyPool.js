@@ -109,38 +109,20 @@ export class EnemyPool {
     /**
      * Release all active models back to the pool (for game restart).
      * @param {Array} enemies - Active enemy array
-     * @param {THREE.Scene} scene - Scene to remove from
      */
-    releaseAll(enemies, scene) {
+    releaseAll(enemies) {
         for (const e of enemies) {
-            if (e.skinnedMesh && e.animController) {
-                const model = {
-                    group: e.mesh,
-                    skinnedMesh: e.skinnedMesh,
-                    skeleton: e.skeleton,
-                    boneMap: e.boneMap,
-                    outlineMesh: e.outlineMesh,
-                    materials: e.materials,
-                    animController: e.animController,
-                    enemyType: e.type,
-                };
-                this.release(model);
-            } else if (e.mesh) {
-                // Legacy enemy — just remove from scene
-                scene.remove(e.mesh);
-                e.mesh.traverse(child => {
-                    if (child.isMesh) {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            if (Array.isArray(child.material)) {
-                                child.material.forEach(m => m.dispose());
-                            } else {
-                                child.material.dispose();
-                            }
-                        }
-                    }
-                });
-            }
+            const model = {
+                group: e.mesh,
+                skinnedMesh: e.skinnedMesh,
+                skeleton: e.skeleton,
+                boneMap: e.boneMap,
+                outlineMesh: e.outlineMesh,
+                materials: e.materials,
+                animController: e.animController,
+                enemyType: e.type,
+            };
+            this.release(model);
         }
     }
 

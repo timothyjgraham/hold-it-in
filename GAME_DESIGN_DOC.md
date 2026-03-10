@@ -140,12 +140,53 @@ ENEMIES APPROACH → YOU PANIC → PAUSE → PLACE/UPGRADE TOWERS → UNPAUSE �
 
 ## 4. ENEMY ROSTER
 
-### Early Waves (1-5)
+### Implemented Enemies (Skeletal Animation System)
 
-**The Polite Knocker**
-- Walks slowly. Knocks on the door if they reach it. Low HP.
-- Pauses at obstacles briefly. Gives up easily to misdirection.
-- The tutorial enemy.
+All enemies use a custom skeletal animation system with toon shading, rim lighting, inverted-hull outlines, and expressive keyframe animations. Each type has a unique bone hierarchy (9-15 bones), dedicated walk/bash/hit/death animation clips, and shader-driven visual effects (hit flash, desperate tint, aura glow).
+
+**The Polite Knocker** (wave 1 — baseline)
+- Tan (0xd4a574), size 1.5, speed 3.0. 11 bones.
+- Rounded box torso (dress shirt/slacks proportions), sphere head. Slightly hunched, arms at sides.
+- Measured walking stride with restrained arm swing and subtle forward lean. Politely knocks on door.
+- The tutorial enemy. Trying to be civilized about a desperate situation.
+
+**The Pee Dancer** (wave 3 — fast swarm)
+- Blue (0x3498db), size 1.0, speed 5.5. 9 bones.
+- Small compact frame with knees pressed together, hunched forward. Cross-legged shuffle.
+- Hopping/bouncing walk with squash-and-stretch on each landing. Desperate, can't hold it.
+- Comes in groups. Low individual HP but overwhelms with speed and numbers.
+
+**The Waddle Tank** (wave 5 — slow tank)
+- Brown (0x795548), size 2.0, speed 2.0. 15 bones (includes belly jiggle bone).
+- Wide rotund torso with extended belly, hand on stomach, low center of gravity.
+- Slow waddle with side-to-side rocking. Belly leads motion with 0.1s delay overshoot.
+- At 50% HP: panics — speed doubles, transitions to frantic sprint with pumping arms and wild belly bounce.
+- Big guy who ate too much, lumbering with increasing urgency.
+
+**The Panicker** (wave 7 — priority target)
+- Bright yellow (0xf1c40f), size 1.6, speed 4.0. 13 bones.
+- Tall lanky frame with elongated torso and exaggerated arm length.
+- Frantic run with asymmetric arm flailing (left at 1.3x frequency, right at 1.0x), body twisting.
+- Pulsing fresnel aura glow (speed buff for nearby enemies, range 8, +50% speed).
+- Complete meltdown. Running around screaming. Kill them first.
+
+**The Power Walker** (wave 9 — slow immune)
+- Teal (0x1abc9c), size 1.4, speed 3.5. 15 bones (full hierarchy with feet for firm planting).
+- Athletic fit build, rigid determined posture, arms at 90 degrees.
+- Mechanical power-walk stride with precise arm pumping. Eerily minimal vertical motion.
+- Immune to slow effects (Wet Floor Signs). Walks right through them.
+- Fitness person with intense, unstoppable purpose.
+
+**The Girls** (wave 10 — cluster swarm)
+- Pink (0xe91e8c), size 0.85, speed 3.0. 9 bones.
+- Petite frame with ponytail sphere, slim limbs. Relaxed casual posture.
+- Chatty walk with hip sway, gesturing arms, head turns. Random phase offset per instance.
+- Spawn as cluster of 5-7, pick a lane (left/middle/right) and stay grouped.
+- Group of friends heading to the bathroom together. Low individual HP, strength in numbers.
+
+### Future Enemies — Early Waves (1-5)
+
+**The Polite Knocker** — *see Implemented above*
 
 **The Speed Walker**
 - Fast. Low HP. Tries to slip past your defenses.
@@ -155,7 +196,7 @@ ENEMIES APPROACH → YOU PANIC → PAUSE → PLACE/UPGRADE TOWERS → UNPAUSE �
 - Medium speed, medium HP.
 - Partially ignores misdirection ("I'm not even using the toilet!")
 
-### Mid Waves (6-15)
+### Future Enemies — Mid Waves (6-15)
 
 **The Desperate Jogger**
 - Fast, medium HP. Comes in bursts.
@@ -278,7 +319,7 @@ ENEMIES APPROACH → YOU PANIC → PAUSE → PLACE/UPGRADE TOWERS → UNPAUSE �
 - **Low-poly but warm and colorful** — NOT the dark/gritty Polydangerous palette
 - Think Overcooked meets Crossy Road meets TABS
 - Bright, saturated colors. Readable at thumbnail size.
-- **Enemies are goofy low-poly people** — exaggerated proportions, wobbly animations
+- **Enemies are goofy skeletal-animated people** — toon-shaded with outlines, exaggerated proportions, expressive keyframe animations inspired by Disney's 12 principles (squash/stretch, anticipation, follow-through, exaggeration)
 - **Towers are oversized bathroom objects** — a giant plunger, a massive mop, comically large air freshener cans
 - **The toilet glows golden** — it's sacred. It's yours. Heavenly light from above.
 - **The bathroom is pristine tile** — white, clean, holy ground

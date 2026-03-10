@@ -89,9 +89,6 @@
     <!-- Game Logic -->
     <script>
     const Game = {
-        // === FEATURE FLAGS ===
-        USE_SKELETAL: true,  // Phase 5: skeletal animation system
-
         // === STATE ===
         scene: null,
         camera: null,
@@ -378,7 +375,7 @@
             });
 
             // Phase 6A: Initialize enemy object pool
-            if (this.USE_SKELETAL && window.EnemyPool) {
+            if (window.EnemyPool) {
                 this.enemyPool = new EnemyPool();
                 this.enemyPool.preAllocate();
                 console.log('Enemy pool pre-allocated:', this.enemyPool.getStats().poolSizes);
@@ -1305,91 +1302,21 @@
 
             let group, skinnedMesh, skeleton, boneMap, outlineMesh, materials;
             let pooledAnimController = null;
-            // Legacy fields for non-skeletal fallback
-            let body = null, leftLeg = null, rightLeg = null;
-            let leftArm = null, rightArm = null, stomachHand = null;
 
-            if (this.USE_SKELETAL && window.createEnemyModel) {
-                // === SKELETAL PATH (Phase 5 + 6A pooling) ===
-                let model;
-                if (this.enemyPool) {
-                    model = this.enemyPool.acquire(enemyType, color, isDesperate, size);
-                    pooledAnimController = model.animController;
-                } else {
-                    model = createEnemyModel(enemyType, color, isDesperate, size);
-                }
-                group = model.group;
-                skinnedMesh = model.skinnedMesh;
-                skeleton = model.skeleton;
-                boneMap = model.boneMap;
-                outlineMesh = model.outlineMesh;
-                materials = model.materials;
+            // Skeletal model (Phase 5 + 6A pooling)
+            let model;
+            if (this.enemyPool) {
+                model = this.enemyPool.acquire(enemyType, color, isDesperate, size);
+                pooledAnimController = model.animController;
             } else {
-                // === LEGACY PATH (primitive geometry) ===
-                group = new THREE.Group();
-
-                let bodyW = size * 0.8, bodyH = size * 1.4, bodyD = size * 0.5;
-                if (enemyType === 'waddle') { bodyW = size * 1.1; bodyD = size * 0.7; }
-                if (enemyType === 'panicker') { bodyW = size * 0.6; }
-
-                body = new THREE.Mesh(
-                    new THREE.BoxGeometry(bodyW, bodyH, bodyD),
-                    new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 })
-                );
-                body.position.y = size * 1.2;
-                body.castShadow = true;
-                group.add(body);
-
-                const head = new THREE.Mesh(
-                    new THREE.SphereGeometry(size * 0.35, 6, 6),
-                    new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.5 })
-                );
-                head.position.y = size * 2.1;
-                head.castShadow = true;
-                group.add(head);
-
-                const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-                let legSpacing = size * 0.15;
-                if (enemyType === 'waddle') legSpacing = size * 0.35;
-                if (enemyType === 'dancer') legSpacing = size * 0.08;
-
-                leftLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
-                leftLeg.position.set(-legSpacing, size * 0.4, 0);
-                group.add(leftLeg);
-                rightLeg = new THREE.Mesh(new THREE.BoxGeometry(size * 0.25, size * 0.8, size * 0.25), legMat);
-                rightLeg.position.set(legSpacing, size * 0.4, 0);
-                group.add(rightLeg);
-
-                if (enemyType === 'dancer') { body.rotation.x = -0.15; }
-                if (enemyType === 'waddle') {
-                    body.rotation.x = -0.2;
-                    stomachHand = new THREE.Mesh(
-                        new THREE.BoxGeometry(size * 0.3, size * 0.2, size * 0.15),
-                        new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.5 })
-                    );
-                    stomachHand.position.set(0, size * 1.0, bodyD * 0.5 + size * 0.05);
-                    group.add(stomachHand);
-                }
-                if (enemyType === 'panicker') {
-                    const armMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
-                    leftArm = new THREE.Mesh(new THREE.BoxGeometry(size * 0.15, size * 0.6, size * 0.15), armMat);
-                    leftArm.position.set(-size * 0.45, size * 2.4, 0);
-                    group.add(leftArm);
-                    rightArm = new THREE.Mesh(new THREE.BoxGeometry(size * 0.15, size * 0.6, size * 0.15), armMat);
-                    rightArm.position.set(size * 0.45, size * 2.4, 0);
-                    group.add(rightArm);
-                }
-                if (enemyType === 'powerwalker') {
-                    const armMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
-                    leftArm = new THREE.Mesh(new THREE.BoxGeometry(size * 0.15, size * 0.5, size * 0.15), armMat);
-                    leftArm.position.set(-size * 0.55, size * 1.4, 0);
-                    group.add(leftArm);
-                    rightArm = new THREE.Mesh(new THREE.BoxGeometry(size * 0.15, size * 0.5, size * 0.15), armMat);
-                    rightArm.position.set(size * 0.55, size * 1.4, 0);
-                    group.add(rightArm);
-                }
-                if (isDesperate) { body.rotation.x -= 0.2; }
+                model = createEnemyModel(enemyType, color, isDesperate, size);
             }
+            group = model.group;
+            skinnedMesh = model.skinnedMesh;
+            skeleton = model.skeleton;
+            boneMap = model.boneMap;
+            outlineMesh = model.outlineMesh;
+            materials = model.materials;
 
             group.position.set(x, 0, z);
             this.scene.add(group);
@@ -1397,20 +1324,13 @@
             const enemy = {
                 type: enemyType,
                 mesh: group,
-                // Skeletal fields (null if legacy)
+                // Skeletal fields
                 skinnedMesh: skinnedMesh || null,
                 skeleton: skeleton || null,
                 boneMap: boneMap || null,
                 outlineMesh: outlineMesh || null,
                 materials: materials || null,
                 animController: null,
-                // Legacy fields (null if skeletal)
-                body: body,
-                leftLeg: leftLeg,
-                rightLeg: rightLeg,
-                leftArm: leftArm,
-                rightArm: rightArm,
-                stomachHand: stomachHand,
                 // Common fields
                 x: x,
                 z: z,
@@ -1430,31 +1350,29 @@
                 ...(opts.targetLane !== undefined && { targetLane: opts.targetLane }),
             };
 
-            // Set up AnimationController for skeletal enemies (6A: reuse from pool)
-            if (this.USE_SKELETAL && skinnedMesh) {
-                const ac = pooledAnimController || new AnimationController(skinnedMesh, enemyType);
-                enemy.animController = ac;
+            // Set up AnimationController (6A: reuse from pool)
+            const ac = pooledAnimController || new AnimationController(skinnedMesh, enemyType);
+            enemy.animController = ac;
 
-                // Initial animation state per type
-                const initialStates = {
-                    polite: 'walk',
-                    dancer: 'hop_walk',
-                    waddle: 'waddle',
-                    panicker: 'panic_run',
-                    powerwalker: 'power_walk',
-                    girls: 'walk_chat',
-                };
-                ac.setState(initialStates[enemyType] || 'walk');
+            // Initial animation state per type
+            const initialStates = {
+                polite: 'walk',
+                dancer: 'hop_walk',
+                waddle: 'waddle',
+                panicker: 'panic_run',
+                powerwalker: 'power_walk',
+                girls: 'walk_chat',
+            };
+            ac.setState(initialStates[enemyType] || 'walk');
 
-                // Girls: random phase offset for visual variety in clusters
-                if (enemyType === 'girls') {
-                    ac.mixer.time = Math.random() * 2.0;
-                }
+            // Girls: random phase offset for visual variety in clusters
+            if (enemyType === 'girls') {
+                ac.mixer.time = Math.random() * 2.0;
+            }
 
-                // 6B: set initial animation speed for desperate enemies
-                if (isDesperate) {
-                    ac.setTimeScale(1.5);
-                }
+            // 6B: set initial animation speed for desperate enemies
+            if (isDesperate) {
+                ac.setTimeScale(1.5);
             }
 
             this.enemies.push(enemy);
@@ -1546,13 +1464,7 @@
                     if (e.type === 'waddle' && !e.panicked && e.hp < e.maxHp * 0.5) {
                         e.panicked = true;
                         e.speed *= 2.0;
-                        if (e.animController) {
-                            e.animController.setState('panic_sprint');
-                        } else {
-                            // Legacy visual shift
-                            if (e.body) { e.body.rotation.x = 0.15; e.body.rotation.z = 0; }
-                            if (e.stomachHand) e.stomachHand.visible = false;
-                        }
+                        e.animController.setState('panic_sprint');
                     }
 
                     const moveSpeed = e.speed * slowMult * auraMult * dt;
@@ -1603,100 +1515,55 @@
                         }
                     }
 
-                    // Walk animation (5D + 6B speed sync + 6C secondary motion + 6D effects)
-                    if (e.animController) {
-                        // 6B: sync animation speed with movement modifiers
-                        // 6C: skip speed sync during hitstop freeze
-                        if (!e._hitstopTimer || e._hitstopTimer <= 0) {
-                            let animSpeed = slowMult * auraMult;
-                            if (e.desperate) animSpeed *= 1.5;
-                            if (e.lastStraw) animSpeed *= 2.0;
-                            e.animController.setTimeScale(animSpeed);
-                        }
+                    // Walk animation (6B speed sync + 6C secondary motion + 6D effects)
+                    // 6B: sync animation speed with movement modifiers
+                    // 6C: skip speed sync during hitstop freeze
+                    if (!e._hitstopTimer || e._hitstopTimer <= 0) {
+                        let animSpeed = slowMult * auraMult;
+                        if (e.desperate) animSpeed *= 1.5;
+                        if (e.lastStraw) animSpeed *= 2.0;
+                        e.animController.setTimeScale(animSpeed);
+                    }
 
-                        // 6D: Panicker pulsing aura glow
-                        if (e.type === 'panicker' && e.skinnedMesh) {
-                            const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
-                            const mats = e.skinnedMesh.material;
-                            if (Array.isArray(mats)) {
-                                for (const m of mats) {
-                                    if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
-                                }
+                    // 6D: Panicker pulsing aura glow
+                    if (e.type === 'panicker') {
+                        const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
+                        const mats = e.skinnedMesh.material;
+                        if (Array.isArray(mats)) {
+                            for (const m of mats) {
+                                if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
                             }
-                        }
-
-                        // 6D: Desperate tint pulsing (subtle throb / frantic flash for lastStraw)
-                        if (e.skinnedMesh && (e.desperate || e.lastStraw)) {
-                            let pulse;
-                            if (e.lastStraw) {
-                                // Frantic rapid red flash for last straw enemies
-                                pulse = 0.6 + Math.sin(this.time * 12) * 0.4;
-                            } else {
-                                // Subtle throb for regular desperate
-                                pulse = 0.7 + Math.sin(this.time * 6) * 0.3;
-                            }
-                            const mats = e.skinnedMesh.material;
-                            if (Array.isArray(mats)) {
-                                for (const m of mats) {
-                                    if (m.uniforms && m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = pulse;
-                                }
-                            }
-                        }
-
-                        // 6E: LOD — hide outline beyond 40 units
-                        const camDist = e.mesh.position.distanceTo(this.camera.position);
-                        if (e.outlineMesh) {
-                            e.outlineMesh.visible = camDist < 40;
-                        }
-
-                        // Skeletal: let AnimationController handle all animation
-                        e.animController.update(dt, camDist);
-                        // Keep walkPhase for zig-zag movement logic
-                        e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
-                    } else {
-                        // Legacy procedural animation
-                        e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
-
-                        if (e.type === 'dancer') {
-                            e.mesh.position.y = Math.abs(Math.sin(e.walkPhase * 1.5)) * 0.4;
-                            e.body.rotation.z = Math.sin(e.walkPhase) * 0.15;
-                            if (e.leftLeg) e.leftLeg.rotation.x = Math.sin(e.walkPhase * 2) * 0.15;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -Math.sin(e.walkPhase * 2) * 0.15;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase * 1.5)) * 0.15;
-                        } else if (e.type === 'waddle' && !e.panicked) {
-                            e.body.rotation.z = Math.sin(e.walkPhase) * 0.12;
-                            const wLeg = Math.sin(e.walkPhase) * 0.15;
-                            if (e.leftLeg) e.leftLeg.rotation.x = wLeg;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -wLeg;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.03;
-                        } else if (e.type === 'waddle' && e.panicked) {
-                            const wLeg = Math.sin(e.walkPhase) * 0.5;
-                            if (e.leftLeg) e.leftLeg.rotation.x = wLeg;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -wLeg;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.08;
-                            e.body.rotation.z = 0;
-                        } else if (e.type === 'panicker') {
-                            const pLeg = Math.sin(e.walkPhase) * 0.4;
-                            if (e.leftLeg) e.leftLeg.rotation.x = pLeg;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -pLeg;
-                            if (e.leftArm) e.leftArm.rotation.z = Math.sin(e.walkPhase * 1.3 + 1) * 0.6;
-                            if (e.rightArm) e.rightArm.rotation.z = -Math.sin(e.walkPhase * 1.3) * 0.6;
-                            e.body.rotation.z = Math.sin(e.walkPhase * 0.7) * 0.1;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.06;
-                        } else if (e.type === 'powerwalker') {
-                            const pwLeg = Math.sin(e.walkPhase) * 0.35;
-                            if (e.leftLeg) e.leftLeg.rotation.x = pwLeg;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -pwLeg;
-                            if (e.leftArm) e.leftArm.rotation.x = -pwLeg;
-                            if (e.rightArm) e.rightArm.rotation.x = pwLeg;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.02;
-                        } else {
-                            const legSwing = Math.sin(e.walkPhase) * 0.3;
-                            if (e.leftLeg) e.leftLeg.rotation.x = legSwing;
-                            if (e.rightLeg) e.rightLeg.rotation.x = -legSwing;
-                            e.body.position.y = e.size * 1.2 + Math.abs(Math.sin(e.walkPhase)) * 0.05;
                         }
                     }
+
+                    // 6D: Desperate tint pulsing (subtle throb / frantic flash for lastStraw)
+                    if (e.desperate || e.lastStraw) {
+                        let pulse;
+                        if (e.lastStraw) {
+                            // Frantic rapid red flash for last straw enemies
+                            pulse = 0.6 + Math.sin(this.time * 12) * 0.4;
+                        } else {
+                            // Subtle throb for regular desperate
+                            pulse = 0.7 + Math.sin(this.time * 6) * 0.3;
+                        }
+                        const mats = e.skinnedMesh.material;
+                        if (Array.isArray(mats)) {
+                            for (const m of mats) {
+                                if (m.uniforms && m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = pulse;
+                            }
+                        }
+                    }
+
+                    // 6E: LOD — hide outline beyond 40 units
+                    const camDist = e.mesh.position.distanceTo(this.camera.position);
+                    if (e.outlineMesh) {
+                        e.outlineMesh.visible = camDist < 40;
+                    }
+
+                    // AnimationController handles all animation
+                    e.animController.update(dt, camDist);
+                    // Keep walkPhase for zig-zag movement logic
+                    e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
                 }
 
                 // 6C: hitstop timer — resume animation after brief freeze
@@ -1708,37 +1575,26 @@
                     }
                 }
 
-                // Hit flash effect (5E)
+                // Hit flash effect
                 if (e.hitFlash > 0) {
                     e.hitFlash -= dt;
-                    if (e.skinnedMesh) {
-                        // Skeletal: update uHitFlash uniform on all materials
-                        const flashVal = Math.max(0, e.hitFlash / 0.15);
-                        const mats = e.skinnedMesh.material;
-                        if (Array.isArray(mats)) {
-                            for (const m of mats) {
-                                if (m.uniforms && m.uniforms.uHitFlash) m.uniforms.uHitFlash.value = flashVal;
-                            }
-                        } else if (mats.uniforms && mats.uniforms.uHitFlash) {
-                            mats.uniforms.uHitFlash.value = flashVal;
+                    const flashVal = Math.max(0, e.hitFlash / 0.15);
+                    const mats = e.skinnedMesh.material;
+                    if (Array.isArray(mats)) {
+                        for (const m of mats) {
+                            if (m.uniforms && m.uniforms.uHitFlash) m.uniforms.uHitFlash.value = flashVal;
                         }
-                    } else if (e.body) {
-                        e.body.material.emissive.setHex(0xffffff);
-                        e.body.material.emissiveIntensity = Math.max(0, e.hitFlash / 0.15);
+                    } else if (mats.uniforms && mats.uniforms.uHitFlash) {
+                        mats.uniforms.uHitFlash.value = flashVal;
                     }
                 } else {
-                    if (e.skinnedMesh) {
-                        const mats = e.skinnedMesh.material;
-                        if (Array.isArray(mats)) {
-                            for (const m of mats) {
-                                if (m.uniforms && m.uniforms.uHitFlash) m.uniforms.uHitFlash.value = 0;
-                            }
-                        } else if (mats.uniforms && mats.uniforms.uHitFlash) {
-                            mats.uniforms.uHitFlash.value = 0;
+                    const mats = e.skinnedMesh.material;
+                    if (Array.isArray(mats)) {
+                        for (const m of mats) {
+                            if (m.uniforms && m.uniforms.uHitFlash) m.uniforms.uHitFlash.value = 0;
                         }
-                    } else if (e.body) {
-                        e.body.material.emissive.setHex(0x000000);
-                        e.body.material.emissiveIntensity = 0;
+                    } else if (mats.uniforms && mats.uniforms.uHitFlash) {
+                        mats.uniforms.uHitFlash.value = 0;
                     }
                 }
 
@@ -1755,39 +1611,25 @@
                         e.bashing = true;
                         e.bashTimer = 0.3 + Math.random() * 0.3; // first hit comes fast
                         e.bashCooldown = e.type === 'boss' ? 1.5 : 1.0;
-                        // Skeletal: transition to bash_door animation
-                        if (e.animController) {
-                            e.animController.setState('bash_door');
-                        }
+                        e.animController.setState('bash_door');
                     }
 
                     // Bash animation
                     e.bashTimer -= dt;
-                    if (!e.animController) {
-                        // Legacy: lunge forward and back
-                        const bashPhase = e.bashTimer / e.bashCooldown;
-                        if (bashPhase < 0.15 && bashPhase > 0) {
-                            e.mesh.position.z = e.z - (1 - bashPhase / 0.15) * 0.8;
-                        } else {
-                            e.mesh.position.z = e.z;
-                        }
-                    } else {
-                        // Skeletal: animation handles the lunge, keep mesh at door
-                        const camDist = e.mesh.position.distanceTo(this.camera.position);
-                        // 6D: panicker aura glow while bashing
-                        if (e.type === 'panicker' && e.skinnedMesh) {
-                            const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
-                            const mats = e.skinnedMesh.material;
-                            if (Array.isArray(mats)) {
-                                for (const m of mats) {
-                                    if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
-                                }
+                    const camDist = e.mesh.position.distanceTo(this.camera.position);
+                    // 6D: panicker aura glow while bashing
+                    if (e.type === 'panicker') {
+                        const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
+                        const mats = e.skinnedMesh.material;
+                        if (Array.isArray(mats)) {
+                            for (const m of mats) {
+                                if (m.uniforms && m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = glow;
                             }
                         }
-                        // 6E: outline LOD
-                        if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
-                        e.animController.update(dt, camDist);
                     }
+                    // 6E: outline LOD
+                    if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
+                    e.animController.update(dt, camDist);
 
                     // Time to bash!
                     if (e.bashTimer <= 0) {
@@ -1859,18 +1701,14 @@
                         e.hp = 1;
                         e.speed *= 3.0;
                         e.lastStrawTimer = 1.0;
-                        // 5I: desperate tint via uniform or legacy color
-                        if (e.skinnedMesh) {
-                            const mats = e.skinnedMesh.material;
-                            if (Array.isArray(mats)) {
-                                for (const m of mats) {
-                                    if (m.uniforms && m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = 1.0;
-                                }
-                            } else if (mats.uniforms && mats.uniforms.uDesperateTint) {
-                                mats.uniforms.uDesperateTint.value = 1.0;
+                        // Desperate tint via uniform
+                        const mats = e.skinnedMesh.material;
+                        if (Array.isArray(mats)) {
+                            for (const m of mats) {
+                                if (m.uniforms && m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = 1.0;
                             }
-                        } else if (e.body) {
-                            e.body.material.color.setHex(0xff2200);
+                        } else if (mats.uniforms && mats.uniforms.uDesperateTint) {
+                            mats.uniforms.uDesperateTint.value = 1.0;
                         }
                         continue;
                     }
@@ -1880,8 +1718,8 @@
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
                     this._spawnCoinText(e.x, e.z, e.coins);
 
-                    // 5H + 6A: death animation then release to pool (or dispose)
-                    if (e.animController && !e.dying) {
+                    // Death animation then release to pool (or dispose)
+                    if (!e.dying) {
                         e.dying = true;
                         e.animController.playOneShot('death');
                         // Delay removal by death clip duration
@@ -1889,7 +1727,7 @@
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
                         const enemyRef = e;
                         setTimeout(() => {
-                            if (this.enemyPool && enemyRef.skinnedMesh) {
+                            if (this.enemyPool) {
                                 // 6A: release back to pool for reuse
                                 this.enemyPool.release({
                                     group: enemyRef.mesh,
@@ -1902,7 +1740,7 @@
                                     enemyType: enemyRef.type,
                                 });
                             } else {
-                                if (enemyRef.animController) enemyRef.animController.dispose();
+                                enemyRef.animController.dispose();
                                 this.scene.remove(enemyRef.mesh);
                                 enemyRef.mesh.traverse(child => {
                                     if (child.isMesh) {
@@ -1918,13 +1756,8 @@
                                 });
                             }
                         }, delay);
-                        // Remove from enemies array now (no longer participates in game logic)
-                        this.enemies.splice(i, 1);
-                        this.updateHUD();
-                        continue;
                     }
-
-                    this.scene.remove(e.mesh);
+                    // Remove from enemies array now (no longer participates in game logic)
                     this.enemies.splice(i, 1);
                     this.updateHUD();
                     continue;
