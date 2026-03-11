@@ -344,18 +344,18 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 ### Stage 7: Implement Legendary Upgrades (12)
 > Game-warping effects — careful testing needed
 
-- [ ] L1: Double Flush — increase door maxHP and currentHP
-- [ ] L2: Desperate Measures — check door HP ratio each frame, apply global tower damage/speed buff
-- [ ] L3: Plunger Protocol — on door damage event, trigger timed buff on nearby towers
-- [ ] L4: Rush Hour Pileup — in knockback collision detection, check enemy-enemy overlap, apply mutual stun + damage
-- [ ] L5: Domino Effect — on pot trip slide, check collision with other enemies, trigger chain trip with diminishing damage
-- [ ] L6: Spill Zone — on enemy death, spawn toxic puddle mesh with slow aura + dps, timed despawn
-- [ ] L7: Loose Change — add coin-as-trap logic: uncollected coins get collision check vs enemies, trigger mini-stun, consume coin
-- [ ] L8: Nuclear Mop — 4x knockback, add wall/tower collision damage check at end of knockback
-- [ ] L9: Ubik Flood — on spray end, spawn lingering damage zone mesh, track per-Ubik zone count, timed despawn
-- [ ] L10: Golden Magnet — add passive coin generation timer to magnets
-- [ ] L11: False Alarm — per wave, pick one panicker, invert aura to slow, change tint to green
-- [ ] L12: Overtime — at wave start, apply 5s global buff (3x tower speed, 0.5x enemy speed), visual countdown
+- [x] L1: Double Flush — increase door maxHP and currentHP
+- [x] L2: Desperate Measures — check door HP ratio each frame, apply global tower damage/speed buff
+- [x] L3: Plunger Protocol — on door damage event, trigger timed buff on nearby towers
+- [x] L4: Rush Hour Pileup — in knockback collision detection, check enemy-enemy overlap, apply mutual stun + damage
+- [x] L5: Domino Effect — on pot trip slide, check collision with other enemies, trigger chain trip with diminishing damage
+- [x] L6: Spill Zone — on enemy death, spawn toxic puddle mesh with slow aura + dps, timed despawn
+- [x] L7: Loose Change — add coin-as-trap logic: uncollected coins get collision check vs enemies, trigger mini-stun, consume coin
+- [x] L8: Nuclear Mop — 4x knockback, add wall/tower collision damage check at end of knockback
+- [x] L9: Ubik Flood — on spray end, spawn lingering damage zone mesh, track per-Ubik zone count, timed despawn
+- [x] L10: Golden Magnet — add passive coin generation timer to magnets
+- [x] L11: False Alarm — per wave, pick one panicker, invert aura to slow, change tint to green
+- [x] L12: Overtime — at wave start, apply 5s global buff (3x tower speed, 0.5x enemy speed), visual countdown
 - [ ] Test all legendary upgrades individually
 - [ ] Test legendary + rare combo interactions (e.g., Domino Effect + Chain Trip)
 - [ ] Test legendary + legendary combos (e.g., Spill Zone + Rush Hour Pileup)

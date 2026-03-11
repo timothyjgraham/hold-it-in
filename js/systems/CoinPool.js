@@ -297,6 +297,41 @@ export class CoinPool {
         return value;
     }
 
+    /**
+     * L7: Loose Change — check if hovering coins collide with enemies.
+     * Returns number of coins consumed.
+     */
+    checkLooseChangeTrap(enemies, scene) {
+        const toRemove = [];
+        for (let i = this._active.length - 1; i >= 0; i--) {
+            const c = this._active[i];
+            if (c.state !== 'hovering') continue;
+            for (const e of enemies) {
+                if (e.dying || e.stunTimer > 0) continue;
+                const dx = e.x - c.x;
+                const dz = e.z - c.z;
+                if (dx * dx + dz * dz < 1.44) { // 1.2 unit radius
+                    e.stunTimer = 1.0;
+                    e.tripFallDuration = 1.0;
+                    e.hp -= 2;
+                    e.hitFlash = 0.15;
+                    if (e.bashing) { e.bashing = false; e.bashingBarrier = null; }
+                    if (e.animController) {
+                        e.animController.playOneShot('hit_react');
+                        e.animController.setTimeScale(0);
+                    }
+                    toRemove.push(i);
+                    break; // one enemy per coin
+                }
+            }
+        }
+        // Remove consumed coins in reverse order to preserve indices
+        for (const idx of toRemove) {
+            this._removeCoin(idx, scene);
+        }
+        return toRemove.length;
+    }
+
     clear(scene) {
         for (let i = this._active.length - 1; i >= 0; i--) {
             this._removeCoin(i, scene);
