@@ -95,7 +95,7 @@
         </div>
         <div class="tower-btn" data-tower="mop"
              data-tip-name="Mop Turret" data-tip-cost="25"
-             data-tip-desc="Attacks enemies + knockback. Hits hard!">
+             data-tip-desc="Sweeping crowd control. Low damage, big knockback!">
             <span class="hotkey">3</span>
             <div class="tower-icon">
                 <!-- Mop in bucket -->
@@ -195,6 +195,7 @@
         _spawnQueue: [],
         _floatingTexts: [],
         _doorParticles: [],
+        _mopImpacts: [],
         _cinematicTimer: 0,
 
         // Player character (seated on toilet)
@@ -234,12 +235,15 @@
             mop: {
                 name: 'Mop Turret',
                 cost: 25,
-                range: 5,
+                range: 4.5,
                 hp: 6,              // Sturdy — actively fighting back
                 color: 0x9b59b6,    // PALETTE.mop
-                damage: 20,
-                attackRate: 1.0,
-                knockback: 2.0,
+                damage: 8,          // Low damage — crowd control focus
+                attackRate: 1.2,    // Cooldown after sweep completes
+                knockback: 7.0,     // Big knockback displacement (units)
+                sweepSpeed: 9.0,    // Angular velocity (radians/sec)
+                followThrough: 0.6, // ~34° past target for follow-through
+                hitWidth: 0.6,      // Handle hitbox width
                 hotkey: 'Digit3',
             },
             ubik: {
@@ -984,6 +988,14 @@
                 p.mesh.material.dispose();
             });
             this._doorParticles = [];
+
+            // Clear mop impact effects
+            this._mopImpacts.forEach(fx => {
+                this.scene.remove(fx.ring);
+                fx.ring.geometry.dispose();
+                fx.ring.material.dispose();
+            });
+            this._mopImpacts = [];
             this._cinematicTimer = 0;
 
             // Reset fade overlay instantly (no transition)
@@ -1581,45 +1593,65 @@
                 exDot.rotation.x = 0.25;
                 group.add(exDot);
             } else if (type === 'mop') {
-                // Mop bucket (grey cylinder)
+                // ─── MOP TURRET — sweeping crowd control ───
+                // Bucket base (stationary)
                 const bucket = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.45, 0.35, 0.6, 8),
+                    new THREE.CylinderGeometry(0.55, 0.45, 0.7, 8),
                     toonMat(PALETTE.fixture)
                 );
-                bucket.position.y = 0.3;
+                bucket.position.y = 0.35;
                 group.add(bucket);
-                // Water in bucket (blue disc)
+                // Bucket rim (dark ring for definition)
+                const rim = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.5, 0.04, 6, 12),
+                    toonMat(PALETTE.charcoal)
+                );
+                rim.position.y = 0.7;
+                rim.rotation.x = Math.PI / 2;
+                group.add(rim);
+                // Water surface
                 const water = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.4, 0.4, 0.05, 8),
+                    new THREE.CylinderGeometry(0.48, 0.48, 0.05, 8),
                     toonMat(PALETTE.rimCool)
                 );
-                water.position.y = 0.55;
+                water.position.y = 0.65;
                 group.add(water);
-                // Mop handle (brown stick, angled)
+
+                // Mop arm — pivots around Y axis at bucket center
+                const mopArm = new THREE.Group();
+                group.add(mopArm);
+
+                // Handle — long wooden stick extending outward along local +Z
+                const handleLen = 3.5;
                 const handle = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6),
+                    new THREE.CylinderGeometry(0.06, 0.05, handleLen, 6),
                     toonMat(PALETTE.wood)
                 );
-                handle.position.set(0.15, 1.2, 0);
-                handle.rotation.z = -0.15;
-                group.add(handle);
-                // Mop head (shaggy strands — wide flat shape at bottom of handle)
+                handle.rotation.x = Math.PI / 2; // Extend along Z
+                handle.position.set(0, 0.85, handleLen / 2);
+                mopArm.add(handle);
+
+                // Mop head — wide flat block attached at handle tip
                 const mopHead = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.5, 0.25, 0.5),
+                    new THREE.BoxGeometry(0.7, 0.25, 0.7),
                     mat
                 );
-                mopHead.position.set(0.25, 0.25, 0);
-                group.add(mopHead);
-                // Mop strand details (smaller boxes hanging down)
+                mopHead.position.set(0, 0.72, handleLen);
+                mopArm.add(mopHead);
+
+                // Mop strand details (hanging below mop head)
                 const strandMat = toonMat(PALETTE.mop);
                 for (let si = -1; si <= 1; si++) {
                     const strand = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.12, 0.15, 0.4),
+                        new THREE.BoxGeometry(0.15, 0.2, 0.45),
                         strandMat
                     );
-                    strand.position.set(0.25 + si * 0.15, 0.1, 0);
-                    group.add(strand);
+                    strand.position.set(si * 0.2, 0.52, handleLen);
+                    mopArm.add(strand);
                 }
+
+                // Store arm ref for sweep rotation
+                group.userData.mopArm = mopArm;
             } else if (type === 'ubik') {
                 // ─── UBIK SPRAY CAN — stylized toon aerosol ───
                 const canRadius = 0.55;
@@ -1798,7 +1830,16 @@
                 attackTimer: 0,
                 hitShake: 0,
                 // Tower-specific state
-                ...(type === 'mop' && { swingAngle: 0 }),
+                ...(type === 'mop' && {
+                    mopAngle: Math.random() * Math.PI * 2, // Random initial direction
+                    sweeping: false,
+                    sweepFrom: 0,
+                    sweepTo: 0,
+                    sweepDir: 1,
+                    sweepProgress: 0,
+                    sweepTotalArc: 0,
+                    sweepHitEnemies: null,
+                }),
                 ...(type === 'coinmagnet' && { magnetTimer: 0 }),
             };
         },
@@ -2050,6 +2091,8 @@
                 bodyColor: color,
                 slowImmune: def.slowImmune || false,
                 panicked: false,
+                knockbackVX: 0,
+                knockbackVZ: 0,
                 desperate: isDesperate,
                 targetLane: this._pickLane(enemyType, def, opts),
             };
@@ -2159,6 +2202,28 @@
                             auraMult = 1.5;
                             break;
                         }
+                    }
+                }
+
+                // Apply knockback velocity (from mop sweeps etc.)
+                if (e.knockbackVX !== 0 || e.knockbackVZ !== 0) {
+                    e.x += e.knockbackVX * dt;
+                    e.z += e.knockbackVZ * dt;
+                    const kbDecay = Math.exp(-12 * dt);
+                    e.knockbackVX *= kbDecay;
+                    e.knockbackVZ *= kbDecay;
+                    if (Math.abs(e.knockbackVX) < 0.1 && Math.abs(e.knockbackVZ) < 0.1) {
+                        e.knockbackVX = 0;
+                        e.knockbackVZ = 0;
+                    }
+                    // Clamp to playfield
+                    e.x = Math.max(-15, Math.min(15, e.x));
+                    e.z = Math.max(CONFIG.toiletPos.z + 1, Math.min(CONFIG.spawnZoneZ + 2, e.z));
+                    e.mesh.position.x = e.x;
+                    e.mesh.position.z = e.z;
+                    // Interrupt door bashing if knocked hard enough
+                    if (e.bashing && (Math.abs(e.knockbackVX) > 1 || Math.abs(e.knockbackVZ) > 1)) {
+                        e.bashing = false;
                     }
                 }
 
@@ -2621,52 +2686,149 @@
                     continue;
                 }
 
-                t.attackTimer -= dt;
-                if (t.attackTimer > 0) continue;
-
-                // Find nearest enemy in range (for targeted towers)
-                let nearest = null;
-                let nearestDist = Infinity;
-                for (const e of this.enemies) {
-                    const dx = e.x - t.gridX;
-                    const dz = e.z - t.gridZ;
-                    const dist = Math.sqrt(dx * dx + dz * dz);
-                    if (dist < t.def.range && dist < nearestDist) {
-                        nearest = e;
-                        nearestDist = dist;
-                    }
-                }
-
-                if (!nearest) continue;
-
-                t.attackTimer = t.def.attackRate;
-
+                // ─── MOP TURRET — sweeping crowd control ───
                 if (t.type === 'mop') {
-                    // Melee attack — direct damage + knockback
-                    nearest.hp -= t.def.damage;
-                    nearest.hitFlash = 0.15;
-                    nearest.z += t.def.knockback;
-                    nearest.mesh.position.z = nearest.z;
-                    // Hit react animation (additive layer)
-                    if (nearest.animController && !nearest.dying) {
-                        nearest.animController.playOneShot('hit_react');
-                    }
-                    // 6C: hitstop — brief animation freeze on heavy mop hit
-                    if (nearest.animController) {
-                        nearest.animController.setTimeScale(0);
-                        nearest._hitstopTimer = 0.05; // ~3 frames at 60fps
-                    }
-                    // Animate mop swing
-                    t.swingAngle = 1.0;
-                }
-            }
+                    const mopArm = t.mesh.userData.mopArm;
 
-            // --- Animate mop swing ---
-            for (const t of this.towers) {
-                if (t.type !== 'mop' || !t.swingAngle) continue;
-                t.swingAngle *= 0.85;
-                if (t.swingAngle < 0.01) t.swingAngle = 0;
-                t.mesh.rotation.y = Math.sin(this.time * 20) * t.swingAngle * 0.5;
+                    if (t.sweeping) {
+                        // --- Active sweep ---
+                        const sweepDuration = t.sweepTotalArc / t.def.sweepSpeed;
+                        t.sweepProgress += dt / sweepDuration;
+
+                        if (t.sweepProgress >= 1.0) {
+                            // Sweep complete — update resting angle, start cooldown
+                            t.mopAngle = t.sweepTo;
+                            // Normalize to [-π, π]
+                            while (t.mopAngle > Math.PI) t.mopAngle -= Math.PI * 2;
+                            while (t.mopAngle < -Math.PI) t.mopAngle += Math.PI * 2;
+                            t.sweeping = false;
+                            t.attackTimer = t.def.attackRate;
+                            t.sweepHitEnemies = null;
+                            if (mopArm) mopArm.rotation.y = t.mopAngle;
+                        } else {
+                            // Ease-out — fast snap at start, decelerates into follow-through
+                            const eased = 1 - Math.pow(1 - t.sweepProgress, 2.5);
+                            const currentAngle = t.sweepFrom + (t.sweepTo - t.sweepFrom) * eased;
+
+                            // Update visual
+                            if (mopArm) mopArm.rotation.y = currentAngle;
+
+                            // Hit detection — line segment from tower center to mop tip
+                            const tipX = t.gridX + t.def.range * Math.sin(currentAngle);
+                            const tipZ = t.gridZ + t.def.range * Math.cos(currentAngle);
+
+                            for (const e of this.enemies) {
+                                if (e.dying || t.sweepHitEnemies.has(e)) continue;
+
+                                // Point-to-segment distance
+                                const abx = tipX - t.gridX, abz = tipZ - t.gridZ;
+                                const apx = e.x - t.gridX, apz = e.z - t.gridZ;
+                                const ab2 = abx * abx + abz * abz;
+                                let param = ab2 > 0.001 ? (apx * abx + apz * abz) / ab2 : 0;
+                                param = Math.max(0, Math.min(1, param));
+                                const cx = t.gridX + param * abx, cz = t.gridZ + param * abz;
+                                const dist = Math.sqrt((e.x - cx) ** 2 + (e.z - cz) ** 2);
+
+                                const hitRadius = t.def.hitWidth + e.size * 0.25;
+
+                                if (dist < hitRadius) {
+                                    t.sweepHitEnemies.add(e);
+
+                                    // Low damage — crowd control focus
+                                    e.hp -= t.def.damage;
+                                    e.hitFlash = 0.15;
+
+                                    // Directional knockback — tangential to sweep arc
+                                    const angleToEnemy = Math.atan2(e.x - t.gridX, e.z - t.gridZ);
+                                    // Tangent direction (perpendicular to radius, in sweep direction)
+                                    const tanX = t.sweepDir * Math.cos(angleToEnemy);
+                                    const tanZ = t.sweepDir * -Math.sin(angleToEnemy);
+                                    // Radial direction (outward from tower)
+                                    const radX = Math.sin(angleToEnemy);
+                                    const radZ = Math.cos(angleToEnemy);
+
+                                    // Mix: 70% tangential + 30% radial push
+                                    let kbX = tanX * 0.7 + radX * 0.3;
+                                    let kbZ = tanZ * 0.7 + radZ * 0.3;
+                                    const kbLen = Math.sqrt(kbX * kbX + kbZ * kbZ);
+                                    if (kbLen > 0) { kbX /= kbLen; kbZ /= kbLen; }
+
+                                    // Lever arm — tip hits harder than base
+                                    const enemyDist = Math.sqrt((e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2);
+                                    const leverScale = 0.3 + 0.7 * Math.min(1, enemyDist / t.def.range);
+
+                                    // Apply as velocity (decays over ~0.25s, total displacement ≈ knockback * leverScale)
+                                    const KNOCKBACK_DECAY = 12;
+                                    const kbForce = t.def.knockback * leverScale * KNOCKBACK_DECAY;
+                                    e.knockbackVX = kbX * kbForce;
+                                    e.knockbackVZ = kbZ * kbForce;
+
+                                    // Hit react + micro-hitstop
+                                    if (e.animController && !e.dying) {
+                                        e.animController.playOneShot('hit_react');
+                                        e.animController.setTimeScale(0);
+                                        e._hitstopTimer = 0.04;
+                                    }
+
+                                    // POW! impact VFX
+                                    this._spawnMopImpact(e.x, e.z);
+                                }
+                            }
+                        }
+                    } else {
+                        // --- Not sweeping — check cooldown and look for targets ---
+                        t.attackTimer -= dt;
+
+                        if (t.attackTimer <= 0) {
+                            // Find nearest enemy in range
+                            let mopTarget = null;
+                            let mopTargetDist = Infinity;
+                            for (const e of this.enemies) {
+                                if (e.dying) continue;
+                                const dx = e.x - t.gridX;
+                                const dz = e.z - t.gridZ;
+                                const dist = Math.sqrt(dx * dx + dz * dz);
+                                if (dist < t.def.range && dist < mopTargetDist) {
+                                    mopTarget = e;
+                                    mopTargetDist = dist;
+                                }
+                            }
+
+                            if (mopTarget) {
+                                // Initiate sweep toward target
+                                const dx = mopTarget.x - t.gridX;
+                                const dz = mopTarget.z - t.gridZ;
+                                const targetAngle = Math.atan2(dx, dz);
+                                let angleDiff = targetAngle - t.mopAngle;
+                                // Normalize to [-π, π]
+                                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                                const sweepDir = angleDiff >= 0 ? 1 : -1;
+                                // Minimum 60° sweep for visual impact, plus follow-through past target
+                                const absArc = Math.max(
+                                    Math.abs(angleDiff) + t.def.followThrough,
+                                    1.05
+                                );
+
+                                t.sweepFrom = t.mopAngle;
+                                t.sweepTo = t.mopAngle + sweepDir * absArc;
+                                t.sweepDir = sweepDir;
+                                t.sweepTotalArc = absArc;
+                                t.sweepProgress = 0;
+                                t.sweeping = true;
+                                t.sweepHitEnemies = new Set();
+                            }
+                        }
+
+                        // Idle sway — subtle wobble when waiting
+                        if (mopArm) {
+                            mopArm.rotation.y = t.mopAngle + Math.sin(this.time * 1.5) * 0.03;
+                        }
+                    }
+
+                    continue;
+                }
             }
 
             // --- Update projectiles ---
@@ -3018,17 +3180,6 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const text = `+${amount}`;
-            // White background pill
-            const tw = ctx.measureText(text).width;
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            const pw = tw / 2 + 14, ph = 24;
-            ctx.roundRect(-pw, -ph, pw * 2, ph * 2, 10);
-            ctx.fill();
-            // Thick black outline on pill
-            ctx.strokeStyle = '#1a1a1a';
-            ctx.lineWidth = 4;
-            ctx.stroke();
             // Black text outline
             ctx.strokeStyle = '#1a1a1a';
             ctx.lineWidth = 5;
@@ -3049,6 +3200,58 @@
             this.scene.add(sprite);
 
             this._floatingTexts.push({ sprite, life: 1.2 });
+        },
+
+        // ============================
+        // MOP IMPACT VFX
+        // ============================
+        _spawnMopImpact(x, z) {
+            // "POW!" text sprite — comic-book style
+            const canvas = document.createElement('canvas');
+            canvas.width = 192;
+            canvas.height = 96;
+            const ctx = canvas.getContext('2d');
+            const rot = (Math.random() - 0.5) * 0.3;
+            ctx.translate(96, 48);
+            ctx.rotate(rot);
+            ctx.font = 'bold 56px Bangers, Impact, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const words = ['POW!', 'WHAP!', 'SMACK!', 'THWACK!'];
+            const text = words[Math.floor(Math.random() * words.length)];
+            // Purple text with black outline
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 6;
+            ctx.strokeText(text, 0, 2);
+            ctx.fillStyle = '#9b59b6';
+            ctx.fillText(text, 0, 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.set(x, 3.5, z);
+            sprite.scale.set(3.5, 1.8, 1);
+            this.scene.add(sprite);
+            this._floatingTexts.push({ sprite, life: 0.8 });
+
+            // Expanding impact ring
+            const ringGeo = new THREE.RingGeometry(0.2, 0.5, 16);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x9b59b6,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, 0.3, z);
+            ring.rotation.x = -Math.PI / 2;
+            this.scene.add(ring);
+            this._mopImpacts.push({ ring, life: 0.35, maxLife: 0.35 });
         },
 
         // ============================
@@ -3227,6 +3430,23 @@
                     ft.sprite.material.map.dispose();
                     ft.sprite.material.dispose();
                     this._floatingTexts.splice(i, 1);
+                }
+            }
+
+            // Update mop impact rings (expanding + fading)
+            for (let i = this._mopImpacts.length - 1; i >= 0; i--) {
+                const fx = this._mopImpacts[i];
+                fx.life -= dt;
+                const t = 1 - fx.life / fx.maxLife; // 0→1
+                // Quick expand with ease-out
+                const scale = 1 + t * 4;
+                fx.ring.scale.set(scale, scale, 1);
+                fx.ring.material.opacity = 0.8 * (1 - t * t);
+                if (fx.life <= 0) {
+                    this.scene.remove(fx.ring);
+                    fx.ring.geometry.dispose();
+                    fx.ring.material.dispose();
+                    this._mopImpacts.splice(i, 1);
                 }
             }
 
