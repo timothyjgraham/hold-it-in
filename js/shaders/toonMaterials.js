@@ -115,6 +115,66 @@ export function outlineMatStatic(width = 0.025, color) {
     });
 }
 
+// ─── JITTERY OUTLINE (Borderlands ink jitter — legendary drones) ──────────────
+
+const _outlineVertJittery = /* glsl */ `
+uniform float uOutlineWidth;
+uniform float uTime;
+
+void main() {
+    float jitter = sin(position.x * 40.0 + uTime * 8.0) *
+                   sin(position.y * 40.0 + uTime * 6.0) * 0.005;
+    vec3 pos = position + normal * (uOutlineWidth + jitter);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+}
+`;
+
+const _outlineFragJittery = /* glsl */ `
+#include <common>
+#include <fog_pars_fragment>
+
+uniform vec3 uOutlineColor;
+uniform float uAlpha;
+
+void main() {
+    gl_FragColor = vec4(uOutlineColor, uAlpha);
+    #include <fog_fragment>
+}
+`;
+
+/**
+ * Create a jittery outline ShaderMaterial (Borderlands-style ink jitter).
+ * Time uniform must be updated each frame via material.uniforms.uTime.value.
+ *
+ * @param {number} [width=0.025] - Outline thickness
+ * @param {number} [color] - Outline color
+ * @param {number} [alpha=1.0] - Outline alpha
+ * @returns {THREE.ShaderMaterial}
+ */
+export function outlineMatJittery(width = 0.025, color, alpha = 1.0) {
+    const uniforms = {
+        uOutlineWidth: { value: width },
+        uOutlineColor: { value: new THREE.Color(color !== undefined ? color : PALETTE.outlineColor) },
+        uAlpha: { value: alpha },
+        uTime: { value: 0 },
+    };
+
+    if (THREE.UniformsLib && THREE.UniformsLib.fog) {
+        const fogUniforms = THREE.UniformsUtils.clone(THREE.UniformsLib.fog);
+        Object.assign(uniforms, fogUniforms);
+    }
+
+    return new THREE.ShaderMaterial({
+        vertexShader: _outlineVertJittery,
+        fragmentShader: _outlineFragJittery,
+        uniforms,
+        side: THREE.BackSide,
+        fog: true,
+        transparent: alpha < 1.0,
+        depthWrite: alpha >= 1.0,
+    });
+}
+
 // ─── CONVENIENCE MATERIAL PRESETS ─────────────────────────────────────────────
 // Named factories matching common environment roles.
 // Replace the old chrome(), porcelain(), whitePlastic() etc. in EnvironmentModels.js

@@ -2069,8 +2069,8 @@
             this._upgradeOptions = options;
 
             // Target hover positions: 3 drones in a row, centered, CLOSE to camera
-            const spacing = 5.5;
-            const hoverY = 20;    // Close to camera Y=26
+            const spacing = 5.0;
+            const hoverY = 23;    // Close to camera Y=26, centered with larger placards
             const hoverZ = -6;    // Very close to camera (cam at Z=-15)
             const startX = -(options.length - 1) * spacing / 2;
 
@@ -2119,6 +2119,23 @@
         _updateUpgradeDrones(dt) {
             if (!this.upgradeDrones || this.upgradeDrones.length === 0) return;
 
+            // ── Update trail particles ──
+            if (!this._droneTrailParticles) this._droneTrailParticles = [];
+            for (let i = this._droneTrailParticles.length - 1; i >= 0; i--) {
+                const p = this._droneTrailParticles[i];
+                p.life -= dt;
+                p.mesh.position.y += p.vy * dt;
+                const fade = Math.max(0, p.life / p.maxLife);
+                p.mesh.material.opacity = fade;
+                p.mesh.scale.setScalar(0.3 + fade * 0.7);
+                if (p.life <= 0) {
+                    this.scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    this._droneTrailParticles.splice(i, 1);
+                }
+            }
+
             for (const drone of this.upgradeDrones) {
                 const ud = drone.userData;
 
@@ -2131,33 +2148,77 @@
                     const pos = new THREE.Vector3();
                     ud.flightCurve.getPoint(et, pos);
 
-                    // Velocity from previous frame (before updating position)
-                    const velocity = ud.prevPos ? pos.clone().sub(ud.prevPos) : new THREE.Vector3();
+                    // Smoothed velocity (exponential moving average)
+                    const rawVel = ud.prevPos ? pos.clone().sub(ud.prevPos) : new THREE.Vector3();
+                    if (!ud._smoothVel) ud._smoothVel = rawVel.clone();
+                    ud._smoothVel.lerp(rawVel, 0.15);
 
                     drone.position.copy(pos);
 
-                    // Pendulum force from lateral acceleration
-                    ud._externalAccel = -velocity.x * 3.0;
+                    // Pendulum force from smoothed lateral acceleration
+                    ud._externalAccel = -ud._smoothVel.x * 3.0;
 
-                    // Drone tilt based on velocity
-                    const speed = velocity.length() / Math.max(dt, 0.001);
-                    const tilt = Math.min(0.3, speed * 0.02);
-                    const hDir = new THREE.Vector2(velocity.x, velocity.z);
+                    // Tilt fading in last 20% of flight
+                    const tiltFade = Math.min(1, (1 - t) / 0.2);
+                    const speed = ud._smoothVel.length() / Math.max(dt, 0.001);
+                    const tilt = Math.min(0.3, speed * 0.02) * tiltFade;
+                    const hDir = new THREE.Vector2(ud._smoothVel.x, ud._smoothVel.z);
                     if (hDir.length() > 0.001) {
                         hDir.normalize();
-                        drone.rotation.y = Math.atan2(hDir.x, hDir.y);
+                        drone.rotation.y = Math.atan2(hDir.x, hDir.y) * tiltFade;
                         drone.rotation.x = -tilt;
-                        drone.rotation.z = -velocity.x * 0.1;
+                        drone.rotation.z = -ud._smoothVel.x * 0.1 * tiltFade;
                     }
 
                     ud.prevPos = pos.clone();
 
-                    // Transition to hovering
+                    // Trail particles (rare/legendary)
+                    if (ud.rarity !== 'common') {
+                        if (!ud._trailTimer) ud._trailTimer = 0;
+                        ud._trailTimer += dt;
+                        const interval = ud.rarity === 'legendary' ? 0.04 : 0.08;
+                        while (ud._trailTimer >= interval) {
+                            ud._trailTimer -= interval;
+                            const color = ud.rarity === 'legendary' ? PALETTE.rarityLegendary : PALETTE.rarityRare;
+                            const fadeTime = ud.rarity === 'legendary' ? 0.6 : 0.4;
+                            const geo = new THREE.SphereGeometry(0.04, 4, 4);
+                            const mat = new THREE.MeshBasicMaterial({
+                                color, transparent: true, opacity: 1, depthWrite: false,
+                            });
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.position.copy(drone.position);
+                            this.scene.add(mesh);
+                            this._droneTrailParticles.push({
+                                mesh,
+                                vy: ud.rarity === 'legendary' ? 0.3 : 0,
+                                life: fadeTime,
+                                maxLife: fadeTime,
+                            });
+                        }
+                    }
+
+                    // Transition to settling (smooth transition, no hard snap)
                     if (t >= 1) {
-                        ud.state = 'hovering';
+                        ud.state = 'settling';
+                        ud._settleTimer = 0;
                         drone.position.copy(ud.targetPos);
-                        drone.rotation.set(0, 0, 0);
                         ud._externalAccel = 0;
+                    }
+
+                } else if (ud.state === 'settling') {
+                    // Exponential rotation decay instead of hard snap
+                    const decay = Math.pow(0.88, dt * 60);
+                    drone.rotation.x *= decay;
+                    drone.rotation.y *= decay;
+                    drone.rotation.z *= decay;
+
+                    ud._settleTimer += dt;
+                    const bob = ud._hoverBob || 0;
+                    drone.position.y = ud.targetPos.y + bob;
+
+                    if (ud._settleTimer >= 0.5) {
+                        ud.state = 'hovering';
+                        drone.rotation.set(0, 0, 0);
                     }
 
                 } else if (ud.state === 'hovering') {
@@ -2177,11 +2238,11 @@
                 }
             }
 
-            // Check if all drones are hovering and selection UI not yet active
+            // Check if all drones are hovering/settling and selection UI not yet active
             if (this._upgradePhase && this.upgradeSelectionUI && !this.upgradeSelectionUI.active) {
-                const allHovering = this.upgradeDrones.length > 0 &&
-                    this.upgradeDrones.every(d => d.userData.state === 'hovering');
-                if (allHovering) {
+                const allReady = this.upgradeDrones.length > 0 &&
+                    this.upgradeDrones.every(d => d.userData.state === 'hovering' || d.userData.state === 'settling');
+                if (allReady) {
                     this.upgradeSelectionUI.activate(
                         this.upgradeDrones,
                         this._upgradeOptions,
@@ -2199,6 +2260,15 @@
                 if (window.disposeUpgradeDrone) {
                     disposeUpgradeDrone(drone);
                 }
+            }
+            // Clean up trail particles
+            if (this._droneTrailParticles) {
+                for (const p of this._droneTrailParticles) {
+                    this.scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                }
+                this._droneTrailParticles = [];
             }
             this.upgradeDrones = [];
             this._upgradePhase = false;
