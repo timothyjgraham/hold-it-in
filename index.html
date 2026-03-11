@@ -61,9 +61,9 @@
             <span class="label">Mop</span>
             <span class="cost">25</span>
         </div>
-        <div class="tower-btn" data-tower="freshener" title="Air Freshener — Ranged DPS">
+        <div class="tower-btn" data-tower="ubik" title="Ubik — Spray Tower">
             <span class="hotkey">4</span>
-            <span class="label">Freshener</span>
+            <span class="label">Ubik</span>
             <span class="cost">35</span>
         </div>
     </div>
@@ -167,14 +167,16 @@
                 knockback: 2.0,
                 hotkey: 'Digit3',
             },
-            freshener: {
-                name: 'Air Freshener',
+            ubik: {
+                name: 'Ubik',
                 cost: 35,
-                range: 9,
-                hp: 2,              // Fragile canister — place at the back
+                range: 9,              // Spray travels 9 units forward
+                hp: 2,                 // Fragile canister — place at the back
                 color: 0x2ecc71,
-                damage: 12,
-                attackRate: 0.6,
+                damage: 10,            // Per-tick spray damage (hits multiple enemies)
+                attackRate: 1.5,       // Interval between sprays
+                sprayDuration: 0.8,    // How long the spray cloud lasts
+                sprayWidth: 2.0,       // Width of the spray cone at max range
                 hotkey: 'Digit4',
             },
         },
@@ -237,7 +239,7 @@
             { enemies: [['polite', 7]], interval: 2.0, delay: 4 },
             // Wave 3: PEE DANCERS — fast, bouncy, come in groups
             { enemies: [['polite', 4], ['dancer', 4]], interval: 1.8, delay: 4 },
-            // Wave 4: Harder mix, Air Freshener now available
+            // Wave 4: Harder mix, Ubik now available
             { enemies: [['polite', 5], ['dancer', 5]], interval: 1.5, delay: 3.5 },
             // Wave 5: WADDLE TANK — big, slow, panics into sprint at 50% HP
             { enemies: [['polite', 4], ['dancer', 3], ['waddle', 2]], interval: 1.3, delay: 3 },
@@ -833,6 +835,17 @@
             this.enemies = [];
             this.towers = [];
             this.projectiles = [];
+            // Clean up active sprays
+            if (this.sprays) {
+                for (const s of this.sprays) {
+                    for (const p of s.particles) {
+                        p.mesh.geometry.dispose();
+                        p.mesh.material.dispose();
+                    }
+                    this.scene.remove(s.group);
+                }
+            }
+            this.sprays = [];
 
             // Clear dropped coins
             if (this.coinPool) {
@@ -1508,28 +1521,139 @@
                     strand.position.set(0.25 + si * 0.15, 0.1, 0);
                     group.add(strand);
                 }
-            } else if (type === 'freshener') {
-                // Can body
-                const can = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8),
+            } else if (type === 'ubik') {
+                // ─── UBIK SPRAY CAN — stylized toon aerosol ───
+                const canRadius = 0.55;
+                const canHeight = 2.0;
+                const segments = 12;
+
+                // Outline edges (inverted-hull style — dark shell behind geometry)
+                const outlineMat = new THREE.MeshBasicMaterial({
+                    color: 0x111111, side: THREE.BackSide
+                });
+                const outlineGeo = new THREE.CylinderGeometry(
+                    canRadius + 0.04, canRadius + 0.04, canHeight + 0.04, segments
+                );
+                const outline = new THREE.Mesh(outlineGeo, outlineMat);
+                outline.position.y = canHeight / 2 + 0.15;
+                group.add(outline);
+
+                // Main can body — green toon
+                const canGeo = new THREE.CylinderGeometry(canRadius, canRadius, canHeight, segments);
+                const canMesh = new THREE.Mesh(canGeo, mat);
+                canMesh.position.y = canHeight / 2 + 0.15;
+                group.add(canMesh);
+
+                // Bottom dome (rounded base)
+                const bottomDome = new THREE.Mesh(
+                    new THREE.SphereGeometry(canRadius, segments, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
                     mat
                 );
-                can.position.y = 0.8;
-                group.add(can);
-                // Nozzle
-                const nozzle = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.15, 0.3, 6),
-                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                bottomDome.position.y = 0.15;
+                group.add(bottomDome);
+
+                // Shoulder taper (top of can narrows slightly)
+                const shoulderGeo = new THREE.CylinderGeometry(canRadius * 0.7, canRadius, 0.25, segments);
+                const shoulderMesh = new THREE.Mesh(shoulderGeo, mat);
+                shoulderMesh.position.y = canHeight + 0.15;
+                group.add(shoulderMesh);
+
+                // Shoulder outline
+                const shoulderOutline = new THREE.Mesh(
+                    new THREE.CylinderGeometry(canRadius * 0.7 + 0.04, canRadius + 0.04, 0.29, segments),
+                    outlineMat
                 );
-                nozzle.position.y = 1.5;
+                shoulderOutline.position.y = canHeight + 0.15;
+                group.add(shoulderOutline);
+
+                // Nozzle cap (white plastic top)
+                const capMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+                const capGeo = new THREE.CylinderGeometry(canRadius * 0.55, canRadius * 0.7, 0.2, segments);
+                const cap = new THREE.Mesh(capGeo, capMat);
+                cap.position.y = canHeight + 0.35;
+                group.add(cap);
+
+                // Spray nozzle (small protruding tip, faces +Z toward enemies)
+                const nozzleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+                const nozzleGeo = new THREE.CylinderGeometry(0.06, 0.1, 0.15, 6);
+                const nozzle = new THREE.Mesh(nozzleGeo, nozzleMat);
+                nozzle.rotation.x = Math.PI / 2; // Point forward
+                nozzle.position.set(0, canHeight + 0.35, canRadius * 0.55 + 0.07);
                 group.add(nozzle);
-                // Base platform
-                const base = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x555555 })
+                // Nozzle outline
+                const nozzleOutline = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.09, 0.13, 0.19, 6),
+                    outlineMat
                 );
-                base.position.y = 0.1;
-                group.add(base);
+                nozzleOutline.rotation.x = Math.PI / 2;
+                nozzleOutline.position.copy(nozzle.position);
+                group.add(nozzleOutline);
+
+                // ─── LABEL ───
+                // Label band (cream/white rectangle wrapped around can center)
+                const labelMat = new THREE.MeshStandardMaterial({
+                    color: 0xf5f0e0, // Warm cream
+                    emissive: 0x222211,
+                    emissiveIntensity: 0.15,
+                });
+                const labelGeo = new THREE.CylinderGeometry(
+                    canRadius + 0.01, canRadius + 0.01, canHeight * 0.45, segments
+                );
+                const label = new THREE.Mesh(labelGeo, labelMat);
+                label.position.y = canHeight * 0.45 + 0.15;
+                group.add(label);
+                // Label outline (ring edges at top and bottom of label)
+                const labelEdgeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+                const labelEdgeGeo = new THREE.TorusGeometry(canRadius + 0.02, 0.02, 4, segments);
+                const labelTop = new THREE.Mesh(labelEdgeGeo, labelEdgeMat);
+                labelTop.rotation.x = Math.PI / 2;
+                labelTop.position.y = canHeight * 0.45 + canHeight * 0.225 + 0.15;
+                group.add(labelTop);
+                const labelBot = new THREE.Mesh(labelEdgeGeo, labelEdgeMat);
+                labelBot.rotation.x = Math.PI / 2;
+                labelBot.position.y = canHeight * 0.45 - canHeight * 0.225 + 0.15;
+                group.add(labelBot);
+
+                // "UBIK" text — canvas texture on a plane facing camera
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                // Background transparent
+                ctx.clearRect(0, 0, 256, 128);
+                // Bold retro text
+                ctx.fillStyle = '#1a6b3a';
+                ctx.font = 'bold 72px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('UBIK', 128, 55);
+                // Tagline
+                ctx.fillStyle = '#555544';
+                ctx.font = 'italic 22px Arial, sans-serif';
+                ctx.fillText('safe when used as directed', 128, 100);
+
+                const labelTex = new THREE.CanvasTexture(canvas);
+                labelTex.needsUpdate = true;
+                const textMat = new THREE.MeshBasicMaterial({
+                    map: labelTex,
+                    transparent: true,
+                    depthWrite: false,
+                });
+                // Place text plane on front face of can (toward camera)
+                const textPlane = new THREE.Mesh(
+                    new THREE.PlaneGeometry(canRadius * 1.8, canRadius * 0.9),
+                    textMat
+                );
+                textPlane.position.set(0, canHeight * 0.45 + 0.15, canRadius + 0.02);
+                group.add(textPlane);
+                // Duplicate on back face
+                const textBack = textPlane.clone();
+                textBack.rotation.y = Math.PI;
+                textBack.position.z = -(canRadius + 0.02);
+                group.add(textBack);
+
+                // Store nozzle ref for spray VFX direction
+                group.userData.nozzleWorldZ = canRadius * 0.55 + 0.07;
             }
 
             return {
@@ -2256,7 +2380,14 @@
                 t.attackTimer -= dt;
                 if (t.attackTimer > 0) continue;
 
-                // Find nearest enemy in range
+                // Ubik fires on a timer regardless of enemy position — sprays straight ahead
+                if (t.type === 'ubik') {
+                    t.attackTimer = t.def.attackRate;
+                    this._fireSpray(t);
+                    continue;
+                }
+
+                // Find nearest enemy in range (for targeted towers)
                 let nearest = null;
                 let nearestDist = Infinity;
                 for (const e of this.enemies) {
@@ -2290,9 +2421,6 @@
                     }
                     // Animate mop swing
                     t.swingAngle = 1.0;
-                } else if (t.type === 'freshener') {
-                    // Ranged — spawn projectile
-                    this._fireProjectile(t, nearest);
                 }
             }
 
@@ -2336,6 +2464,9 @@
                     }
                 }
             }
+
+            // --- Update Ubik sprays ---
+            this._updateSprays(dt);
 
             // --- Exit door spring physics ---
             if (this.officeGroup && this.officeGroup.userData.exitDoors) {
@@ -2398,6 +2529,110 @@
                 damage: tower.def.damage,
                 life: 2.0,
             });
+        },
+
+        // ─── UBIK SPRAY SYSTEM ───
+        _fireSpray(tower) {
+            const def = tower.def;
+            const spraySpeed = 12;
+            const duration = def.sprayDuration || 0.8;
+
+            // Create spray cloud group (multiple particles in a cone)
+            const group = new THREE.Group();
+            group.position.set(tower.gridX, 1.4, tower.gridZ);
+            this.scene.add(group);
+
+            // 5 spray particles in a fan pattern
+            const particles = [];
+            const sprayMat = new THREE.MeshBasicMaterial({
+                color: 0x88ffaa,
+                transparent: true,
+                opacity: 0.7,
+                depthWrite: false,
+            });
+            for (let i = 0; i < 5; i++) {
+                const size = 0.15 + Math.random() * 0.15;
+                const pMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(size, 5, 5),
+                    sprayMat.clone()
+                );
+                // Fan spread: center particle goes straight, edges spread out
+                const spread = (i - 2) * 0.12; // -0.24 to +0.24
+                pMesh.position.set(spread, (Math.random() - 0.5) * 0.3, 0.3);
+                group.add(pMesh);
+                particles.push({
+                    mesh: pMesh,
+                    vx: spread * spraySpeed * 0.3, // Slight X spread
+                    vz: spraySpeed + Math.random() * 2, // Forward (+Z)
+                    startSize: size,
+                });
+            }
+
+            this.sprays.push({
+                group: group,
+                particles: particles,
+                x: tower.gridX,
+                z: tower.gridZ,
+                damage: def.damage,
+                life: duration,
+                maxLife: duration,
+                width: def.sprayWidth || 2.0,
+                range: def.range,
+                damageTimer: 0,        // Tick damage every 0.2s — continuous while in cloud
+            });
+        },
+
+        _updateSprays(dt) {
+            for (let i = this.sprays.length - 1; i >= 0; i--) {
+                const s = this.sprays[i];
+                s.life -= dt;
+                s.damageTimer -= dt;
+
+                const progress = 1 - s.life / s.maxLife; // 0→1
+                const alpha = Math.max(0, s.life / s.maxLife); // 1→0
+
+                // Update each particle
+                for (const p of s.particles) {
+                    p.mesh.position.x += p.vx * dt;
+                    p.mesh.position.z += p.vz * dt;
+                    // Grow and fade as spray expands
+                    const scale = 1 + progress * 3;
+                    p.mesh.scale.setScalar(scale);
+                    p.mesh.material.opacity = alpha * 0.6;
+                }
+
+                // Damage enemies in the spray cone — continuous tick damage
+                if (s.damageTimer <= 0) {
+                    s.damageTimer = 0.2; // Tick every 0.2s
+                    const sprayFrontZ = s.z + progress * s.range;
+                    const sprayBackZ = s.z + Math.max(0, progress - 0.3) * s.range;
+                    const halfWidth = (s.width * 0.5) * progress + 0.5; // Widens with distance
+
+                    for (const e of this.enemies) {
+                        if (e.dying) continue;
+                        // Check if enemy is in the spray zone
+                        if (e.z >= sprayBackZ && e.z <= sprayFrontZ + 1 &&
+                            Math.abs(e.x - s.x) < halfWidth + e.size * 0.5) {
+                            e.hp -= s.damage;
+                            e.hitFlash = 0.15;
+                            if (e.animController && !e.dying) {
+                                e.animController.playOneShot('hit_react');
+                            }
+                        }
+                    }
+                }
+
+                // Remove expired spray
+                if (s.life <= 0) {
+                    // Dispose particle materials
+                    for (const p of s.particles) {
+                        p.mesh.geometry.dispose();
+                        p.mesh.material.dispose();
+                    }
+                    this.scene.remove(s.group);
+                    this.sprays.splice(i, 1);
+                }
+            }
         },
 
         // ============================
