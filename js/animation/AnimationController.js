@@ -1,5 +1,6 @@
 // AnimationController.js — Per-enemy animation state machine
 // Phase 4: LOD throttling, crossfade blending, speed synchronization
+// Phase 8: Robust bone reset, hit_react cooldown
 
 import { getAnimationClip } from './AnimationLibrary.js';
 
@@ -19,6 +20,12 @@ const LOD_FAR_INTERVAL  = 0.066;   // ~15fps
 
 const DEFAULT_CROSSFADE = 0.2;
 const WADDLE_PANIC_CROSSFADE = 0.4;
+
+// ═══════════════════════════════════════
+// HIT REACT COOLDOWN
+// ═══════════════════════════════════════
+
+const HIT_REACT_COOLDOWN = 0.25; // seconds — prevents rapid retrigger jerking
 
 /**
  * AnimationController — per-enemy state machine with LOD throttling
@@ -47,6 +54,25 @@ export class AnimationController {
 
         // Speed sync (4C) — base timeScale applied to looping actions
         this._timeScale = 1.0;
+
+        // Hit react cooldown — wall-clock time of last trigger
+        this._lastHitReactTime = -Infinity;
+
+        // Capture bone rest state at bind time for robust pool reset.
+        // This captures position, quaternion, and scale BEFORE any animation plays,
+        // ensuring we can fully restore bones after death animations that scale to 0
+        // or rotate to extreme values.
+        this._boneRestState = [];
+        if (skinnedMesh.skeleton) {
+            for (const bone of skinnedMesh.skeleton.bones) {
+                this._boneRestState.push({
+                    bone: bone,
+                    position: bone.position.clone(),
+                    quaternion: bone.quaternion.clone(),
+                    scale: bone.scale.clone(),
+                });
+            }
+        }
     }
 
     // ───────────────────────────────────────
@@ -88,9 +114,21 @@ export class AnimationController {
     /**
      * Play a one-shot animation layered additively over the current state.
      * Used for hit_react — blends on top without interrupting walk/bash.
+     *
+     * Includes a cooldown to prevent rapid re-triggering (e.g. spray tower
+     * 0.2s ticks) which causes visible jerking as the animation snaps back
+     * to frame 0 on each trigger.
+     *
      * @param {string} clipName — animation clip name (e.g. 'hit_react')
      */
     playOneShot(clipName) {
+        // Cooldown — prevent rapid re-triggering that causes jerking
+        const now = performance.now() * 0.001;
+        if (now - this._lastHitReactTime < HIT_REACT_COOLDOWN) {
+            return;
+        }
+        this._lastHitReactTime = now;
+
         const clip = getAnimationClip(this.type, clipName);
         const action = this.mixer.clipAction(clip);
 
@@ -197,15 +235,33 @@ export class AnimationController {
     // ───────────────────────────────────────
 
     /**
-     * Reset for object pool reuse — stop all actions but keep mixer alive.
+     * Reset for object pool reuse — stop all actions and restore bone rest state.
      * Call when releasing an enemy back to the pool.
+     *
+     * Critical: death animations leave bones in extreme states (root scale 0.01,
+     * root tilted forward/sideways). mixer.stopAllAction() relies on Three.js
+     * PropertyMixer internals to restore values — we explicitly restore as a
+     * safety net to prevent invisible/distorted enemies on pool reuse.
      */
     reset() {
         this.mixer.stopAllAction();
+
+        // Explicitly restore all bone transforms to their rest state.
+        // This handles cases where:
+        // - Death animation scaled root to [0.01, 0.01, 0.01]
+        // - Death animation rotated root (powerwalker face-plant, waddle sideways fall)
+        // - Additive hit_react left residual position/rotation offsets
+        for (const state of this._boneRestState) {
+            state.bone.position.copy(state.position);
+            state.bone.quaternion.copy(state.quaternion);
+            state.bone.scale.copy(state.scale);
+        }
+
         this.currentAction = null;
         this.currentState = null;
         this._timeScale = 1.0;
         this.updateAccumulator = 0;
+        this._lastHitReactTime = -Infinity;
     }
 
     /**
@@ -218,5 +274,6 @@ export class AnimationController {
         this.mesh = null;
         this.currentAction = null;
         this.currentState = null;
+        this._boneRestState = null;
     }
 }

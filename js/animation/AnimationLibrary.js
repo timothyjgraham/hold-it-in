@@ -159,15 +159,12 @@ function _politeHitReact() {
     const dur = 0.3;
     const t = [0, 0.04, 0.12, 0.22, dur];
     return new THREE.AnimationClip('polite_hit_react', dur, [
-        // Stumble backward
-        posTrack('root', t, [[0, 0, 0], [0, -0.06, -0.15], [0, -0.02, -0.08], [0, -0.01, -0.03], [0, 0, 0]]),
-        // Spine flinch forward + slight lateral
+        // Stumble backward (additive position delta)
+        posTrack('root', t, [[0, 0, 0], [0, -0.04, -0.10], [0, -0.01, -0.05], [0, 0, -0.02], [0, 0, 0]]),
+        // Spine flinch forward + slight lateral (additive rotation from identity)
         eulerTrack('spine', t, [
-            [0, 0, 0], [0.18, 0, 0.06], [0.06, 0, 0.02], [0.02, 0, 0], [0, 0, 0]
+            [0, 0, 0], [0.14, 0, 0.04], [0.05, 0, 0.01], [0.01, 0, 0], [0, 0, 0]
         ]),
-        // Arms flail outward briefly
-        buildRotationTrack('upperArm_L', t, [0, -0.4, -0.15, -0.05, 0], AXIS_Z),
-        buildRotationTrack('upperArm_R', t, [0, 0.4, 0.15, 0.05, 0], AXIS_Z),
     ]);
 }
 
@@ -314,13 +311,10 @@ function _dancerHitReact() {
     const dur = 0.25;
     const t = [0, 0.03, 0.10, 0.18, dur];
     return new THREE.AnimationClip('dancer_hit_react', dur, [
-        // Bounces upward then slams down
-        posTrack('root', t, [[0, 0, 0], [0, 0.10, -0.08], [0, -0.05, -0.03], [0, 0.02, -0.01], [0, 0, 0]]),
-        // Big squash on hit (delta values for additive blending)
-        scaleTrack('root', t, [
-            [0, 0, 0], [0.22, -0.32, 0.22], [-0.12, 0.14, -0.12], [0.05, -0.03, 0.05], [0, 0, 0]
-        ]),
-        buildRotationTrack('spine', t, [0, 0.12, 0.04, 0.01, 0], AXIS_X),
+        // Bounces upward then settles (additive position delta)
+        posTrack('root', t, [[0, 0, 0], [0, 0.06, -0.05], [0, -0.03, -0.02], [0, 0.01, -0.01], [0, 0, 0]]),
+        // Spine crunch forward (additive rotation from identity)
+        buildRotationTrack('spine', t, [0, 0.10, 0.03, 0.01, 0], AXIS_X),
     ]);
 }
 
@@ -539,20 +533,16 @@ function _waddleHitReact() {
     const dur = 0.35;
     const t = [0, 0.05, 0.12, 0.22, 0.30, dur];
     return new THREE.AnimationClip('waddle_hit_react', dur, [
-        // Tank barely flinches
+        // Tank barely flinches (additive position delta)
         posTrack('root', t, [
-            [0, 0, 0], [0, 0, -0.06], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0], [0, 0, 0]
+            [0, 0, 0], [0, 0, -0.04], [0, 0, -0.02], [0, 0, -0.01], [0, 0, 0], [0, 0, 0]
         ]),
-        // But belly JIGGLES gloriously (delta values for additive blending)
-        scaleTrack('belly', t, [
-            [0, 0, 0], [0.22, -0.18, 0.28], [-0.14, 0.14, -0.20],
-            [0.10, -0.06, 0.10], [-0.04, 0.03, -0.04], [0, 0, 0]
-        ]),
+        // Belly jiggles via rotation only (additive from identity — no scale tracks)
         eulerTrack('belly', t, [
-            [0, 0, 0], [0.14, 0, 0.06], [-0.08, 0, -0.03],
-            [0.04, 0, 0.01], [-0.01, 0, 0], [0, 0, 0]
+            [0, 0, 0], [0.10, 0, 0.04], [-0.06, 0, -0.02],
+            [0.03, 0, 0.01], [-0.01, 0, 0], [0, 0, 0]
         ]),
-        buildRotationTrack('spine', t, [0, 0.05, 0.02, 0.01, 0, 0], AXIS_X),
+        buildRotationTrack('spine', t, [0, 0.04, 0.01, 0.005, 0, 0], AXIS_X),
     ]);
 }
 
@@ -727,23 +717,20 @@ function _panickerHitReact() {
     const dur = 0.3;
     const t = [0, 0.04, 0.10, 0.18, 0.25, dur];
     return new THREE.AnimationClip('panicker_hit_react', dur, [
-        // Dramatic flinch backward
+        // Dramatic flinch backward (additive position delta)
         posTrack('root', t, [
-            [0, 0, 0], [0, -0.06, -0.18], [0, -0.02, -0.10],
-            [0, -0.01, -0.04], [0, 0, -0.01], [0, 0, 0]
+            [0, 0, 0], [0, -0.04, -0.12], [0, -0.01, -0.06],
+            [0, -0.005, -0.02], [0, 0, -0.01], [0, 0, 0]
         ]),
-        // Arms fly out sideways dramatically (very visible from above)
-        buildRotationTrack('upperArm_L', t, [0, -0.75, -0.30, -0.10, -0.03, 0], AXIS_Z),
-        buildRotationTrack('upperArm_R', t, [0, 0.75, 0.30, 0.10, 0.03, 0], AXIS_Z),
-        // Spine twists on flinch
+        // Spine twists on flinch (additive rotation from identity)
         eulerTrack('spine', t, [
-            [0, 0, 0], [0.24, 0.14, 0.08], [0.08, 0.05, 0.03],
-            [0.03, 0.02, 0.01], [0, 0, 0], [0, 0, 0]
+            [0, 0, 0], [0.18, 0.10, 0.06], [0.06, 0.03, 0.02],
+            [0.02, 0.01, 0.01], [0, 0, 0], [0, 0, 0]
         ]),
         // Head whips to side
         eulerTrack('head', t, [
-            [0, 0, 0], [0.12, -0.22, 0], [0.04, -0.08, 0],
-            [0.01, -0.03, 0], [0, 0, 0], [0, 0, 0]
+            [0, 0, 0], [0.08, -0.14, 0], [0.03, -0.05, 0],
+            [0.01, -0.02, 0], [0, 0, 0], [0, 0, 0]
         ]),
     ]);
 }
