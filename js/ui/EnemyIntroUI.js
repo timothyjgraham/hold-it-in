@@ -25,12 +25,15 @@ const INPUT_ENABLE_DELAY = 1.8;
 const EXIT_DURATION = 0.8;        // Phase 3
 const ENEMY_EXIT_DUR = 0.5;
 
-// ─── SIGN CANVAS DIMENSIONS ─────────────────────────────────────────────────
+// ─── RENDER ORDER LAYERS ──────────────────────────────────────────────────────
+// Intro elements render ON TOP of the dim plane, which renders on top of the game world.
+const DIM_RENDER_ORDER = 999;
+const INTRO_RENDER_ORDER = 1000;
 
-const SIGN_CANVAS_W = 1000;
-const SIGN_CANVAS_H = 400;
-const SIGN_WORLD_W = 5.5;
-const SIGN_WORLD_H = 2.2;
+// ─── SIGN CANVAS DIMENSIONS ─────────────────────────────────────────────────
+// Match the placard geometry aspect ratio (4.5 / 2.8125 ≈ 1.6:1)
+const SIGN_CANVAS_W = 1200;
+const SIGN_CANVAS_H = 750;
 
 // ─── HELPER: hex to CSS ──────────────────────────────────────────────────────
 
@@ -55,44 +58,44 @@ function _createIntroSignTexture(enemyType) {
     ctx.fillStyle = hexCSS(PALETTE.cream);
     ctx.fillRect(0, 0, cW, cH);
 
-    // Enemy color border (6px)
+    // Enemy color border (8px)
     ctx.strokeStyle = enemyColor;
-    ctx.lineWidth = 6;
-    ctx.strokeRect(3, 3, cW - 6, cH - 6);
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, cW - 8, cH - 8);
 
     // Top colored bar with tagline
-    const barH = 50;
+    const barH = 80;
     ctx.fillStyle = enemyColor;
     ctx.fillRect(0, 0, cW, barH);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = hexCSS(PALETTE.cream);
-    ctx.font = "28px 'Bangers', sans-serif";
+    ctx.font = "40px 'Bangers', sans-serif";
     ctx.fillText(data.tagline, cW / 2, barH / 2);
 
     // Enemy name (large)
     ctx.fillStyle = hexCSS(PALETTE.ink);
     const nameLen = data.name.length;
-    const nameFontSize = nameLen > 18 ? 52 : nameLen > 14 ? 60 : 72;
+    const nameFontSize = nameLen > 18 ? 72 : nameLen > 14 ? 84 : 100;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
-    ctx.fillText(data.name, cW / 2, barH + 65);
+    ctx.fillText(data.name, cW / 2, barH + 100);
 
     // Divider line
-    const dividerY = barH + 110;
-    ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
-    ctx.lineWidth = 2;
+    const dividerY = barH + 170;
+    ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(60, dividerY);
-    ctx.lineTo(cW - 60, dividerY);
+    ctx.moveTo(80, dividerY);
+    ctx.lineTo(cW - 80, dividerY);
     ctx.stroke();
 
     // Trait bullets
     ctx.fillStyle = hexCSS(PALETTE.ink);
-    ctx.font = "32px 'Bangers', sans-serif";
+    ctx.font = "48px 'Bangers', sans-serif";
     ctx.textAlign = 'center';
-    const traitStartY = dividerY + 40;
-    const traitLineH = 42;
+    const traitStartY = dividerY + 60;
+    const traitLineH = 62;
     for (let i = 0; i < data.traits.length; i++) {
         ctx.fillText('• ' + data.traits[i], cW / 2, traitStartY + i * traitLineH);
     }
@@ -112,23 +115,37 @@ function _ensureTapTextElement() {
     _tapTextEl.id = 'enemy-intro-tap';
     _tapTextEl.style.cssText = `
         position: fixed;
-        bottom: 12%;
+        bottom: 22%;
         left: 50%;
         transform: translateX(-50%);
         z-index: 15;
         font-family: 'Bangers', sans-serif;
-        font-size: 32px;
+        font-size: 44px;
         color: var(--pal-cream, #fff4d9);
         text-shadow: 2px 2px 0 var(--pal-ink, #1a1a2e), -1px -1px 0 var(--pal-ink, #1a1a2e);
-        letter-spacing: 2px;
+        letter-spacing: 3px;
+        padding: 12px 36px;
+        background: rgba(26, 26, 46, 0.6);
+        border: 2px solid rgba(255, 244, 217, 0.4);
+        border-radius: 8px;
         opacity: 0;
         transition: opacity 0.4s;
         pointer-events: none;
         user-select: none;
     `;
-    _tapTextEl.textContent = 'TAP TO CONTINUE';
+    _tapTextEl.textContent = 'CLICK TO CONTINUE';
     document.body.appendChild(_tapTextEl);
     return _tapTextEl;
+}
+
+// ─── HELPER: set renderOrder on all meshes in a hierarchy ────────────────────
+
+function _setRenderOrder(obj, order) {
+    obj.traverse(child => {
+        if (child.isMesh) {
+            child.renderOrder = order;
+        }
+    });
 }
 
 // ─── ENEMY INTRO UI CLASS ────────────────────────────────────────────────────
@@ -193,7 +210,7 @@ export class EnemyIntroUI {
         const introData = ENEMY_INTRO_DATA[enemyType];
         const visualConfig = ENEMY_VISUAL_CONFIG[enemyType];
 
-        // ── Background dim (3D plane behind intro elements) ──
+        // ── Background dim (3D plane, renders on top of game world via renderOrder) ──
         this._createDimPlane();
 
         // ── Create drone with sign ──
@@ -213,25 +230,33 @@ export class EnemyIntroUI {
     }
 
     /**
-     * Create a 3D dim plane behind intro elements so the game world is dimmed
-     * but the sign and enemy remain fully lit and clear.
+     * Create a fullscreen dim plane that renders ON TOP of the game world
+     * (via renderOrder) but BEHIND the intro elements. Writes to depth buffer
+     * so intro elements can depth-test against it correctly.
      */
     _createDimPlane() {
-        const geo = new THREE.PlaneGeometry(80, 80);
+        const geo = new THREE.PlaneGeometry(200, 200);
         const mat = new THREE.MeshBasicMaterial({
             color: 0x1a1a2e,
             transparent: true,
-            opacity: 0.5,
-            depthWrite: false,
+            opacity: 0.55,
+            depthTest: false,   // Always render on top of game world
+            depthWrite: true,   // Write depth so intro elements can test against it
+            fog: false,
+            side: THREE.DoubleSide,
         });
         this._dimPlane = new THREE.Mesh(geo, mat);
-        // Position behind the intro elements but in front of the game world
-        // Camera is at z=-15, intro elements at z=-2 to z=-1, game world at z=0+
-        this._dimPlane.position.set(0, 18, 1);
-        // Face toward camera (default PlaneGeometry faces +Z, camera is at -Z)
-        this._dimPlane.rotation.y = Math.PI;
-        // Render on both sides so orientation doesn't matter
-        mat.side = THREE.DoubleSide;
+        this._dimPlane.renderOrder = DIM_RENDER_ORDER;
+
+        // Position the plane facing the camera, 25 units along the view direction.
+        // This is behind all intro elements (14-17 units from camera) but covers
+        // the entire game world when rendered with depthTest:false.
+        const cam = this._camera;
+        const dir = new THREE.Vector3();
+        cam.getWorldDirection(dir);
+        this._dimPlane.position.copy(cam.position).add(dir.multiplyScalar(25));
+        this._dimPlane.lookAt(cam.position);
+
         this._scene.add(this._dimPlane);
     }
 
@@ -264,10 +289,13 @@ export class EnemyIntroUI {
         // Scale up the sign group for larger intro placard
         const signGroup = this._drone.userData.signGroup;
         if (signGroup) {
-            signGroup.scale.set(1.2, 1.2, 1.2);
+            signGroup.scale.set(1.8, 1.8, 1.8);
         }
 
-        // Flight path: pick random window → hover position (left side, so enemy is visible on right)
+        // Mark all drone meshes to render on top of dim plane
+        _setRenderOrder(this._drone, INTRO_RENDER_ORDER);
+
+        // Flight path: pick random window → hover position (left side, enemy visible on right)
         const hoverPos = new THREE.Vector3(-3.5, 22, -2);
         let startPos;
 
@@ -309,8 +337,8 @@ export class EnemyIntroUI {
         const config = ENEMY_VISUAL_CONFIG[enemyType];
         const introData = ENEMY_INTRO_DATA[enemyType];
 
-        // Create enemy model at display scale (1.5x for drama)
-        const displayScale = config.size * 1.5;
+        // Create enemy model at display scale (2x for drama)
+        const displayScale = config.size * 2.0;
         const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
         this._enemyGroup = result.group;
         this._enemyGroup.position.set(3.5, 17, -1);
@@ -318,6 +346,9 @@ export class EnemyIntroUI {
 
         // Rotate to face camera (face -Z direction is toward camera at Z=-15)
         this._enemyGroup.rotation.y = Math.PI;
+
+        // Mark all enemy meshes to render on top of dim plane
+        _setRenderOrder(this._enemyGroup, INTRO_RENDER_ORDER);
 
         this._scene.add(this._enemyGroup);
 
@@ -333,6 +364,7 @@ export class EnemyIntroUI {
         this._pedestal = new THREE.Mesh(pedGeo, pedMat);
         this._pedestal.position.set(3.5, 17 - pedH / 2, -1);
         this._pedestal.scale.setScalar(0);
+        this._pedestal.renderOrder = INTRO_RENDER_ORDER;
         this._scene.add(this._pedestal);
 
         // Pedestal outline
@@ -340,6 +372,7 @@ export class EnemyIntroUI {
         this._pedestalOutline = new THREE.Mesh(outGeo, outlineMatStatic(0.03));
         this._pedestalOutline.position.copy(this._pedestal.position);
         this._pedestalOutline.scale.setScalar(0);
+        this._pedestalOutline.renderOrder = INTRO_RENDER_ORDER;
         this._scene.add(this._pedestalOutline);
     }
 
@@ -359,6 +392,7 @@ export class EnemyIntroUI {
             });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.copy(center);
+            mesh.renderOrder = INTRO_RENDER_ORDER;
             this._scene.add(mesh);
 
             const angle = Math.random() * Math.PI * 2;
@@ -537,6 +571,15 @@ export class EnemyIntroUI {
     _updateDrone(dt) {
         if (!this._drone) return;
         updateUpgradeDrone(this._drone, dt);
+
+        // Billboard the sign to face the camera flat-on (override pendulum tilt).
+        // This keeps the info card readable regardless of camera angle.
+        const signGroup = this._drone.userData.signGroup;
+        if (signGroup && this._camera) {
+            // Object3D.lookAt handles parent transforms, so this works even
+            // though signGroup is a child of the drone root.
+            signGroup.lookAt(this._camera.position);
+        }
     }
 
     // ─── ENEMY MODEL UPDATE ──────────────────────────────────────────────
@@ -650,7 +693,7 @@ export class EnemyIntroUI {
         // Dim plane fade out
         if (this._dimPlane) {
             const t = Math.min(1, exitT / EXIT_DURATION);
-            this._dimPlane.material.opacity = 0.5 * (1 - t);
+            this._dimPlane.material.opacity = 0.55 * (1 - t);
         }
 
         // Complete
