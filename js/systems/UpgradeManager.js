@@ -54,38 +54,52 @@ export class UpgradeManager {
      *   towerCostMult, doorMaxHP, ...
      */
     getModifier(stat) {
-        // Placeholder — will be populated in Stages 5-7 when effectFns are wired
-        // For now returns neutral values (1.0 for multipliers, 0 for additives)
         switch (stat) {
-            // Multiplicative stats (return 1.0 = no change)
+            // ─── Multiplicative stats (return 1.0 = no change) ───
             case 'coinValueMult':
-                return 1.0 + this.getStacks('C2') * 0.5;      // +50% per stack
+                return 1.0 + this.getStacks('C2') * 0.5;      // C2: +50% per stack
+            case 'signSlowMult':
+                return this.hasUpgrade('C5') ? 0.2 : 0.4;     // C5: 20% speed (base 40%)
             case 'mopCooldownMult':
-                return 1.0 - this.getStacks('C8') * 0.3;      // -30% per stack
+                return 1.0 - this.getStacks('C8') * 0.3;      // C8: -30% per stack
             case 'mopKnockbackMult':
-                return 1.0 + this.getStacks('C9') * 0.5;      // +50% per stack
-            case 'ubikDamageMult':
-                return 1.0 + this.getStacks('C13') * 0.4;     // +40% per stack
+                return 1.0 + this.getStacks('C9') * 0.5;      // C9: +50% per stack
+            case 'ubikWidthMult':
+                if (this.hasUpgrade('C11')) return 0.5;        // C11: Pressure Washer halves width
+                if (this.hasUpgrade('C12')) return 1.6;        // C12: Wide Spray +60% width
+                return 1.0;
+            case 'ubikRangeMult':
+                return this.hasUpgrade('C11') ? 2.0 : 1.0;    // C11: Pressure Washer doubles range
+            case 'ubikDamageMult': {
+                const base = this.hasUpgrade('C12') ? 0.7 : 1.0; // C12: Wide Spray -30% damage
+                return base + this.getStacks('C13') * 0.4;    // C13: +40% per stack
+            }
             case 'ubikCooldownMult':
-                return 1.0 - this.getStacks('C14') * 0.25;    // -25% per stack
+                return 1.0 - this.getStacks('C14') * 0.25;    // C14: -25% per stack
             case 'towerCostMult':
-                return this.hasUpgrade('R14') ? 0.8 : 1.0;    // -20% from Clearance Sale
+                return this.hasUpgrade('R14') ? 0.8 : 1.0;    // R14: Clearance Sale -20%
 
-            // Additive stats (return 0 = no change)
+            // ─── Additive stats (return 0 = no change) ───
             case 'magnetRange':
-                return this.hasUpgrade('C1') ? 8 : 0;         // +8 units (doubles 8→16)
+                return this.hasUpgrade('C1') ? 8 : 0;         // C1: +8 units (doubles 8→16)
             case 'magnetHP':
-                return this.getStacks('C3') * 4;               // +4 per stack
+                return this.getStacks('C3') * 4;               // C3: +4 per stack
             case 'signHP':
-                return this.getStacks('C4') * 1.0;             // +100% per stack (multiplicative on base)
+                return this.getStacks('C4') * 1.0;             // C4: +100% per stack (mult on base)
             case 'signBashDamage':
-                return this.getStacks('C6') * 5;               // +5 per stack
+                return this.getStacks('C6') * 5;               // C6: +5 per stack
+            case 'mopMinArc':
+                return this.hasUpgrade('C7') ? Math.PI : 1.05; // C7: 180° (base ~60°)
             case 'mopHP':
-                return this.getStacks('C10') * 4;              // +4 per stack
+                return this.getStacks('C10') * 4;              // C10: +4 per stack
             case 'potContactDPS':
-                return this.getStacks('C16') * 3;              // +3 dps per stack
+                return this.getStacks('C16') * 3;              // C16: +3 dps per stack
             case 'doorMaxHP':
-                return this.hasUpgrade('L1') ? 4 : 0;         // +4 from Double Flush
+                return this.hasUpgrade('L1') ? 4 : 0;         // L1: Double Flush +4
+
+            // ─── Boolean-like stats ───
+            case 'potReturnToOrigin':
+                return this.hasUpgrade('C15') ? 1 : 0;        // C15: Spring-Loaded Pot
 
             default:
                 return 0;

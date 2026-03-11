@@ -294,28 +294,28 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 - [x] Dim background (reduce ambient light or add overlay)
 - [x] After selection completes: restore lighting, start inter-wave timer
 - [x] Handle edge case: wave 1 has no upgrade phase (first upgrades after wave 1 clear)
-- [ ] Add active upgrade display to HUD (small icons, bottom of screen or sidebar)
+- [x] Add active upgrade display to HUD (small icons, bottom of screen or sidebar)
 - [x] Show upgrade name briefly on HUD when acquired (toast notification style)
 
 ### Stage 5: Implement Common Upgrades (16)
 > Stat modifications — the simplest to wire in
 
-- [ ] C1: Overclocked Magnet — modify magnet range constant
-- [ ] C2: Double Dip — modify coin value multiplier in magnetCollect()
-- [ ] C3: Magnet Durability — modify magnet HP on creation
-- [ ] C4: Reinforced Signs — modify barrier HP on creation
-- [ ] C5: Extra Slippery — modify slow multiplier constant
-- [ ] C6: Prickly Signs — add damage-on-bash in barrier bash handler
-- [ ] C7: Industrial Mop Head — modify mop sweep arc angle
-- [ ] C8: Quick Sweep — modify mop cooldown
-- [ ] C9: Heavy Mop — modify mop knockback force
-- [ ] C10: Extra Absorbent — modify mop HP on creation
-- [ ] C11: Pressure Washer — modify Ubik cone width + range (mutually exclusive with C12)
-- [ ] C12: Wide Spray — modify Ubik cone width + damage (mutually exclusive with C11)
-- [ ] C13: Corrosive Formula — modify Ubik damage per tick
-- [ ] C14: Rapid Spray — modify Ubik cooldown
-- [ ] C15: Spring-Loaded Pot — add return-to-origin logic after pot kick resolves
-- [ ] C16: Cactus Pot — add proximity damage aura tick to pot plant update
+- [x] C1: Overclocked Magnet — modify magnet range constant
+- [x] C2: Double Dip — modify coin value multiplier in magnetCollect()
+- [x] C3: Magnet Durability — modify magnet HP on creation
+- [x] C4: Reinforced Signs — modify barrier HP on creation
+- [x] C5: Extra Slippery — modify slow multiplier constant (+ added base slow zone mechanic)
+- [x] C6: Prickly Signs — add damage-on-bash in barrier bash handler
+- [x] C7: Industrial Mop Head — modify mop sweep arc angle
+- [x] C8: Quick Sweep — modify mop cooldown
+- [x] C9: Heavy Mop — modify mop knockback force
+- [x] C10: Extra Absorbent — modify mop HP on creation
+- [x] C11: Pressure Washer — modify Ubik cone width + range (mutually exclusive with C12)
+- [x] C12: Wide Spray — modify Ubik cone width + damage (mutually exclusive with C11)
+- [x] C13: Corrosive Formula — modify Ubik damage per tick
+- [x] C14: Rapid Spray — modify Ubik cooldown
+- [x] C15: Spring-Loaded Pot — add return-to-origin logic after pot kick resolves
+- [x] C16: Cactus Pot — add proximity damage aura tick to pot plant update
 - [ ] Test all common upgrades individually
 - [ ] Test stacking behavior and caps
 

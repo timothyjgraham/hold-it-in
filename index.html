@@ -1451,6 +1451,8 @@
                 mesh: mesh,
                 x: t.gridX,
                 z: t.gridZ,
+                origX: t.gridX,  // C15: original position for Spring-Loaded Pot
+                origZ: t.gridZ,
                 vx: dirX * def.kickSpeed,
                 vz: dirZ * def.kickSpeed,
                 vy: 3.5,
@@ -2779,14 +2781,22 @@
                 }
             }
 
+            // C3/C4/C10: Apply HP bonuses from upgrades
+            let towerHP = def.hp;
+            if (this.upgradeManager) {
+                if (type === 'coinmagnet') towerHP += this.upgradeManager.getModifier('magnetHP');
+                if (type === 'wetfloor')  towerHP = Math.round(towerHP * (1 + this.upgradeManager.getModifier('signHP')));
+                if (type === 'mop')       towerHP += this.upgradeManager.getModifier('mopHP');
+            }
+
             return {
                 type: type,
                 mesh: group,
                 gridX: 0,
                 gridZ: 0,
                 def: def,
-                hp: def.hp,
-                maxHp: def.hp,
+                hp: towerHP,
+                maxHp: towerHP,
                 attackTimer: 0,
                 hitShake: 0,
                 // Tower-specific state
@@ -3163,6 +3173,24 @@
 
                 let slowMult = 1.0;
 
+                // Wet Floor Sign slow zone — enemies near barriers move slower
+                if (!e.slowImmune) {
+                    for (const wt of this.towers) {
+                        if (wt.type !== 'wetfloor' || wt.dying || wt.delivering) continue;
+                        const gs = CONFIG.grid;
+                        const tw = wt.tileWidth || 1;
+                        const halfSpan = tw * gs * 0.5;
+                        // Slow zone: barrier width + 1 unit margin, 3 units in front + 1 behind
+                        if (e.x >= wt.gridX - halfSpan - 1 && e.x <= wt.gridX + halfSpan + 1 &&
+                            e.z >= wt.gridZ - 1 && e.z <= wt.gridZ + 3) {
+                            // C5: Extra Slippery — 20% speed (base 40%)
+                            const signSlow = this.upgradeManager ? this.upgradeManager.getModifier('signSlowMult') : 0.4;
+                            slowMult = Math.min(slowMult, signSlow);
+                            break;
+                        }
+                    }
+                }
+
                 // Panicker speed aura — panic is contagious, nearby enemies 50% faster
                 let auraMult = 1.0;
                 if (e.type !== 'panicker') {
@@ -3459,6 +3487,15 @@
                             bt.hp -= dmg;
                             bt.hitShake = 0.2;
                             this._spawnBarrierChips(bt.gridX, bt.gridZ, dmg);
+
+                            // C6: Prickly Signs — enemies take damage when bashing
+                            if (this.upgradeManager) {
+                                const bashDmg = this.upgradeManager.getModifier('signBashDamage');
+                                if (bashDmg > 0) {
+                                    e.hp -= bashDmg;
+                                    e.hitFlash = 0.15;
+                                }
+                            }
 
                             if (bt.hp <= 0) {
                                 // Release ALL enemies bashing this barrier
@@ -3785,10 +3822,15 @@
                     if (t.magnetTimer <= 0) {
                         t.magnetTimer = t.def.magnetInterval;
                         if (this.coinPool) {
-                            const collected = this.coinPool.magnetCollect(
-                                t.gridX, t.gridZ, t.def.range, this.scene
+                            // C1: Overclocked Magnet — extended range
+                            const magnetRange = t.def.range + (this.upgradeManager ? this.upgradeManager.getModifier('magnetRange') : 0);
+                            const rawCollected = this.coinPool.magnetCollect(
+                                t.gridX, t.gridZ, magnetRange, this.scene
                             );
-                            if (collected > 0) {
+                            if (rawCollected > 0) {
+                                // C2: Double Dip — coin value multiplier
+                                const coinMult = this.upgradeManager ? this.upgradeManager.getModifier('coinValueMult') : 1.0;
+                                const collected = Math.round(rawCollected * coinMult);
                                 this.coins += collected;
                                 this._animateCoinGain(collected);
                                 this._spawnCoinText(t.gridX, t.gridZ, collected);
@@ -3803,7 +3845,26 @@
                 }
 
                 if (t.type === 'wetfloor') continue; // barrier — damage handled in enemy loop
-                if (t.type === 'potplant') continue; // passive — no active attack
+
+                // Pot Plant — passive, but C16 (Cactus Pot) adds contact damage aura
+                if (t.type === 'potplant') {
+                    if (this.upgradeManager) {
+                        const contactDPS = this.upgradeManager.getModifier('potContactDPS');
+                        if (contactDPS > 0) {
+                            const auraR2 = 2.5 * 2.5; // ~2.5 unit radius
+                            for (const e of this.enemies) {
+                                if (e.dying) continue;
+                                const pdx = e.x - t.gridX;
+                                const pdz = e.z - t.gridZ;
+                                if (pdx * pdx + pdz * pdz < auraR2) {
+                                    e.hp -= contactDPS * dt;
+                                    if (Math.random() < dt * 2) e.hitFlash = 0.08;
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
 
                 // Ubik — smooth turret rotation toward nearest enemy
                 if (t.type === 'ubik') {
@@ -3835,7 +3896,9 @@
 
                     // Fire only when there's a target in range
                     if (ubikTarget) {
-                        t.attackTimer = t.def.attackRate;
+                        // C14: Rapid Spray — reduced cooldown
+                        const ubikCdMult = this.upgradeManager ? this.upgradeManager.getModifier('ubikCooldownMult') : 1.0;
+                        t.attackTimer = t.def.attackRate * ubikCdMult;
                         this._fireSpray(t, ubikTarget);
                     }
                     continue;
@@ -3857,7 +3920,9 @@
                             while (t.mopAngle > Math.PI) t.mopAngle -= Math.PI * 2;
                             while (t.mopAngle < -Math.PI) t.mopAngle += Math.PI * 2;
                             t.sweeping = false;
-                            t.attackTimer = t.def.attackRate;
+                            // C8: Quick Sweep — reduced cooldown
+                            const mopCdMult = this.upgradeManager ? this.upgradeManager.getModifier('mopCooldownMult') : 1.0;
+                            t.attackTimer = t.def.attackRate * mopCdMult;
                             t.sweepHitEnemies = null;
                             if (mopArm) mopArm.rotation.y = t.mopAngle;
                         } else {
@@ -3914,7 +3979,9 @@
 
                                     // Apply as velocity (decays over ~0.25s, total displacement ≈ knockback * leverScale)
                                     const KNOCKBACK_DECAY = 12;
-                                    const kbForce = t.def.knockback * leverScale * KNOCKBACK_DECAY;
+                                    // C9: Heavy Mop — increased knockback
+                                    const kbMult = this.upgradeManager ? this.upgradeManager.getModifier('mopKnockbackMult') : 1.0;
+                                    const kbForce = t.def.knockback * kbMult * leverScale * KNOCKBACK_DECAY;
                                     e.knockbackVX = kbX * kbForce;
                                     e.knockbackVZ = kbZ * kbForce;
 
@@ -3969,10 +4036,11 @@
                                 while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
                                 const sweepDir = angleDiff >= 0 ? 1 : -1;
-                                // Minimum 60° sweep for visual impact, plus follow-through past target
+                                // C7: Industrial Mop Head — 180° min arc (base ~60°)
+                                const minArc = this.upgradeManager ? this.upgradeManager.getModifier('mopMinArc') : 1.05;
                                 const absArc = Math.max(
                                     Math.abs(angleDiff) + t.def.followThrough,
-                                    1.05
+                                    minArc
                                 );
 
                                 t.sweepFrom = t.mopAngle;
@@ -4097,8 +4165,12 @@
         // ─── UBIK SPRAY SYSTEM ───
         _fireSpray(tower, target) {
             const def = tower.def;
-            const spraySpeed = 12;
-            const duration = def.sprayDuration || 0.8;
+            // C11/C12: Ubik shape upgrades, C13: damage
+            const ubikWidthMult = this.upgradeManager ? this.upgradeManager.getModifier('ubikWidthMult') : 1.0;
+            const ubikRangeMult = this.upgradeManager ? this.upgradeManager.getModifier('ubikRangeMult') : 1.0;
+            const ubikDmgMult = this.upgradeManager ? this.upgradeManager.getModifier('ubikDamageMult') : 1.0;
+            const spraySpeed = 12 * ubikRangeMult; // Particles travel faster to cover extended range
+            const duration = (def.sprayDuration || 0.8);
 
             // Direction from tower toward target
             const dirX = target.x - tower.gridX;
@@ -4156,11 +4228,11 @@
                 z: tower.gridZ,
                 dirX: ndx,             // Spray direction (unit vector)
                 dirZ: ndz,
-                damage: def.damage,
+                damage: Math.round(def.damage * ubikDmgMult),
                 life: duration,
                 maxLife: duration,
-                width: def.sprayWidth || 2.0,
-                range: def.range,
+                width: (def.sprayWidth || 2.0) * ubikWidthMult,
+                range: def.range * ubikRangeMult,
                 damageTimer: 0,        // Tick damage every 0.2s — continuous while in cloud
             });
         },
@@ -5172,6 +5244,13 @@
                 const outOfBounds = sp.x > 16 || sp.x < -16 || sp.z < 2 || sp.z > 71;
                 if (sp.life <= 0 || stopped || outOfBounds) {
                     if (sp.hp > 0 && !outOfBounds) {
+                        // C15: Spring-Loaded Pot — return to original position (if unoccupied)
+                        if (this.upgradeManager && this.upgradeManager.getModifier('potReturnToOrigin') &&
+                            !this._isCellOccupied(sp.origX, sp.origZ)) {
+                            sp.x = sp.origX;
+                            sp.z = sp.origZ;
+                            sp.mesh.position.set(sp.origX, 0, sp.origZ);
+                        }
                         // Re-place as a ground hazard tower
                         this._replacePotPlant(sp);
                         this._slidingPots.splice(i, 1);
