@@ -647,9 +647,9 @@
             const tilePx = tileCanvas.width / tilesPerRow;
             for (let r = 0; r < tilesPerRow; r++) {
                 for (let c = 0; c < tilesPerRow; c++) {
-                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#7e8e96' : '#6e7e86';
+                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#9a9488' : '#8a847a';
                     tCtx.fillRect(c * tilePx, r * tilePx, tilePx, tilePx);
-                    tCtx.strokeStyle = '#5e6e76';
+                    tCtx.strokeStyle = '#7a756c';
                     tCtx.lineWidth = 3;
                     tCtx.strokeRect(c * tilePx + 1.5, r * tilePx + 1.5, tilePx - 3, tilePx - 3);
                 }

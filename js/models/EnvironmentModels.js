@@ -581,31 +581,31 @@ export function createBathroomWalls() {
 
     // === Back wall REMOVED — camera at (0, 14, -15) needs clear view of toilet ===
 
-    // === Left wall: at x=-6, z=-1 to z=9, height 3.5 ===
-    const leftWall = buildTiledWall(10, wallHeight, 0.3, false);
-    leftWall.position.set(-6, 0, 4);
+    // === Left wall: at x=-6, extends past corners for overlap ===
+    const leftWall = buildTiledWall(10.6, wallHeight, 0.3, false);
+    leftWall.position.set(-6, 0, 4.3);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.name = 'leftWall';
     group.add(leftWall);
 
     // Left wall baseboard
-    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 10);
+    const bbLeftGeo = new THREE.BoxGeometry(0.35, 0.25, 10.6);
     const bbLeft = new THREE.Mesh(bbLeftGeo, baseboardMat);
-    bbLeft.position.set(-5.85, 0.125, 4);
+    bbLeft.position.set(-5.85, 0.125, 4.3);
     bbLeft.receiveShadow = true;
     group.add(bbLeft);
 
-    // === Right wall: at x=6, z=-1 to z=9, height 3.5 ===
-    const rightWall = buildTiledWall(10, wallHeight, 0.3, false);
-    rightWall.position.set(6, 0, 4);
+    // === Right wall: at x=6, extends past corners for overlap ===
+    const rightWall = buildTiledWall(10.6, wallHeight, 0.3, false);
+    rightWall.position.set(6, 0, 4.3);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.name = 'rightWall';
     group.add(rightWall);
 
     // Right wall baseboard
-    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 10);
+    const bbRightGeo = new THREE.BoxGeometry(0.35, 0.25, 10.6);
     const bbRight = new THREE.Mesh(bbRightGeo, baseboardMat);
-    bbRight.position.set(5.85, 0.125, 4);
+    bbRight.position.set(5.85, 0.125, 4.3);
     bbRight.receiveShadow = true;
     group.add(bbRight);
 

@@ -127,7 +127,78 @@ export function matWood()       { return toonMat(PALETTE.wood); }
 export function matWhite()      { return toonMat(PALETTE.white); }
 export function matDark()       { return toonMat(PALETTE.charcoal); }
 export function matInk()        { return toonMat(PALETTE.ink); }
-export function matCarpet()     { return toonMat(PALETTE.carpet); }
+// Carpet with subtle commercial carpet-tile texture
+let _carpetTexture = null;
+export function matCarpet() {
+    if (!_carpetTexture) {
+        const sz = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = sz;
+        canvas.height = sz;
+        const ctx = canvas.getContext('2d');
+
+        // Base carpet color
+        ctx.fillStyle = '#5a6658';
+        ctx.fillRect(0, 0, sz, sz);
+
+        // 2x2 carpet tile grid with subtle warm/cool shift
+        const half = sz / 2;
+        for (let ty = 0; ty < 2; ty++) {
+            for (let tx = 0; tx < 2; tx++) {
+                const x = tx * half;
+                const y = ty * half;
+
+                // Alternate tiles warm/cool
+                ctx.fillStyle = (tx + ty) % 2 === 0
+                    ? 'rgba(200, 190, 160, 0.035)'
+                    : 'rgba(80, 100, 120, 0.035)';
+                ctx.fillRect(x, y, half, half);
+
+                // Directional fiber lines (horizontal)
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.018)';
+                ctx.lineWidth = 1;
+                for (let ly = y; ly < y + half; ly += 4) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, ly);
+                    ctx.lineTo(x + half, ly);
+                    ctx.stroke();
+                }
+
+                // Subtle speckle (carpet fiber variation)
+                for (let i = 0; i < 400; i++) {
+                    const fx = x + Math.random() * half;
+                    const fy = y + Math.random() * half;
+                    ctx.fillStyle = Math.random() > 0.5
+                        ? 'rgba(255, 255, 255, 0.03)'
+                        : 'rgba(0, 0, 0, 0.03)';
+                    ctx.fillRect(fx, fy, 2, 2);
+                }
+            }
+        }
+
+        // Seam lines between carpet tiles
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, half);
+        ctx.lineTo(sz, half);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(half, 0);
+        ctx.lineTo(half, sz);
+        ctx.stroke();
+
+        _carpetTexture = new THREE.CanvasTexture(canvas);
+        _carpetTexture.wrapS = THREE.RepeatWrapping;
+        _carpetTexture.wrapT = THREE.RepeatWrapping;
+        _carpetTexture.repeat.set(6, 5);
+    }
+
+    return new THREE.MeshToonMaterial({
+        map: _carpetTexture,
+        gradientMap: getGradientMap(),
+    });
+}
 
 // Tower materials
 export function matMagnet()     { return toonMat(PALETTE.magnet); }
