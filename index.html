@@ -340,11 +340,11 @@
                 name: 'Pot Plant',
                 cost: 10,
                 range: 0,              // Passive — no active attack
-                hp: 1,                 // One-hit trip hazard
+                hp: 3,                 // Survives 3 kicks before breaking
                 color: 0xc4663a,       // PALETTE.potplant — terracotta
                 effect: 'trip',
                 tripDamage: 6,         // Light damage on trip
-                stunDuration: 0.6,     // Enemy freezes briefly after tripping
+                stunDuration: 1.8,     // Enemy face-plants for 1.8s
                 kickSpeed: 18,         // Initial velocity when kicked (units/sec)
                 hotkey: 'Digit5',
             },
@@ -1353,8 +1353,9 @@
             const t = this.towers[towerIndex];
             const mesh = t.mesh;
             const def = t.def;
+            const remainingHp = t.hp; // HP after the trample code decremented it
 
-            // Remove from towers array (no longer a tower — it's a projectile now)
+            // Remove from towers array (it's a projectile now)
             this.towers.splice(towerIndex, 1);
 
             // Calculate kick direction: from kicker center toward pot center
@@ -1365,39 +1366,68 @@
                 dirX /= dirLen;
                 dirZ /= dirLen;
             } else {
-                // Fallback: kick in enemy's movement direction (toward toilet, -Z)
                 dirX = 0;
                 dirZ = -1;
             }
 
-            // Create sliding pot entity
+            // Create sliding pot entity (carries remaining HP)
             const slidingPot = {
                 mesh: mesh,
                 x: t.gridX,
                 z: t.gridZ,
                 vx: dirX * def.kickSpeed,
                 vz: dirZ * def.kickSpeed,
-                vy: 3.5,                     // Initial upward bounce
+                vy: 3.5,
                 y: 0,
-                spin: (Math.random() - 0.5) * 14, // Tumble rotation speed
-                life: 2.0,                   // Safety timeout
-                hitEnemies: new Set(),        // Track which enemies were hit
+                spin: (Math.random() - 0.5) * 14,
+                life: 2.0,
+                hitEnemies: new Set(),
                 tripDamage: def.tripDamage,
                 stunDuration: def.stunDuration,
+                hp: remainingHp,              // Survives if hp > 0
             };
-            // Mark the kicker so the pot doesn't immediately hit them
             slidingPot.hitEnemies.add(kicker);
 
             this._slidingPots.push(slidingPot);
 
-            // Kicker stumble animation
+            // Trip the kicker — face-plant stun
+            kicker.hp -= def.tripDamage;
+            kicker.hitFlash = 0.15;
+            kicker.stunTimer = def.stunDuration;
+            kicker.tripFallDuration = def.stunDuration;
             if (kicker.animController) {
                 kicker.animController.playOneShot('hit_react');
+                kicker.animController.setTimeScale(0);
             }
+            if (kicker.bashing) {
+                kicker.bashing = false;
+                kicker.bashingBarrier = null;
+            }
+            kicker._impactSquash = 0.18;
 
-            // Camera micro-shake
-            this._cameraShake = 0.08;
-            this._cameraShakeIntensity = 0.1;
+            this._globalHitstop = Math.max(this._globalHitstop, 0.04);
+            this._cameraShake = 0.1;
+            this._cameraShakeIntensity = 0.12;
+            this._spawnTripImpact(kicker.x, kicker.z);
+        },
+
+        _replacePotPlant(sp) {
+            // Reset mesh rotation from tumble and sit it upright on the ground
+            sp.mesh.rotation.set(0, sp.mesh.rotation.y, 0);
+            sp.mesh.position.set(sp.x, 0, sp.z);
+
+            // Re-add as a tower at its landed position
+            this.towers.push({
+                type: 'potplant',
+                def: this.TOWERS.potplant,
+                mesh: sp.mesh,
+                gridX: sp.x,
+                gridZ: sp.z,
+                hp: sp.hp,
+                hitShake: 0,
+                dying: false,
+                delivering: false,
+            });
         },
 
         _disposeSlidingPot(index) {
@@ -2574,6 +2604,7 @@
                 knockbackVX: 0,
                 knockbackVZ: 0,
                 stunTimer: 0,
+                tripFallDuration: 0,
                 desperate: isDesperate,
                 targetLane: this._pickLane(enemyType, def, opts),
             };
@@ -2705,15 +2736,39 @@
                     e.stunTimer -= dt;
                     if (e.stunTimer <= 0) {
                         e.stunTimer = 0;
-                        e.mesh.rotation.z = 0; // Reset wobble
+                        e.mesh.rotation.x = 0;
+                        e.mesh.rotation.z = 0;
+                        e.tripFallDuration = 0;
                         // Resume walk animation
                         if (e.animController) {
                             const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                             e.animController.setTimeScale(1.0);
                         }
+                    } else if (e.tripFallDuration > 0) {
+                        // Face-plant: fall forward → stay down → get back up
+                        const elapsed = e.tripFallDuration - e.stunTimer;
+                        const remaining = e.stunTimer;
+                        const fallDur = 0.3;   // Time to hit the ground
+                        const riseDur = 0.3;   // Time to stand back up
+                        const maxTilt = Math.PI * 0.45; // ~81 degrees forward
+
+                        let tilt;
+                        if (elapsed < fallDur) {
+                            // Falling forward (accelerating)
+                            const t = elapsed / fallDur;
+                            tilt = t * t * maxTilt;
+                        } else if (remaining > riseDur) {
+                            // Face down on the ground
+                            tilt = maxTilt;
+                        } else {
+                            // Getting back up (decelerating)
+                            const t = remaining / riseDur;
+                            tilt = t * t * maxTilt;
+                        }
+                        e.mesh.rotation.x = -tilt; // Negative = forward toward -Z
                     } else {
-                        // Still stunned — visual wobble
+                        // Regular stun wobble (from other sources)
                         e.mesh.rotation.z = Math.sin(this.time * 18) * 0.15 * (e.stunTimer / 0.6);
                     }
                 }
@@ -2816,10 +2871,16 @@
                         if (dist < trampleRadius) {
                             e.trampledTowers.add(tKey);
 
-                            // Pot plant — kicked as a sliding projectile instead of destroyed
+                            // Pot plant — kick it! Enemy trips, pot slides away
                             if (t.type === 'potplant') {
+                                t.hp -= 1;
+                                t.hitShake = 0.2;
+                                if (t.hp <= 0) {
+                                    // Final kick — shatter immediately
+                                    this._spawnPotShatter(t.gridX, t.gridZ);
+                                }
                                 this._kickPotPlant(ti, e);
-                                continue; // tower removed from array, skip further processing
+                                continue;
                             }
 
                             t.hp -= 1;
@@ -4193,58 +4254,51 @@
                 sp.mesh.rotation.x += sp.spin * dt;
                 sp.mesh.rotation.z += sp.spin * 0.6 * dt;
 
-                // Check collision with enemies
+                // Check collision with enemies (pot keeps sliding, trips anyone it hits)
                 const speed2 = sp.vx * sp.vx + sp.vz * sp.vz;
-                if (speed2 > 1) { // Only collide while moving meaningfully
+                if (speed2 > 1) {
                     for (const e of this.enemies) {
                         if (e.dying || e.stunTimer > 0 || sp.hitEnemies.has(e)) continue;
                         const dx = e.x - sp.x;
                         const dz = e.z - sp.z;
                         const hitRadius = 0.6 + e.size * 0.25;
                         if (dx * dx + dz * dz < hitRadius * hitRadius) {
-                            // HIT! Trip the enemy
+                            // Trip the enemy — pot keeps going
                             sp.hitEnemies.add(e);
                             e.hp -= sp.tripDamage;
                             e.hitFlash = 0.15;
-
-                            // Stun the enemy
                             e.stunTimer = sp.stunDuration;
+                            e.tripFallDuration = sp.stunDuration;
                             if (e.animController) {
                                 e.animController.playOneShot('hit_react');
                                 e.animController.setTimeScale(0);
                             }
-
-                            // Interrupt bashing if applicable
                             if (e.bashing) {
                                 e.bashing = false;
                                 e.bashingBarrier = null;
                             }
-
-                            // Impact juice
                             e._impactSquash = 0.18;
                             this._globalHitstop = Math.max(this._globalHitstop, 0.04);
                             this._cameraShake = 0.1;
                             this._cameraShakeIntensity = 0.12;
-
-                            // VFX
                             this._spawnTripImpact(e.x, e.z);
-
-                            // Shatter the pot on impact
-                            this._spawnPotShatter(sp.x, sp.z);
-                            this._disposeSlidingPot(i);
-                            break; // Pot is gone — exit enemy loop
                         }
                     }
-                    // If pot was disposed, skip further checks
-                    if (i >= this._slidingPots.length || this._slidingPots[i] !== sp) continue;
                 }
 
-                // Out of bounds or timed out or stopped — shatter
+                // Stopped, timed out, or out of bounds
                 const stopped = speed2 < 0.5 && sp.y < 0.05;
                 const outOfBounds = sp.x > 16 || sp.x < -16 || sp.z < 2 || sp.z > 71;
                 if (sp.life <= 0 || stopped || outOfBounds) {
-                    this._spawnPotShatter(sp.x, sp.z);
-                    this._disposeSlidingPot(i);
+                    if (sp.hp > 0 && !outOfBounds) {
+                        // Re-place as a ground hazard tower
+                        this._replacePotPlant(sp);
+                        this._slidingPots.splice(i, 1);
+                    } else {
+                        // Out of HP or out of bounds — shatter
+                        this._spawnPotShatter(sp.x, sp.z);
+                        this._disposeSlidingPot(i);
+                    }
                 }
             }
 
