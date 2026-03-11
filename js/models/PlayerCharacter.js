@@ -49,6 +49,10 @@ export class PlayerCharacter {
         this._tapQ = new THREE.Quaternion();
         // Rest quaternions for MANUAL bones (not reset by idle mixer each frame)
         this._restQuats = {};
+        // Panic state (cinematic game-over reaction)
+        this._isPanicking = false;
+        this._panicElapsed = 0;
+        this._panicStartPos = new THREE.Vector3();
     }
 
     /**
@@ -115,10 +119,95 @@ export class PlayerCharacter {
     }
 
     /**
+     * Trigger panic reaction — player leaps off toilet, flails arms.
+     * Called when door shatters and enemies rush in.
+     */
+    startPanic() {
+        if (!this.boneMap) return;
+        this._isPanicking = true;
+        this._isTapping = false;
+        this._panicElapsed = 0;
+        this._panicStartPos.copy(this.group.position);
+        if (this.mixer) this.mixer.stopAllAction();
+    }
+
+    /**
+     * Detach phone from hand bone and return it for physics simulation.
+     * Returns the phone mesh at its current world position, or null.
+     */
+    detachPhone(scene) {
+        if (!this.phoneMesh || !this.boneMap.hand_L) return null;
+        const worldPos = new THREE.Vector3();
+        this.phoneMesh.getWorldPosition(worldPos);
+        const worldQuat = new THREE.Quaternion();
+        this.phoneMesh.getWorldQuaternion(worldQuat);
+        this.boneMap.hand_L.remove(this.phoneMesh);
+        this.phoneMesh.position.copy(worldPos);
+        this.phoneMesh.quaternion.copy(worldQuat);
+        scene.add(this.phoneMesh);
+        const phone = this.phoneMesh;
+        this.phoneMesh = null;
+        return phone;
+    }
+
+    /**
+     * Reset to calm seated state (called on game restart).
+     */
+    reset(toiletPosition) {
+        this._isPanicking = false;
+        this._panicElapsed = 0;
+        this._isTapping = false;
+        this.group.rotation.y = 0;
+
+        const toiletScale = 0.85;
+        const seatWorldY = toiletPosition.y + (1.65 + 0.05) * toiletScale;
+        this.group.position.set(
+            toiletPosition.x,
+            seatWorldY,
+            toiletPosition.z + 0.1 * toiletScale
+        );
+
+        // Reset all bone quaternions to identity (construction pose)
+        // Panic animation overwrites every bone, so we must clear them all
+        if (this.skeleton) {
+            for (const bone of this.skeleton.bones) {
+                bone.quaternion.identity();
+            }
+        }
+        // Restore saved rest quats for manual bones
+        for (const [name, restQ] of Object.entries(this._restQuats)) {
+            if (this.boneMap[name]) {
+                this.boneMap[name].quaternion.copy(restQ);
+            }
+        }
+
+        // Recreate phone if it was detached
+        if (!this.phoneMesh) {
+            const config = PLAYER_VISUAL_CONFIG.player;
+            this._createPhone(config, config.size);
+        }
+
+        // Restart idle animation
+        if (this.mixer) {
+            this.mixer.stopAllAction();
+            const config = PLAYER_VISUAL_CONFIG.player;
+            const idleClip = this._buildIdleSitting(config);
+            this.mixer.clipAction(idleClip).play();
+        }
+    }
+
+    /**
      * Update animations and phone screen pulse.
      * @param {number} dt — delta time in seconds
      */
     update(dt) {
+        // Panic mode — override everything
+        if (this._isPanicking) {
+            this._panicElapsed += dt;
+            this._updatePanic();
+            return;
+        }
+
         if (this.mixer) {
             this.mixer.update(dt);
         }
@@ -214,6 +303,103 @@ export class PlayerCharacter {
             bm.hand_R.quaternion.copy(this._restQuats.hand_R);
             q.setFromEuler(new THREE.Euler(e * -0.30, e * -0.20, 0));
             bm.hand_R.quaternion.multiply(q);
+        }
+    }
+
+    // ───────────────────────────────────────
+    // Panic animation (cinematic game-over)
+    // ───────────────────────────────────────
+
+    _updatePanic() {
+        const t = this._panicElapsed;
+        const bm = this.boneMap;
+        const q = this._tapQ;
+
+        // ── Stand up — rise from seated ──
+        const standT = Math.min(1, t / 0.25);
+        const standEase = 1 - (1 - standT) * (1 - standT);
+        this.group.position.y = this._panicStartPos.y + standEase * 0.8;
+
+        // ── Stagger backward (away from door, -Z) ──
+        if (t > 0.2) {
+            const staggerT = Math.min(1, (t - 0.2) / 2.0);
+            const staggerEase = staggerT * (2 - staggerT); // ease-out
+            this.group.position.z = this._panicStartPos.z - staggerEase * 2.5;
+        }
+
+        // ── Stumble wobble ──
+        this.group.rotation.y = Math.sin(t * 8) * 0.15 * Math.min(1, t / 0.3);
+
+        // ── Spine — lean back in shock ──
+        q.setFromEuler(new THREE.Euler(
+            -0.35 * standEase + Math.sin(t * 6) * 0.12,
+            Math.sin(t * 7) * 0.15,
+            Math.sin(t * 5) * 0.1
+        ));
+        bm.spine.quaternion.copy(q);
+
+        // ── Chest — heaving ──
+        if (bm.chest) {
+            q.setFromEuler(new THREE.Euler(
+                Math.sin(t * 8) * 0.08,
+                0,
+                Math.sin(t * 6) * 0.05
+            ));
+            bm.chest.quaternion.copy(q);
+        }
+
+        // ── Head — snapping around wildly ──
+        q.setFromEuler(new THREE.Euler(
+            -0.4 + Math.sin(t * 14) * 0.25,
+            Math.sin(t * 11) * 0.35,
+            Math.cos(t * 9) * 0.15
+        ));
+        bm.head.quaternion.copy(q);
+
+        // ── Arms — wild flailing ──
+        const flailAmp = 0.7 + Math.sin(t * 3) * 0.3;
+
+        q.setFromEuler(new THREE.Euler(
+            Math.sin(t * 15) * flailAmp,
+            Math.cos(t * 13) * 0.5,
+            -1.0 + Math.sin(t * 11) * 0.6
+        ));
+        bm.upperArm_L.quaternion.copy(q);
+
+        q.setFromEuler(new THREE.Euler(
+            Math.cos(t * 14) * flailAmp,
+            Math.sin(t * 12) * 0.5,
+            1.0 + Math.cos(t * 10) * 0.6
+        ));
+        bm.upperArm_R.quaternion.copy(q);
+
+        // ── Forearms flop around ──
+        q.setFromEuler(new THREE.Euler(
+            -0.5 + Math.sin(t * 17) * 0.6,
+            Math.cos(t * 13) * 0.3, 0
+        ));
+        bm.forearm_L.quaternion.copy(q);
+
+        q.setFromEuler(new THREE.Euler(
+            -0.5 + Math.cos(t * 16) * 0.6,
+            Math.sin(t * 12) * 0.3, 0
+        ));
+        bm.forearm_R.quaternion.copy(q);
+
+        // ── Hands flap wildly ──
+        if (bm.hand_L) {
+            q.setFromEuler(new THREE.Euler(
+                Math.sin(t * 22) * 0.5,
+                Math.cos(t * 18) * 0.3, 0
+            ));
+            bm.hand_L.quaternion.copy(q);
+        }
+        if (bm.hand_R) {
+            q.setFromEuler(new THREE.Euler(
+                Math.cos(t * 20) * 0.5,
+                Math.sin(t * 16) * 0.3, 0
+            ));
+            bm.hand_R.quaternion.copy(q);
         }
     }
 

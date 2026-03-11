@@ -94,6 +94,11 @@ export class EnemyPool {
         // Reset all material uniforms
         this._resetUniforms(model);
 
+        // Reset group transforms (gameplay/cinematic may have modified these)
+        model.group.scale.set(1, 1, 1);
+        model.group.rotation.set(0, 0, 0);
+        model.group.position.set(0, 0, 0);
+
         // Remove from scene if still attached
         if (model.group.parent) {
             model.group.parent.remove(model.group);
