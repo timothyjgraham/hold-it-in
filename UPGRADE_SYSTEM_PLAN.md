@@ -322,22 +322,22 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 ### Stage 6: Implement Rare Upgrades (16)
 > Synergies and cross-system interactions — more complex wiring
 
-- [ ] R1: Wet & Soapy — check slow status in Ubik damage calc, apply 2x multiplier
-- [ ] R2: Mop Splash — detect mop knockback path crossing barrier zone, trigger zone stun
-- [ ] R3: Magnetic Mops — scan for magnets near mops, apply attack speed bonus
-- [ ] R4: Ubik Slick — track sprayed floor areas, boost pot slide distance + damage when kicked through
-- [ ] R5: Coin Shrapnel — add damage roll in magnetCollect(), spawn bonk VFX
-- [ ] R6: Sign Fortress — on barrier bash, distribute damage to connected adjacent barriers
-- [ ] R7: Mop & Bucket — detect mop sweep overlapping active spray, add damage bonus
-- [ ] R8: Pot Magnet — after pot bounce, apply gentle velocity toward nearest magnet
-- [ ] R9: Sticky Mop — spawn puddle mesh at knockback landing point, add slow zone logic
-- [ ] R10: Chain Trip — on pot trip, AoE query nearby enemies, apply half-stun
-- [ ] R11: Spray & Pray — count enemies hit per Ubik burst, refund coins if 5+, spawn coin VFX
-- [ ] R12: Sentry Magnet — add pulse timer to magnets, show HP bars in range, set target priority
-- [ ] R13: The Tip Jar — add golden coin roll on enemy death, distinct visual
-- [ ] R14: Clearance Sale — modify tower costs in build system
-- [ ] R15: Insurance Policy — trigger coin refund on tower destruction
-- [ ] R16: Bathroom Panic — modify enemy spawn to roll freeze chance, add 2s stun then 2x speed
+- [x] R1: Wet & Soapy — check slow status in Ubik damage calc, apply 2x multiplier
+- [x] R2: Mop Splash — detect mop knockback path crossing barrier zone, trigger zone stun
+- [x] R3: Magnetic Mops — scan for magnets near mops, apply attack speed bonus
+- [x] R4: Ubik Slick — track sprayed floor areas, boost pot slide distance + damage when kicked through
+- [x] R5: Coin Shrapnel — add damage roll in magnetCollect(), spawn bonk VFX
+- [x] R6: Sign Fortress — on barrier bash, distribute damage to connected adjacent barriers
+- [x] R7: Mop & Bucket — detect mop sweep overlapping active spray, add damage bonus
+- [x] R8: Pot Magnet — after pot bounce, apply gentle velocity toward nearest magnet
+- [x] R9: Sticky Mop — spawn puddle mesh at knockback landing point, add slow zone logic
+- [x] R10: Chain Trip — on pot trip, AoE query nearby enemies, apply half-stun
+- [x] R11: Spray & Pray — count enemies hit per Ubik burst, refund coins if 5+, spawn coin VFX
+- [x] R12: Sentry Magnet — add pulse timer to magnets, show HP bars in range, set target priority
+- [x] R13: The Tip Jar — add golden coin roll on enemy death, distinct visual
+- [x] R14: Clearance Sale — modify tower costs in build system
+- [x] R15: Insurance Policy — trigger coin refund on tower destruction
+- [x] R16: Bathroom Panic — modify enemy spawn to roll freeze chance, add 2s stun then 2x speed
 - [ ] Test all rare upgrades individually
 - [ ] Test synergy combinations (especially multi-synergy stacking)
 

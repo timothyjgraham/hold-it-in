@@ -269,6 +269,7 @@
         _doorParticles: [],
         _mopImpacts: [],
         _slidingPots: [],
+        _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
         _cinematicTimer: 0,
         _cinematicEffects: [],
         _flyingPhone: null,
@@ -997,6 +998,21 @@
             document.getElementById('coins-display').textContent = this.coins;
             document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
             document.getElementById('score-display').textContent = this.score;
+
+            // R14: Clearance Sale — update tower cost displays
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R14')) {
+                const costMult = this.upgradeManager.getModifier('towerCostMult');
+                document.querySelectorAll('.tower-btn').forEach(btn => {
+                    const type = btn.dataset.tower;
+                    const def = this.TOWERS[type];
+                    if (def) {
+                        const discounted = Math.max(5, Math.floor(def.cost * costMult));
+                        const costEl = btn.querySelector('.cost');
+                        if (costEl) costEl.textContent = discounted;
+                        btn.dataset.tipCost = discounted;
+                    }
+                });
+            }
         },
 
         // --- HUD juice: door damage feedback ---
@@ -1186,6 +1202,14 @@
             });
             this._mopImpacts = [];
 
+            // Clear mop puddles (R9)
+            this._mopPuddles.forEach(p => {
+                this.scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+            });
+            this._mopPuddles = [];
+
             // Clear sliding pots
             this._slidingPots.forEach(sp => {
                 this.scene.remove(sp.mesh);
@@ -1331,7 +1355,10 @@
 
             const def = this.TOWERS[this.selectedTower];
             if (!def) return;
-            if (this.coins < def.cost) return;
+            // R14: Clearance Sale — tower costs reduced
+            const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+            const towerCost = Math.max(5, Math.floor(def.cost * costMult));
+            if (this.coins < towerCost) return;
 
             const gs = CONFIG.grid;
             const tw = def.tileWidth || 1;
@@ -1344,7 +1371,7 @@
                 if (this._isCellOccupied(cellX, pos.z)) return;
             }
 
-            this.coins -= def.cost;
+            this.coins -= towerCost;
 
             // Create tower mesh
             const tower = this._createTowerMesh(this.selectedTower, def);
@@ -1372,6 +1399,14 @@
         _destroyTower(index) {
             const t = this.towers[index];
             t.dying = true;
+
+            // R15: Insurance Policy — refund 50% of tower cost on destruction
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R15')) {
+                const refund = Math.floor(t.def.cost * 0.5);
+                this.coins += refund;
+                this._spawnCoinText(t.gridX, t.gridZ, refund);
+                this.updateHUD();
+            }
 
             // Release all enemies bashing this barrier
             if (t.type === 'wetfloor') {
@@ -1446,6 +1481,23 @@
                 dirZ = -1;
             }
 
+            // R4: Ubik Slick — pot kicked through active Ubik spray slides further + more damage
+            let slickSpeedMult = 1.0;
+            let slickDmgMult = 1.0;
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R4')) {
+                for (const s of this.sprays) {
+                    const relX = t.gridX - s.x;
+                    const relZ = t.gridZ - s.z;
+                    const forward = relX * s.dirX + relZ * s.dirZ;
+                    const lateral = Math.abs(relX * (-s.dirZ) + relZ * s.dirX);
+                    if (forward > 0 && forward < s.range && lateral < s.width + 1) {
+                        slickSpeedMult = 2.5;
+                        slickDmgMult = 1.5;
+                        break;
+                    }
+                }
+            }
+
             // Create sliding pot entity (carries remaining HP)
             const slidingPot = {
                 mesh: mesh,
@@ -1453,14 +1505,14 @@
                 z: t.gridZ,
                 origX: t.gridX,  // C15: original position for Spring-Loaded Pot
                 origZ: t.gridZ,
-                vx: dirX * def.kickSpeed,
-                vz: dirZ * def.kickSpeed,
+                vx: dirX * def.kickSpeed * slickSpeedMult,
+                vz: dirZ * def.kickSpeed * slickSpeedMult,
                 vy: 3.5,
                 y: 0,
                 spin: (Math.random() - 0.5) * 14,
                 life: 2.0,
                 hitEnemies: new Set(),
-                tripDamage: def.tripDamage,
+                tripDamage: Math.round(def.tripDamage * slickDmgMult),
                 stunDuration: def.stunDuration,
                 hp: remainingHp,              // Survives if hp > 0
             };
@@ -3095,6 +3147,13 @@
                 ac.setTimeScale(1.5);
             }
 
+            // R16: Bathroom Panic — 12% of enemies freeze 2s on entering, then 2x speed
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R16') && Math.random() < 0.12) {
+                enemy.stunTimer = 2.0;
+                enemy._bathroomPanicBoost = true;
+                ac.setTimeScale(0);
+            }
+
             this.enemies.push(enemy);
         },
 
@@ -3172,6 +3231,11 @@
                 const e = this.enemies[i];
 
                 let slowMult = 1.0;
+                e._inSlowZone = false; // R1: track per frame for Wet & Soapy
+
+                // R12: Sentry Magnet — decrement mark/HP bar timers
+                if (e._sentryMarked > 0) { e._sentryMarked -= dt; if (e._sentryMarked <= 0) e._sentryMarked = 0; }
+                if (e._showHPBar > 0) { e._showHPBar -= dt; if (e._showHPBar <= 0) e._showHPBar = 0; }
 
                 // Wet Floor Sign slow zone — enemies near barriers move slower
                 if (!e.slowImmune) {
@@ -3186,7 +3250,21 @@
                             // C5: Extra Slippery — 20% speed (base 40%)
                             const signSlow = this.upgradeManager ? this.upgradeManager.getModifier('signSlowMult') : 0.4;
                             slowMult = Math.min(slowMult, signSlow);
+                            e._inSlowZone = true; // R1: mark as slowed by barrier
                             break;
+                        }
+                    }
+
+                    // R9: Sticky Mop puddle slow zones
+                    if (this._mopPuddles.length > 0) {
+                        for (const p of this._mopPuddles) {
+                            const pdx = e.x - p.x;
+                            const pdz = e.z - p.z;
+                            if (pdx * pdx + pdz * pdz < p.radius * p.radius) {
+                                slowMult = Math.min(slowMult, 0.6); // 40% slow
+                                e._inSlowZone = true; // puddles also count for R1
+                                break;
+                            }
                         }
                     }
                 }
@@ -3215,12 +3293,42 @@
                     if (Math.abs(e.knockbackVX) < 0.1 && Math.abs(e.knockbackVZ) < 0.1) {
                         e.knockbackVX = 0;
                         e.knockbackVZ = 0;
+                        // R9: Sticky Mop — create puddle where knockback ends
+                        if (e._knockedByMopR9 && this.upgradeManager && this.upgradeManager.hasUpgrade('R9')) {
+                            e._knockedByMopR9 = false;
+                            this._createMopPuddle(e.x, e.z);
+                        }
                     }
                     // Clamp to playfield
                     e.x = Math.max(-15, Math.min(15, e.x));
                     e.z = Math.max(CONFIG.toiletPos.z + 1, Math.min(CONFIG.spawnZoneZ + 2, e.z));
                     e.mesh.position.x = e.x;
                     e.mesh.position.z = e.z;
+                    // R2: Mop Splash — knockback through wet floor zone stuns all enemies in zone
+                    if (e._mopKnockbackActive && !e._mopSplashDone &&
+                        this.upgradeManager && this.upgradeManager.hasUpgrade('R2')) {
+                        for (const wt of this.towers) {
+                            if (wt.type !== 'wetfloor' || wt.dying || wt.delivering) continue;
+                            const gs = CONFIG.grid;
+                            const tw = wt.tileWidth || 1;
+                            const halfSpan = tw * gs * 0.5;
+                            if (e.x >= wt.gridX - halfSpan - 1 && e.x <= wt.gridX + halfSpan + 1 &&
+                                e.z >= wt.gridZ - 1 && e.z <= wt.gridZ + 3) {
+                                e._mopSplashDone = true;
+                                // Stun ALL enemies in this wet floor zone for 1.2s
+                                for (const other of this.enemies) {
+                                    if (other === e || other.dying) continue;
+                                    if (other.x >= wt.gridX - halfSpan - 1 && other.x <= wt.gridX + halfSpan + 1 &&
+                                        other.z >= wt.gridZ - 1 && other.z <= wt.gridZ + 3) {
+                                        other.stunTimer = Math.max(other.stunTimer, 1.2);
+                                        if (other.bashing) { other.bashing = false; other.bashingBarrier = null; }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
                     // Interrupt bashing if knocked hard enough
                     if (e.bashing && (Math.abs(e.knockbackVX) > 1 || Math.abs(e.knockbackVZ) > 1)) {
                         e.bashing = false;
@@ -3230,6 +3338,12 @@
                             const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                         }
+                    }
+
+                    // Clear knockback tracking flags when knockback ends
+                    if (e.knockbackVX === 0 && e.knockbackVZ === 0) {
+                        e._mopKnockbackActive = false;
+                        e._mopSplashDone = false;
                     }
                 }
 
@@ -3241,6 +3355,11 @@
                         e.mesh.rotation.x = 0;
                         e.mesh.rotation.z = 0;
                         e.tripFallDuration = 0;
+                        // R16: Bathroom Panic — after freeze, 2x speed
+                        if (e._bathroomPanicBoost) {
+                            e._bathroomPanicBoost = false;
+                            e.speed *= 2.0;
+                        }
                         // Resume walk animation
                         if (e.animController) {
                             const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
@@ -3484,8 +3603,27 @@
                         if (e.bashTimer <= 0) {
                             e.bashTimer = e.bashCooldown;
                             const dmg = e.doorDmg || 2;
-                            bt.hp -= dmg;
-                            bt.hitShake = 0.2;
+
+                            // R6: Sign Fortress — adjacent barriers share damage evenly
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R6')) {
+                                const adjacents = [bt];
+                                for (const wt of this.towers) {
+                                    if (wt === bt || wt.type !== 'wetfloor' || wt.dying || wt.delivering) continue;
+                                    const adx = wt.gridX - bt.gridX;
+                                    const adz = wt.gridZ - bt.gridZ;
+                                    if (adx * adx + adz * adz < 36) { // within 6 units
+                                        adjacents.push(wt);
+                                    }
+                                }
+                                const sharedDmg = Math.ceil(dmg / adjacents.length);
+                                for (const ab of adjacents) {
+                                    ab.hp -= sharedDmg;
+                                    ab.hitShake = 0.15;
+                                }
+                            } else {
+                                bt.hp -= dmg;
+                                bt.hitShake = 0.2;
+                            }
                             this._spawnBarrierChips(bt.gridX, bt.gridZ, dmg);
 
                             // C6: Prickly Signs — enemies take damage when bashing
@@ -3497,15 +3635,24 @@
                                 }
                             }
 
-                            if (bt.hp <= 0) {
+                            // Check if any barrier died (including R6 shared damage)
+                            const barriersToCheck = [bt];
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R6')) {
+                                for (const wt of this.towers) {
+                                    if (wt === bt || wt.type !== 'wetfloor' || wt.dying) continue;
+                                    if (wt.hp <= 0) barriersToCheck.push(wt);
+                                }
+                            }
+                            for (const deadBt of barriersToCheck) {
+                                if (deadBt.hp > 0 || deadBt.dying) continue;
                                 // Release ALL enemies bashing this barrier
                                 for (const other of this.enemies) {
-                                    if (other.bashingBarrier === bt) {
+                                    if (other.bashingBarrier === deadBt) {
                                         other.bashing = false;
                                         other.bashingBarrier = null;
                                     }
                                 }
-                                const bIdx = this.towers.indexOf(bt);
+                                const bIdx = this.towers.indexOf(deadBt);
                                 if (bIdx !== -1) this._destroyTower(bIdx);
                             }
                         }
@@ -3690,6 +3837,11 @@
                     if (this.coinPool) {
                         const drop = this.COIN_DROPS[e.type] || { value: e.coins, count: 1 };
                         this.coinPool.spawnCoins(e.x, e.z, drop.value, drop.count, this.scene);
+
+                        // R13: The Tip Jar — 20% chance to drop golden coin worth 5x
+                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.2) {
+                            this.coinPool.spawnCoins(e.x, e.z, drop.value * 5, 1, this.scene);
+                        }
                     } else {
                         // Fallback: instant reward if CoinPool not loaded
                         this.coins += e.coins;
@@ -3835,9 +3987,53 @@
                                 this._animateCoinGain(collected);
                                 this._spawnCoinText(t.gridX, t.gridZ, collected);
                                 this.updateHUD();
+
+                                // R5: Coin Shrapnel — 15% chance per coin to bonk nearest enemy
+                                if (this.upgradeManager && this.upgradeManager.hasUpgrade('R5')) {
+                                    const approxCoins = Math.max(1, Math.round(rawCollected / 5));
+                                    for (let c = 0; c < approxCoins; c++) {
+                                        if (Math.random() < 0.15) {
+                                            let nearest = null;
+                                            let nearDist2 = magnetRange * magnetRange;
+                                            for (const e of this.enemies) {
+                                                if (e.dying) continue;
+                                                const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
+                                                if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
+                                            }
+                                            if (nearest) {
+                                                nearest.hp -= 5;
+                                                nearest.hitFlash = 0.15;
+                                                if (nearest.animController && !nearest.dying) nearest.animController.playOneShot('hit_react');
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    // R12: Sentry Magnet — pulse every 4s, reveal HP bars, mark highest-HP enemy
+                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('R12')) {
+                        const magnetRange = t.def.range + (this.upgradeManager.getModifier('magnetRange') || 0);
+                        t._sentryTimer = (t._sentryTimer || 0) - dt;
+                        if (t._sentryTimer <= 0) {
+                            t._sentryTimer = 4.0;
+                            let highestHPEnemy = null;
+                            let maxHP = 0;
+                            for (const e of this.enemies) {
+                                if (e.dying) continue;
+                                const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
+                                if (dx2 < magnetRange * magnetRange) {
+                                    e._showHPBar = 2.0;
+                                    if (e.hp > maxHP) { maxHP = e.hp; highestHPEnemy = e; }
+                                }
+                            }
+                            if (highestHPEnemy) {
+                                highestHPEnemy._sentryMarked = 3.0;
+                            }
+                        }
+                    }
+
                     // Animate magnet rotation — juicy spin
                     const magnetHead = t.mesh.getObjectByName('magnetHead');
                     if (magnetHead) magnetHead.rotation.y += dt * 1.8;
@@ -3870,14 +4066,20 @@
                 if (t.type === 'ubik') {
                     let ubikTarget = null;
                     let ubikTargetDist = Infinity;
+                    let ubikTargetMarked = false;
                     for (const e of this.enemies) {
                         if (e.dying) continue;
                         const dx = e.x - t.gridX;
                         const dz = e.z - t.gridZ;
                         const dist = Math.sqrt(dx * dx + dz * dz);
-                        if (dist < t.def.range && dist < ubikTargetDist) {
-                            ubikTarget = e;
-                            ubikTargetDist = dist;
+                        if (dist < t.def.range) {
+                            // R12: Sentry Magnet — prioritize marked targets
+                            const isMarked = e._sentryMarked > 0;
+                            if ((isMarked && !ubikTargetMarked) || (isMarked === ubikTargetMarked && dist < ubikTargetDist)) {
+                                ubikTarget = e;
+                                ubikTargetDist = dist;
+                                ubikTargetMarked = isMarked;
+                            }
                         }
                     }
                     if (ubikTarget) {
@@ -3922,7 +4124,17 @@
                             t.sweeping = false;
                             // C8: Quick Sweep — reduced cooldown
                             const mopCdMult = this.upgradeManager ? this.upgradeManager.getModifier('mopCooldownMult') : 1.0;
-                            t.attackTimer = t.def.attackRate * mopCdMult;
+                            // R3: Magnetic Mops — nearby magnets boost attack speed
+                            let mopMagnetBonus = 1.0;
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R3')) {
+                                for (const mt of this.towers) {
+                                    if (mt.type !== 'coinmagnet' || mt.dying || mt.delivering) continue;
+                                    const mdx = mt.gridX - t.gridX;
+                                    const mdz = mt.gridZ - t.gridZ;
+                                    if (mdx * mdx + mdz * mdz < 100) mopMagnetBonus += 0.15; // +15% per magnet within 10u
+                                }
+                            }
+                            t.attackTimer = t.def.attackRate * mopCdMult / mopMagnetBonus;
                             t.sweepHitEnemies = null;
                             if (mopArm) mopArm.rotation.y = t.mopAngle;
                         } else {
@@ -3954,8 +4166,23 @@
                                 if (dist < hitRadius) {
                                     t.sweepHitEnemies.add(e);
 
+                                    // R7: Mop & Bucket — bonus damage when sweeping through active Ubik spray
+                                    let mopBonusDmg = 0;
+                                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('R7')) {
+                                        for (const s of this.sprays) {
+                                            const relX = tipX - s.x;
+                                            const relZ = tipZ - s.z;
+                                            const fwd = relX * s.dirX + relZ * s.dirZ;
+                                            const lat = Math.abs(relX * (-s.dirZ) + relZ * s.dirX);
+                                            if (fwd > 0 && fwd < s.range && lat < s.width + 1) {
+                                                mopBonusDmg = 8;
+                                                break;
+                                            }
+                                        }
+                                    }
+
                                     // Low damage — crowd control focus
-                                    e.hp -= t.def.damage;
+                                    e.hp -= t.def.damage + mopBonusDmg;
                                     e.hitFlash = 0.15;
 
                                     // Directional knockback — tangential to sweep arc
@@ -3984,6 +4211,11 @@
                                     const kbForce = t.def.knockback * kbMult * leverScale * KNOCKBACK_DECAY;
                                     e.knockbackVX = kbX * kbForce;
                                     e.knockbackVZ = kbZ * kbForce;
+                                    // R2: tag for Mop Splash (knockback through wet floor zone)
+                                    e._mopKnockbackActive = true;
+                                    e._mopSplashDone = false;
+                                    // R9: tag for Sticky Mop (puddle at knockback landing)
+                                    e._knockedByMopR9 = true;
 
                                     // Hit react + hitstop freeze
                                     if (e.animController && !e.dying) {
@@ -4011,17 +4243,22 @@
                         t.attackTimer -= dt;
 
                         if (t.attackTimer <= 0) {
-                            // Find nearest enemy in range
+                            // Find nearest enemy in range (R12: prefer sentry-marked)
                             let mopTarget = null;
                             let mopTargetDist = Infinity;
+                            let mopTargetMarked = false;
                             for (const e of this.enemies) {
                                 if (e.dying) continue;
                                 const dx = e.x - t.gridX;
                                 const dz = e.z - t.gridZ;
                                 const dist = Math.sqrt(dx * dx + dz * dz);
-                                if (dist < t.def.range && dist < mopTargetDist) {
-                                    mopTarget = e;
-                                    mopTargetDist = dist;
+                                if (dist < t.def.range) {
+                                    const isMarked = e._sentryMarked > 0;
+                                    if ((isMarked && !mopTargetMarked) || (isMarked === mopTargetMarked && dist < mopTargetDist)) {
+                                        mopTarget = e;
+                                        mopTargetDist = dist;
+                                        mopTargetMarked = isMarked;
+                                    }
                                 }
                             }
 
@@ -4098,6 +4335,11 @@
 
             // --- Update Ubik sprays ---
             this._updateSprays(dt);
+
+            // --- Update R9 mop puddles ---
+            if (this._mopPuddles.length > 0) {
+                this._updateMopPuddles(dt);
+            }
 
             // --- Exit door spring physics ---
             if (this.officeGroup && this.officeGroup.userData.exitDoors) {
@@ -4266,6 +4508,11 @@
                     const perpX = -s.dirZ;
                     const perpZ = s.dirX;
 
+                    // R1: Wet & Soapy — slowed enemies take 2x Ubik damage
+                    const hasWetSoapy = this.upgradeManager && this.upgradeManager.hasUpgrade('R1');
+                    // R11: Spray & Pray — track enemies hit this burst
+                    if (!s._hitEnemies) s._hitEnemies = new Set();
+
                     for (const e of this.enemies) {
                         if (e.dying) continue;
                         const relX = e.x - s.x;
@@ -4277,12 +4524,24 @@
 
                         if (forward >= sprayBackDist && forward <= sprayFrontDist + 1 &&
                             lateral < halfWidth + e.size * 0.5) {
-                            e.hp -= s.damage;
+                            // R1: Wet & Soapy — 2x damage if enemy is in a slow zone
+                            const dmgMult = (hasWetSoapy && e._inSlowZone) ? 2 : 1;
+                            e.hp -= s.damage * dmgMult;
                             e.hitFlash = 0.15;
                             if (e.animController && !e.dying) {
                                 e.animController.playOneShot('hit_react');
                             }
+                            s._hitEnemies.add(e); // R11: track for Spray & Pray
                         }
+                    }
+
+                    // R11: Spray & Pray — refund 5 coins if 5+ enemies hit in this burst
+                    if (!s._coinRefunded && this.upgradeManager && this.upgradeManager.hasUpgrade('R11') &&
+                        s._hitEnemies.size >= 5) {
+                        s._coinRefunded = true;
+                        this.coins += 5;
+                        this._spawnCoinText(s.x, s.z, 5);
+                        this.updateHUD();
                     }
                 }
 
@@ -4295,6 +4554,47 @@
                     }
                     this.scene.remove(s.group);
                     this.sprays.splice(i, 1);
+                }
+            }
+        },
+
+        // ============================
+        // R9: STICKY MOP PUDDLES
+        // ============================
+        _createMopPuddle(x, z) {
+            // Max 12 puddles globally (≈3 per mop)
+            while (this._mopPuddles.length >= 12) {
+                const old = this._mopPuddles.shift();
+                this.scene.remove(old.mesh);
+                old.mesh.geometry.dispose();
+                old.mesh.material.dispose();
+            }
+            const puddleMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.mop,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false,
+            });
+            const puddleMesh = new THREE.Mesh(
+                new THREE.CircleGeometry(1.5, 12),
+                puddleMat
+            );
+            puddleMesh.rotation.x = -Math.PI / 2;
+            puddleMesh.position.set(x, 0.02, z);
+            this.scene.add(puddleMesh);
+            this._mopPuddles.push({ x, z, mesh: puddleMesh, life: 3.0, radius: 1.5 });
+        },
+
+        _updateMopPuddles(dt) {
+            for (let i = this._mopPuddles.length - 1; i >= 0; i--) {
+                const p = this._mopPuddles[i];
+                p.life -= dt;
+                p.mesh.material.opacity = Math.max(0, 0.35 * (p.life / 3.0));
+                if (p.life <= 0) {
+                    this.scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    this._mopPuddles.splice(i, 1);
                 }
             }
         },
@@ -4337,7 +4637,8 @@
             // Color: green if can place, red if occupied or can't afford
             const gs = CONFIG.grid;
             const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
-            let canPlace = this.coins >= def.cost;
+            const hoverCostMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+            let canPlace = this.coins >= Math.max(5, Math.floor(def.cost * hoverCostMult));
             for (let dx = 0; dx < tw && canPlace; dx++) {
                 const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
                 if (cellX < -halfW || cellX > halfW || this._isCellOccupied(cellX, pos.z)) {
@@ -5200,6 +5501,24 @@
                     sp.y = 0;
                     sp.vy = Math.abs(sp.vy) * 0.3; // damped bounce
                     if (sp.vy < 0.5) sp.vy = 0;    // stop bouncing when tiny
+
+                    // R8: Pot Magnet — pull toward nearest coin magnet on bounce
+                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('R8')) {
+                        let nearMag = null;
+                        let nearDist2 = Infinity;
+                        for (const mt of this.towers) {
+                            if (mt.type !== 'coinmagnet' || mt.dying || mt.delivering) continue;
+                            const mdx = mt.gridX - sp.x;
+                            const mdz = mt.gridZ - sp.z;
+                            const md2 = mdx * mdx + mdz * mdz;
+                            if (md2 < nearDist2) { nearMag = mt; nearDist2 = md2; }
+                        }
+                        if (nearMag && nearDist2 > 1) {
+                            const dist = Math.sqrt(nearDist2);
+                            sp.vx += ((nearMag.gridX - sp.x) / dist) * 5;
+                            sp.vz += ((nearMag.gridZ - sp.z) / dist) * 5;
+                        }
+                    }
                 }
 
                 // Update mesh position + tumble
@@ -5235,6 +5554,20 @@
                             this._cameraShake = 0.1;
                             this._cameraShakeIntensity = 0.12;
                             this._spawnTripImpact(e.x, e.z);
+
+                            // R10: Chain Trip — shockwave stumbles nearby enemies
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R10')) {
+                                for (const other of this.enemies) {
+                                    if (other === e || other.dying || other.stunTimer > 0) continue;
+                                    const sdx = other.x - e.x;
+                                    const sdz = other.z - e.z;
+                                    if (sdx * sdx + sdz * sdz < 9) { // 3-unit radius
+                                        other.stunTimer = 0.9; // half-duration stun
+                                        // wobble stun, no face-plant (tripFallDuration stays 0)
+                                        if (other.bashing) { other.bashing = false; other.bashingBarrier = null; }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
