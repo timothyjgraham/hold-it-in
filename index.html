@@ -2210,7 +2210,8 @@
                 powerwalker: 'power_walk',
                 girls: 'walk_chat',
             };
-            ac.setState(initialStates[enemyType] || 'walk');
+            enemy.walkState = initialStates[enemyType] || 'walk';
+            ac.setState(enemy.walkState);
 
             // Girls: random phase offset for visual variety in clusters
             if (enemyType === 'girls') {
@@ -2309,6 +2310,11 @@
                     if (e.bashing && (Math.abs(e.knockbackVX) > 1 || Math.abs(e.knockbackVZ) > 1)) {
                         e.bashing = false;
                         e.bashingBarrier = null;
+                        // Reset animation from bash_door back to walk state
+                        if (e.animController) {
+                            const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
+                            e.animController.setState(walkState);
+                        }
                     }
                 }
 
@@ -2532,7 +2538,8 @@
                     e._hitstopTimer -= dt;
                     if (e._hitstopTimer <= 0) {
                         e._hitstopTimer = 0;
-                        // TimeScale will be corrected by 6B speed sync on next walk frame
+                        // Actively unfreeze — can't rely on 6B sync if enemy is bashing
+                        e.animController.setTimeScale(1.0);
                     }
                 }
 
