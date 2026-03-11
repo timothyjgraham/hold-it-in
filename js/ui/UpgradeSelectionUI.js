@@ -33,8 +33,8 @@ const PRESENT_WAIT_DUR = 1.5;     // Hold close-up before card drop
 const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 
 // Card drop display dimensions
-const CARD_DROP_W = 280;
-const CARD_DROP_H = 140;
+const CARD_DROP_W = 320;
+const CARD_DROP_H = 200;
 
 // ─── SCREEN FLASH OVERLAY ───────────────────────────────────────────────────
 
@@ -738,7 +738,7 @@ export class UpgradeSelectionUI {
         const rarity = upgrade.rarity;
 
         // ── Render card content onto a canvas (mirrors the 3D placard sign) ──
-        const cW = 512, cH = 256;
+        const cW = 640, cH = 400;
         const canvas = document.createElement('canvas');
         canvas.width = cW;
         canvas.height = cH;
@@ -754,9 +754,9 @@ export class UpgradeSelectionUI {
         // Border
         const borderColor = rarity === 'rare' ? '#9b8ec4' : '#1a1a2e';
         ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 10;
         ctx.beginPath();
-        ctx.roundRect(4, 4, cW - 8, cH - 8, 16);
+        ctx.roundRect(5, 5, cW - 10, cH - 10, 16);
         ctx.stroke();
 
         ctx.fillStyle = '#1a1a2e';
@@ -764,17 +764,17 @@ export class UpgradeSelectionUI {
         ctx.textBaseline = 'middle';
 
         // Icon
-        drawUpgradeIcon(ctx, upgrade.icon || 'star', 256, 50, 60);
+        drawUpgradeIcon(ctx, upgrade.icon || 'star', cW / 2, 65, 80);
 
         // Name (Bangers font, word-wrapped)
-        const nameFontSize = upgrade.name.length > 16 ? 26 : 32;
+        const nameFontSize = upgrade.name.length > 16 ? 34 : 42;
         ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
         const nameWords = upgrade.name.split(' ');
         const nameLines = [];
         let curLine = nameWords[0];
         for (let w = 1; w < nameWords.length; w++) {
             const test = curLine + ' ' + nameWords[w];
-            if (ctx.measureText(test).width > 460) {
+            if (ctx.measureText(test).width > 580) {
                 nameLines.push(curLine);
                 curLine = nameWords[w];
             } else {
@@ -784,35 +784,35 @@ export class UpgradeSelectionUI {
         nameLines.push(curLine);
 
         const nLineH = nameFontSize + 4;
-        const nStartY = 110 - (nameLines.length - 1) * nLineH / 2;
+        const nStartY = 150 - (nameLines.length - 1) * nLineH / 2;
         for (let i = 0; i < nameLines.length; i++) {
             if (rarity !== 'common') {
                 ctx.fillStyle = 'rgba(0,0,0,0.15)';
-                ctx.fillText(nameLines[i], 258, nStartY + i * nLineH + 2);
+                ctx.fillText(nameLines[i], cW / 2 + 2, nStartY + i * nLineH + 2);
             }
             ctx.fillStyle = '#1a1a2e';
-            ctx.fillText(nameLines[i], 256, nStartY + i * nLineH);
+            ctx.fillText(nameLines[i], cW / 2, nStartY + i * nLineH);
         }
 
         // Divider
-        const divY = nStartY + nameLines.length * nLineH + 6;
+        const divY = nStartY + nameLines.length * nLineH + 8;
         ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(60, divY);
-        ctx.lineTo(452, divY);
+        ctx.moveTo(75, divY);
+        ctx.lineTo(cW - 75, divY);
         ctx.stroke();
 
-        // Description (smaller Bangers)
+        // Description (larger Bangers for legibility)
         if (upgrade.description) {
             ctx.fillStyle = '#3a3a4a';
-            ctx.font = "20px 'Bangers', sans-serif";
+            ctx.font = "26px 'Bangers', sans-serif";
             const dWords = upgrade.description.split(' ');
             const dLines = [];
             let dLine = dWords[0] || '';
             for (let w = 1; w < dWords.length; w++) {
                 const test = dLine + ' ' + dWords[w];
-                if (ctx.measureText(test).width > 440) {
+                if (ctx.measureText(test).width > 560) {
                     dLines.push(dLine);
                     dLine = dWords[w];
                 } else {
@@ -820,10 +820,10 @@ export class UpgradeSelectionUI {
                 }
             }
             dLines.push(dLine);
-            const dLineH = 24;
-            const dStartY = divY + 18;
+            const dLineH = 32;
+            const dStartY = divY + 22;
             for (let i = 0; i < dLines.length; i++) {
-                ctx.fillText(dLines[i], 256, dStartY + i * dLineH);
+                ctx.fillText(dLines[i], cW / 2, dStartY + i * dLineH);
             }
         }
 

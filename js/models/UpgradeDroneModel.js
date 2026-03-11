@@ -18,13 +18,6 @@ const RARITY_GLOW = {
     legendary: PALETTE.rarityLegendary,
 };
 
-// Scale per rarity (relative to common baseline)
-const RARITY_SCALE = {
-    common:    1.0,
-    rare:      1.125,  // 1.35 / 1.2 ≈ 1.125x
-    legendary: 1.25,   // 1.5 / 1.2 ≈ 1.25x
-};
-
 // Propeller blade count per rarity
 const RARITY_BLADES = {
     common:    1,
@@ -49,9 +42,11 @@ const RARITY_OUTLINE = {
  */
 function createPlacardTexture(upgrade, rarity) {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 256;
+    canvas.width = 640;
+    canvas.height = 400;
     const ctx = canvas.getContext('2d');
+
+    const cW = 640, cH = 400;
 
     // Background
     if (rarity === 'legendary') {
@@ -61,17 +56,17 @@ function createPlacardTexture(upgrade, rarity) {
     } else {
         ctx.fillStyle = '#ffffff'; // white
     }
-    ctx.fillRect(0, 0, 512, 256);
+    ctx.fillRect(0, 0, cW, cH);
 
     // Border
     if (rarity === 'rare') {
         ctx.strokeStyle = '#9b8ec4';
-        ctx.lineWidth = 8;
-        ctx.strokeRect(4, 4, 504, 248);
+        ctx.lineWidth = 10;
+        ctx.strokeRect(5, 5, cW - 10, cH - 10);
     } else if (rarity === 'legendary') {
         ctx.strokeStyle = '#1a1a2e';
-        ctx.lineWidth = 8;
-        ctx.strokeRect(4, 4, 504, 248);
+        ctx.lineWidth = 10;
+        ctx.strokeRect(5, 5, cW - 10, cH - 10);
     }
 
     ctx.fillStyle = '#1a1a2e';
@@ -79,10 +74,10 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textBaseline = 'middle';
 
     // Icon (top area)
-    drawUpgradeIcon(ctx, upgrade.icon || 'star', 256, 50, 60);
+    drawUpgradeIcon(ctx, upgrade.icon || 'star', cW / 2, 65, 80);
 
     // Name (middle area, larger bold text)
-    const nameFontSize = upgrade.name.length > 16 ? 26 : 32;
+    const nameFontSize = upgrade.name.length > 16 ? 34 : 42;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
 
     // Word wrap name
@@ -91,7 +86,7 @@ function createPlacardTexture(upgrade, rarity) {
     let currentLine = nameWords[0];
     for (let i = 1; i < nameWords.length; i++) {
         const test = currentLine + ' ' + nameWords[i];
-        if (ctx.measureText(test).width > 460) {
+        if (ctx.measureText(test).width > 580) {
             nameLines.push(currentLine);
             currentLine = nameWords[i];
         } else {
@@ -101,29 +96,29 @@ function createPlacardTexture(upgrade, rarity) {
     nameLines.push(currentLine);
 
     const nameLineH = nameFontSize + 4;
-    const nameStartY = 110 - (nameLines.length - 1) * nameLineH / 2;
+    const nameStartY = 150 - (nameLines.length - 1) * nameLineH / 2;
     for (let i = 0; i < nameLines.length; i++) {
         if (rarity !== 'common') {
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
-            ctx.fillText(nameLines[i], 258, nameStartY + i * nameLineH + 2);
+            ctx.fillText(nameLines[i], cW / 2 + 2, nameStartY + i * nameLineH + 2);
         }
         ctx.fillStyle = '#1a1a2e';
-        ctx.fillText(nameLines[i], 256, nameStartY + i * nameLineH);
+        ctx.fillText(nameLines[i], cW / 2, nameStartY + i * nameLineH);
     }
 
     // Divider line
-    const dividerY = nameStartY + nameLines.length * nameLineH + 6;
+    const dividerY = nameStartY + nameLines.length * nameLineH + 8;
     ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(60, dividerY);
-    ctx.lineTo(452, dividerY);
+    ctx.moveTo(75, dividerY);
+    ctx.lineTo(cW - 75, dividerY);
     ctx.stroke();
 
-    // Description (bottom area, smaller text)
+    // Description (bottom area, larger text for legibility)
     if (upgrade.description) {
         ctx.fillStyle = '#3a3a4a';
-        const descFontSize = 20;
+        const descFontSize = 26;
         ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
 
         const descWords = upgrade.description.split(' ');
@@ -131,7 +126,7 @@ function createPlacardTexture(upgrade, rarity) {
         let descLine = descWords[0] || '';
         for (let i = 1; i < descWords.length; i++) {
             const test = descLine + ' ' + descWords[i];
-            if (ctx.measureText(test).width > 440) {
+            if (ctx.measureText(test).width > 560) {
                 descLines.push(descLine);
                 descLine = descWords[i];
             } else {
@@ -140,10 +135,10 @@ function createPlacardTexture(upgrade, rarity) {
         }
         descLines.push(descLine);
 
-        const descLineH = descFontSize + 4;
-        const descStartY = dividerY + 18;
+        const descLineH = descFontSize + 6;
+        const descStartY = dividerY + 22;
         for (let i = 0; i < descLines.length; i++) {
-            ctx.fillText(descLines[i], 256, descStartY + i * descLineH);
+            ctx.fillText(descLines[i], cW / 2, descStartY + i * descLineH);
         }
     }
 
@@ -163,7 +158,6 @@ function createPlacardTexture(upgrade, rarity) {
  */
 export function createUpgradeDrone(upgrade, slotIndex) {
     const rarity = upgrade.rarity;
-    const scale = RARITY_SCALE[rarity];
     const bodyColor = DRONE_COLORS[slotIndex % 3];
     const glowColor = RARITY_GLOW[rarity];
     const outlineW = OUTLINE_WIDTH.tower * RARITY_OUTLINE[rarity];
@@ -280,7 +274,7 @@ export function createUpgradeDrone(upgrade, slotIndex) {
 
     const chainMat = toonMat(PALETTE.fixture);
     const chainLength = 1.2;
-    const chainSpacing = 1.2;  // half-width of placard
+    const chainSpacing = 0.35;  // within body radius so chains connect to drone
 
     // Left chain
     const chainL = new THREE.Mesh(
@@ -298,9 +292,9 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     chainR.position.set(chainSpacing, -chainLength / 2, 0);
     signGroup.add(chainR);
 
-    // Placard (flat box with canvas texture on front) — 2x size for readability
-    const placardW = 3.0;
-    const placardH = 1.5;
+    // Placard (flat box with canvas texture on front)
+    const placardW = 4.0;
+    const placardH = 2.5;
     const placardD = 0.04;
 
     const placardTexture = createPlacardTexture(upgrade, rarity);
@@ -337,9 +331,6 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     // Position sign group at bottom of drone body
     signGroup.position.y = -bodyH / 2 - 0.1;
     root.add(signGroup);
-
-    // ── SCALE BY RARITY ─────────────────────────────────────────────────
-    root.scale.setScalar(scale);
 
     // ── USERDATA FOR ANIMATION ──────────────────────────────────────────
     root.userData = {
