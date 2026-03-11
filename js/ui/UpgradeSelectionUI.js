@@ -12,7 +12,7 @@ import { toonMat } from '../shaders/toonMaterials.js';
 
 const HOVER_RISE = 0.3;           // Hovered drone rises this many units
 const DIM_BRIGHTNESS = 0.7;       // Non-hovered drones dim to this
-const SIGN_TILT_ANGLE = 0.15;     // Sign tilts toward camera (radians)
+const HOVER_EXTRA_TILT = 0.1;     // Extra tilt toward camera when hovered
 
 // Selection animation durations (seconds)
 const COMMON_SELECT_DUR = 0.6;
@@ -385,12 +385,11 @@ export class UpgradeSelectionUI {
             ud._hoverRise += (targetRise - ud._hoverRise) * Math.min(1, dt * 8);
             drone.position.y = ud.targetPos.y + (ud._hoverBob || 0) + ud._hoverRise;
 
-            // Sign tilt toward camera on hover
-            if (isHovered) {
-                const targetTilt = -SIGN_TILT_ANGLE;
+            // Billboard sign to face camera, with extra tilt on hover
+            if (ud.signGroup) {
+                const baseTilt = this._computeCameraTilt(drone.position);
+                const targetTilt = isHovered ? baseTilt + HOVER_EXTRA_TILT : baseTilt;
                 ud.signGroup.rotation.x += (targetTilt - ud.signGroup.rotation.x) * Math.min(1, dt * 6);
-            } else {
-                ud.signGroup.rotation.x += (0 - ud.signGroup.rotation.x) * Math.min(1, dt * 6);
             }
 
             // Brightness dimming
@@ -421,6 +420,20 @@ export class UpgradeSelectionUI {
                 }
             }
         });
+    }
+
+    // ─── CAMERA-FACING TILT ──────────────────────────────────────────────
+
+    /**
+     * Compute the X-axis tilt angle so a sign faces the camera from a given position.
+     */
+    _computeCameraTilt(dronePos) {
+        if (!this._camera) return 0;
+        const dx = this._camera.position.x - dronePos.x;
+        const dy = this._camera.position.y - dronePos.y;
+        const dz = this._camera.position.z - dronePos.z;
+        const horizDist = Math.sqrt(dx * dx + dz * dz);
+        return Math.atan2(dy, horizDist);
     }
 
     // ─── SELECTION ───────────────────────────────────────────────────────
@@ -711,10 +724,16 @@ export class UpgradeSelectionUI {
 
             selDrone.position.lerpVectors(selUd._presentStartPos, selUd._presentTargetPos, et);
 
-            // Smooth rotation toward camera (face forward)
+            // Smooth body rotation to zero
             selDrone.rotation.y *= 0.92;
             selDrone.rotation.x *= 0.92;
             selDrone.rotation.z *= 0.92;
+
+            // Billboard sign toward camera during close-up
+            if (selUd.signGroup) {
+                const tilt = this._computeCameraTilt(selDrone.position);
+                selUd.signGroup.rotation.x += (tilt - selUd.signGroup.rotation.x) * Math.min(1, dt * 6);
+            }
 
             if (t >= 1 && !this._presentWaiting) {
                 this._presentWaiting = true;
@@ -926,17 +945,14 @@ export class UpgradeSelectionUI {
     // ─── BACKGROUND DIMMING ──────────────────────────────────────────────
 
     _dimBackground(scene, dim) {
-        // CSS overlay for screen dimming
-        const el = _ensureDimElement();
-        el.style.opacity = dim ? '1' : '0';
-
-        // Also reduce ambient light intensity
+        // No CSS overlay — it darkened the drones and made signs hard to read.
+        // Subtle ambient light reduction only, so drones stay vibrant.
         if (dim) {
             scene.traverse(child => {
                 if (child.isAmbientLight) {
                     this._ambientLight = child;
                     this._savedAmbientIntensity = child.intensity;
-                    child.intensity = child.intensity * 0.5;
+                    child.intensity = child.intensity * 0.8;
                 }
             });
         } else if (this._ambientLight) {
