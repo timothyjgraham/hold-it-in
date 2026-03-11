@@ -61,26 +61,86 @@
 
     <!-- Tower Build Panel -->
     <div id="tower-panel">
-        <div class="tower-btn" data-tower="coinmagnet" title="Coin Magnet — Auto-collects dropped coins in range">
+        <div class="tower-btn" data-tower="coinmagnet"
+             data-tip-name="Coin Magnet" data-tip-cost="10"
+             data-tip-desc="Auto-collects dropped coins in range. Fragile!">
             <span class="hotkey">1</span>
-            <span class="label">Magnet</span>
+            <div class="tower-icon">
+                <!-- Horseshoe magnet with coin jar -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <rect x="17" y="34" width="14" height="6" rx="2" fill="#2d2b3d" stroke="#1a1a2e" stroke-width="1.5"/>
+                    <rect x="22" y="22" width="4" height="14" rx="1" fill="#a8a098" stroke="#1a1a2e" stroke-width="1"/>
+                    <path d="M14 14 A10 10 0 0 1 34 14" fill="none" stroke="#ff6b7a" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="14" cy="14" r="3" fill="#a8a098" stroke="#1a1a2e" stroke-width="1"/>
+                    <circle cx="34" cy="14" r="3" fill="#a8a098" stroke="#1a1a2e" stroke-width="1"/>
+                    <rect x="18" y="28" width="12" height="10" rx="3" fill="#6688aa" fill-opacity="0.4" stroke="#1a1a2e" stroke-width="1"/>
+                    <ellipse cx="24" cy="35" rx="5" ry="2" fill="#ffd93d" stroke="#1a1a2e" stroke-width="0.8"/>
+                </svg>
+            </div>
             <span class="cost">10</span>
         </div>
-        <div class="tower-btn" data-tower="wetfloor" title="Wet Floor Sign — Slows enemies">
+        <div class="tower-btn" data-tower="wetfloor"
+             data-tip-name="Wet Floor Sign" data-tip-cost="15"
+             data-tip-desc="Slows enemies to 40% speed. Tough plastic!">
             <span class="hotkey">2</span>
-            <span class="label">Wet Floor</span>
+            <div class="tower-icon">
+                <!-- A-frame caution sign with ! -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <polygon points="24,4 8,42 40,42" fill="#e8d44a" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+                    <rect x="22" y="14" width="4" height="16" rx="1" fill="#1a1a2e"/>
+                    <circle cx="24" cy="35" r="2.5" fill="#1a1a2e"/>
+                </svg>
+            </div>
             <span class="cost">15</span>
         </div>
-        <div class="tower-btn" data-tower="mop" title="Mop Turret — Attacks + knockback">
+        <div class="tower-btn" data-tower="mop"
+             data-tip-name="Mop Turret" data-tip-cost="25"
+             data-tip-desc="Attacks enemies + knockback. Hits hard!">
             <span class="hotkey">3</span>
-            <span class="label">Mop</span>
+            <div class="tower-icon">
+                <!-- Mop in bucket -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <path d="M12 24 L14 42 L34 42 L36 24 Z" fill="#a8a098" stroke="#1a1a2e" stroke-width="1.5" stroke-linejoin="round"/>
+                    <ellipse cx="24" cy="24" rx="12" ry="3" fill="#6688aa" stroke="#1a1a2e" stroke-width="1"/>
+                    <line x1="28" y1="24" x2="22" y2="4" stroke="#8b6e4e" stroke-width="3" stroke-linecap="round"/>
+                    <rect x="16" y="2" width="12" height="7" rx="2" fill="#9b59b6" stroke="#1a1a2e" stroke-width="1"/>
+                    <rect x="17" y="9" width="3" height="4" rx="0.5" fill="#9b59b6"/>
+                    <rect x="22" y="9" width="3" height="4" rx="0.5" fill="#9b59b6"/>
+                    <rect x="27" y="9" width="3" height="4" rx="0.5" fill="#9b59b6"/>
+                </svg>
+            </div>
             <span class="cost">25</span>
         </div>
-        <div class="tower-btn" data-tower="ubik" title="Ubik — Spray Tower">
+        <div class="tower-btn" data-tower="ubik"
+             data-tip-name="Ubik Spray" data-tip-cost="35"
+             data-tip-desc="Long-range spray hits all enemies in cone. Area damage!">
             <span class="hotkey">4</span>
-            <span class="label">Ubik</span>
+            <div class="tower-icon">
+                <!-- Spray can -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <rect x="15" y="12" width="18" height="30" rx="4" fill="#6bcb77" stroke="#1a1a2e" stroke-width="2"/>
+                    <rect x="18" y="6" width="12" height="8" rx="2" fill="#faf5ef" stroke="#1a1a2e" stroke-width="1.5"/>
+                    <rect x="22" y="2" width="4" height="5" rx="1" fill="#a8a098" stroke="#1a1a2e" stroke-width="1"/>
+                    <rect x="18" y="20" width="12" height="12" rx="1" fill="#fff4d9" fill-opacity="0.6" stroke="#1a1a2e" stroke-width="0.8"/>
+                    <text x="24" y="29" text-anchor="middle" font-size="7" font-weight="bold" fill="#1a1a2e" font-family="sans-serif">UBIK</text>
+                    <ellipse cx="24" cy="42" rx="9" ry="2" fill="#1a1a2e" fill-opacity="0.15"/>
+                </svg>
+            </div>
             <span class="cost">35</span>
         </div>
+    </div>
+
+    <!-- Tower Tooltip -->
+    <div id="tower-tooltip">
+        <div class="tip-name"></div>
+        <div class="tip-cost-line">
+            <svg class="tip-coin-icon" viewBox="0 0 16 16" width="14" height="14" style="vertical-align: -2px;">
+                <circle cx="8" cy="8" r="7" fill="#ffd93d" stroke="#1a1a2e" stroke-width="1.5"/>
+                <text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a1a2e" font-family="sans-serif">$</text>
+            </svg>
+            <span class="tip-cost"></span> coins
+        </div>
+        <div class="tip-desc"></div>
     </div>
 
     <!-- Start Screen -->
@@ -743,11 +803,33 @@
             });
 
             // Tower panel buttons
+            const tooltip = document.getElementById('tower-tooltip');
+            const tipName = tooltip.querySelector('.tip-name');
+            const tipCost = tooltip.querySelector('.tip-cost');
+            const tipDesc = tooltip.querySelector('.tip-desc');
+
             document.querySelectorAll('.tower-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const towerType = btn.dataset.tower;
                     this.selectTower(towerType);
+                });
+
+                // Tooltip show on hover
+                btn.addEventListener('mouseenter', () => {
+                    tipName.textContent = btn.dataset.tipName;
+                    tipCost.textContent = btn.dataset.tipCost;
+                    tipDesc.textContent = btn.dataset.tipDesc;
+
+                    // Position tooltip to the left of the button
+                    const rect = btn.getBoundingClientRect();
+                    tooltip.style.right = (window.innerWidth - rect.left + 10) + 'px';
+                    tooltip.style.top = (rect.top + rect.height / 2 - 40) + 'px';
+                    tooltip.classList.add('visible');
+                });
+
+                btn.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
                 });
             });
         },
