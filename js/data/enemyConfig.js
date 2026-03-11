@@ -55,7 +55,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── PEE DANCER ─── wave 3, fast swarm, 9 bones (no arms)
     dancer: {
-        size: 1.0,
+        size: 1.25,
         bones: {
             neck: true,
             upperArms: false,

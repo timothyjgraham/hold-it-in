@@ -316,9 +316,9 @@ function _dancerHitReact() {
     return new THREE.AnimationClip('dancer_hit_react', dur, [
         // Bounces upward then slams down
         posTrack('root', t, [[0, 0, 0], [0, 0.10, -0.08], [0, -0.05, -0.03], [0, 0.02, -0.01], [0, 0, 0]]),
-        // Big squash on hit
+        // Big squash on hit (delta values for additive blending)
         scaleTrack('root', t, [
-            [1, 1, 1], [1.22, 0.68, 1.22], [0.88, 1.14, 0.88], [1.05, 0.97, 1.05], [1, 1, 1]
+            [0, 0, 0], [0.22, -0.32, 0.22], [-0.12, 0.14, -0.12], [0.05, -0.03, 0.05], [0, 0, 0]
         ]),
         buildRotationTrack('spine', t, [0, 0.12, 0.04, 0.01, 0], AXIS_X),
     ]);
@@ -543,10 +543,10 @@ function _waddleHitReact() {
         posTrack('root', t, [
             [0, 0, 0], [0, 0, -0.06], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0], [0, 0, 0]
         ]),
-        // But belly JIGGLES gloriously (absorbs the hit like a champ)
+        // But belly JIGGLES gloriously (delta values for additive blending)
         scaleTrack('belly', t, [
-            [1, 1, 1], [1.22, 0.82, 1.28], [0.86, 1.14, 0.80],
-            [1.10, 0.94, 1.10], [0.96, 1.03, 0.96], [1, 1, 1]
+            [0, 0, 0], [0.22, -0.18, 0.28], [-0.14, 0.14, -0.20],
+            [0.10, -0.06, 0.10], [-0.04, 0.03, -0.04], [0, 0, 0]
         ]),
         eulerTrack('belly', t, [
             [0, 0, 0], [0.14, 0, 0.06], [-0.08, 0, -0.03],

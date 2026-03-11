@@ -189,13 +189,15 @@
                 baseHP: 20, hpPerWave: 10,
                 size: 1.5, color: 0xd4a574, // warm tan — unremarkable, baseline
                 coins: 5, doorDmg: 2,
+                flankChance: 0.15, // polite, mostly center
             },
             dancer: {
                 name: 'Pee Dancer',
                 baseSpeed: 5.5, speedVar: 1.0,
                 baseHP: 10, hpPerWave: 4,
-                size: 1.0, color: 0x3498db, // bright blue — energetic
+                size: 1.25, color: 0x3498db, // bright blue — energetic
                 coins: 3, doorDmg: 1,
+                flankChance: 0.6, // fast — darts to the sides to dodge towers
             },
             waddle: {
                 name: 'Waddle Tank',
@@ -204,6 +206,7 @@
                 size: 2.0, color: 0x795548, // brown — earthy, heavy
                 coins: 12, doorDmg: 4,
                 panicThreshold: 0.5, // Panics at 50% HP — speed doubles
+                flankChance: 0.1, // big and lumbering, goes straight
             },
             panicker: {
                 name: 'Panicker',
@@ -212,6 +215,7 @@
                 size: 1.6, color: 0xf1c40f, // bright yellow — WARNING
                 coins: 10, doorDmg: 2,
                 speedAuraRange: 8, speedAuraBonus: 0.5, // Panic is contagious — priority target
+                flankChance: 0.4, // erratic — might go anywhere
             },
             powerwalker: {
                 name: 'Power Walker',
@@ -220,6 +224,7 @@
                 size: 1.4, color: 0x1abc9c, // teal — athletic, composed
                 coins: 7, doorDmg: 2,
                 slowImmune: true, // Too much momentum — wet floor signs useless
+                flankChance: 0.7, // strategic — takes wide routes around defenses
             },
             girls: {
                 name: 'The Girls',
@@ -1845,6 +1850,33 @@
             this.enemiesSpawned++;
         },
 
+        _pickLane(enemyType, def, opts) {
+            // Girls use their pre-assigned shared lane
+            if (opts.targetLane !== undefined) return opts.targetLane;
+
+            const flankChance = def.flankChance || 0.15;
+            const roll = Math.random();
+            const farFlankChance = flankChance * 0.4; // 40% of flankers go FAR out
+
+            let lane;
+            if (roll < farFlankChance) {
+                // Far flank — way out to the sides, forces wide tower placement
+                const farLanes = [-10, -8.5, 8.5, 10];
+                lane = farLanes[Math.floor(Math.random() * farLanes.length)];
+            } else if (roll < flankChance) {
+                // Regular flank — outside the corridor but not extreme
+                const outerLanes = [-6, -5, 5, 6];
+                lane = outerLanes[Math.floor(Math.random() * outerLanes.length)];
+            } else {
+                // Center area — standard approach
+                const innerLanes = [-3, -1.5, 0, 1.5, 3];
+                lane = innerLanes[Math.floor(Math.random() * innerLanes.length)];
+            }
+            // Jitter so enemies in the same lane aren't single-file
+            lane += (Math.random() - 0.5) * 1.5;
+            return lane;
+        },
+
         _createEnemy(enemyType, def, opts) {
             const spread = CONFIG.spawnWidth;
             const x = opts.xOverride !== undefined ? opts.xOverride : (Math.random() - 0.5) * spread;
@@ -1927,7 +1959,7 @@
                 slowImmune: def.slowImmune || false,
                 panicked: false,
                 desperate: isDesperate,
-                ...(opts.targetLane !== undefined && { targetLane: opts.targetLane }),
+                targetLane: this._pickLane(enemyType, def, opts),
             };
 
             // Set up AnimationController (6A: reuse from pool)
@@ -2050,18 +2082,26 @@
                     const moveSpeed = e.speed * slowMult * auraMult * dt;
                     e.z -= moveSpeed;
 
-                    // Steering — girls follow their chosen lane, others converge to toilet
-                    if (e.type === 'girls' && e.targetLane !== undefined) {
+                    // Steering — enemies fan out from door to chosen lane, then converge near toilet
+                    const spawnZ = CONFIG.spawnZoneZ;     // 69 — door
+                    const laneZ = spawnZ - 15;            // 54 — fully in lane
+                    const convergeZ = 20;                 // start funneling back toward corridor
+
+                    if (e.z > laneZ) {
+                        // Phase 1: Fan out from narrow doorway to chosen lane
+                        const fanProgress = Math.min(1, (spawnZ - e.z) / (spawnZ - laneZ));
+                        const dxToLane = e.targetLane - e.x;
+                        e.x += dxToLane * dt * (1.5 + fanProgress * 2.5);
+                    } else if (e.z > convergeZ) {
+                        // Phase 2: Follow lane — gentle correction to stay on track
                         const dxToLane = e.targetLane - e.x;
                         e.x += dxToLane * dt * 2.0;
                     } else {
-                        const distZ = Math.abs(e.z - CONFIG.toiletPos.z);
-                        const convergeDist = 40;
-                        if (distZ < convergeDist && Math.abs(e.x) > 0.3) {
-                            const convergeStrength = 1 - (distZ / convergeDist);
-                            const dxToToilet = CONFIG.toiletPos.x - e.x;
-                            e.x += dxToToilet * convergeStrength * dt * 0.8;
-                        }
+                        // Phase 3: Converge toward toilet — funnel into corridor
+                        const t = Math.max(0, (e.z - CONFIG.toiletPos.z) / (convergeZ - CONFIG.toiletPos.z));
+                        const targetX = e.targetLane * t; // lerp from lane position to center (x=0)
+                        const dxToTarget = targetX - e.x;
+                        e.x += dxToTarget * dt * 2.5;
                     }
 
                     // Panicker zig-zag — slight lateral wobble
