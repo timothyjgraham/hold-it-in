@@ -13,6 +13,7 @@ import { PlayerCharacter } from './models/PlayerCharacter.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
 import { createIconDataURL } from './data/upgradeIcons.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
+import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
@@ -85,6 +86,7 @@ window.createUpgradeDrone = createUpgradeDrone;
 window.updateUpgradeDrone = updateUpgradeDrone;
 window.disposeUpgradeDrone = disposeUpgradeDrone;
 window.UpgradeSelectionUI = UpgradeSelectionUI;
+window.EnemyIntroUI = EnemyIntroUI;
 window.createIconDataURL = createIconDataURL;
 window.outlineMatStatic = outlineMatStatic;
 

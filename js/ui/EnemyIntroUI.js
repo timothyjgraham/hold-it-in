@@ -1,0 +1,779 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  HOLD IT IN — Enemy Introduction Intermission UI                          ║
+// ║  PvZ-style "a new enemy approaches" screen between waves.                ║
+// ║  Drone flies in with a sign, animated enemy model on a pedestal.         ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import { PALETTE } from '../data/palette.js';
+import { toonMat, outlineMatStatic } from '../shaders/toonMaterials.js';
+import { ENEMY_INTRO_DATA, INTRO_WAVE_MAP } from '../data/enemyIntroData.js';
+import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
+import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from '../models/UpgradeDroneModel.js';
+import { createEnemyModel } from '../models/EnemyModelFactory.js';
+import { AnimationController } from '../animation/AnimationController.js';
+
+// ─── TIMING CONSTANTS ────────────────────────────────────────────────────────
+
+const ENTRY_DURATION = 2.0;       // Phase 1 total
+const ENEMY_APPEAR_DELAY = 0.3;   // Delay before enemy model appears
+const ENEMY_POP_DUR = 0.4;        // Scale 0→1.1
+const ENEMY_SETTLE_DUR = 0.2;     // Scale 1.1→1.0
+const PEDESTAL_FADE_DELAY = 0.5;
+const PARTICLE_BURST_DELAY = 1.0;
+const INPUT_ENABLE_DELAY = 1.8;
+const AUTO_DISMISS_TIME = 6.0;    // Auto-dismiss if no input
+const EXIT_DURATION = 0.8;        // Phase 3
+const ENEMY_EXIT_DUR = 0.5;
+
+// ─── SIGN CANVAS DIMENSIONS ─────────────────────────────────────────────────
+
+const SIGN_CANVAS_W = 1000;
+const SIGN_CANVAS_H = 400;
+const SIGN_WORLD_W = 5.5;
+const SIGN_WORLD_H = 2.2;
+
+// ─── HELPER: hex to CSS ──────────────────────────────────────────────────────
+
+function hexCSS(hex) {
+    return '#' + hex.toString(16).padStart(6, '0');
+}
+
+// ─── SIGN CANVAS TEXTURE ────────────────────────────────────────────────────
+
+function _createIntroSignTexture(enemyType) {
+    const data = ENEMY_INTRO_DATA[enemyType];
+    const config = ENEMY_VISUAL_CONFIG[enemyType];
+    const enemyColor = hexCSS(config.materialColors.body);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = SIGN_CANVAS_W;
+    canvas.height = SIGN_CANVAS_H;
+    const ctx = canvas.getContext('2d');
+    const cW = SIGN_CANVAS_W, cH = SIGN_CANVAS_H;
+
+    // Cream background
+    ctx.fillStyle = hexCSS(PALETTE.cream);
+    ctx.fillRect(0, 0, cW, cH);
+
+    // Enemy color border (6px)
+    ctx.strokeStyle = enemyColor;
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, cW - 6, cH - 6);
+
+    // Top colored bar with tagline
+    const barH = 50;
+    ctx.fillStyle = enemyColor;
+    ctx.fillRect(0, 0, cW, barH);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = hexCSS(PALETTE.cream);
+    ctx.font = "28px 'Bangers', sans-serif";
+    ctx.fillText(data.tagline, cW / 2, barH / 2);
+
+    // Enemy name (large)
+    ctx.fillStyle = hexCSS(PALETTE.ink);
+    const nameLen = data.name.length;
+    const nameFontSize = nameLen > 18 ? 52 : nameLen > 14 ? 60 : 72;
+    ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
+    ctx.fillText(data.name, cW / 2, barH + 65);
+
+    // Divider line
+    const dividerY = barH + 110;
+    ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(60, dividerY);
+    ctx.lineTo(cW - 60, dividerY);
+    ctx.stroke();
+
+    // Trait bullets
+    ctx.fillStyle = hexCSS(PALETTE.ink);
+    ctx.font = "32px 'Bangers', sans-serif";
+    ctx.textAlign = 'center';
+    const traitStartY = dividerY + 40;
+    const traitLineH = 42;
+    for (let i = 0; i < data.traits.length; i++) {
+        ctx.fillText('• ' + data.traits[i], cW / 2, traitStartY + i * traitLineH);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+}
+
+// ─── DIM OVERLAY ─────────────────────────────────────────────────────────────
+
+let _introDimEl = null;
+
+function _ensureIntroDimElement() {
+    if (_introDimEl) return _introDimEl;
+    _introDimEl = document.createElement('div');
+    _introDimEl.id = 'enemy-intro-dim';
+    _introDimEl.style.cssText = `
+        position: fixed; inset: 0;
+        pointer-events: none;
+        z-index: 5;
+        background: rgba(26, 26, 46, 0.5);
+        opacity: 0;
+        transition: opacity 0.5s;
+    `;
+    document.body.appendChild(_introDimEl);
+    return _introDimEl;
+}
+
+// ─── TAP TO CONTINUE TEXT ────────────────────────────────────────────────────
+
+let _tapTextEl = null;
+
+function _ensureTapTextElement() {
+    if (_tapTextEl) return _tapTextEl;
+    _tapTextEl = document.createElement('div');
+    _tapTextEl.id = 'enemy-intro-tap';
+    _tapTextEl.style.cssText = `
+        position: fixed;
+        bottom: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 15;
+        font-family: 'Bangers', sans-serif;
+        font-size: 32px;
+        color: var(--pal-cream, #fff4d9);
+        text-shadow: 2px 2px 0 var(--pal-ink, #1a1a2e), -1px -1px 0 var(--pal-ink, #1a1a2e);
+        letter-spacing: 2px;
+        opacity: 0;
+        transition: opacity 0.4s;
+        pointer-events: none;
+        user-select: none;
+    `;
+    _tapTextEl.textContent = 'TAP TO CONTINUE';
+    document.body.appendChild(_tapTextEl);
+    return _tapTextEl;
+}
+
+// ─── ENEMY INTRO UI CLASS ────────────────────────────────────────────────────
+
+export class EnemyIntroUI {
+    constructor() {
+        this.active = false;
+        this._phase = 'idle'; // idle | entering | display | exiting
+        this._timer = 0;
+        this._autoTimer = 0;
+        this._inputEnabled = false;
+
+        // 3D objects
+        this._drone = null;
+        this._signGroup = null;
+        this._signTexture = null;
+        this._enemyGroup = null;
+        this._enemyAnimCtrl = null;
+        this._pedestal = null;
+        this._pedestalOutline = null;
+        this._particles = [];
+
+        // Scene refs
+        this._scene = null;
+        this._camera = null;
+        this._onComplete = null;
+        this._enemyType = null;
+
+        // Input handler
+        this._onDismiss = this._handleDismiss.bind(this);
+    }
+
+    /**
+     * Check if the given wave number has an enemy intro.
+     * @param {number} waveNumber
+     * @returns {string|null} Enemy type key or null
+     */
+    static getIntroEnemyType(waveNumber) {
+        return INTRO_WAVE_MAP[waveNumber] || null;
+    }
+
+    /**
+     * Start the enemy introduction intermission.
+     * @param {string} enemyType - Key into ENEMY_INTRO_DATA
+     * @param {THREE.Scene} scene
+     * @param {THREE.Camera} camera
+     * @param {Array} windowPositions - Available window positions for drone entry
+     * @param {Function} onComplete - Called when intermission ends
+     */
+    activate(enemyType, scene, camera, windowPositions, onComplete) {
+        if (this.active) this.deactivate();
+
+        this.active = true;
+        this._phase = 'entering';
+        this._timer = 0;
+        this._autoTimer = 0;
+        this._inputEnabled = false;
+        this._scene = scene;
+        this._camera = camera;
+        this._onComplete = onComplete;
+        this._enemyType = enemyType;
+
+        const introData = ENEMY_INTRO_DATA[enemyType];
+        const visualConfig = ENEMY_VISUAL_CONFIG[enemyType];
+
+        // ── Background dim ──
+        const dimEl = _ensureIntroDimElement();
+        dimEl.style.opacity = '0';
+        requestAnimationFrame(() => { dimEl.style.opacity = '1'; });
+
+        // ── Create drone with sign ──
+        this._createDroneWithSign(enemyType, windowPositions);
+
+        // ── Create enemy model on pedestal ──
+        this._createEnemyDisplay(enemyType);
+
+        // ── Tap text (hidden initially) ──
+        const tapEl = _ensureTapTextElement();
+        tapEl.style.opacity = '0';
+
+        // ── Input listeners (added, but not enabled until delay) ──
+        window.addEventListener('click', this._onDismiss);
+        window.addEventListener('touchstart', this._onDismiss);
+        window.addEventListener('keydown', this._onDismiss);
+    }
+
+    /**
+     * Create the drone and its attached intro sign.
+     */
+    _createDroneWithSign(enemyType, windowPositions) {
+        // Create a common-tier drone (reuse upgrade drone factory with a fake upgrade)
+        const fakeUpgrade = { name: '', rarity: 'common', icon: 'star', description: '' };
+        this._drone = createUpgradeDrone(fakeUpgrade, 0);
+
+        // Replace the placard texture with our intro sign
+        const signTexture = _createIntroSignTexture(enemyType);
+        this._signTexture = signTexture;
+
+        // Find the placard mesh and replace its texture
+        this._drone.traverse(child => {
+            if (child.name === 'placard' && child.isMesh) {
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                for (const mat of mats) {
+                    if (mat.map) {
+                        mat.map.dispose();
+                        mat.map = signTexture;
+                        mat.needsUpdate = true;
+                    }
+                }
+            }
+        });
+
+        // Scale up the sign group for larger intro placard
+        const signGroup = this._drone.userData.signGroup;
+        if (signGroup) {
+            signGroup.scale.set(1.2, 1.2, 1.2);
+        }
+
+        // Flight path: pick random window → hover position
+        const hoverPos = new THREE.Vector3(0, 22, -4);
+        let startPos;
+
+        if (windowPositions && windowPositions.length > 0) {
+            const win = windowPositions[Math.floor(Math.random() * windowPositions.length)];
+            const outsideX = win.x + (win.x < 0 ? -3 : 3);
+            startPos = new THREE.Vector3(outsideX, win.y, win.z);
+
+            this._drone.userData.flightCurve = new THREE.CatmullRomCurve3([
+                startPos.clone(),
+                new THREE.Vector3(win.x, win.y + 2, win.z),
+                new THREE.Vector3(win.x * 0.3, (win.y + hoverPos.y) / 2 + 2, (win.z + hoverPos.z) / 2),
+                hoverPos.clone(),
+            ], false, 'catmullrom', 0.3);
+        } else {
+            // Fallback: fly in from above
+            startPos = new THREE.Vector3(0, 35, -4);
+            this._drone.userData.flightCurve = new THREE.CatmullRomCurve3([
+                startPos.clone(),
+                new THREE.Vector3(0, 30, -4),
+                hoverPos.clone(),
+            ], false, 'catmullrom', 0.3);
+        }
+
+        this._drone.position.copy(startPos);
+        this._drone.userData.state = 'entering';
+        this._drone.userData.flightProgress = 0;
+        this._drone.userData.enterDuration = 1.8;
+        this._drone.userData.targetPos = hoverPos.clone();
+        this._drone.userData.prevPos = startPos.clone();
+
+        this._scene.add(this._drone);
+    }
+
+    /**
+     * Create the enemy model and pedestal for display.
+     */
+    _createEnemyDisplay(enemyType) {
+        const config = ENEMY_VISUAL_CONFIG[enemyType];
+        const introData = ENEMY_INTRO_DATA[enemyType];
+
+        // Create enemy model at display scale (1.5x for drama)
+        const displayScale = config.size * 1.5;
+        const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
+        this._enemyGroup = result.group;
+        this._enemyGroup.position.set(0, 16, -1);
+        this._enemyGroup.scale.setScalar(0); // Start at 0, will pop in
+
+        // Rotate to face camera (face -Z direction is toward camera at Z=-15)
+        this._enemyGroup.rotation.y = Math.PI;
+
+        this._scene.add(this._enemyGroup);
+
+        // Start walk animation
+        this._enemyAnimCtrl = new AnimationController(result.skinnedMesh, enemyType);
+        this._enemyAnimCtrl.setState(introData.walkState);
+
+        // Create pedestal (cream cylinder with outline)
+        const pedR = displayScale * 0.5;
+        const pedH = 0.3;
+        const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
+        const pedMat = toonMat(PALETTE.cream);
+        this._pedestal = new THREE.Mesh(pedGeo, pedMat);
+        this._pedestal.position.set(0, 16 - pedH / 2, -1);
+        this._pedestal.scale.setScalar(0);
+        this._scene.add(this._pedestal);
+
+        // Pedestal outline
+        const outGeo = new THREE.CylinderGeometry(pedR + 0.03, pedR + 0.03, pedH + 0.03, 24);
+        this._pedestalOutline = new THREE.Mesh(outGeo, outlineMatStatic(0.03));
+        this._pedestalOutline.position.copy(this._pedestal.position);
+        this._pedestalOutline.scale.setScalar(0);
+        this._scene.add(this._pedestalOutline);
+    }
+
+    /**
+     * Spawn a burst of particles in the enemy's color.
+     */
+    _spawnEnemyParticles() {
+        const config = ENEMY_VISUAL_CONFIG[this._enemyType];
+        const color = config.materialColors.body;
+        const center = new THREE.Vector3(0, 17.5, -1);
+
+        for (let i = 0; i < 20; i++) {
+            const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);
+            const mat = toonMat(color, {
+                emissive: color,
+                emissiveIntensity: 0.5,
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(center);
+            this._scene.add(mesh);
+
+            const angle = Math.random() * Math.PI * 2;
+            const upAngle = Math.random() * Math.PI * 0.6 - Math.PI * 0.1;
+            const spd = 3 * (0.6 + Math.random() * 0.8);
+            this._particles.push({
+                mesh,
+                vx: Math.cos(angle) * Math.cos(upAngle) * spd,
+                vy: Math.sin(upAngle) * spd + 2,
+                vz: Math.sin(angle) * Math.cos(upAngle) * spd,
+                life: 0.8 * (0.5 + Math.random() * 0.5),
+                maxLife: 0.8,
+            });
+        }
+    }
+
+    // ─── DISMISS HANDLER ─────────────────────────────────────────────────
+
+    _handleDismiss(e) {
+        if (!this._inputEnabled) return;
+        if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
+        e.stopPropagation();
+        e.preventDefault();
+        this._beginExit();
+    }
+
+    // ─── UPDATE (called every frame) ─────────────────────────────────────
+
+    update(dt) {
+        if (!this.active) return;
+
+        this._timer += dt;
+
+        // ── Phase 1: Entry ──
+        if (this._phase === 'entering') {
+            this._updateEntry(dt);
+
+            // Enable input after delay
+            if (this._timer >= INPUT_ENABLE_DELAY && !this._inputEnabled) {
+                this._inputEnabled = true;
+                const tapEl = _tapTextEl;
+                if (tapEl) {
+                    tapEl.style.opacity = '1';
+                    // Pulse animation via CSS
+                    tapEl.style.animation = 'enemyIntroPulse 1.2s ease-in-out infinite';
+                    this._ensurePulseCSS();
+                }
+            }
+
+            if (this._timer >= ENTRY_DURATION) {
+                this._phase = 'display';
+                this._autoTimer = 0;
+
+                // Ensure drone is in hover state
+                const ud = this._drone.userData;
+                if (ud.state !== 'hovering') {
+                    ud.state = 'hovering';
+                    this._drone.position.copy(ud.targetPos);
+                    this._drone.rotation.set(0, 0, 0);
+                }
+            }
+        }
+
+        // ── Phase 2: Display ──
+        if (this._phase === 'display') {
+            this._autoTimer += dt;
+            if (this._autoTimer >= AUTO_DISMISS_TIME) {
+                this._beginExit();
+            }
+        }
+
+        // ── Phase 3: Exit ──
+        if (this._phase === 'exiting') {
+            this._updateExit(dt);
+        }
+
+        // ── Always: update drone animations, enemy animation, particles ──
+        this._updateDrone(dt);
+        this._updateEnemyModel(dt);
+        this._updateParticles(dt);
+    }
+
+    // ─── ENTRY PHASE UPDATE ──────────────────────────────────────────────
+
+    _updateEntry(dt) {
+        const ud = this._drone.userData;
+
+        // Drone flight
+        if (ud.state === 'entering' && ud.flightCurve) {
+            ud.flightProgress += dt / ud.enterDuration;
+            const t = Math.min(1, ud.flightProgress);
+            const et = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            const pos = new THREE.Vector3();
+            ud.flightCurve.getPoint(et, pos);
+
+            // Smoothed velocity for pendulum
+            const rawVel = ud.prevPos ? pos.clone().sub(ud.prevPos) : new THREE.Vector3();
+            if (!ud._smoothVel) ud._smoothVel = rawVel.clone();
+            ud._smoothVel.lerp(rawVel, 0.15);
+
+            this._drone.position.copy(pos);
+            ud._externalAccel = -ud._smoothVel.x * 3.0;
+
+            // Tilt fading
+            const tiltFade = Math.min(1, (1 - t) / 0.2);
+            const speed = ud._smoothVel.length() / Math.max(dt, 0.001);
+            const tilt = Math.min(0.3, speed * 0.02) * tiltFade;
+            const hDir = new THREE.Vector2(ud._smoothVel.x, ud._smoothVel.z);
+            if (hDir.length() > 0.001) {
+                hDir.normalize();
+                this._drone.rotation.y = Math.atan2(hDir.x, hDir.y) * tiltFade;
+                this._drone.rotation.x = -tilt;
+                this._drone.rotation.z = -ud._smoothVel.x * 0.1 * tiltFade;
+            }
+
+            ud.prevPos = pos.clone();
+
+            if (t >= 1) {
+                ud.state = 'settling';
+                ud._settleTimer = 0;
+                this._drone.position.copy(ud.targetPos);
+                ud._externalAccel = 0;
+            }
+        }
+
+        if (ud.state === 'settling') {
+            const decay = Math.pow(0.88, dt * 60);
+            this._drone.rotation.x *= decay;
+            this._drone.rotation.y *= decay;
+            this._drone.rotation.z *= decay;
+
+            ud._settleTimer = (ud._settleTimer || 0) + dt;
+            const bob = ud._hoverBob || 0;
+            this._drone.position.y = ud.targetPos.y + bob;
+
+            if (ud._settleTimer >= 0.5) {
+                ud.state = 'hovering';
+                this._drone.rotation.set(0, 0, 0);
+            }
+        }
+
+        if (ud.state === 'hovering') {
+            const bob = ud._hoverBob || 0;
+            this._drone.position.y = ud.targetPos.y + bob;
+        }
+
+        // Enemy model pop-in
+        if (this._enemyGroup && this._timer >= ENEMY_APPEAR_DELAY) {
+            const enemyT = this._timer - ENEMY_APPEAR_DELAY;
+            if (enemyT < ENEMY_POP_DUR) {
+                // Scale 0 → 1.1
+                const t = enemyT / ENEMY_POP_DUR;
+                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                this._enemyGroup.scale.setScalar(eased * 1.1);
+            } else if (enemyT < ENEMY_POP_DUR + ENEMY_SETTLE_DUR) {
+                // Scale 1.1 → 1.0
+                const t = (enemyT - ENEMY_POP_DUR) / ENEMY_SETTLE_DUR;
+                this._enemyGroup.scale.setScalar(1.1 - t * 0.1);
+            } else {
+                this._enemyGroup.scale.setScalar(1.0);
+            }
+        }
+
+        // Pedestal fade in
+        if (this._pedestal && this._timer >= PEDESTAL_FADE_DELAY) {
+            const pedT = Math.min(1, (this._timer - PEDESTAL_FADE_DELAY) / 0.4);
+            this._pedestal.scale.setScalar(pedT);
+            this._pedestalOutline.scale.setScalar(pedT);
+        }
+
+        // Particle burst
+        if (this._timer >= PARTICLE_BURST_DELAY && this._particles.length === 0 && this._phase === 'entering') {
+            this._spawnEnemyParticles();
+        }
+    }
+
+    // ─── DRONE UPDATE (always running) ───────────────────────────────────
+
+    _updateDrone(dt) {
+        if (!this._drone) return;
+        updateUpgradeDrone(this._drone, dt);
+    }
+
+    // ─── ENEMY MODEL UPDATE ──────────────────────────────────────────────
+
+    _updateEnemyModel(dt) {
+        if (!this._enemyGroup || !this._enemyAnimCtrl) return;
+
+        // Update animation (use near-distance for full fidelity)
+        this._enemyAnimCtrl.update(dt, 0);
+
+        // Turntable rotation
+        if (this._phase !== 'exiting') {
+            this._enemyGroup.rotation.y += 0.3 * dt;
+        }
+    }
+
+    // ─── PARTICLES UPDATE ────────────────────────────────────────────────
+
+    _updateParticles(dt) {
+        for (let i = this._particles.length - 1; i >= 0; i--) {
+            const p = this._particles[i];
+            p.life -= dt;
+            p.vy -= 6 * dt;
+            p.mesh.position.x += p.vx * dt;
+            p.mesh.position.y += p.vy * dt;
+            p.mesh.position.z += p.vz * dt;
+
+            const fade = Math.max(0, p.life / p.maxLife);
+            p.mesh.material.transparent = true;
+            p.mesh.material.opacity = fade;
+            p.mesh.scale.setScalar(0.5 + fade * 0.5);
+
+            if (p.life <= 0) {
+                this._scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+                this._particles.splice(i, 1);
+            }
+        }
+    }
+
+    // ─── EXIT PHASE ──────────────────────────────────────────────────────
+
+    _beginExit() {
+        if (this._phase === 'exiting') return;
+        this._phase = 'exiting';
+        this._timer = 0;
+        this._inputEnabled = false;
+
+        // Remove input listeners
+        window.removeEventListener('click', this._onDismiss);
+        window.removeEventListener('touchstart', this._onDismiss);
+        window.removeEventListener('keydown', this._onDismiss);
+
+        // Hide tap text
+        if (_tapTextEl) _tapTextEl.style.opacity = '0';
+
+        // Dim overlay fade out
+        if (_introDimEl) _introDimEl.style.opacity = '0';
+
+        // Set drone exit flight
+        if (this._drone) {
+            const ud = this._drone.userData;
+            ud.state = 'exiting';
+
+            // Fly out to a random direction
+            const startPos = this._drone.position.clone();
+            const exitX = (Math.random() - 0.5) * 20;
+            const exitTarget = new THREE.Vector3(exitX, 35, startPos.z - 10);
+
+            ud._exitCurve = new THREE.CatmullRomCurve3([
+                startPos,
+                new THREE.Vector3((startPos.x + exitTarget.x) / 2, startPos.y + 3, (startPos.z + exitTarget.z) / 2),
+                exitTarget,
+            ], false, 'catmullrom', 0.3);
+            ud._exitProgress = 0;
+        }
+    }
+
+    _updateExit(dt) {
+        const exitT = this._timer; // _timer was reset when exit began
+
+        // Drone exit flight
+        if (this._drone) {
+            const ud = this._drone.userData;
+            if (ud._exitCurve) {
+                ud._exitProgress += dt / EXIT_DURATION;
+                const t = Math.min(1, ud._exitProgress);
+                const et = t * t; // Accelerating
+
+                const pos = new THREE.Vector3();
+                ud._exitCurve.getPoint(et, pos);
+                this._drone.position.copy(pos);
+
+                // Tilt forward as it flies away
+                this._drone.rotation.x = -t * 0.3;
+            }
+        }
+
+        // Enemy model: spin + scale to 0
+        if (this._enemyGroup) {
+            const t = Math.min(1, exitT / ENEMY_EXIT_DUR);
+            this._enemyGroup.rotation.y += dt * 8; // fast spin
+            this._enemyGroup.scale.setScalar(Math.max(0, 1 - t));
+        }
+
+        // Pedestal fade
+        if (this._pedestal) {
+            const t = Math.min(1, exitT / ENEMY_EXIT_DUR);
+            this._pedestal.scale.setScalar(Math.max(0, 1 - t));
+            this._pedestalOutline.scale.setScalar(Math.max(0, 1 - t));
+        }
+
+        // Complete
+        if (exitT >= EXIT_DURATION) {
+            const callback = this._onComplete;
+            this.deactivate();
+            if (callback) callback();
+        }
+    }
+
+    // ─── DEACTIVATE (cleanup) ────────────────────────────────────────────
+
+    deactivate() {
+        if (!this.active && !this._drone && !this._enemyGroup) return;
+
+        this.active = false;
+        this._phase = 'idle';
+        this._inputEnabled = false;
+
+        // Remove input listeners
+        window.removeEventListener('click', this._onDismiss);
+        window.removeEventListener('touchstart', this._onDismiss);
+        window.removeEventListener('keydown', this._onDismiss);
+
+        // Clean up drone
+        if (this._drone && this._scene) {
+            this._scene.remove(this._drone);
+            disposeUpgradeDrone(this._drone);
+            this._drone = null;
+        }
+
+        // Clean up sign texture
+        if (this._signTexture) {
+            this._signTexture.dispose();
+            this._signTexture = null;
+        }
+
+        // Clean up enemy model
+        if (this._enemyGroup && this._scene) {
+            this._scene.remove(this._enemyGroup);
+            this._enemyGroup.traverse(child => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else if (child.material) {
+                        child.material.dispose();
+                    }
+                }
+            });
+            this._enemyGroup = null;
+        }
+
+        // Clean up animation controller
+        if (this._enemyAnimCtrl) {
+            this._enemyAnimCtrl.dispose();
+            this._enemyAnimCtrl = null;
+        }
+
+        // Clean up pedestal
+        if (this._pedestal && this._scene) {
+            this._scene.remove(this._pedestal);
+            this._pedestal.geometry.dispose();
+            this._pedestal.material.dispose();
+            this._pedestal = null;
+        }
+        if (this._pedestalOutline && this._scene) {
+            this._scene.remove(this._pedestalOutline);
+            this._pedestalOutline.geometry.dispose();
+            this._pedestalOutline.material.dispose();
+            this._pedestalOutline = null;
+        }
+
+        // Clean up particles
+        if (this._scene) {
+            for (const p of this._particles) {
+                this._scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+                p.mesh.material.dispose();
+            }
+        }
+        this._particles = [];
+
+        // Hide DOM elements
+        if (_introDimEl) _introDimEl.style.opacity = '0';
+        if (_tapTextEl) {
+            _tapTextEl.style.opacity = '0';
+            _tapTextEl.style.animation = '';
+        }
+
+        this._scene = null;
+        this._camera = null;
+        this._onComplete = null;
+        this._enemyType = null;
+    }
+
+    // ─── DISPOSE (full teardown) ─────────────────────────────────────────
+
+    dispose() {
+        this.deactivate();
+        if (_introDimEl && _introDimEl.parentNode) {
+            _introDimEl.parentNode.removeChild(_introDimEl);
+            _introDimEl = null;
+        }
+        if (_tapTextEl && _tapTextEl.parentNode) {
+            _tapTextEl.parentNode.removeChild(_tapTextEl);
+            _tapTextEl = null;
+        }
+    }
+
+    // ─── CSS ANIMATION HELPER ────────────────────────────────────────────
+
+    _ensurePulseCSS() {
+        if (document.getElementById('enemy-intro-pulse-style')) return;
+        const style = document.createElement('style');
+        style.id = 'enemy-intro-pulse-style';
+        style.textContent = `
+            @keyframes enemyIntroPulse {
+                0%, 100% { opacity: 0.6; }
+                50% { opacity: 1.0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}

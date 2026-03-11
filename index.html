@@ -609,6 +609,13 @@
                 console.log('Upgrade selection UI initialized');
             }
 
+            // Enemy introduction intermission UI
+            if (window.EnemyIntroUI) {
+                this.enemyIntroUI = new EnemyIntroUI();
+                this._introPhase = false;
+                console.log('Enemy intro UI initialized');
+            }
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -859,16 +866,16 @@
 
                 if (this.state === 'title') return;
 
-                // Pause toggle (disabled during upgrade selection)
+                // Pause toggle (disabled during upgrade selection / intro)
                 if (e.code === 'Space' || e.code === 'Escape') {
-                    if (this._upgradePhase) return;
+                    if (this._upgradePhase || this._introPhase) return;
                     if (this.state === 'playing') this.pause();
                     else if (this.state === 'paused') this.unpause();
                     return;
                 }
 
-                // Tower hotkeys (work while paused too, not during upgrade selection)
-                if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase) {
+                // Tower hotkeys (work while paused too, not during upgrade/intro selection)
+                if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase) {
                     for (const [key, def] of Object.entries(this.TOWERS)) {
                         if (e.code === def.hotkey) {
                             this.selectTower(key);
@@ -887,8 +894,8 @@
             // Mouse click (place tower)
             window.addEventListener('click', (e) => {
                 if (this.state !== 'playing' && this.state !== 'paused') return;
-                // Don't place towers during upgrade selection
-                if (this._upgradePhase) return;
+                // Don't place towers during upgrade selection or enemy intro
+                if (this._upgradePhase || this._introPhase) return;
                 if (this.selectedTower) {
                     this._tryPlaceTower(e);
                 }
@@ -1303,6 +1310,11 @@
             }
             if (this.upgradeSelectionUI) {
                 this.upgradeSelectionUI.deactivate();
+            }
+            // Reset enemy intro
+            if (this.enemyIntroUI) {
+                this.enemyIntroUI.deactivate();
+                this._introPhase = false;
             }
             // Clear upgrade HUD cards
             if (this._upgradeHUD) {
@@ -2311,8 +2323,30 @@
             this._upgradePhase = false;
             this._cleanupUpgradeDrones();
 
-            // Now start the inter-wave timer
-            this._setInterWaveTimer();
+            // Check if next wave introduces a new enemy type
+            const introType = this.enemyIntroUI && EnemyIntroUI.getIntroEnemyType(this.wave + 1);
+            if (introType) {
+                this._startEnemyIntro(introType);
+            } else {
+                this._setInterWaveTimer();
+            }
+        },
+
+        /** Start enemy introduction intermission before the next wave */
+        _startEnemyIntro(enemyType) {
+            this._introPhase = true;
+            this.waveTimer = 9999; // Block wave start
+            this.enemyIntroUI.activate(
+                enemyType,
+                this.scene,
+                this.camera,
+                this.windowPositions,
+                () => {
+                    // Intro complete — resume normal flow
+                    this._introPhase = false;
+                    this._setInterWaveTimer();
+                }
+            );
         },
 
         /** Ensure the persistent upgrade HUD bar exists in bottom-left */
@@ -3298,6 +3332,12 @@
         // ============================
         update(dt) {
             if (this.state !== 'playing') return;
+
+            // --- Enemy intro phase: freeze game world ---
+            if (this._introPhase && this.enemyIntroUI && this.enemyIntroUI.active) {
+                this.enemyIntroUI.update(dt);
+                return; // Skip all game logic during intro
+            }
 
             // --- Upgrade selection phase: freeze game world ---
             if (this._upgradePhase && this.upgradeSelectionUI && this.upgradeSelectionUI.active) {
@@ -5034,7 +5074,7 @@
         // GRID HOVER
         // ============================
         _updateGridHover() {
-            const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused') && !this._upgradePhase;
+            const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase;
 
             // Show/hide grid lines based on whether we're placing
             if (this._buildGrid) this._buildGrid.visible = !!active;
