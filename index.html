@@ -602,6 +602,12 @@
                 console.log('Upgrade system initialized');
             }
 
+            // Upgrade selection UI (Stage 3-4)
+            if (window.UpgradeSelectionUI) {
+                this.upgradeSelectionUI = new UpgradeSelectionUI();
+                console.log('Upgrade selection UI initialized');
+            }
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -852,15 +858,16 @@
 
                 if (this.state === 'title') return;
 
-                // Pause toggle
+                // Pause toggle (disabled during upgrade selection)
                 if (e.code === 'Space' || e.code === 'Escape') {
+                    if (this._upgradePhase) return;
                     if (this.state === 'playing') this.pause();
                     else if (this.state === 'paused') this.unpause();
                     return;
                 }
 
-                // Tower hotkeys (work while paused too)
-                if (this.state === 'playing' || this.state === 'paused') {
+                // Tower hotkeys (work while paused too, not during upgrade selection)
+                if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase) {
                     for (const [key, def] of Object.entries(this.TOWERS)) {
                         if (e.code === def.hotkey) {
                             this.selectTower(key);
@@ -879,6 +886,8 @@
             // Mouse click (place tower)
             window.addEventListener('click', (e) => {
                 if (this.state !== 'playing' && this.state !== 'paused') return;
+                // Don't place towers during upgrade selection
+                if (this._upgradePhase) return;
                 if (this.selectedTower) {
                     this._tryPlaceTower(e);
                 }
@@ -1241,6 +1250,9 @@
                 this.upgradeManager.reset();
                 this._cleanupUpgradeDrones();
                 this._upgradePhase = false;
+            }
+            if (this.upgradeSelectionUI) {
+                this.upgradeSelectionUI.deactivate();
             }
 
             this.selectedTower = null;
@@ -2065,9 +2077,11 @@
                     }
 
                 } else if (ud.state === 'hovering') {
-                    // Apply hover bob
-                    const bob = ud._hoverBob || 0;
-                    drone.position.y = ud.targetPos.y + bob;
+                    // Apply hover bob (selection UI handles position when active)
+                    if (!this.upgradeSelectionUI || !this.upgradeSelectionUI.active) {
+                        const bob = ud._hoverBob || 0;
+                        drone.position.y = ud.targetPos.y + bob;
+                    }
 
                     // Gentle facing toward camera (face -Z)
                     drone.rotation.y *= 0.95; // Damp toward 0
@@ -2076,6 +2090,20 @@
                 // Always update drone animations (rotors, pendulum, bob)
                 if (window.updateUpgradeDrone) {
                     updateUpgradeDrone(drone, dt);
+                }
+            }
+
+            // Check if all drones are hovering and selection UI not yet active
+            if (this._upgradePhase && this.upgradeSelectionUI && !this.upgradeSelectionUI.active) {
+                const allHovering = this.upgradeDrones.length > 0 &&
+                    this.upgradeDrones.every(d => d.userData.state === 'hovering');
+                if (allHovering) {
+                    this.upgradeSelectionUI.activate(
+                        this.upgradeDrones,
+                        this._upgradeOptions,
+                        this.scene,
+                        this.camera
+                    );
                 }
             }
         },
@@ -2091,6 +2119,89 @@
             this.upgradeDrones = [];
             this._upgradePhase = false;
             this._upgradeOptions = null;
+        },
+
+        /** Calculate and set the inter-wave timer for the next wave */
+        _setInterWaveTimer() {
+            const nextComp = this.WAVE_COMPOSITIONS[this.wave + 1];
+            let delay = nextComp ? nextComp.delay : Math.max(1.5, 4 - this.wave * 0.12);
+            if (this.wave >= 20) delay = Math.min(delay, 2.0);
+            if (this.wave >= 30) delay = Math.min(delay, 1.5);
+            this.waveTimer = delay;
+        },
+
+        /** Called when the player selects an upgrade from the drone UI */
+        _onUpgradeSelected(upgrade) {
+            if (!upgrade || !this.upgradeManager) return;
+
+            // Apply upgrade
+            this.upgradeManager.applyUpgrade(upgrade.id);
+
+            // Show toast notification
+            this._showUpgradeToast(upgrade);
+
+            // Deactivate selection UI first (restores ambient, removes listeners)
+            if (this.upgradeSelectionUI) {
+                this.upgradeSelectionUI.deactivate();
+            }
+
+            // Then clean up drones and restore game flow
+            this._upgradePhase = false;
+            this._cleanupUpgradeDrones();
+
+            // Now start the inter-wave timer
+            this._setInterWaveTimer();
+        },
+
+        /** Show a brief toast notification when an upgrade is acquired */
+        _showUpgradeToast(upgrade) {
+            let toast = document.getElementById('upgrade-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'upgrade-toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 15%;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(-20px);
+                    z-index: 120;
+                    padding: 12px 28px;
+                    background: var(--pal-cream, #fff4d9);
+                    border: 3px solid var(--pal-ink, #1a1a2e);
+                    border-radius: 10px;
+                    font-family: 'Bangers', sans-serif;
+                    font-size: 22px;
+                    color: var(--pal-ink, #1a1a2e);
+                    opacity: 0;
+                    transition: opacity 0.3s, transform 0.3s;
+                    pointer-events: none;
+                    text-align: center;
+                    white-space: nowrap;
+                `;
+                document.body.appendChild(toast);
+            }
+
+            const rarityColors = {
+                common: 'var(--pal-white, #faf5ef)',
+                rare: '#e8e0f5',
+                legendary: 'var(--pal-gold, #ffd93d)',
+            };
+            toast.style.background = rarityColors[upgrade.rarity] || rarityColors.common;
+            toast.textContent = `${upgrade.icon || '?'} ${upgrade.name}`;
+
+            // Animate in
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            void toast.offsetWidth;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+
+            // Fade out after 2s
+            clearTimeout(this._upgradeToastTimer);
+            this._upgradeToastTimer = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            }, 2000);
         },
 
         _createTowerMesh(type, def) {
@@ -2845,6 +2956,26 @@
         update(dt) {
             if (this.state !== 'playing') return;
 
+            // --- Upgrade selection phase: freeze game world ---
+            if (this._upgradePhase && this.upgradeSelectionUI && this.upgradeSelectionUI.active) {
+                // Only update the selection UI, everything else stays frozen
+                const result = this.upgradeSelectionUI.update(dt);
+
+                // Apply camera zoom-punch
+                if (result.zoomPunch) {
+                    this.camera.position.z = CONFIG.cameraPos.z + result.zoomPunch;
+                } else {
+                    this.camera.position.z = CONFIG.cameraPos.z;
+                }
+
+                // Selection complete — apply upgrade and resume
+                if (result.done && result.selectedUpgrade) {
+                    this.camera.position.z = CONFIG.cameraPos.z;
+                    this._onUpgradeSelected(result.selectedUpgrade);
+                }
+                return; // Skip all game logic while selecting
+            }
+
             this.time += dt;
 
             // --- Wave management ---
@@ -2868,12 +2999,6 @@
                 const overlapThreshold = this.wave >= 20 ? 10 : (this.wave >= 15 ? 5 : 0);
                 if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length <= overlapThreshold) {
                     this.waveActive = false;
-                    const nextComp = this.WAVE_COMPOSITIONS[this.wave + 1];
-                    // Inter-wave delay shrinks at higher waves
-                    let delay = nextComp ? nextComp.delay : Math.max(1.5, 4 - this.wave * 0.12);
-                    if (this.wave >= 20) delay = Math.min(delay, 2.0);
-                    if (this.wave >= 30) delay = Math.min(delay, 1.5);
-                    this.waveTimer = delay;
                     // Bonus coins — caps at wave 10 to pressure late-game economy
                     const waveBonus = 15 + Math.min(this.wave, 10) * 5;
                     this.coins += waveBonus;
@@ -2882,9 +3007,14 @@
                     this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
                     this._spawnCoinText(0, 30, waveBonus);
 
-                    // Spawn upgrade drones (after wave 1+)
+                    // Enter upgrade selection phase (after wave 1+), or go straight to next wave timer
                     if (this.upgradeManager && this.wave >= 1) {
                         this._spawnUpgradeDrones();
+                        // Block next wave from starting while drones fly in + player selects
+                        this.waveTimer = 9999;
+                    } else {
+                        // Wave 0 (shouldn't happen) — go directly to next wave
+                        this._setInterWaveTimer();
                     }
                 }
             }
@@ -3963,7 +4093,7 @@
         // GRID HOVER
         // ============================
         _updateGridHover() {
-            const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused');
+            const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused') && !this._upgradePhase;
 
             // Show/hide grid lines based on whether we're placing
             if (this._buildGrid) this._buildGrid.visible = !!active;

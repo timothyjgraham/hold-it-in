@@ -11,6 +11,7 @@ import { CoinPool } from './systems/CoinPool.js';
 import { UpgradeManager } from './systems/UpgradeManager.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
+import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
@@ -82,6 +83,7 @@ window.PlayerCharacter = PlayerCharacter;
 window.createUpgradeDrone = createUpgradeDrone;
 window.updateUpgradeDrone = updateUpgradeDrone;
 window.disposeUpgradeDrone = disposeUpgradeDrone;
+window.UpgradeSelectionUI = UpgradeSelectionUI;
 window.outlineMatStatic = outlineMatStatic;
 
 // Initialize game

@@ -274,28 +274,28 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 ### Stage 3: Drone Presentation — Interaction & Selection
 > Player input, hover feedback, selection ceremony, exit
 
-- [ ] Add hover detection (raycasting on drone/sign meshes)
-- [ ] Hover feedback: raise drone, tilt sign, dim others
-- [ ] Show upgrade description on hover (expanded sign or floating text)
-- [ ] Click handler: determine which drone was selected
-- [ ] Trigger selection animation per rarity (nod / spin / barrel roll)
-- [ ] Common selection VFX: white sparkle burst
-- [ ] Rare selection VFX: colored ray burst, camera nudge, sign flip
-- [ ] Legendary selection VFX: gold screen flash, particle shower, zoom-punch, slowmo
-- [ ] Rejected drone exit animations (sad peel-off to windows)
-- [ ] Wire selection to `UpgradeManager.applyUpgrade()`
-- [ ] Unfreeze game state and start next wave timer
+- [x] Add hover detection (raycasting on drone/sign meshes)
+- [x] Hover feedback: raise drone, tilt sign, dim others
+- [x] Show upgrade description on hover (expanded sign or floating text)
+- [x] Click handler: determine which drone was selected
+- [x] Trigger selection animation per rarity (nod / spin / barrel roll)
+- [x] Common selection VFX: white sparkle burst
+- [x] Rare selection VFX: colored ray burst, camera nudge, sign flip
+- [x] Legendary selection VFX: gold screen flash, particle shower, zoom-punch, slowmo
+- [x] Rejected drone exit animations (sad peel-off to windows)
+- [x] Wire selection to `UpgradeManager.applyUpgrade()`
+- [x] Unfreeze game state and start next wave timer
 
 ### Stage 4: Game State Integration
 > Wire the upgrade selection phase into the wave flow
 
-- [ ] Add new game phase: `upgradeSelection` (between `waveActive = false` and next wave timer)
-- [ ] Freeze game world during selection (stop enemy/tower updates, keep rendering)
-- [ ] Dim background (reduce ambient light or add overlay)
-- [ ] After selection completes: restore lighting, start inter-wave timer
-- [ ] Handle edge case: wave 1 has no upgrade phase (first upgrades after wave 1 clear)
+- [x] Add new game phase: `upgradeSelection` (between `waveActive = false` and next wave timer)
+- [x] Freeze game world during selection (stop enemy/tower updates, keep rendering)
+- [x] Dim background (reduce ambient light or add overlay)
+- [x] After selection completes: restore lighting, start inter-wave timer
+- [x] Handle edge case: wave 1 has no upgrade phase (first upgrades after wave 1 clear)
 - [ ] Add active upgrade display to HUD (small icons, bottom of screen or sidebar)
-- [ ] Show upgrade name briefly on HUD when acquired (toast notification style)
+- [x] Show upgrade name briefly on HUD when acquired (toast notification style)
 
 ### Stage 5: Implement Common Upgrades (16)
 > Stat modifications — the simplest to wire in
