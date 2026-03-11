@@ -134,6 +134,7 @@ export function matMagnet()     { return toonMat(PALETTE.magnet); }
 export function matSign()       { return toonMat(PALETTE.sign); }
 export function matMop()        { return toonMat(PALETTE.mop); }
 export function matUbik()       { return toonMat(PALETTE.ubik); }
+export function matPotplant()   { return toonMat(PALETTE.potplant); }
 
 // Porcelain (toilet, sinks) — white with subtle cool emissive
 export function matPorcelain() {

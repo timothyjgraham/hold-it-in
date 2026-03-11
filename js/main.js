@@ -12,7 +12,7 @@ import { PlayerCharacter } from './models/PlayerCharacter.js';
 import {
     toonMat, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
-    matDanger, matBeam, matParticles, matSpray, matMagnet, matSign, matMop, matUbik,
+    matDanger, matBeam, matParticles, matSpray, matMagnet, matSign, matMop, matUbik, matPotplant,
     matRangeCircle,
 } from './shaders/toonMaterials.js';
 import { setupPostProcessing } from './shaders/postProcessing.js';
@@ -54,6 +54,7 @@ window.matMagnet = matMagnet;
 window.matSign = matSign;
 window.matMop = matMop;
 window.matUbik = matUbik;
+window.matPotplant = matPotplant;
 window.matRangeCircle = matRangeCircle;
 window.setupPostProcessing = setupPostProcessing;
 window.CONFIG = CONFIG;

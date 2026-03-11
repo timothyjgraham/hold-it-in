@@ -59,6 +59,7 @@ export const PALETTE = {
     sign:       0xe8d44a,   // Wet Floor Sign — safety yellow (caution ⚠)
     mop:        0x9b59b6,   // Mop Turret — purple (unique, melee)
     ubik:       0x6bcb77,   // Ubik Spray — mint green (chemical, aerosol)
+    potplant:   0xc4663a,   // Pot Plant — terracotta (earthy, disposable trip hazard)
 
     // ─── UI / EFFECTS ─────────────────────────────────────────────────────────
     // Functional colors used in HUD, feedback, particles, highlights
@@ -132,6 +133,6 @@ export function injectCSSPalette() {
 // ENVIRONMENT       tileLight #ddd2c0 │ tileDark #c4b8a5 │ wall #7e8e96 │ fixture #a8a098 │ wood #8b6e4e │ carpet #5a6658
 // PLAYER            hoodie #4a86c8 │ skin #ffccaa │ pants #3a3a4a
 // ENEMIES           polite #d4a574 │ dancer #59c3e8 │ waddle #8b5e3c │ panicker #f5c842 │ power #20b89a │ girls #e84888
-// TOWERS            magnet #f0a030 │ sign #e8d44a │ mop #9b59b6 │ ubik #6bcb77
+// TOWERS            magnet #f0a030 │ sign #e8d44a │ mop #9b59b6 │ ubik #6bcb77 │ potplant #c4663a
 // UI/EFFECTS        gold #ffd93d │ danger #ff6b7a │ success #50c878 │ glow #fff0c0
 // LIGHTING          ambient #505060 │ holyGold #ffd080 │ rimCool #6688aa │ fillWarm #fff0d0

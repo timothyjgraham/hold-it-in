@@ -183,6 +183,23 @@
             </div>
             <span class="cost">35</span>
         </div>
+        <div class="tower-btn" data-tower="potplant"
+             data-tip-name="Pot Plant" data-tip-cost="10"
+             data-tip-desc="Cheap trip hazard. Gets kicked into enemies on contact!">
+            <span class="hotkey">5</span>
+            <div class="tower-icon">
+                <!-- Potted plant -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <path d="M14 28 L16 42 L32 42 L34 28 Z" fill="#c4663a" stroke="#1a1a2e" stroke-width="1.5" stroke-linejoin="round"/>
+                    <ellipse cx="24" cy="28" rx="10" ry="2.5" fill="#c4663a" stroke="#1a1a2e" stroke-width="1"/>
+                    <rect x="22" y="14" width="4" height="14" rx="1" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="0.8"/>
+                    <circle cx="24" cy="12" r="6" fill="#50c878" stroke="#1a1a2e" stroke-width="1.2"/>
+                    <circle cx="19" cy="14" r="4" fill="#50c878" stroke="#1a1a2e" stroke-width="1"/>
+                    <circle cx="29" cy="14" r="4" fill="#50c878" stroke="#1a1a2e" stroke-width="1"/>
+                </svg>
+            </div>
+            <span class="cost">10</span>
+        </div>
     </div>
 
     <!-- Tower Tooltip -->
@@ -251,6 +268,7 @@
         _floatingTexts: [],
         _doorParticles: [],
         _mopImpacts: [],
+        _slidingPots: [],
         _cinematicTimer: 0,
 
         // Hitstop & impact juice
@@ -317,6 +335,18 @@
                 sprayDuration: 0.8,    // How long the spray cloud lasts
                 sprayWidth: 2.0,       // Width of the spray cone at max range
                 hotkey: 'Digit4',
+            },
+            potplant: {
+                name: 'Pot Plant',
+                cost: 10,
+                range: 0,              // Passive — no active attack
+                hp: 1,                 // One-hit trip hazard
+                color: 0xc4663a,       // PALETTE.potplant — terracotta
+                effect: 'trip',
+                tripDamage: 6,         // Light damage on trip
+                stunDuration: 0.6,     // Enemy freezes briefly after tripping
+                kickSpeed: 18,         // Initial velocity when kicked (units/sec)
+                hotkey: 'Digit5',
             },
         },
 
@@ -1126,6 +1156,19 @@
                 fx.ring.material.dispose();
             });
             this._mopImpacts = [];
+
+            // Clear sliding pots
+            this._slidingPots.forEach(sp => {
+                this.scene.remove(sp.mesh);
+                sp.mesh.traverse(child => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        child.material.dispose();
+                    }
+                });
+            });
+            this._slidingPots = [];
+
             this._cinematicTimer = 0;
             this._globalHitstop = 0;
             this._cameraShake = 0;
@@ -1301,6 +1344,156 @@
 
             // Remove from towers array immediately so it can't be interacted with
             this.towers.splice(index, 1);
+        },
+
+        // ============================
+        // POT PLANT KICK PHYSICS
+        // ============================
+        _kickPotPlant(towerIndex, kicker) {
+            const t = this.towers[towerIndex];
+            const mesh = t.mesh;
+            const def = t.def;
+
+            // Remove from towers array (no longer a tower — it's a projectile now)
+            this.towers.splice(towerIndex, 1);
+
+            // Calculate kick direction: from kicker center toward pot center
+            let dirX = t.gridX - kicker.x;
+            let dirZ = t.gridZ - kicker.z;
+            const dirLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
+            if (dirLen > 0.01) {
+                dirX /= dirLen;
+                dirZ /= dirLen;
+            } else {
+                // Fallback: kick in enemy's movement direction (toward toilet, -Z)
+                dirX = 0;
+                dirZ = -1;
+            }
+
+            // Create sliding pot entity
+            const slidingPot = {
+                mesh: mesh,
+                x: t.gridX,
+                z: t.gridZ,
+                vx: dirX * def.kickSpeed,
+                vz: dirZ * def.kickSpeed,
+                vy: 3.5,                     // Initial upward bounce
+                y: 0,
+                spin: (Math.random() - 0.5) * 14, // Tumble rotation speed
+                life: 2.0,                   // Safety timeout
+                hitEnemies: new Set(),        // Track which enemies were hit
+                tripDamage: def.tripDamage,
+                stunDuration: def.stunDuration,
+            };
+            // Mark the kicker so the pot doesn't immediately hit them
+            slidingPot.hitEnemies.add(kicker);
+
+            this._slidingPots.push(slidingPot);
+
+            // Kicker stumble animation
+            if (kicker.animController) {
+                kicker.animController.playOneShot('hit_react');
+            }
+
+            // Camera micro-shake
+            this._cameraShake = 0.08;
+            this._cameraShakeIntensity = 0.1;
+        },
+
+        _disposeSlidingPot(index) {
+            const sp = this._slidingPots[index];
+            this.scene.remove(sp.mesh);
+            sp.mesh.traverse(child => {
+                if (child.isMesh) {
+                    child.geometry.dispose();
+                    child.material.dispose();
+                }
+            });
+            this._slidingPots.splice(index, 1);
+        },
+
+        _spawnPotShatter(x, z) {
+            // Terracotta shards + soil + leaf particles
+            const colors = [PALETTE.potplant, PALETTE.potplant, PALETTE.wood, PALETTE.success, PALETTE.success, PALETTE.ink];
+            const chipCount = 12 + Math.floor(Math.random() * 6);
+
+            for (let i = 0; i < chipCount; i++) {
+                const size = 0.08 + Math.random() * 0.18;
+                const geo = Math.random() > 0.4
+                    ? new THREE.BoxGeometry(size, size * 0.5, size * 0.3)
+                    : new THREE.TetrahedronGeometry(size * 0.6, 0);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const mat2 = toonMat(color);
+                const chip = new THREE.Mesh(geo, mat2);
+                chip.position.set(
+                    x + (Math.random() - 0.5) * 1.5,
+                    0.5 + Math.random() * 1.0,
+                    z + (Math.random() - 0.5) * 1.5
+                );
+                chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                chip.castShadow = true;
+                this.scene.add(chip);
+
+                this._doorParticles.push({
+                    mesh: chip,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: 3 + Math.random() * 4,
+                    vz: (Math.random() - 0.5) * 6,
+                    rotSpeed: (Math.random() - 0.5) * 14,
+                    life: 0.6 + Math.random() * 0.5,
+                    maxLife: 0.6 + Math.random() * 0.5,
+                    gravity: 14 + Math.random() * 4,
+                });
+            }
+        },
+
+        _spawnTripImpact(x, z) {
+            // Comic text sprite — "TRIP!", "CRASH!", etc.
+            const canvas = document.createElement('canvas');
+            canvas.width = 192;
+            canvas.height = 96;
+            const ctx = canvas.getContext('2d');
+            const rot = (Math.random() - 0.5) * 0.3;
+            ctx.translate(96, 48);
+            ctx.rotate(rot);
+            ctx.font = 'bold 56px Bangers, Impact, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const words = ['TRIP!', 'CRASH!', 'SPLAT!', 'BONK!', 'OOF!'];
+            const text = words[Math.floor(Math.random() * words.length)];
+            // Terracotta text with black outline
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 6;
+            ctx.strokeText(text, 0, 2);
+            ctx.fillStyle = '#c4663a';
+            ctx.fillText(text, 0, 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.set(x, 3.5, z);
+            sprite.scale.set(3.5, 1.8, 1);
+            this.scene.add(sprite);
+            this._floatingTexts.push({ sprite, life: 0.8 });
+
+            // Expanding impact ring
+            const ringGeo = new THREE.RingGeometry(0.2, 0.5, 16);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.potplant,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, 0.3, z);
+            ring.rotation.x = -Math.PI / 2;
+            this.scene.add(ring);
+            this._mopImpacts.push({ ring, life: 0.35, maxLife: 0.35 });
         },
 
         // ============================
@@ -2050,6 +2243,60 @@
 
                 // Store nozzle ref for spray VFX direction
                 group.userData.nozzleWorldZ = canRadius * 0.55 + 0.07;
+            } else if (type === 'potplant') {
+                // ─── POT PLANT — trip hazard that gets kicked into enemies ───
+                const potMat2 = toonMat(PALETTE.potplant);
+                const leafMat2 = toonMat(PALETTE.success);
+
+                // Terracotta pot
+                const pot = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.45, 0.35, 0.9, 8),
+                    potMat2
+                );
+                pot.position.y = 0.45;
+                pot.castShadow = true;
+                group.add(pot);
+
+                // Pot rim (slightly wider lip)
+                const rim = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.5, 0.48, 0.1, 8),
+                    potMat2
+                );
+                rim.position.y = 0.9;
+                group.add(rim);
+
+                // Soil
+                const soil = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.42, 0.42, 0.08, 8),
+                    toonMat(PALETTE.ink)
+                );
+                soil.position.y = 0.88;
+                group.add(soil);
+
+                // Trunk
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.07, 0.09, 0.8, 6),
+                    toonMat(PALETTE.wood)
+                );
+                trunk.position.y = 1.25;
+                group.add(trunk);
+
+                // Leaf clusters (5 spheres — same layout as decorative buildPlant)
+                for (const [lx, ly, lz, lr] of [
+                    [0, 1.6, 0, 0.45],
+                    [0.22, 1.8, 0.17, 0.33],
+                    [-0.17, 1.9, -0.12, 0.3],
+                    [0.12, 1.4, -0.17, 0.28],
+                    [-0.22, 1.5, 0.12, 0.25],
+                ]) {
+                    const leaf = new THREE.Mesh(
+                        new THREE.SphereGeometry(lr, 6, 6),
+                        leafMat2
+                    );
+                    leaf.position.set(lx, ly, lz);
+                    leaf.castShadow = true;
+                    group.add(leaf);
+                }
             }
 
             return {
@@ -2326,6 +2573,7 @@
                 panicked: false,
                 knockbackVX: 0,
                 knockbackVZ: 0,
+                stunTimer: 0,
                 desperate: isDesperate,
                 targetLane: this._pickLane(enemyType, def, opts),
             };
@@ -2452,8 +2700,26 @@
                     }
                 }
 
-                // Move toward toilet (skip if bashing the door)
-                if (!e.bashing) {
+                // Stun timer — enemy tripped over pot plant, frozen in place
+                if (e.stunTimer > 0) {
+                    e.stunTimer -= dt;
+                    if (e.stunTimer <= 0) {
+                        e.stunTimer = 0;
+                        e.mesh.rotation.z = 0; // Reset wobble
+                        // Resume walk animation
+                        if (e.animController) {
+                            const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
+                            e.animController.setState(walkState);
+                            e.animController.setTimeScale(1.0);
+                        }
+                    } else {
+                        // Still stunned — visual wobble
+                        e.mesh.rotation.z = Math.sin(this.time * 18) * 0.15 * (e.stunTimer / 0.6);
+                    }
+                }
+
+                // Move toward toilet (skip if bashing the door or stunned)
+                if (!e.bashing && e.stunTimer <= 0) {
                     // Waddle Tank panic — speeds up when badly hurt (5F)
                     if (e.type === 'waddle' && !e.panicked && e.hp < e.maxHp * 0.5) {
                         e.panicked = true;
@@ -2549,6 +2815,13 @@
                         const dist = Math.sqrt(dx * dx + dz * dz);
                         if (dist < trampleRadius) {
                             e.trampledTowers.add(tKey);
+
+                            // Pot plant — kicked as a sliding projectile instead of destroyed
+                            if (t.type === 'potplant') {
+                                this._kickPotPlant(ti, e);
+                                continue; // tower removed from array, skip further processing
+                            }
+
                             t.hp -= 1;
                             t.hitShake = 0.2;
                             // Enemy flails arms trying to get past
@@ -2995,6 +3268,7 @@
                 }
 
                 if (t.type === 'wetfloor') continue; // barrier — damage handled in enemy loop
+                if (t.type === 'potplant') continue; // passive — no active attack
 
                 // Ubik — smooth turret rotation toward nearest enemy
                 if (t.type === 'ubik') {
@@ -3890,6 +4164,87 @@
                     p.mesh.geometry.dispose();
                     p.mesh.material.dispose();
                     this._doorParticles.splice(i, 1);
+                }
+            }
+
+            // Update sliding pots (kicked pot plant physics)
+            for (let i = this._slidingPots.length - 1; i >= 0; i--) {
+                const sp = this._slidingPots[i];
+                sp.life -= dt;
+
+                // Physics — slide with friction + bounce arc
+                const friction = Math.exp(-4.5 * dt);
+                sp.vx *= friction;
+                sp.vz *= friction;
+                sp.vy -= 22 * dt; // gravity
+                sp.x += sp.vx * dt;
+                sp.z += sp.vz * dt;
+                sp.y += sp.vy * dt;
+
+                // Floor bounce
+                if (sp.y < 0) {
+                    sp.y = 0;
+                    sp.vy = Math.abs(sp.vy) * 0.3; // damped bounce
+                    if (sp.vy < 0.5) sp.vy = 0;    // stop bouncing when tiny
+                }
+
+                // Update mesh position + tumble
+                sp.mesh.position.set(sp.x, sp.y, sp.z);
+                sp.mesh.rotation.x += sp.spin * dt;
+                sp.mesh.rotation.z += sp.spin * 0.6 * dt;
+
+                // Check collision with enemies
+                const speed2 = sp.vx * sp.vx + sp.vz * sp.vz;
+                if (speed2 > 1) { // Only collide while moving meaningfully
+                    for (const e of this.enemies) {
+                        if (e.dying || e.stunTimer > 0 || sp.hitEnemies.has(e)) continue;
+                        const dx = e.x - sp.x;
+                        const dz = e.z - sp.z;
+                        const hitRadius = 0.6 + e.size * 0.25;
+                        if (dx * dx + dz * dz < hitRadius * hitRadius) {
+                            // HIT! Trip the enemy
+                            sp.hitEnemies.add(e);
+                            e.hp -= sp.tripDamage;
+                            e.hitFlash = 0.15;
+
+                            // Stun the enemy
+                            e.stunTimer = sp.stunDuration;
+                            if (e.animController) {
+                                e.animController.playOneShot('hit_react');
+                                e.animController.setTimeScale(0);
+                            }
+
+                            // Interrupt bashing if applicable
+                            if (e.bashing) {
+                                e.bashing = false;
+                                e.bashingBarrier = null;
+                            }
+
+                            // Impact juice
+                            e._impactSquash = 0.18;
+                            this._globalHitstop = Math.max(this._globalHitstop, 0.04);
+                            this._cameraShake = 0.1;
+                            this._cameraShakeIntensity = 0.12;
+
+                            // VFX
+                            this._spawnTripImpact(e.x, e.z);
+
+                            // Shatter the pot on impact
+                            this._spawnPotShatter(sp.x, sp.z);
+                            this._disposeSlidingPot(i);
+                            break; // Pot is gone — exit enemy loop
+                        }
+                    }
+                    // If pot was disposed, skip further checks
+                    if (i >= this._slidingPots.length || this._slidingPots[i] !== sp) continue;
+                }
+
+                // Out of bounds or timed out or stopped — shatter
+                const stopped = speed2 < 0.5 && sp.y < 0.05;
+                const outOfBounds = sp.x > 16 || sp.x < -16 || sp.z < 2 || sp.z > 71;
+                if (sp.life <= 0 || stopped || outOfBounds) {
+                    this._spawnPotShatter(sp.x, sp.z);
+                    this._disposeSlidingPot(i);
                 }
             }
 
