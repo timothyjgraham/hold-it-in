@@ -14,27 +14,42 @@
     <div id="hud">
         <div id="hud-left">
             <div class="hud-stat" id="door-hp-stat">
-                <span class="icon">🚪</span>
-                <span class="value" id="door-hp-display">100%</span>
-                <div id="door-hp-bar-bg" style="width:60px;height:8px;background:#333;border-radius:4px;margin-left:6px;overflow:hidden;display:inline-block;vertical-align:middle;">
-                    <div id="door-hp-bar" style="width:100%;height:100%;background:#4caf50;border-radius:4px;transition:width 0.3s,background 0.3s;"></div>
+                <div class="hp-label-row">
+                    <svg class="hud-icon" viewBox="0 0 28 32" width="22" height="26">
+                        <!-- toon door -->
+                        <rect x="3" y="2" width="22" height="28" rx="2" ry="2" fill="#c8a87c" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+                        <rect x="7" y="5" width="6" height="10" rx="1" fill="#a07848" stroke="#1a1a1a" stroke-width="2"/>
+                        <rect x="15" y="5" width="6" height="10" rx="1" fill="#a07848" stroke="#1a1a1a" stroke-width="2"/>
+                        <rect x="7" y="18" width="14" height="9" rx="1" fill="#a07848" stroke="#1a1a1a" stroke-width="2"/>
+                        <circle cx="21" cy="17" r="2.2" fill="#ffd93d" stroke="#1a1a1a" stroke-width="2"/>
+                    </svg>
+                    <span class="value" id="door-hp-display">100%</span>
+                </div>
+                <div id="door-hp-bar-container">
+                    <div id="door-hp-bar"></div>
                 </div>
             </div>
-            <div class="hud-stat">
-                <span class="icon">🪙</span>
+            <div class="hud-stat coins-badge">
+                <svg class="hud-icon" viewBox="0 0 28 28" width="24" height="24">
+                    <!-- toon coin -->
+                    <ellipse cx="14" cy="15" rx="11" ry="10.5" fill="#ffd93d" stroke="#1a1a1a" stroke-width="3"/>
+                    <ellipse cx="14" cy="15" rx="7" ry="6.8" fill="none" stroke="#e6a800" stroke-width="2" stroke-dasharray="3 2"/>
+                    <text x="14" y="19" text-anchor="middle" font-family="Bangers, sans-serif" font-size="14" fill="#1a1a1a" font-weight="400">$</text>
+                </svg>
                 <span class="value" id="coins-display">50</span>
             </div>
         </div>
-        <div id="hud-center">
-            <span id="wave-display">WAVE 1</span>
-        </div>
+        <div id="hud-center"></div>
         <div id="hud-right">
-            <div class="hud-stat">
+            <div class="hud-stat score-badge">
                 <span class="value" id="score-display">0</span>
                 <span class="icon">PTS</span>
             </div>
         </div>
     </div>
+
+    <!-- Wave badge (positioned above door in 3D) -->
+    <span id="wave-display">WAVE 1</span>
 
     <!-- Wave Announcement -->
     <div id="wave-announce"></div>
@@ -765,11 +780,27 @@
                 document.getElementById('door-hp-display').textContent = pct + '%';
                 const bar = document.getElementById('door-hp-bar');
                 bar.style.width = pct + '%';
-                // Color shifts: green → yellow → orange → red
-                if (pct > 60) bar.style.background = '#4caf50';
+                // Color shifts: salmon → orange → red (sticker palette)
+                if (pct > 60) bar.style.background = '#ff6b7a';
                 else if (pct > 40) bar.style.background = '#ff9800';
                 else if (pct > 20) bar.style.background = '#ff5722';
-                else bar.style.background = '#f44336';
+                else {
+                    bar.style.background = '#f44336';
+                    // Urgent jitter on low HP
+                    const hpStat = document.getElementById('door-hp-stat');
+                    if (!hpStat.classList.contains('urgent')) {
+                        hpStat.style.animation = 'jitter 0.15s ease-in-out infinite';
+                        hpStat.classList.add('urgent');
+                    }
+                }
+                // Remove urgent jitter if HP recovered
+                if (pct > 20) {
+                    const hpStat = document.getElementById('door-hp-stat');
+                    if (hpStat.classList.contains('urgent')) {
+                        hpStat.style.animation = '';
+                        hpStat.classList.remove('urgent');
+                    }
+                }
             }
             document.getElementById('coins-display').textContent = this.coins;
             document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
@@ -779,8 +810,11 @@
         announceWave(text) {
             const el = document.getElementById('wave-announce');
             el.textContent = text;
+            el.classList.remove('visible');
+            // Force reflow for re-trigger of animation
+            void el.offsetWidth;
             el.classList.add('visible');
-            setTimeout(() => el.classList.remove('visible'), 2000);
+            setTimeout(() => el.classList.remove('visible'), 2200);
         },
 
         // ============================
@@ -2914,20 +2948,35 @@
         // ============================
         _spawnCoinText(x, z, amount) {
             const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 64;
+            canvas.width = 192;
+            canvas.height = 80;
             const ctx = canvas.getContext('2d');
-            ctx.font = 'bold 40px monospace';
+            // Slight random rotation for hand-drawn feel
+            const rot = (Math.random() - 0.5) * 0.1;
+            ctx.translate(96, 40);
+            ctx.rotate(rot);
+            ctx.font = '52px Bangers, Impact, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const text = `+${amount}`;
-            // Black outline
-            ctx.strokeStyle = '#000000';
+            // White background pill
+            const tw = ctx.measureText(text).width;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            const pw = tw / 2 + 14, ph = 24;
+            ctx.roundRect(-pw, -ph, pw * 2, ph * 2, 10);
+            ctx.fill();
+            // Thick black outline on pill
+            ctx.strokeStyle = '#1a1a1a';
             ctx.lineWidth = 4;
-            ctx.strokeText(text, 64, 32);
+            ctx.stroke();
+            // Black text outline
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 5;
+            ctx.strokeText(text, 0, 2);
             // Gold fill
-            ctx.fillStyle = '#ffd700';
-            ctx.fillText(text, 64, 32);
+            ctx.fillStyle = '#ffd93d';
+            ctx.fillText(text, 0, 2);
 
             const texture = new THREE.CanvasTexture(canvas);
             const mat = new THREE.SpriteMaterial({
@@ -2937,7 +2986,7 @@
             });
             const sprite = new THREE.Sprite(mat);
             sprite.position.set(x, 3, z);
-            sprite.scale.set(2.5, 1.25, 1);
+            sprite.scale.set(3, 1.5, 1);
             this.scene.add(sprite);
 
             this._floatingTexts.push({ sprite, life: 1.2 });
@@ -3100,6 +3149,19 @@
             // Update player character animation
             if (this.playerCharacter) {
                 this.playerCharacter.update(dt);
+            }
+
+            // Position wave badge centered above the enemy spawn door (north exit)
+            if (this.camera) {
+                const exitTop = new THREE.Vector3(0, 7.5, 68);
+                exitTop.project(this.camera);
+                const wEl = document.getElementById('wave-display');
+                const hw = window.innerWidth / 2;
+                const hh = window.innerHeight / 2;
+                const sx = exitTop.x * hw + hw;
+                const sy = -exitTop.y * hh + hh;
+                wEl.style.left = (sx - wEl.offsetWidth / 2) + 'px';
+                wEl.style.top = (sy - wEl.offsetHeight) + 'px';
             }
 
             // Update grid hover
