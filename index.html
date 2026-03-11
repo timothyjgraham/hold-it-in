@@ -221,7 +221,7 @@
                 name: 'Coin Magnet',
                 cost: 10,
                 range: 8,
-                hp: 1,              // Fragile — shatters on trample
+                hp: 4,              // Takes a few hits before breaking
                 color: 0xf0a030,    // PALETTE.magnet
                 effect: 'magnet',
                 magnetInterval: 0.3,
@@ -1550,61 +1550,62 @@
             const mat = toonMat(def.color);
 
             if (type === 'coinmagnet') {
-                // Base platform
+                // Sturdy base platform
                 const base = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8),
+                    new THREE.CylinderGeometry(0.6, 0.7, 0.25, 12),
                     toonMat(PALETTE.charcoal)
                 );
-                base.position.y = 0.1;
+                base.position.y = 0.125;
                 group.add(base);
 
-                // Stand pole
+                // Collection jar (transparent, at base)
+                const jar = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.4, 0.45, 0.5, 10),
+                    toonMat(PALETTE.rimCool, { transparent: true, opacity: 0.3 })
+                );
+                jar.position.y = 0.5;
+                group.add(jar);
+
+                // Gold coins pile inside jar
+                const coinsInside = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.28, 0.3, 0.15, 8),
+                    matGold()
+                );
+                coinsInside.position.y = 0.33;
+                group.add(coinsInside);
+
+                // Stand pole — thicker, more substantial
                 const pole = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.06, 0.06, 0.6, 6),
+                    new THREE.CylinderGeometry(0.09, 0.09, 0.6, 8),
                     toonMat(PALETTE.fixture)
                 );
-                pole.position.y = 0.5;
+                pole.position.y = 1.05;
                 group.add(pole);
 
                 // Magnet head group (rotates)
                 const magnetHead = new THREE.Group();
                 magnetHead.name = 'magnetHead';
-                magnetHead.position.y = 0.9;
+                magnetHead.position.y = 1.45;
 
-                // Horseshoe magnet — half torus
+                // Classic horseshoe magnet body — chunky half-torus
                 const horseshoe = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.25, 0.08, 8, 12, Math.PI),
+                    new THREE.TorusGeometry(0.4, 0.14, 12, 16, Math.PI),
                     toonMat(PALETTE.danger)
                 );
                 horseshoe.rotation.z = Math.PI; // U-shape opening downward
                 magnetHead.add(horseshoe);
 
-                // Magnet tips (silver spheres at ends)
+                // Silver pole tips — flat-ended cylinders for that classic look
                 const tipMat2 = toonMat(PALETTE.fixture);
-                const tipL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat2);
-                tipL.position.set(-0.25, 0, 0);
+                const tipGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.22, 8);
+                const tipL = new THREE.Mesh(tipGeo, tipMat2);
+                tipL.position.set(-0.4, -0.11, 0);
                 magnetHead.add(tipL);
-                const tipR = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat2);
-                tipR.position.set(0.25, 0, 0);
+                const tipR = new THREE.Mesh(tipGeo, tipMat2);
+                tipR.position.set(0.4, -0.11, 0);
                 magnetHead.add(tipR);
 
                 group.add(magnetHead);
-
-                // Collection jar (transparent, at base)
-                const jar = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.3, 0.35, 0.4, 8),
-                    toonMat(PALETTE.rimCool, { transparent: true, opacity: 0.35 })
-                );
-                jar.position.y = 0.3;
-                group.add(jar);
-
-                // Small gold coins visible inside jar
-                const coinsInside = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8),
-                    matGold()
-                );
-                coinsInside.position.y = 0.2;
-                group.add(coinsInside);
             } else if (type === 'wetfloor') {
                 // Construction-style barrier spanning 4 world units wide (2 grid cells)
                 const signMat2 = toonMat(PALETTE.sign);
@@ -2859,9 +2860,9 @@
                             }
                         }
                     }
-                    // Animate magnet rotation
+                    // Animate magnet rotation — juicy spin
                     const magnetHead = t.mesh.getObjectByName('magnetHead');
-                    if (magnetHead) magnetHead.rotation.y += dt * 0.5;
+                    if (magnetHead) magnetHead.rotation.y += dt * 1.8;
                     continue;
                 }
 
