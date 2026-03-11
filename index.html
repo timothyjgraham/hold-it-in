@@ -198,6 +198,11 @@
         _mopImpacts: [],
         _cinematicTimer: 0,
 
+        // Hitstop & impact juice
+        _globalHitstop: 0,          // Timer: when > 0, dt scales to near-zero
+        _cameraShake: 0,            // Timer: when > 0, camera jitters
+        _cameraShakeIntensity: 0,   // Current shake magnitude
+
         // Player character (seated on toilet)
         playerCharacter: null,
 
@@ -998,6 +1003,9 @@
             });
             this._mopImpacts = [];
             this._cinematicTimer = 0;
+            this._globalHitstop = 0;
+            this._cameraShake = 0;
+            this._cameraShakeIntensity = 0;
 
             // Reset fade overlay instantly (no transition)
             const fadeEl = document.getElementById('fade-overlay');
@@ -2543,6 +2551,28 @@
                     }
                 }
 
+                // Impact squash-and-stretch — compress on Y, expand on XZ, spring back
+                if (e._impactSquash > 0) {
+                    e._impactSquash -= dt;
+                    const t = Math.max(0, e._impactSquash / 0.18);  // 1→0
+                    // Phase 1 (t > 0.5): squash down. Phase 2: spring overshoot back
+                    let scaleY, scaleXZ;
+                    if (t > 0.5) {
+                        // Squash phase — compress Y, expand XZ
+                        const squash = (t - 0.5) * 2;  // 1→0 during squash
+                        scaleY = 1 - 0.3 * squash;     // 0.7→1
+                        scaleXZ = 1 + 0.15 * squash;   // 1.15→1
+                    } else {
+                        // Spring phase — slight overshoot on Y
+                        const spring = t * 2;           // 1→0 during spring
+                        scaleY = 1 + 0.08 * Math.sin(spring * Math.PI);  // overshoot
+                        scaleXZ = 1 - 0.04 * Math.sin(spring * Math.PI);
+                    }
+                    e.mesh.scale.set(scaleXZ, scaleY, scaleXZ);
+                } else if (e.mesh.scale.y !== 1) {
+                    e.mesh.scale.set(1, 1, 1);
+                }
+
                 // Hit flash effect
                 if (e.hitFlash > 0) {
                     e.hitFlash -= dt;
@@ -2950,12 +2980,21 @@
                                     e.knockbackVX = kbX * kbForce;
                                     e.knockbackVZ = kbZ * kbForce;
 
-                                    // Hit react + micro-hitstop
+                                    // Hit react + hitstop freeze
                                     if (e.animController && !e.dying) {
                                         e.animController.playOneShot('hit_react');
                                         e.animController.setTimeScale(0);
-                                        e._hitstopTimer = 0.04;
+                                        e._hitstopTimer = 0.08;
                                     }
+
+                                    // ─── IMPACT JUICE ───
+                                    // Global hitstop — brief game-wide freeze
+                                    this._globalHitstop = Math.max(this._globalHitstop, 0.06);
+                                    // Camera micro-shake — proportional to lever (tip hits = bigger shake)
+                                    this._cameraShake = 0.12;
+                                    this._cameraShakeIntensity = 0.15 + 0.15 * leverScale;
+                                    // Squash pop — enemy compresses on Y then springs back
+                                    e._impactSquash = 0.18;
 
                                     // POW! impact VFX
                                     this._spawnMopImpact(e.x, e.z);
@@ -3624,7 +3663,26 @@
         _animate() {
             requestAnimationFrame(() => this._animate());
 
-            const dt = Math.min(this.clock.getDelta(), 0.05); // Cap dt
+            const rawDt = Math.min(this.clock.getDelta(), 0.05); // Cap dt
+            let dt = rawDt;
+
+            // ─── Global hitstop — freeze everything briefly on big impacts ───
+            if (this._globalHitstop > 0) {
+                this._globalHitstop -= rawDt;
+                dt = rawDt * 0.05; // Near-zero time scale during hitstop
+            }
+
+            // ─── Camera micro-shake — uses real time so it decays during hitstop ───
+            if (this._cameraShake > 0) {
+                this._cameraShake -= rawDt;
+                const t = Math.max(0, this._cameraShake / 0.12);
+                const intensity = this._cameraShakeIntensity * t;
+                this.camera.position.x = CONFIG.cameraPos.x + (Math.random() - 0.5) * intensity;
+                this.camera.position.y = CONFIG.cameraPos.y + (Math.random() - 0.5) * intensity * 0.5;
+            } else if (this.state !== 'cinematic') {
+                this.camera.position.x = CONFIG.cameraPos.x;
+                this.camera.position.y = CONFIG.cameraPos.y;
+            }
 
             // Always update toilet glow
             updateToilet(this.toilet, this.clock.elapsedTime);
