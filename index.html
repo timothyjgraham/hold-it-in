@@ -170,8 +170,8 @@
             ubik: {
                 name: 'Ubik',
                 cost: 35,
-                range: 9,              // Spray travels 9 units forward
-                hp: 2,                 // Fragile canister — place at the back
+                range: 18,             // Spray travels 18 units forward
+                hp: 6,                 // Sturdy canister — shows progressive damage
                 color: 0x2ecc71,
                 damage: 10,            // Per-tick spray damage (hits multiple enemies)
                 attackRate: 1.5,       // Interval between sprays
@@ -2089,6 +2089,10 @@
                             e.trampledTowers.add(tKey);
                             t.hp -= 1;
                             t.hitShake = 0.2;
+                            // Enemy flails arms trying to get past
+                            if (e.animController) {
+                                e.animController.playOneShot('bash_door');
+                            }
                             if (t.hp <= 0) {
                                 this._destroyTower(ti);
                             }
@@ -2367,24 +2371,61 @@
                     t.mesh.position.z = t.gridZ;
                 }
 
-                // Damage tint — flash red on hit, tint toward red as HP decreases
+                // Fortnite-style progressive damage — cracks, lean, deformation
                 if (t.hitShake > 0.1) {
-                    // Immediate hit flash
+                    // Immediate hit flash — white burst
                     t.mesh.traverse(child => {
                         if (child.isMesh && child.material.emissive) {
-                            child.material.emissive.setHex(0xff4444);
-                            child.material.emissiveIntensity = 0.4;
+                            child.material.emissive.setHex(0xffffff);
+                            child.material.emissiveIntensity = 0.6;
                         }
                     });
                 } else if (t.hp < t.maxHp) {
-                    // Persistent damage tint
-                    const dmgPct = 1 - t.hp / t.maxHp;
+                    const dmgPct = 1 - t.hp / t.maxHp; // 0 = pristine, 1 = about to break
+
+                    // Stage 1 (>50% HP): light scuffs — subtle darkening
+                    // Stage 2 (25-50%): visible cracks — orange tint, slight lean
+                    // Stage 3 (<25%): critically damaged — red glow, heavy lean, jitter
                     t.mesh.traverse(child => {
                         if (child.isMesh && child.material.emissive) {
-                            child.material.emissive.setHex(0xff0000);
-                            child.material.emissiveIntensity = dmgPct * 0.2;
+                            if (dmgPct < 0.5) {
+                                // Light damage — warm tint
+                                child.material.emissive.setHex(0xff6600);
+                                child.material.emissiveIntensity = dmgPct * 0.3;
+                            } else if (dmgPct < 0.8) {
+                                // Heavy damage — orange-red, cracks darkening
+                                child.material.emissive.setHex(0xff3300);
+                                child.material.emissiveIntensity = 0.15 + dmgPct * 0.25;
+                            } else {
+                                // Critical — angry red pulse
+                                const pulse = 0.3 + Math.sin(this.time * 8) * 0.15;
+                                child.material.emissive.setHex(0xff1100);
+                                child.material.emissiveIntensity = pulse + dmgPct * 0.2;
+                            }
+                            // Progressive desaturation — colors wash out when damaged
+                            if (child.material._origRoughness === undefined) child.material._origRoughness = child.material.roughness;
+                            child.material.roughness = Math.min(1, child.material._origRoughness + dmgPct * 0.4);
                         }
                     });
+
+                    // Physical deformation — lean increases with damage
+                    const leanDir = t._dmgLeanDir ?? (t._dmgLeanDir = (Math.random() - 0.5) * 2);
+                    t.mesh.rotation.z = leanDir * dmgPct * 0.15; // subtle tilt
+                    t.mesh.rotation.x = dmgPct * 0.08;
+
+                    // Critical jitter — tower shudders when near death
+                    if (dmgPct >= 0.8) {
+                        const jitter = (dmgPct - 0.8) * 0.15;
+                        t.mesh.position.x = t.gridX + (Math.random() - 0.5) * jitter;
+                        t.mesh.position.z = t.gridZ + (Math.random() - 0.5) * jitter;
+                    }
+
+                    // Vertical sag — sinks slightly as it breaks down
+                    t.mesh.position.y = -dmgPct * 0.15;
+
+                    // Scale distortion — squish on one axis (dented look)
+                    const squish = 1 - dmgPct * 0.12;
+                    t.mesh.scale.set(1, squish, 1 + dmgPct * 0.05);
                 }
 
                 // Coin Magnet — auto-collect dropped coins in range

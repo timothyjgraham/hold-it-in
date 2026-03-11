@@ -3,8 +3,8 @@
 // Coin Magnets auto-collect them with a satisfying pull arc.
 
 const GRAVITY = 18;
-const BASE_LIFETIME = 5.0;
-const BLINK_TIME = 1.5;
+const BASE_LIFETIME = 10.0;
+const BLINK_TIME = 3.0;
 const MAGNET_DURATION = 0.35;
 
 // Mario-style idle animation
@@ -184,24 +184,48 @@ export class CoinPool {
 
                 // === EXPIRY WARNING ===
                 if (c.life <= BLINK_TIME) {
+                    const urgencyT = 1 - c.life / BLINK_TIME; // 0→1 as expiry approaches
+
                     // Speed up spin as time runs out (urgency!)
-                    const urgency = 1 + (1 - c.life / BLINK_TIME) * 3;
+                    const urgency = 1 + urgencyT * 3;
                     c.mesh.rotation.y = elapsedTime * SPIN_SPEED * urgency + c.spinOffset;
 
-                    // Blink opacity
-                    const blinkSpeed = 3 + (1 - c.life / BLINK_TIME) * 8; // faster as expiry approaches
-                    const on = Math.sin(c.life * blinkSpeed * Math.PI) > 0;
+                    // Smooth pulsing glow — sine wave that speeds up over time
+                    const pulseHz = 2 + urgencyT * 6; // 2 Hz → 8 Hz
+                    const pulse = Math.sin(elapsedTime * pulseHz * Math.PI * 2);
+                    const pulseNorm = pulse * 0.5 + 0.5; // 0→1
+
+                    // Opacity: smooth sine pulse, floor rises so it never fully vanishes
+                    const opacityFloor = 0.4 - urgencyT * 0.15; // 0.4 → 0.25
+                    const opacity = opacityFloor + (1 - opacityFloor) * pulseNorm;
+
+                    // Emissive color shift: gold → warm orange/red as time runs out
+                    const r = 1.0;
+                    const g = 0.67 - urgencyT * 0.35; // orange → reddish
+                    const b = 0.0;
+
                     c.mesh.traverse(child => {
                         if (child.isMesh) {
                             child.material.transparent = true;
-                            child.material.opacity = on ? 1.0 : 0.25;
+                            child.material.opacity = opacity;
+                            child.material.emissiveIntensity = 0.5 + pulseNorm * 0.8;
+                            child.material.emissive.setRGB(r, g, b);
                         }
                     });
 
-                    // Shrink in final 0.3s
-                    if (c.life <= 0.3) {
-                        const shrink = c.life / 0.3;
+                    // Scale pulse — gentle breathe synced to glow
+                    const breathe = 1 + pulseNorm * 0.12 * (1 + urgencyT);
+                    c.mesh.scale.setScalar(COIN_SCALE * breathe);
+
+                    // Final shrink + fade in last 0.5s
+                    if (c.life <= 0.5) {
+                        const shrink = c.life / 0.5;
                         c.mesh.scale.setScalar(COIN_SCALE * shrink);
+                        c.mesh.traverse(child => {
+                            if (child.isMesh) {
+                                child.material.opacity = shrink;
+                            }
+                        });
                     }
                 }
 
@@ -364,6 +388,14 @@ export class CoinPool {
             if (child.isMesh) {
                 child.material.transparent = false;
                 child.material.opacity = 1;
+                // Reset emissive back to gold (expiry warning shifts it orange/red)
+                child.material.emissive.setHex(
+                    child.material.color.getHex() === 0xffd700 ? 0xffaa00 :
+                    child.material.color.getHex() === 0xdaa520 ? 0xcc8800 : 0xddaa00
+                );
+                child.material.emissiveIntensity =
+                    child.material.color.getHex() === 0xffd700 ? 0.6 :
+                    child.material.color.getHex() === 0xdaa520 ? 0.4 : 0.3;
             }
         });
         c.mesh.scale.set(COIN_SCALE, COIN_SCALE, COIN_SCALE);
