@@ -46,9 +46,9 @@
 
     <!-- Tower Build Panel -->
     <div id="tower-panel">
-        <div class="tower-btn" data-tower="tipjar" title="Tip Jar — Generates 2 coins every 3s">
+        <div class="tower-btn" data-tower="coinmagnet" title="Coin Magnet — Auto-collects dropped coins in range">
             <span class="hotkey">1</span>
-            <span class="label">Tip Jar</span>
+            <span class="label">Magnet</span>
             <span class="cost">10</span>
         </div>
         <div class="tower-btn" data-tower="wetfloor" title="Wet Floor Sign — Slows enemies">
@@ -136,15 +136,14 @@
 
         // Tower definitions
         TOWERS: {
-            tipjar: {
-                name: 'Tip Jar',
+            coinmagnet: {
+                name: 'Coin Magnet',
                 cost: 10,
-                range: 0,
-                hp: 1,              // Glass jar — shatters on contact
+                range: 8,
+                hp: 1,              // Fragile — shatters on trample
                 color: 0xf39c12,
-                effect: 'income',
-                incomeAmount: 2,
-                incomeInterval: 2.5,
+                effect: 'magnet',
+                magnetInterval: 0.3,
                 hotkey: 'Digit1',
             },
             wetfloor: {
@@ -234,7 +233,7 @@
             null, // index 0 unused
             // Wave 1: Tutorial — polite knockers only
             { enemies: [['polite', 5]], interval: 2.5, delay: 5 },
-            // Wave 2: More knockers, Tip Jar now available
+            // Wave 2: More knockers, Coin Magnet now available
             { enemies: [['polite', 7]], interval: 2.0, delay: 4 },
             // Wave 3: PEE DANCERS — fast, bouncy, come in groups
             { enemies: [['polite', 4], ['dancer', 4]], interval: 1.8, delay: 4 },
@@ -318,6 +317,19 @@
             },
         },
 
+        // Coin drop table — physical coins scattered on enemy death
+        // Values are ~30% higher than old instant rewards (skill bonus for collection)
+        COIN_DROPS: {
+            polite:      { value: 6,  count: 2 },
+            dancer:      { value: 4,  count: 1 },
+            waddle:      { value: 16, count: 4 },
+            panicker:    { value: 13, count: 3 },
+            powerwalker: { value: 9,  count: 2 },
+            girls:       { value: 3,  count: 1 },
+        },
+
+        coinPool: null,
+
         // ============================
         // INIT
         // ============================
@@ -389,6 +401,13 @@
                 this.enemyPool = new EnemyPool();
                 this.enemyPool.preAllocate();
                 console.log('Enemy pool pre-allocated:', this.enemyPool.getStats().poolSizes);
+            }
+
+            // Initialize coin drop pool
+            if (window.CoinPool) {
+                this.coinPool = new CoinPool();
+                this.coinPool.preAllocate(60);
+                console.log('Coin pool pre-allocated:', this.coinPool.getStats().poolSize);
             }
 
             // Start render loop (but game doesn't start until player clicks)
@@ -815,6 +834,11 @@
             this.towers = [];
             this.projectiles = [];
 
+            // Clear dropped coins
+            if (this.coinPool) {
+                this.coinPool.clear(this.scene);
+            }
+
             // Clear floating texts
             this._floatingTexts.forEach(ft => {
                 this.scene.remove(ft.sprite);
@@ -847,7 +871,7 @@
 
             // 8 second build phase before wave 1
             this.waveTimer = 8.0;
-            this.announceWave('PLACE TIP JARS [1] FOR INCOME!');
+            this.announceWave('PLACE COIN MAGNETS [1] TO COLLECT!');
 
             this.clock.start();
             console.log('Game started — defend the throne!');
@@ -1342,35 +1366,65 @@
                 metalness: 0.1,
             });
 
-            if (type === 'tipjar') {
-                // Glass jar
+            if (type === 'coinmagnet') {
+                // Base platform
+                const base = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7, metalness: 0.3 })
+                );
+                base.position.y = 0.1;
+                group.add(base);
+
+                // Stand pole
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.06, 0.6, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.5, roughness: 0.3 })
+                );
+                pole.position.y = 0.5;
+                group.add(pole);
+
+                // Magnet head group (rotates)
+                const magnetHead = new THREE.Group();
+                magnetHead.name = 'magnetHead';
+                magnetHead.position.y = 0.9;
+
+                // Horseshoe magnet — half torus
+                const horseshoe = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.25, 0.08, 8, 12, Math.PI),
+                    new THREE.MeshStandardMaterial({ color: 0xe74c3c, roughness: 0.4, metalness: 0.2 })
+                );
+                horseshoe.rotation.z = Math.PI; // U-shape opening downward
+                magnetHead.add(horseshoe);
+
+                // Magnet tips (silver spheres at ends)
+                const tipMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.7, roughness: 0.2 });
+                const tipL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat);
+                tipL.position.set(-0.25, 0, 0);
+                magnetHead.add(tipL);
+                const tipR = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat);
+                tipR.position.set(0.25, 0, 0);
+                magnetHead.add(tipR);
+
+                group.add(magnetHead);
+
+                // Collection jar (transparent, at base)
                 const jar = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.35, 0.45, 0.8, 8),
+                    new THREE.CylinderGeometry(0.3, 0.35, 0.4, 8),
                     new THREE.MeshStandardMaterial({
-                        color: 0xaaddff,
-                        roughness: 0.1,
-                        metalness: 0.2,
-                        transparent: true,
-                        opacity: 0.6,
+                        color: 0x88bbff, roughness: 0.1, metalness: 0.1,
+                        transparent: true, opacity: 0.35,
                     })
                 );
-                jar.position.y = 0.4;
+                jar.position.y = 0.3;
                 group.add(jar);
-                // Coins inside
-                const coins = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.3, 0.3, 0.25, 8),
+
+                // Small gold coins visible inside jar
+                const coinsInside = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8),
                     new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 })
                 );
-                coins.position.y = 0.25;
-                group.add(coins);
-                // Coin on top (bobs in animation)
-                const topCoin = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8),
-                    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1, emissive: 0xffa500, emissiveIntensity: 0.2 })
-                );
-                topCoin.position.y = 0.85;
-                topCoin.name = 'topCoin';
-                group.add(topCoin);
+                coinsInside.position.y = 0.2;
+                group.add(coinsInside);
             } else if (type === 'wetfloor') {
                 // A-frame "Caution: Wet Floor" sign
                 const signMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.4 });
@@ -1490,7 +1544,7 @@
                 hitShake: 0,
                 // Tower-specific state
                 ...(type === 'mop' && { swingAngle: 0 }),
-                ...(type === 'tipjar' && { incomeTimer: def.incomeInterval }),
+                ...(type === 'coinmagnet' && { magnetTimer: 0 }),
             };
         },
 
@@ -2082,9 +2136,17 @@
                     }
 
                     this.score += 10;
-                    this.coins += e.coins;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
-                    this._spawnCoinText(e.x, e.z, e.coins);
+
+                    // Spawn physical coins instead of instant reward
+                    if (this.coinPool) {
+                        const drop = this.COIN_DROPS[e.type] || { value: e.coins, count: 1 };
+                        this.coinPool.spawnCoins(e.x, e.z, drop.value, drop.count, this.scene);
+                    } else {
+                        // Fallback: instant reward if CoinPool not loaded
+                        this.coins += e.coins;
+                        this._spawnCoinText(e.x, e.z, e.coins);
+                    }
 
                     // Death animation then release to pool (or dispose)
                     if (!e.dying) {
@@ -2167,24 +2229,25 @@
                     });
                 }
 
-                // Tip Jar — passive income
-                if (t.type === 'tipjar') {
-                    t.incomeTimer -= dt;
-                    if (t.incomeTimer <= 0) {
-                        t.incomeTimer = t.def.incomeInterval;
-                        this.coins += t.def.incomeAmount;
-                        this.updateHUD();
-                        this._spawnCoinText(t.mesh.position.x, t.mesh.position.z, t.def.incomeAmount);
-                        // Pulse the top coin as feedback
-                        const topCoin = t.mesh.getObjectByName('topCoin');
-                        if (topCoin) topCoin.scale.set(1.5, 1.5, 1.5);
+                // Coin Magnet — auto-collect dropped coins in range
+                if (t.type === 'coinmagnet') {
+                    t.magnetTimer = (t.magnetTimer || 0) - dt;
+                    if (t.magnetTimer <= 0) {
+                        t.magnetTimer = t.def.magnetInterval;
+                        if (this.coinPool) {
+                            const collected = this.coinPool.magnetCollect(
+                                t.gridX, t.gridZ, t.def.range, this.scene
+                            );
+                            if (collected > 0) {
+                                this.coins += collected;
+                                this._spawnCoinText(t.gridX, t.gridZ, collected);
+                                this.updateHUD();
+                            }
+                        }
                     }
-                    // Animate top coin bob + scale decay
-                    const topCoin = t.mesh.getObjectByName('topCoin');
-                    if (topCoin) {
-                        topCoin.position.y = 0.85 + Math.sin(this.time * 3 + t.gridX) * 0.05;
-                        topCoin.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-                    }
+                    // Animate magnet rotation
+                    const magnetHead = t.mesh.getObjectByName('magnetHead');
+                    if (magnetHead) magnetHead.rotation.y += dt * 0.5;
                     continue;
                 }
 
@@ -2377,17 +2440,18 @@
             this.gridHighlight.material.color.setHex(hoverColor);
             this.gridHighlight.material.opacity = canPlace ? 0.4 : 0.25;
 
-            // Range circle (hide for towers with no range like Tip Jar)
+            // Range circle
             const range = def.range;
             if (range > 0) {
+                const rangeColor = (this.selectedTower === 'coinmagnet') ? 0xffd700 : hoverColor;
                 this.rangeCircle.scale.set(range, range, range);
                 this.rangeCircle.position.set(pos.x, 0.04, pos.z);
-                this.rangeCircle.material.color.setHex(hoverColor);
+                this.rangeCircle.material.color.setHex(rangeColor);
                 this.rangeCircle.visible = true;
 
                 this.rangeEdge.scale.set(range, range, range);
                 this.rangeEdge.position.set(pos.x, 0.045, pos.z);
-                this.rangeEdge.material.color.setHex(hoverColor);
+                this.rangeEdge.material.color.setHex(rangeColor);
                 this.rangeEdge.visible = true;
             } else {
                 this.rangeCircle.visible = false;
@@ -2670,6 +2734,11 @@
                     p.mesh.material.dispose();
                     this._doorParticles.splice(i, 1);
                 }
+            }
+
+            // Update dropped coins (physics, animation, expiry)
+            if (this.coinPool) {
+                this.coinPool.update(dt, this.clock.elapsedTime, this.scene);
             }
 
             // Update active drones

@@ -95,7 +95,7 @@ export class AnimationController {
         const action = this.mixer.clipAction(clip);
 
         action.setLoop(THREE.LoopOnce);
-        action.clampWhenFinished = true;
+        action.clampWhenFinished = false; // Don't clamp — prevents additive drift from stacking
         action.blendMode = THREE.AdditiveAnimationBlendMode;
 
         // Reset to play from the beginning each time

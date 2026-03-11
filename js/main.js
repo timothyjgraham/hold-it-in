@@ -6,6 +6,7 @@ import { AnimationController } from './animation/AnimationController.js';
 import { getAnimationClip } from './animation/AnimationLibrary.js';
 import { createEnemyModel } from './models/EnemyModelFactory.js';
 import { EnemyPool } from './systems/EnemyPool.js';
+import { CoinPool } from './systems/CoinPool.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
 import {
     createBathroomStalls,
@@ -37,6 +38,7 @@ window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;
 window.createEnemyModel = createEnemyModel;
 window.EnemyPool = EnemyPool;
+window.CoinPool = CoinPool;
 window.PlayerCharacter = PlayerCharacter;
 
 // Initialize game
