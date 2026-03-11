@@ -1589,12 +1589,83 @@
                 nozzleOutline.position.copy(nozzle.position);
                 group.add(nozzleOutline);
 
-                // ─── LABEL ───
-                // Label band (cream/white rectangle wrapped around can center)
+                // ─── LABEL (wraps around can — visible as it rotates) ───
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512;
+                labelCanvas.height = 256;
+                const lctx = labelCanvas.getContext('2d');
+
+                // Cream background
+                lctx.fillStyle = '#f5f0e0';
+                lctx.fillRect(0, 0, 512, 256);
+
+                // Thin border lines at top and bottom
+                lctx.strokeStyle = '#333322';
+                lctx.lineWidth = 4;
+                lctx.strokeRect(0, 0, 512, 256);
+
+                // "UBIK" in military stencil style — draw each letter spaced out
+                lctx.fillStyle = '#1a5c2a';
+                lctx.font = '900 120px "Courier New", monospace';
+                lctx.textAlign = 'center';
+                lctx.textBaseline = 'middle';
+                // Draw text with letter spacing (manual per-char)
+                const ubikText = 'UBIK';
+                const letterSpacing = 22;
+                const totalWidth = lctx.measureText(ubikText).width + letterSpacing * (ubikText.length - 1);
+                let cursorX = 256 - totalWidth / 2;
+                for (let ci = 0; ci < ubikText.length; ci++) {
+                    const ch = ubikText[ci];
+                    const chW = lctx.measureText(ch).width;
+                    lctx.fillText(ch, cursorX + chW / 2, 105);
+                    cursorX += chW + letterSpacing;
+                }
+
+                // Stencil bridge cuts — horizontal cream lines through letter middles
+                lctx.fillStyle = '#f5f0e0';
+                const bridgeY = 105;
+                const bridgeH = 8;
+                // Cut through each letter at the midpoint
+                cursorX = 256 - totalWidth / 2;
+                lctx.font = '900 120px "Courier New", monospace';
+                for (let ci = 0; ci < ubikText.length; ci++) {
+                    const ch = ubikText[ci];
+                    const chW = lctx.measureText(ch).width;
+                    // Bridges for letters with enclosed areas
+                    if ('UBD'.includes(ch)) {
+                        lctx.fillRect(cursorX - 2, bridgeY - bridgeH / 2, chW + 4, bridgeH);
+                    }
+                    cursorX += chW + letterSpacing;
+                }
+
+                // Tagline below
+                lctx.fillStyle = '#555544';
+                lctx.font = 'italic 28px "Courier New", monospace';
+                lctx.textAlign = 'center';
+                lctx.fillText('SAFE WHEN USED AS DIRECTED', 256, 200);
+
+                // Small hazard triangles as decorative elements
+                lctx.fillStyle = '#8b7a2a';
+                for (const tx of [60, 452]) {
+                    lctx.beginPath();
+                    lctx.moveTo(tx, 35);
+                    lctx.lineTo(tx - 15, 60);
+                    lctx.lineTo(tx + 15, 60);
+                    lctx.closePath();
+                    lctx.fill();
+                    // Exclamation mark
+                    lctx.fillStyle = '#f5f0e0';
+                    lctx.font = 'bold 16px monospace';
+                    lctx.fillText('!', tx, 54);
+                    lctx.fillStyle = '#8b7a2a';
+                }
+
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                labelTex.needsUpdate = true;
                 const labelMat = new THREE.MeshStandardMaterial({
-                    color: 0xf5f0e0, // Warm cream
+                    map: labelTex,
                     emissive: 0x222211,
-                    emissiveIntensity: 0.15,
+                    emissiveIntensity: 0.1,
                 });
                 const labelGeo = new THREE.CylinderGeometry(
                     canRadius + 0.01, canRadius + 0.01, canHeight * 0.45, segments
@@ -1602,6 +1673,7 @@
                 const label = new THREE.Mesh(labelGeo, labelMat);
                 label.position.y = canHeight * 0.45 + 0.15;
                 group.add(label);
+
                 // Label outline (ring edges at top and bottom of label)
                 const labelEdgeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
                 const labelEdgeGeo = new THREE.TorusGeometry(canRadius + 0.02, 0.02, 4, segments);
@@ -1613,44 +1685,6 @@
                 labelBot.rotation.x = Math.PI / 2;
                 labelBot.position.y = canHeight * 0.45 - canHeight * 0.225 + 0.15;
                 group.add(labelBot);
-
-                // "UBIK" text — canvas texture on a plane facing camera
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                // Background transparent
-                ctx.clearRect(0, 0, 256, 128);
-                // Bold retro text
-                ctx.fillStyle = '#1a6b3a';
-                ctx.font = 'bold 72px Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('UBIK', 128, 55);
-                // Tagline
-                ctx.fillStyle = '#555544';
-                ctx.font = 'italic 22px Arial, sans-serif';
-                ctx.fillText('safe when used as directed', 128, 100);
-
-                const labelTex = new THREE.CanvasTexture(canvas);
-                labelTex.needsUpdate = true;
-                const textMat = new THREE.MeshBasicMaterial({
-                    map: labelTex,
-                    transparent: true,
-                    depthWrite: false,
-                });
-                // Place text plane on front face of can (toward camera)
-                const textPlane = new THREE.Mesh(
-                    new THREE.PlaneGeometry(canRadius * 1.8, canRadius * 0.9),
-                    textMat
-                );
-                textPlane.position.set(0, canHeight * 0.45 + 0.15, canRadius + 0.02);
-                group.add(textPlane);
-                // Duplicate on back face
-                const textBack = textPlane.clone();
-                textBack.rotation.y = Math.PI;
-                textBack.position.z = -(canRadius + 0.02);
-                group.add(textBack);
 
                 // Store nozzle ref for spray VFX direction
                 group.userData.nozzleWorldZ = canRadius * 0.55 + 0.07;
@@ -2377,15 +2411,44 @@
 
                 if (t.type === 'wetfloor') continue; // passive, no attack
 
-                t.attackTimer -= dt;
-                if (t.attackTimer > 0) continue;
-
-                // Ubik fires on a timer regardless of enemy position — sprays straight ahead
+                // Ubik — smooth turret rotation toward nearest enemy
                 if (t.type === 'ubik') {
-                    t.attackTimer = t.def.attackRate;
-                    this._fireSpray(t);
+                    let ubikTarget = null;
+                    let ubikTargetDist = Infinity;
+                    for (const e of this.enemies) {
+                        if (e.dying) continue;
+                        const dx = e.x - t.gridX;
+                        const dz = e.z - t.gridZ;
+                        const dist = Math.sqrt(dx * dx + dz * dz);
+                        if (dist < t.def.range && dist < ubikTargetDist) {
+                            ubikTarget = e;
+                            ubikTargetDist = dist;
+                        }
+                    }
+                    if (ubikTarget) {
+                        // Smooth rotation toward target
+                        const targetAngle = Math.atan2(
+                            ubikTarget.x - t.gridX, ubikTarget.z - t.gridZ
+                        );
+                        let angleDiff = targetAngle - t.mesh.rotation.y;
+                        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                        t.mesh.rotation.y += angleDiff * Math.min(1, dt * 5);
+                    }
+
+                    t.attackTimer -= dt;
+                    if (t.attackTimer > 0) continue;
+
+                    // Fire only when there's a target in range
+                    if (ubikTarget) {
+                        t.attackTimer = t.def.attackRate;
+                        this._fireSpray(t, ubikTarget);
+                    }
                     continue;
                 }
+
+                t.attackTimer -= dt;
+                if (t.attackTimer > 0) continue;
 
                 // Find nearest enemy in range (for targeted towers)
                 let nearest = null;
@@ -2532,10 +2595,23 @@
         },
 
         // ─── UBIK SPRAY SYSTEM ───
-        _fireSpray(tower) {
+        _fireSpray(tower, target) {
             const def = tower.def;
             const spraySpeed = 12;
             const duration = def.sprayDuration || 0.8;
+
+            // Direction from tower toward target
+            const dirX = target.x - tower.gridX;
+            const dirZ = target.z - tower.gridZ;
+            const dirLen = Math.sqrt(dirX * dirX + dirZ * dirZ) || 1;
+            const ndx = dirX / dirLen;
+            const ndz = dirZ / dirLen;
+            // Perpendicular for fan spread
+            const perpX = -ndz;
+            const perpZ = ndx;
+
+            // Snap can rotation to spray direction
+            tower.mesh.rotation.y = Math.atan2(ndx, ndz);
 
             // Create spray cloud group (multiple particles in a cone)
             const group = new THREE.Group();
@@ -2556,14 +2632,19 @@
                     new THREE.SphereGeometry(size, 5, 5),
                     sprayMat.clone()
                 );
-                // Fan spread: center particle goes straight, edges spread out
-                const spread = (i - 2) * 0.12; // -0.24 to +0.24
-                pMesh.position.set(spread, (Math.random() - 0.5) * 0.3, 0.3);
+                // Fan spread along perpendicular axis
+                const spread = (i - 2) * 0.12;
+                pMesh.position.set(
+                    perpX * spread + ndx * 0.3,
+                    (Math.random() - 0.5) * 0.3,
+                    perpZ * spread + ndz * 0.3
+                );
                 group.add(pMesh);
+                const baseSpeed = spraySpeed + Math.random() * 2;
                 particles.push({
                     mesh: pMesh,
-                    vx: spread * spraySpeed * 0.3, // Slight X spread
-                    vz: spraySpeed + Math.random() * 2, // Forward (+Z)
+                    vx: ndx * baseSpeed + perpX * spread * spraySpeed * 0.3,
+                    vz: ndz * baseSpeed + perpZ * spread * spraySpeed * 0.3,
                     startSize: size,
                 });
             }
@@ -2573,6 +2654,8 @@
                 particles: particles,
                 x: tower.gridX,
                 z: tower.gridZ,
+                dirX: ndx,             // Spray direction (unit vector)
+                dirZ: ndz,
                 damage: def.damage,
                 life: duration,
                 maxLife: duration,
@@ -2604,15 +2687,24 @@
                 // Damage enemies in the spray cone — continuous tick damage
                 if (s.damageTimer <= 0) {
                     s.damageTimer = 0.2; // Tick every 0.2s
-                    const sprayFrontZ = s.z + progress * s.range;
-                    const sprayBackZ = s.z + Math.max(0, progress - 0.3) * s.range;
+                    const sprayFrontDist = progress * s.range;
+                    const sprayBackDist = Math.max(0, progress - 0.3) * s.range;
                     const halfWidth = (s.width * 0.5) * progress + 0.5; // Widens with distance
+                    // Perpendicular axis for lateral distance
+                    const perpX = -s.dirZ;
+                    const perpZ = s.dirX;
 
                     for (const e of this.enemies) {
                         if (e.dying) continue;
-                        // Check if enemy is in the spray zone
-                        if (e.z >= sprayBackZ && e.z <= sprayFrontZ + 1 &&
-                            Math.abs(e.x - s.x) < halfWidth + e.size * 0.5) {
+                        const relX = e.x - s.x;
+                        const relZ = e.z - s.z;
+                        // Project onto spray direction (forward distance along cone)
+                        const forward = relX * s.dirX + relZ * s.dirZ;
+                        // Project onto perpendicular (lateral offset from cone center)
+                        const lateral = Math.abs(relX * perpX + relZ * perpZ);
+
+                        if (forward >= sprayBackDist && forward <= sprayFrontDist + 1 &&
+                            lateral < halfWidth + e.size * 0.5) {
                             e.hp -= s.damage;
                             e.hitFlash = 0.15;
                             if (e.animController && !e.dying) {
