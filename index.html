@@ -224,12 +224,12 @@
             },
             wetfloor: {
                 name: 'Wet Floor Sign',
-                cost: 15,
-                range: 6,
-                hp: 4,              // Plastic sign — takes a beating
+                cost: 25,
+                range: 0,
+                hp: 20,             // Light barrier — disposable but meaningful delay
                 color: 0xe8d44a,    // PALETTE.sign
-                effect: 'slow',
-                slowFactor: 0.4,
+                effect: 'barrier',
+                tileWidth: 2,       // Spans 2 grid cells along X axis (4 world units wide)
                 hotkey: 'Digit2',
             },
             mop: {
@@ -276,6 +276,7 @@
                 baseHP: 10, hpPerWave: 4,
                 size: 1.25, color: 0x59c3e8, // PALETTE.dancer — sky blue
                 coins: 3, doorDmg: 1,
+                canJumpBarrier: true, // agile — leaps over barriers
                 flankChance: 0.6, // fast — darts to the sides to dodge towers
             },
             waddle: {
@@ -1062,19 +1063,35 @@
 
         _isCellOccupied(gx, gz) {
             const gs = CONFIG.grid;
-            return this.towers.some(t =>
-                Math.abs(t.gridX - gx) < gs * 0.5 && Math.abs(t.gridZ - gz) < gs * 0.5
-            );
+            return this.towers.some(t => {
+                // Check all cells this tower occupies (multi-tile barriers)
+                const tw = t.tileWidth || 1;
+                for (let dx = 0; dx < tw; dx++) {
+                    const cellX = t.gridX + (dx - Math.floor(tw / 2)) * gs;
+                    if (Math.abs(cellX - gx) < gs * 0.5 && Math.abs(t.gridZ - gz) < gs * 0.5) return true;
+                }
+                return false;
+            });
         },
 
         _tryPlaceTower() {
             const pos = this._getGridPos();
             if (!pos) return;
-            if (this._isCellOccupied(pos.x, pos.z)) return;
 
             const def = this.TOWERS[this.selectedTower];
             if (!def) return;
             if (this.coins < def.cost) return;
+
+            const gs = CONFIG.grid;
+            const tw = def.tileWidth || 1;
+            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+
+            // Validate all cells for multi-tile towers
+            for (let dx = 0; dx < tw; dx++) {
+                const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
+                if (cellX < -halfW || cellX > halfW) return; // out of bounds
+                if (this._isCellOccupied(cellX, pos.z)) return;
+            }
 
             this.coins -= def.cost;
 
@@ -1082,6 +1099,7 @@
             const tower = this._createTowerMesh(this.selectedTower, def);
             tower.gridX = pos.x;
             tower.gridZ = pos.z;
+            tower.tileWidth = tw;
             tower.mesh.castShadow = true;
             tower.delivering = true; // Tower is inactive until drone delivers it
             this.towers.push(tower);
@@ -1103,6 +1121,16 @@
         _destroyTower(index) {
             const t = this.towers[index];
             t.dying = true;
+
+            // Release all enemies bashing this barrier
+            if (t.type === 'wetfloor') {
+                for (const e of this.enemies) {
+                    if (e.bashingBarrier === t) {
+                        e.bashing = false;
+                        e.bashingBarrier = null;
+                    }
+                }
+            }
 
             // Destruction animation — tumble, shrink, fade
             const mesh = t.mesh;
@@ -1252,23 +1280,40 @@
             return drone;
         },
 
-        _createPackageModel() {
+        _createPackageModel(towerType) {
             const pkg = new THREE.Group();
             pkg.name = 'package';
             const boxMat = toonMat(PALETTE.wood);
+            const isBarrier = towerType === 'wetfloor';
+
             const box = new THREE.Mesh(
-                new THREE.BoxGeometry(0.6, 0.4, 0.6),
+                new THREE.BoxGeometry(
+                    isBarrier ? 1.8 : 0.6,
+                    isBarrier ? 0.3 : 0.4,
+                    isBarrier ? 0.4 : 0.6
+                ),
                 boxMat
             );
             pkg.add(box);
 
             // Tape stripe on top
+            const tapeMat = toonMat(PALETTE.tileLight);
             const tape = new THREE.Mesh(
-                new THREE.BoxGeometry(0.08, 0.005, 0.62),
-                toonMat(PALETTE.tileLight)
+                new THREE.BoxGeometry(0.08, 0.005, isBarrier ? 0.42 : 0.62),
+                tapeMat
             );
-            tape.position.y = 0.201;
+            tape.position.y = isBarrier ? 0.151 : 0.201;
             pkg.add(tape);
+
+            // Barrier gets extra cross-tape (heavy load!)
+            if (isBarrier) {
+                const tape2 = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.82, 0.005, 0.08),
+                    tapeMat
+                );
+                tape2.position.y = 0.151;
+                pkg.add(tape2);
+            }
 
             return pkg;
         },
@@ -1295,8 +1340,9 @@
             const exit = exitPool[Math.floor(Math.random() * exitPool.length)];
 
             // Create drone
+            const isBarrier = tower.type === 'wetfloor';
             const droneModel = this._createDroneModel();
-            const pkg = this._createPackageModel();
+            const pkg = this._createPackageModel(tower.type);
             pkg.position.y = -0.55;
             droneModel.add(pkg);
 
@@ -1339,12 +1385,13 @@
                 outboundCurve: outboundCurve,
                 flyHeight: flyHeight,
                 hoverHeight: hoverHeight,
-                // Phase durations (seconds)
-                enterDuration: 0.6,
-                descendDuration: 0.25,
+                // Phase durations (seconds) — barrier = heavier load, slower delivery
+                enterDuration: isBarrier ? 0.9 : 0.6,
+                descendDuration: isBarrier ? 0.4 : 0.25,
                 dropDuration: 0.15,
                 ascendDuration: 0.2,
                 exitDuration: 0.5,
+                isBarrier: isBarrier,
                 // Previous position for tilt calculation
                 prevPos: new THREE.Vector3(outsideX, entry.y, entry.z),
                 rotorSpin: 0,
@@ -1441,11 +1488,12 @@
                 }
 
                 // Drone tilt based on movement direction
+                const wobbleMult = d.isBarrier ? 3.0 : 1.0; // barrier = amplified wobble
                 const velocity = model.position.clone().sub(d.prevPos);
                 if (velocity.length() > 0.001) {
                     // Pitch forward when moving forward (in flight direction)
                     const speed = velocity.length() / Math.max(dt, 0.001);
-                    const tiltAmount = Math.min(0.4, speed * 0.03);
+                    const tiltAmount = Math.min(0.4, speed * 0.03) * (d.isBarrier ? 1.5 : 1.0);
 
                     // Bank into horizontal movement
                     const horizDir = new THREE.Vector2(velocity.x, velocity.z);
@@ -1456,12 +1504,12 @@
                         // Pitch forward
                         model.rotation.x = -tiltAmount;
                         // Roll based on lateral acceleration (simplified)
-                        model.rotation.z = -velocity.x * 0.15;
+                        model.rotation.z = -velocity.x * 0.15 * wobbleMult;
                     }
                 } else {
-                    // Hovering — slight wobble
-                    model.rotation.x = Math.sin(Date.now() * 0.003) * 0.02;
-                    model.rotation.z = Math.cos(Date.now() * 0.0025) * 0.02;
+                    // Hovering — slight wobble (amplified for barrier load)
+                    model.rotation.x = Math.sin(Date.now() * 0.003) * 0.02 * wobbleMult;
+                    model.rotation.z = Math.cos(Date.now() * 0.0025) * 0.02 * wobbleMult;
                 }
                 d.prevPos.copy(model.position);
 
@@ -1550,48 +1598,100 @@
                 coinsInside.position.y = 0.2;
                 group.add(coinsInside);
             } else if (type === 'wetfloor') {
-                // A-frame "Caution: Wet Floor" sign
+                // Construction-style barrier spanning 4 world units wide (2 grid cells)
                 const signMat2 = toonMat(PALETTE.sign);
-                // Left panel (angled)
+                const inkMat = toonMat(PALETTE.ink);
+
+                // Left vertical post
+                const postL = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.2, 1.6, 0.2),
+                    signMat2
+                );
+                postL.position.set(-1.8, 0.8, 0);
+                group.add(postL);
+
+                // Right vertical post
+                const postR = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.2, 1.6, 0.2),
+                    signMat2
+                );
+                postR.position.set(1.8, 0.8, 0);
+                group.add(postR);
+
+                // Horizontal rail connecting posts
+                const rail = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.8, 0.3, 0.15),
+                    signMat2
+                );
+                rail.position.set(0, 1.1, 0);
+                group.add(rail);
+
+                // Lower horizontal rail
+                const railLow = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.8, 0.2, 0.12),
+                    signMat2
+                );
+                railLow.position.set(0, 0.45, 0);
+                group.add(railLow);
+
+                // Black/yellow hazard stripes on upper rail
+                for (let s = 0; s < 7; s++) {
+                    const hazStripe = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.2, 0.32, 0.16),
+                        inkMat
+                    );
+                    hazStripe.position.set(-1.5 + s * 0.5, 1.1, 0);
+                    group.add(hazStripe);
+                }
+
+                // A-frame sign mounted in center on rail
                 const panelL = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.9, 1.3, 0.06),
+                    new THREE.BoxGeometry(0.7, 0.9, 0.05),
                     signMat2
                 );
-                panelL.position.set(0, 0.75, 0.15);
-                panelL.rotation.x = 0.25;
+                panelL.position.set(0, 1.1, 0.12);
+                panelL.rotation.x = 0.15;
                 group.add(panelL);
-                // Right panel (angled opposite)
+
                 const panelR = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.9, 1.3, 0.06),
+                    new THREE.BoxGeometry(0.7, 0.9, 0.05),
                     signMat2
                 );
-                panelR.position.set(0, 0.75, -0.15);
-                panelR.rotation.x = -0.25;
+                panelR.position.set(0, 1.1, -0.12);
+                panelR.rotation.x = -0.15;
                 group.add(panelR);
-                // Black warning stripe across front panel
-                const stripe = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.7, 0.15, 0.065),
-                    toonMat(PALETTE.ink)
-                );
-                stripe.position.set(0, 0.55, 0.18);
-                stripe.rotation.x = 0.25;
-                group.add(stripe);
-                // Exclamation mark on front — line
+
+                // Exclamation mark on sign
                 const exLine = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.08, 0.35, 0.065),
-                    toonMat(PALETTE.ink)
+                    new THREE.BoxGeometry(0.06, 0.3, 0.055),
+                    inkMat
                 );
-                exLine.position.set(0, 1.0, 0.2);
-                exLine.rotation.x = 0.25;
+                exLine.position.set(0, 1.25, 0.15);
+                exLine.rotation.x = 0.15;
                 group.add(exLine);
-                // Exclamation mark — dot
+
                 const exDot = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.1, 0.1, 0.065),
-                    toonMat(PALETTE.ink)
+                    new THREE.BoxGeometry(0.08, 0.08, 0.055),
+                    inkMat
                 );
-                exDot.position.set(0, 0.75, 0.19);
-                exDot.rotation.x = 0.25;
+                exDot.position.set(0, 1.0, 0.14);
+                exDot.rotation.x = 0.15;
                 group.add(exDot);
+
+                // Post feet/bases for stability look
+                const footL = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.35, 0.1, 0.35),
+                    signMat2
+                );
+                footL.position.set(-1.8, 0.05, 0);
+                group.add(footL);
+
+                const footR = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.35, 0.1, 0.35),
+                    signMat2
+                );
+                footR.position.set(1.8, 0.05, 0);
+                group.add(footR);
             } else if (type === 'mop') {
                 // ─── MOP TURRET — sweeping crowd control ───
                 // Bucket base (stationary)
@@ -2173,23 +2273,7 @@
             for (let i = this.enemies.length - 1; i >= 0; i--) {
                 const e = this.enemies[i];
 
-                // Check slow from Wet Floor Signs (speed walkers are immune)
                 let slowMult = 1.0;
-                if (e.slowed > 0) {
-                    e.slowed -= dt;
-                } else if (!e.slowImmune) {
-                    // Check proximity to slow towers
-                    for (const t of this.towers) {
-                        if (t.type !== 'wetfloor' || t.delivering) continue;
-                        const dx = e.x - t.gridX;
-                        const dz = e.z - t.gridZ;
-                        const dist = Math.sqrt(dx * dx + dz * dz);
-                        if (dist < t.def.range) {
-                            slowMult = t.def.slowFactor;
-                            break;
-                        }
-                    }
-                }
 
                 // Panicker speed aura — panic is contagious, nearby enemies 50% faster
                 let auraMult = 1.0;
@@ -2221,9 +2305,10 @@
                     e.z = Math.max(CONFIG.toiletPos.z + 1, Math.min(CONFIG.spawnZoneZ + 2, e.z));
                     e.mesh.position.x = e.x;
                     e.mesh.position.z = e.z;
-                    // Interrupt door bashing if knocked hard enough
+                    // Interrupt bashing if knocked hard enough
                     if (e.bashing && (Math.abs(e.knockbackVX) > 1 || Math.abs(e.knockbackVZ) > 1)) {
                         e.bashing = false;
+                        e.bashingBarrier = null;
                     }
                 }
 
@@ -2269,6 +2354,45 @@
                     e.mesh.position.z = e.z;
                     e.mesh.position.x = e.x;
 
+                    // Barrier collision — enemies stop and bash through barriers
+                    if (!e.jumping) {
+                        for (let ti = this.towers.length - 1; ti >= 0; ti--) {
+                            const bt = this.towers[ti];
+                            if (bt.type !== 'wetfloor' || bt.dying || bt.delivering) continue;
+                            const gs = CONFIG.grid;
+                            const tw = bt.tileWidth || 1;
+                            const halfSpan = tw * gs * 0.5;
+                            // Check if enemy is within the barrier's X span
+                            if (e.x < bt.gridX - halfSpan - 0.5 || e.x > bt.gridX + halfSpan + 0.5) continue;
+                            // Check if enemy is approaching the barrier's Z
+                            const barrierBashRange = bt.gridZ + 1.2;
+                            if (e.z <= barrierBashRange && e.z >= bt.gridZ - 1.5) {
+                                const eDef = this.ENEMY_TYPES[e.type];
+                                if (eDef && eDef.canJumpBarrier) {
+                                    // Dancer jumps over the barrier
+                                    e.jumping = true;
+                                    e.jumpTimer = 0;
+                                    e.jumpDuration = 0.5;
+                                    e.jumpStartZ = barrierBashRange;
+                                    e.jumpTargetZ = bt.gridZ - 1.5;
+                                    e.jumpPeakY = 2.0;
+                                    e.z = barrierBashRange;
+                                    if (e.animController) e.animController.playOneShot('bash_door');
+                                } else {
+                                    // Stop and bash the barrier
+                                    e.z = barrierBashRange;
+                                    e.mesh.position.z = e.z;
+                                    e.bashing = true;
+                                    e.bashingBarrier = bt;
+                                    e.bashTimer = 0.3 + Math.random() * 0.3;
+                                    e.bashCooldown = 1.0;
+                                    if (e.animController) e.animController.setState('bash_door');
+                                }
+                                break;
+                            }
+                        }
+                    }
+
                     // Trample towers — enemies kick/shove past any tower in their path
                     // Each enemy tracks which towers it already hit to avoid multi-damage
                     if (!e.trampledTowers) e.trampledTowers = new Set();
@@ -2276,6 +2400,7 @@
                     for (let ti = this.towers.length - 1; ti >= 0; ti--) {
                         const t = this.towers[ti];
                         if (t.dying || t.delivering) continue;
+                        if (t.type === 'wetfloor') continue; // barriers are bashed, not trampled
                         // Unique key per tower placement
                         const tKey = t.gridX + ',' + t.gridZ;
                         if (e.trampledTowers.has(tKey)) continue; // already kicked this one
@@ -2345,6 +2470,61 @@
                     e.animController.update(dt, camDist);
                     // Keep walkPhase for zig-zag movement logic
                     e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
+                }
+
+                // Jump arc update — dancer leaping over barriers
+                if (e.jumping) {
+                    e.jumpTimer += dt;
+                    const jt = Math.min(1, e.jumpTimer / e.jumpDuration);
+                    // Linear Z interpolation
+                    e.z = e.jumpStartZ + (e.jumpTargetZ - e.jumpStartZ) * jt;
+                    // Parabolic Y arc
+                    e.mesh.position.y = 4 * e.jumpPeakY * jt * (1 - jt);
+                    // Forward lean
+                    e.mesh.rotation.x = -0.3 * Math.sin(jt * Math.PI);
+                    e.mesh.position.z = e.z;
+                    e.mesh.position.x = e.x;
+                    if (jt >= 1) {
+                        e.jumping = false;
+                        e.jumpTimer = 0;
+                        e.mesh.position.y = 0;
+                        e.mesh.rotation.x = 0;
+                    }
+                }
+
+                // Barrier bash processing — enemies smash through barriers
+                if (e.bashing && e.bashingBarrier) {
+                    const bt = e.bashingBarrier;
+                    // Check if barrier still alive
+                    if (bt.dying || bt.hp <= 0) {
+                        e.bashing = false;
+                        e.bashingBarrier = null;
+                    } else {
+                        e.bashTimer -= dt;
+                        const camDist = e.mesh.position.distanceTo(this.camera.position);
+                        if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
+                        e.animController.update(dt, camDist);
+
+                        if (e.bashTimer <= 0) {
+                            e.bashTimer = e.bashCooldown;
+                            const dmg = e.doorDmg || 2;
+                            bt.hp -= dmg;
+                            bt.hitShake = 0.2;
+                            this._spawnBarrierChips(bt.gridX, bt.gridZ, dmg);
+
+                            if (bt.hp <= 0) {
+                                // Release ALL enemies bashing this barrier
+                                for (const other of this.enemies) {
+                                    if (other.bashingBarrier === bt) {
+                                        other.bashing = false;
+                                        other.bashingBarrier = null;
+                                    }
+                                }
+                                const bIdx = this.towers.indexOf(bt);
+                                if (bIdx !== -1) this._destroyTower(bIdx);
+                            }
+                        }
+                    }
                 }
 
                 // 6C: hitstop timer — resume animation after brief freeze
@@ -2648,7 +2828,7 @@
                     continue;
                 }
 
-                if (t.type === 'wetfloor') continue; // passive, no attack
+                if (t.type === 'wetfloor') continue; // barrier — damage handled in enemy loop
 
                 // Ubik — smooth turret rotation toward nearest enemy
                 if (t.type === 'ubik') {
@@ -3091,14 +3271,23 @@
 
             // Pulse animation for highlight
             const pulse = 0.85 + Math.sin(Date.now() * 0.006) * 0.15;
+            const def = this.TOWERS[this.selectedTower];
+            const tw = def.tileWidth || 1;
 
             this.gridHighlight.position.set(pos.x, 0.05, pos.z);
-            this.gridHighlight.scale.set(pulse, pulse, pulse);
+            this.gridHighlight.scale.set(pulse * tw, pulse, pulse);
             this.gridHighlight.visible = true;
 
             // Color: green if can place, red if occupied or can't afford
-            const def = this.TOWERS[this.selectedTower];
-            const canPlace = !this._isCellOccupied(pos.x, pos.z) && this.coins >= def.cost;
+            const gs = CONFIG.grid;
+            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+            let canPlace = this.coins >= def.cost;
+            for (let dx = 0; dx < tw && canPlace; dx++) {
+                const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
+                if (cellX < -halfW || cellX > halfW || this._isCellOccupied(cellX, pos.z)) {
+                    canPlace = false;
+                }
+            }
             const hoverColor = canPlace ? PALETTE.success : PALETTE.danger;
             this.gridHighlight.material.color.setHex(hoverColor);
             this.gridHighlight.material.opacity = canPlace ? 0.4 : 0.25;
@@ -3281,6 +3470,41 @@
                     vx: (Math.random() - 0.5) * 6,
                     vy: 3 + Math.random() * 5,
                     vz: -(2 + Math.random() * 4), // fly toward camera
+                    rotSpeed: (Math.random() - 0.5) * 12,
+                    life: 0.8 + Math.random() * 0.6,
+                    maxLife: 0.8 + Math.random() * 0.6,
+                    gravity: 12 + Math.random() * 4,
+                });
+            }
+        },
+
+        // ============================
+        // BARRIER BASH PARTICLES
+        // ============================
+        _spawnBarrierChips(x, z, dmg) {
+            const chipCount = Math.min(20, 4 + dmg * 3);
+
+            for (let i = 0; i < chipCount; i++) {
+                const size = 0.08 + Math.random() * 0.15;
+                const geo = Math.random() > 0.5
+                    ? new THREE.BoxGeometry(size, size * 0.5, size * 0.3)
+                    : new THREE.TetrahedronGeometry(size * 0.6, 0);
+                const mat2 = toonMat(PALETTE.sign); // yellow chips
+                const chip = new THREE.Mesh(geo, mat2);
+                chip.position.set(
+                    x + (Math.random() - 0.5) * 3,
+                    0.5 + Math.random() * 1.5,
+                    z
+                );
+                chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                chip.castShadow = true;
+                this.scene.add(chip);
+
+                this._doorParticles.push({
+                    mesh: chip,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: 2 + Math.random() * 3,
+                    vz: -(1.5 + Math.random() * 3), // fly toward camera
                     rotSpeed: (Math.random() - 0.5) * 12,
                     life: 0.8 + Math.random() * 0.6,
                     maxLife: 0.8 + Math.random() * 0.6,
