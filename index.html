@@ -2068,10 +2068,10 @@
             this._upgradePhase = true;
             this._upgradeOptions = options;
 
-            // Target hover positions: 3 drones in a row, centered, close to camera
-            const spacing = 5;
-            const hoverY = 14;    // Roughly mid-camera height
-            const hoverZ = 6;     // Close to camera (cam at Z=-15, looks at Z=22)
+            // Target hover positions: 3 drones in a row, centered, CLOSE to camera
+            const spacing = 3.5;
+            const hoverY = 20;    // Close to camera Y=26
+            const hoverZ = -2;    // Much closer to camera (cam at Z=-15)
             const startX = -(options.length - 1) * spacing / 2;
 
             for (let i = 0; i < options.length; i++) {
@@ -2229,8 +2229,8 @@
                 this.updateHUD();
             }
 
-            // Show toast notification
-            this._showUpgradeToast(upgrade);
+            // Add card directly to HUD (card drop animation already handled by UpgradeSelectionUI)
+            this._addUpgradeCard(upgrade);
 
             // Deactivate selection UI first (restores ambient, removes listeners)
             if (this.upgradeSelectionUI) {
@@ -2255,10 +2255,12 @@
                 bottom: 16px;
                 left: 16px;
                 display: flex;
+                flex-direction: column-reverse;
                 flex-wrap: wrap;
-                gap: 4px;
+                align-content: flex-start;
+                gap: 8px;
                 z-index: 50;
-                max-width: 320px;
+                max-height: ${6 * 72 + 5 * 8}px;
             `;
             document.body.appendChild(hud);
             this._upgradeHUD = hud;
@@ -2305,43 +2307,48 @@
             };
 
             // Create icon data URL using canvas icon system
-            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 48) : '';
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 96) : '';
 
             const card = document.createElement('div');
             card.className = 'upgrade-hud-card';
             card.style.cssText = `
-                width: 36px; height: 36px;
-                border: 2.5px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
-                border-radius: 6px;
+                width: 72px; height: 72px;
+                border: 3px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
+                border-radius: 10px;
                 background: ${rarityBg[upgrade.rarity] || rarityBg.common};
                 display: flex; align-items: center; justify-content: center;
                 cursor: pointer;
                 transition: transform 0.15s, box-shadow 0.15s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                box-shadow: 2px 3px 0px rgba(0,0,0,0.2);
             `;
+            // Pop-in animation
+            card.style.transform = 'scale(0)';
+            void card.offsetWidth;
+            card.style.transform = 'scale(1)';
+
             if (iconURL) {
                 const img = document.createElement('img');
                 img.src = iconURL;
-                img.width = 24;
-                img.height = 24;
+                img.width = 48;
+                img.height = 48;
                 img.style.pointerEvents = 'none';
                 card.appendChild(img);
             }
 
-            // Hover: show tooltip
+            // Hover: show tooltip to the right of card
             card.addEventListener('mouseenter', () => {
                 card.style.transform = 'scale(1.15)';
-                card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                 tip.innerHTML = `<b>${upgrade.name}</b><br>${upgrade.description}`;
                 const rect = card.getBoundingClientRect();
-                tip.style.left = rect.left + 'px';
-                tip.style.top = (rect.top - 8) + 'px';
-                tip.style.transform = 'translateY(-100%)';
+                tip.style.left = (rect.right + 8) + 'px';
+                tip.style.top = rect.top + 'px';
+                tip.style.transform = 'translateY(0)';
                 tip.style.opacity = '1';
             });
             card.addEventListener('mouseleave', () => {
                 card.style.transform = '';
-                card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+                card.style.boxShadow = '2px 3px 0px rgba(0,0,0,0.2)';
                 tip.style.opacity = '0';
             });
 
@@ -2382,7 +2389,7 @@
             toast.style.background = rarityBg[upgrade.rarity] || rarityBg.common;
 
             // Icon (canvas-rendered, no emoji)
-            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 48) : '';
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 96) : '';
             toast.innerHTML = '';
             if (iconURL) {
                 const img = document.createElement('img');

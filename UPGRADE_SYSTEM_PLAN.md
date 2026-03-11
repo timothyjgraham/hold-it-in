@@ -363,11 +363,16 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 ### Stage 8: Upgrade HUD & Feedback
 > Make owned upgrades visible and legible during gameplay
 
-- [ ] Active upgrade icon bar (bottom of screen or side panel)
-  - Small toon-shaded icons, outlined, matching rarity glow
-  - Stack count badges for stackable upgrades
-  - Hover/click to see description (pause menu?)
-- [ ] Acquisition toast: upgrade name + icon slides in from side, holds 2s, slides out
+- [x] Active upgrade icon bar (bottom-left, vertical columns)
+  - 72×72 icons (same size as tower build buttons), toon-outlined, rarity-colored borders
+  - Vertical column-reverse layout, stacks in columns of 6 (wraps right)
+  - Hover shows tooltip to the right with name + description
+  - Pop-in scale animation on card arrival
+  - Stack count badges for stackable upgrades — TODO
+  - ~~Hover/click to see description (pause menu?)~~ Tooltip on hover implemented
+- [x] Acquisition card drop: chosen drone presents close-up, then card drops/flies juicily to HUD
+  - Replaces old toast system. After selection ceremony, rejected drones scram, chosen drone flies to close-up (9 units from camera), waits 1.5s, then card detaches as floating DOM element and arcs via cubic bezier to the HUD position with wobble/scale animation.
+- [x] Drone hover positions moved much closer to camera (Y=20, Z=-2) for readability
 - [ ] Upgrade effect visibility during gameplay
   - Sticky Mop puddles: visible toon-shaded floor decals
   - Spill Zone puddles: green-tinted floor effect

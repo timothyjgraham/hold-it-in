@@ -2,6 +2,7 @@
 // ║  HOLD IT IN — Upgrade Selection UI                                        ║
 // ║  Orchestrates Stage 3 (interaction/selection) and Stage 4 (game phase).   ║
 // ║  Hover detection, selection ceremonies, rejected-drone exits, dimming.    ║
+// ║  Card-drop animation flies chosen upgrade to bottom-left HUD.            ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE } from '../data/palette.js';
@@ -22,6 +23,13 @@ const REJECTED_STAGGER = 0.2;
 
 // Legendary slowmo
 const LEGENDARY_SLOWMO_DUR = 0.3;
+
+// Presenting phase (chosen drone close-up)
+const PRESENT_FLY_DUR = 0.8;      // Fly to close-up position
+const PRESENT_WAIT_DUR = 1.5;     // Hold close-up before card drop
+
+// Card drop animation
+const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 
 // ─── DESCRIPTION TOOLTIP ────────────────────────────────────────────────────
 
@@ -179,12 +187,11 @@ export class UpgradeSelectionUI {
         this.options = [];            // Array of upgrade data objects
         this.hoveredIndex = -1;       // Which drone is hovered (-1 = none)
         this.selectedIndex = -1;      // Which drone was clicked
-        this.phase = 'idle';          // idle | entering | choosing | selecting | exiting | done
+        this.phase = 'idle';          // idle | choosing | selecting | presenting | cardDrop | done
 
         // Selection animation state
         this._selectTimer = 0;
         this._selectDuration = 0;
-        this._exitTimers = [];        // Per rejected drone
 
         // Particles
         this._particles = [];
@@ -199,6 +206,16 @@ export class UpgradeSelectionUI {
 
         // Slowmo
         this._slowmoTimer = 0;
+
+        // Presenting phase
+        this._presentWaiting = false;
+        this._presentWaitTimer = 0;
+
+        // Card drop
+        this._cardDropEl = null;
+        this._cardDropProgress = 0;
+        this._cardDropStart = null;
+        this._cardDropTarget = null;
 
         // Raycasting
         this._raycaster = new THREE.Raycaster();
@@ -269,6 +286,12 @@ export class UpgradeSelectionUI {
 
         // Clean up particles
         this._cleanupParticles();
+
+        // Clean up card drop element
+        if (this._cardDropEl && this._cardDropEl.parentNode) {
+            this._cardDropEl.parentNode.removeChild(this._cardDropEl);
+            this._cardDropEl = null;
+        }
     }
 
     // ─── MOUSE HANDLERS ──────────────────────────────────────────────────
@@ -557,18 +580,21 @@ export class UpgradeSelectionUI {
             this._zoomPunch += this._zoomPunchVel * dt;
         }
 
-        // ─── Transition to exit phase ────────────────────────────────────
+        // ─── Transition to presenting phase ──────────────────────────────
         if (t >= 1) {
-            this.phase = 'exiting';
-            this._beginRejectedExit();
+            this.phase = 'presenting';
+            this._beginPresenting();
         }
     }
 
-    // ─── REJECTED DRONE EXIT ─────────────────────────────────────────────
+    // ─── PRESENTING PHASE (chosen drone close-up + rejected exits) ───────
 
-    _beginRejectedExit() {
-        this._exitTimers = [];
+    _beginPresenting() {
+        this._presentWaiting = false;
+        this._presentWaitTimer = 0;
 
+        // --- Rejected drones exit to windows ---
+        let staggerIdx = 0;
         for (let i = 0; i < this.drones.length; i++) {
             if (i === this.selectedIndex) continue;
 
@@ -595,44 +621,44 @@ export class UpgradeSelectionUI {
             );
 
             drone.userData._exitCurve = new THREE.CatmullRomCurve3([
-                startPos,
-                midPoint,
-                target,
+                startPos, midPoint, target,
             ], false, 'catmullrom', 0.3);
             drone.userData._exitProgress = 0;
-            drone.userData._exitDelay = this._exitTimers.length * REJECTED_STAGGER;
-
-            this._exitTimers.push(i);
+            drone.userData._exitDelay = staggerIdx * REJECTED_STAGGER;
+            staggerIdx++;
         }
 
-        // Also start exit for selected drone (it flies off happily — slight upward arc)
+        // --- Selected drone: fly to close-up position ---
         const selDrone = this.drones[this.selectedIndex];
-        selDrone.userData.state = 'exiting';
-        const selStart = selDrone.position.clone();
-        // Fly upward and toward camera briefly then out
-        selDrone.userData._exitCurve = new THREE.CatmullRomCurve3([
-            selStart,
-            new THREE.Vector3(selStart.x, selStart.y + 3, selStart.z - 5),
-            new THREE.Vector3(selStart.x * 0.5, selStart.y + 8, selStart.z - 15),
-        ], false, 'catmullrom', 0.3);
-        selDrone.userData._exitProgress = 0;
-        selDrone.userData._exitDelay = 0;
+        selDrone.userData.state = 'presenting';
+        const startPos = selDrone.position.clone();
+
+        // Calculate close-up: 9 units in front of camera along view direction
+        const viewDir = new THREE.Vector3();
+        this._camera.getWorldDirection(viewDir);
+        const presentPos = this._camera.position.clone().add(viewDir.multiplyScalar(9));
+
+        selDrone.userData._presentStartPos = startPos;
+        selDrone.userData._presentTargetPos = presentPos;
+        selDrone.userData._presentProgress = 0;
+
+        // Reset rotations from selection ceremony
+        selDrone.rotation.set(0, 0, 0);
     }
 
-    _updateExitAnim(dt) {
-        if (this.phase !== 'exiting') return;
+    _updatePresenting(dt) {
+        if (this.phase !== 'presenting') return;
 
-        let allDone = true;
-
+        // --- Update rejected drone exits ---
         for (let i = 0; i < this.drones.length; i++) {
+            if (i === this.selectedIndex) continue;
             const drone = this.drones[i];
             const ud = drone.userData;
             if (ud.state !== 'exiting') continue;
 
-            // Delay (stagger)
+            // Stagger delay
             if (ud._exitDelay > 0) {
                 ud._exitDelay -= dt;
-                allDone = false;
                 continue;
             }
 
@@ -670,14 +696,192 @@ export class UpgradeSelectionUI {
                 });
             }
 
-            if (t >= 1) {
-                ud.state = 'done';
-            } else {
-                allDone = false;
+            if (t >= 1) ud.state = 'done';
+        }
+
+        // --- Animate selected drone to close-up ---
+        const selDrone = this.drones[this.selectedIndex];
+        const selUd = selDrone.userData;
+
+        if (selUd.state === 'presenting') {
+            selUd._presentProgress += dt / PRESENT_FLY_DUR;
+            const t = Math.min(1, selUd._presentProgress);
+            // Ease-in-out
+            const et = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            selDrone.position.lerpVectors(selUd._presentStartPos, selUd._presentTargetPos, et);
+
+            // Smooth rotation toward camera (face forward)
+            selDrone.rotation.y *= 0.92;
+            selDrone.rotation.x *= 0.92;
+            selDrone.rotation.z *= 0.92;
+
+            if (t >= 1 && !this._presentWaiting) {
+                this._presentWaiting = true;
+                this._presentWaitTimer = 0;
             }
         }
 
-        if (allDone) {
+        // --- Wait before card drop ---
+        if (this._presentWaiting) {
+            this._presentWaitTimer += dt;
+            if (this._presentWaitTimer >= PRESENT_WAIT_DUR) {
+                this._beginCardDrop();
+            }
+        }
+    }
+
+    // ─── CARD DROP ANIMATION ─────────────────────────────────────────────
+
+    _beginCardDrop() {
+        this.phase = 'cardDrop';
+
+        const selDrone = this.drones[this.selectedIndex];
+        const upgrade = this.options[this.selectedIndex];
+
+        // Project sign center to screen coordinates
+        const signWorldPos = new THREE.Vector3();
+        selDrone.userData.signGroup.getWorldPosition(signWorldPos);
+        signWorldPos.project(this._camera);
+        const screenX = (signWorldPos.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-signWorldPos.y * 0.5 + 0.5) * window.innerHeight;
+
+        // Create floating DOM card at sign's screen position
+        this._cardDropEl = this._createCardDropElement(upgrade, screenX, screenY);
+
+        // Hide 3D sign
+        selDrone.userData.signGroup.visible = false;
+
+        // Target: bottom-left HUD area
+        const hud = document.getElementById('upgrade-hud');
+        let targetX, targetY;
+        if (hud) {
+            const rect = hud.getBoundingClientRect();
+            // Target the next card slot
+            const cardCount = hud.children.length;
+            const col = Math.floor(cardCount / 6);
+            const row = cardCount % 6;
+            targetX = rect.left + col * 80 + 36;
+            targetY = rect.bottom - row * 80 - 36;
+        } else {
+            // HUD not yet created — target bottom-left corner
+            targetX = 16 + 36;
+            targetY = window.innerHeight - 16 - 36;
+        }
+
+        this._cardDropStart = { x: screenX, y: screenY };
+        this._cardDropTarget = { x: targetX, y: targetY };
+        this._cardDropProgress = 0;
+
+        selDrone.userData.state = 'cardDrop';
+    }
+
+    _createCardDropElement(upgrade, screenX, screenY) {
+        const rarityBorders = {
+            common: 'var(--pal-ink, #1a1a2e)',
+            rare: 'var(--pal-rarityRare, #9b8ec4)',
+            legendary: 'var(--pal-rarityLegendary, #ffd93d)',
+        };
+        const rarityBg = {
+            common: 'var(--pal-white, #faf5ef)',
+            rare: '#ede8f5',
+            legendary: '#fff5d0',
+        };
+
+        const el = document.createElement('div');
+        el.id = 'upgrade-card-drop';
+        el.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: 110;
+            width: 72px;
+            height: 72px;
+            border-radius: 10px;
+            border: 3px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
+            background: ${rarityBg[upgrade.rarity] || rarityBg.common};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            box-shadow: 3px 4px 0px var(--pal-ink, #1a1a2e),
+                        0 0 20px rgba(255, 217, 61, 0.4);
+            left: ${screenX - 36}px;
+            top: ${screenY - 36}px;
+        `;
+
+        if (window.createIconDataURL) {
+            const img = document.createElement('img');
+            img.src = window.createIconDataURL(upgrade.icon || 'star', 96);
+            img.width = 48;
+            img.height = 48;
+            img.style.pointerEvents = 'none';
+            el.appendChild(img);
+        }
+
+        document.body.appendChild(el);
+        return el;
+    }
+
+    _updateCardDrop(dt) {
+        if (this.phase !== 'cardDrop') return;
+
+        this._cardDropProgress += dt / CARD_DROP_DUR;
+        const t = Math.min(1, this._cardDropProgress);
+
+        const start = this._cardDropStart;
+        const target = this._cardDropTarget;
+
+        // Cubic bezier curve: drop down first, then arc to bottom-left HUD
+        const cp1x = start.x;
+        const cp1y = start.y + 80;    // Drop down
+        const cp2x = target.x + 120;  // Approach from the right
+        const cp2y = target.y - 60;   // Approach from above
+
+        const u = 1 - t;
+        const x = u*u*u*start.x + 3*u*u*t*cp1x + 3*u*t*t*cp2x + t*t*t*target.x;
+        const y = u*u*u*start.y + 3*u*u*t*cp1y + 3*u*t*t*cp2y + t*t*t*target.y;
+
+        if (this._cardDropEl) {
+            this._cardDropEl.style.left = (x - 36) + 'px';
+            this._cardDropEl.style.top = (y - 36) + 'px';
+
+            // Juicy scale: slight grow then settle
+            const scale = 1 + Math.sin(t * Math.PI) * 0.15;
+            // Wobble rotation that damps out
+            const rot = Math.sin(t * Math.PI * 4) * 12 * (1 - t);
+            this._cardDropEl.style.transform = `scale(${scale}) rotate(${rot}deg)`;
+
+            // Fade in quickly, stay visible, fade out at end
+            if (t < 0.08) {
+                this._cardDropEl.style.opacity = String(t / 0.08);
+            } else if (t > 0.88) {
+                this._cardDropEl.style.opacity = String((1 - t) / 0.12);
+            } else {
+                this._cardDropEl.style.opacity = '1';
+            }
+        }
+
+        // Fade out the 3D drone body
+        const selDrone = this.drones[this.selectedIndex];
+        if (t > 0.2) {
+            const fade = Math.max(0, 1 - (t - 0.2) / 0.5);
+            selDrone.traverse(child => {
+                if (child.isMesh && child.material) {
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    for (const mat of mats) {
+                        mat.transparent = true;
+                        mat.opacity = fade;
+                    }
+                }
+            });
+        }
+
+        if (t >= 1) {
+            // Clean up card drop element
+            if (this._cardDropEl && this._cardDropEl.parentNode) {
+                this._cardDropEl.parentNode.removeChild(this._cardDropEl);
+                this._cardDropEl = null;
+            }
             this.phase = 'done';
         }
     }
@@ -768,9 +972,14 @@ export class UpgradeSelectionUI {
             this._updateSelectionAnim(dt);
         }
 
-        // Exit animation
-        if (this.phase === 'exiting') {
-            this._updateExitAnim(dt);
+        // Presenting phase (close-up + rejected exits)
+        if (this.phase === 'presenting') {
+            this._updatePresenting(dt);
+        }
+
+        // Card drop animation
+        if (this.phase === 'cardDrop') {
+            this._updateCardDrop(dt);
         }
 
         // Particles
