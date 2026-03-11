@@ -77,6 +77,20 @@ export const PALETTE = {
     rimCool:    0x6688aa,   // Rim/back lighting (cool contrast)
     fillWarm:   0xfff0d0,   // Warm fill lights
 
+    // ─── DRONES ─────────────────────────────────────────────────────────────
+    // Three distinct pastels for upgrade drones (one per slot in a trio)
+
+    droneAlpha:  0xf2b8c6,  // Soft rose — warm pastel, reads against all backgrounds
+    droneBeta:   0xa8d8ea,  // Powder blue — cool pastel, distinct from player hoodie
+    droneGamma:  0xc5e8b7,  // Sage green — neutral pastel, complements both others
+
+    // ─── RARITY GLOW ────────────────────────────────────────────────────────
+    // Emissive/glow colors per upgrade rarity tier
+
+    rarityCommon:    0xfaf5ef,  // Clean cream — matches PALETTE.white, subtle
+    rarityRare:      0x9b8ec4,  // Soft violet — cool, noticeable, not overwhelming
+    rarityLegendary: 0xffd93d,  // Rich gold — matches PALETTE.gold, unmistakable
+
     // ─── TOON SHADER PARAMS ───────────────────────────────────────────────────
     // Shared across all toon materials for consistency
 
@@ -136,3 +150,5 @@ export function injectCSSPalette() {
 // TOWERS            magnet #f0a030 │ sign #e8d44a │ mop #9b59b6 │ ubik #6bcb77 │ potplant #c4663a
 // UI/EFFECTS        gold #ffd93d │ danger #ff6b7a │ success #50c878 │ glow #fff0c0
 // LIGHTING          ambient #505060 │ holyGold #ffd080 │ rimCool #6688aa │ fillWarm #fff0d0
+// DRONES            alpha #f2b8c6 │ beta #a8d8ea │ gamma #c5e8b7
+// RARITY            common #faf5ef │ rare #9b8ec4 │ legendary #ffd93d

@@ -235,41 +235,41 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 ### Stage 1: Data Layer & Core System
 > Upgrade registry, rarity tables, selection logic, state management
 
-- [ ] Create `js/data/upgradeRegistry.js` — master list of all 44 upgrades as data objects
+- [x] Create `js/data/upgradeRegistry.js` — master list of all 44 upgrades as data objects
   - Each upgrade: `{ id, name, description, rarity, icon, towerRequirement, stackable, maxStacks, effectFn }`
   - Export by tier: `COMMON_UPGRADES`, `RARE_UPGRADES`, `LEGENDARY_UPGRADES`
-- [ ] Create `js/systems/UpgradeManager.js` — runtime upgrade state
+- [x] Create `js/systems/UpgradeManager.js` — runtime upgrade state
   - Tracks owned upgrades and stack counts
   - `rollUpgrades(wave, ownedTowers)` — returns 3 upgrade options respecting all selection rules
   - `applyUpgrade(upgradeId)` — activates the upgrade, updates internal state
   - `hasUpgrade(id)` / `getStacks(id)` — query helpers for game logic
   - `getModifier(stat)` — returns cumulative modifier for a stat (e.g., `mopKnockback` returns 1.5 if Heavy Mop owned)
-- [ ] Add rarity distribution logic matching the wave-based table above
-- [ ] Add tower ownership check: scan `Game.towers[]` for placed tower types before rolling
-- [ ] Add "at least one general option" guarantee rule
-- [ ] Wire `UpgradeManager` into `Game` object — initialize on game start, reset on game over
+- [x] Add rarity distribution logic matching the wave-based table above
+- [x] Add tower ownership check: scan `Game.towers[]` for placed tower types before rolling
+- [x] Add "at least one general option" guarantee rule
+- [x] Wire `UpgradeManager` into `Game` object — initialize on game start, reset on game over
 
 ### Stage 2: Drone Presentation — Models & Flight
 > Build the drones, fly them in, make them hover
 
-- [ ] Add `PALETTE.drones` colors (3 distinct pastels) to `js/data/palette.js`
-- [ ] Create `js/models/UpgradeDroneModel.js` — drone mesh factory
+- [x] Add `PALETTE.drones` colors (3 distinct pastels) to `js/data/palette.js`
+- [x] Create `js/models/UpgradeDroneModel.js` — drone mesh factory
   - Pill-shaped body (capsule geometry or rounded box)
   - 4 propeller arms + spinning disc props
   - Toon-shaded with outline (using existing toon shader)
   - Scale variants for common/rare/legendary
   - Sign attachment: two thin chain cylinders + flat placard box
-- [ ] Create placard sign with canvas texture
+- [x] Create placard sign with canvas texture
   - Render upgrade name + icon to canvas
   - Apply as texture on sign front face
   - Rarity-appropriate border/background color
-- [ ] Implement pendulum physics for sign swing (simple damped oscillation)
-- [ ] Reuse existing CatmullRomCurve3 flight path system (from tower drone delivery)
+- [x] Implement pendulum physics for sign swing (simple damped oscillation)
+- [x] Reuse existing CatmullRomCurve3 flight path system (from tower drone delivery)
   - Randomize source window per drone
   - Define target hover positions (3-point row in front of camera)
   - Add deceleration wobble at end of path
-- [ ] Implement staggered entrance (0.3s per drone)
-- [ ] Implement idle hover (sine bob, offset phases)
+- [x] Implement staggered entrance (0.3s per drone)
+- [x] Implement idle hover (sine bob, offset phases)
 
 ### Stage 3: Drone Presentation — Interaction & Selection
 > Player input, hover feedback, selection ceremony, exit

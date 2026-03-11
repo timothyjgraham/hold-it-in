@@ -8,9 +8,11 @@ import { getAnimationClip } from './animation/AnimationLibrary.js';
 import { createEnemyModel } from './models/EnemyModelFactory.js';
 import { EnemyPool } from './systems/EnemyPool.js';
 import { CoinPool } from './systems/CoinPool.js';
+import { UpgradeManager } from './systems/UpgradeManager.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
+import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
 import {
-    toonMat, matWall, matTileLight, matTileDark, matFixture, matWood,
+    toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
     matDanger, matBeam, matParticles, matSpray, matMagnet, matSign, matMop, matUbik, matPotplant,
     matRangeCircle,
@@ -75,7 +77,12 @@ window.getAnimationClip = getAnimationClip;
 window.createEnemyModel = createEnemyModel;
 window.EnemyPool = EnemyPool;
 window.CoinPool = CoinPool;
+window.UpgradeManager = UpgradeManager;
 window.PlayerCharacter = PlayerCharacter;
+window.createUpgradeDrone = createUpgradeDrone;
+window.updateUpgradeDrone = updateUpgradeDrone;
+window.disposeUpgradeDrone = disposeUpgradeDrone;
+window.outlineMatStatic = outlineMatStatic;
 
 // Initialize game
 window.Game = Game;

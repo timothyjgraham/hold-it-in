@@ -594,6 +594,14 @@
                 console.log('Coin pool pre-allocated:', this.coinPool.getStats().poolSize);
             }
 
+            // Upgrade system
+            if (window.UpgradeManager) {
+                this.upgradeManager = new UpgradeManager();
+                this.upgradeDrones = [];     // Active upgrade drones in scene
+                this._upgradePhase = false;  // True during upgrade selection between waves
+                console.log('Upgrade system initialized');
+            }
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -1226,6 +1234,13 @@
                 fadeEl.classList.remove('active');
                 void fadeEl.offsetHeight;
                 fadeEl.style.transition = '';
+            }
+
+            // Reset upgrade system
+            if (this.upgradeManager) {
+                this.upgradeManager.reset();
+                this._cleanupUpgradeDrones();
+                this._upgradePhase = false;
             }
 
             this.selectedTower = null;
@@ -1935,6 +1950,147 @@
                     this.activeDrones.splice(i, 1);
                 }
             }
+        },
+
+        // ============================
+        // UPGRADE DRONE SYSTEM
+        // ============================
+
+        _spawnUpgradeDrones() {
+            if (!this.upgradeManager || !window.createUpgradeDrone) return;
+
+            // Clean up any existing upgrade drones
+            this._cleanupUpgradeDrones();
+
+            // Determine which tower types the player currently has placed
+            const ownedTypes = [...new Set(this.towers.filter(t => !t.dying && !t.delivering).map(t => t.type))];
+
+            // Roll 3 upgrade options
+            const options = this.upgradeManager.rollUpgrades(this.wave, ownedTypes);
+            if (options.length === 0) return;
+
+            this._upgradePhase = true;
+            this._upgradeOptions = options;
+
+            // Target hover positions: 3 drones in a row, centered
+            const spacing = 6;
+            const hoverY = 8;     // Above eye level
+            const hoverZ = 20;    // In front of camera, above the play area
+            const startX = -(options.length - 1) * spacing / 2;
+
+            for (let i = 0; i < options.length; i++) {
+                const upgrade = options[i];
+                const drone = createUpgradeDrone(upgrade, i);
+
+                // Pick a random entry window
+                const windows = this.windowPositions;
+                if (windows.length === 0) continue;
+                const win = windows[Math.floor(Math.random() * windows.length)];
+
+                // Target position
+                const targetX = startX + i * spacing;
+                const targetY = hoverY;
+                const targetZ = hoverZ;
+
+                // Build CatmullRomCurve3 flight path from window to hover position
+                const outsideX = win.x + (win.x < 0 ? -3 : 3);
+                const flightCurve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(outsideX, win.y, win.z),
+                    new THREE.Vector3(win.x, win.y + 2, win.z),
+                    new THREE.Vector3(win.x * 0.3, (win.y + targetY) / 2 + 2, (win.z + targetZ) / 2),
+                    new THREE.Vector3(targetX, targetY, targetZ),
+                ], false, 'catmullrom', 0.3);
+
+                // Initial position
+                drone.position.set(outsideX, win.y, win.z);
+                this.scene.add(drone);
+
+                // Drone flight state
+                const ud = drone.userData;
+                ud.state = 'entering';
+                ud.flightCurve = flightCurve;
+                ud.flightProgress = 0;
+                ud.enterDuration = 1.5 + i * 0.3; // Stagger: 1.5s, 1.8s, 2.1s
+                ud.targetPos = new THREE.Vector3(targetX, targetY, targetZ);
+                ud.prevPos = drone.position.clone();
+
+                this.upgradeDrones.push(drone);
+            }
+
+            console.log(`Upgrade drones spawned: ${options.map(o => o.name).join(', ')}`);
+        },
+
+        _updateUpgradeDrones(dt) {
+            if (!this.upgradeDrones || this.upgradeDrones.length === 0) return;
+
+            for (const drone of this.upgradeDrones) {
+                const ud = drone.userData;
+
+                if (ud.state === 'entering') {
+                    ud.flightProgress += dt / ud.enterDuration;
+                    const t = Math.min(1, ud.flightProgress);
+                    // Ease-in-out
+                    const et = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+                    const pos = new THREE.Vector3();
+                    ud.flightCurve.getPoint(et, pos);
+
+                    // Velocity from previous frame (before updating position)
+                    const velocity = ud.prevPos ? pos.clone().sub(ud.prevPos) : new THREE.Vector3();
+
+                    drone.position.copy(pos);
+
+                    // Pendulum force from lateral acceleration
+                    ud._externalAccel = -velocity.x * 3.0;
+
+                    // Drone tilt based on velocity
+                    const speed = velocity.length() / Math.max(dt, 0.001);
+                    const tilt = Math.min(0.3, speed * 0.02);
+                    const hDir = new THREE.Vector2(velocity.x, velocity.z);
+                    if (hDir.length() > 0.001) {
+                        hDir.normalize();
+                        drone.rotation.y = Math.atan2(hDir.x, hDir.y);
+                        drone.rotation.x = -tilt;
+                        drone.rotation.z = -velocity.x * 0.1;
+                    }
+
+                    ud.prevPos = pos.clone();
+
+                    // Transition to hovering
+                    if (t >= 1) {
+                        ud.state = 'hovering';
+                        drone.position.copy(ud.targetPos);
+                        drone.rotation.set(0, 0, 0);
+                        ud._externalAccel = 0;
+                    }
+
+                } else if (ud.state === 'hovering') {
+                    // Apply hover bob
+                    const bob = ud._hoverBob || 0;
+                    drone.position.y = ud.targetPos.y + bob;
+
+                    // Gentle facing toward camera (face -Z)
+                    drone.rotation.y *= 0.95; // Damp toward 0
+                }
+
+                // Always update drone animations (rotors, pendulum, bob)
+                if (window.updateUpgradeDrone) {
+                    updateUpgradeDrone(drone, dt);
+                }
+            }
+        },
+
+        _cleanupUpgradeDrones() {
+            if (!this.upgradeDrones) return;
+            for (const drone of this.upgradeDrones) {
+                this.scene.remove(drone);
+                if (window.disposeUpgradeDrone) {
+                    disposeUpgradeDrone(drone);
+                }
+            }
+            this.upgradeDrones = [];
+            this._upgradePhase = false;
+            this._upgradeOptions = null;
         },
 
         _createTowerMesh(type, def) {
@@ -2725,6 +2881,11 @@
                     this.updateHUD();
                     this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
                     this._spawnCoinText(0, 30, waveBonus);
+
+                    // Spawn upgrade drones (after wave 1+)
+                    if (this.upgradeManager && this.wave >= 1) {
+                        this._spawnUpgradeDrones();
+                    }
                 }
             }
 
@@ -4761,6 +4922,9 @@
 
             // Update active drones
             this._updateDrones(dt);
+
+            // Update upgrade drones
+            this._updateUpgradeDrones(dt);
 
             // Game logic
             this.update(dt);
