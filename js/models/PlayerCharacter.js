@@ -228,20 +228,17 @@ export class PlayerCharacter {
 
         // Phone body
         const phoneGeo = new THREE.BoxGeometry(phoneW, phoneH, phoneD);
-        const phoneMat = new THREE.MeshStandardMaterial({
+        const phoneMat = new THREE.MeshToonMaterial({
             color: 0x1a1a2e,
-            roughness: 0.3,
-            metalness: 0.5,
         });
         this.phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
 
         // Screen — bright emissive blue glow (visible from above)
         const screenGeo = new THREE.PlaneGeometry(phoneW * 0.85, phoneH * 0.85);
-        const screenMat = new THREE.MeshStandardMaterial({
+        const screenMat = new THREE.MeshToonMaterial({
             color: 0x4fc3f7,
-            emissive: 0x4fc3f7,
+            emissive: new THREE.Color(0x4fc3f7),
             emissiveIntensity: 1.2,
-            roughness: 0.1,
         });
         const screen = new THREE.Mesh(screenGeo, screenMat);
         screen.position.z = phoneD * 0.51;

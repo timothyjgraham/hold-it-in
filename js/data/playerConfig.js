@@ -1,6 +1,9 @@
 // Player Visual Configuration — seated character on toilet with phone
 // Pure data module. No THREE.js dependency.
 // Bone positions encode the SEATED configuration directly (thighs forward, shins down).
+// All colors sourced from the master palette.
+
+import { PALETTE } from './palette.js';
 
 export const PLAYER_VISUAL_CONFIG = {
     player: {
@@ -48,10 +51,10 @@ export const PLAYER_VISUAL_CONFIG = {
             handSize: 0.10,         // was 0.13
         },
         materialColors: {
-            body: 0x4a86c8,    // blue hoodie
-            skin: 0xffccaa,    // skin tone
-            legs: 0x2c3e50,    // dark pants
-            outline: 0x1a1a1a,
+            body: PALETTE.hoodie,   // player exclusive blue
+            skin: PALETTE.skin,     // shared skin tone
+            legs: PALETTE.pants,    // dark pants
+            outline: PALETTE.ink,   // universal outline
         },
         restPose: {
             head: { x: -0.20 },   // looking down at phone

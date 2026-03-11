@@ -1,5 +1,8 @@
 // Enemy Visual Configuration — per-type appearance, skeleton, and animation parameters
 // Pure data module. No THREE.js dependency.
+// All colors sourced from the master palette.
+
+import { PALETTE } from './palette.js';
 
 export const ENEMY_VISUAL_CONFIG = {
 
@@ -36,10 +39,10 @@ export const ENEMY_VISUAL_CONFIG = {
             legSpacing: 0.15,
         },
         materialColors: {
-            body: 0xd4a574,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.polite,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 1.0,
@@ -84,10 +87,10 @@ export const ENEMY_VISUAL_CONFIG = {
             legSpacing: 0.08,
         },
         materialColors: {
-            body: 0x3498db,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.dancer,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 0.4,
@@ -141,10 +144,10 @@ export const ENEMY_VISUAL_CONFIG = {
             bellyRadius: 0.45,
         },
         materialColors: {
-            body: 0x795548,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.waddle,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 1.4,
@@ -197,10 +200,10 @@ export const ENEMY_VISUAL_CONFIG = {
             armLength: 0.60,
         },
         materialColors: {
-            body: 0xf1c40f,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.panicker,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 0.5,
@@ -255,10 +258,10 @@ export const ENEMY_VISUAL_CONFIG = {
             legSpacing: 0.15,
         },
         materialColors: {
-            body: 0x1abc9c,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.power,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 0.7,
@@ -305,10 +308,10 @@ export const ENEMY_VISUAL_CONFIG = {
             legSpacing: 0.10,
         },
         materialColors: {
-            body: 0xe91e8c,
-            skin: 0xffccaa,
-            legs: 0x333333,
-            outline: 0x1a1a1a,
+            body: PALETTE.girls,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
         },
         animationParams: {
             walkDuration: 0.9,

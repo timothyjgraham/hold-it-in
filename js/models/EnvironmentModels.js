@@ -1,46 +1,33 @@
 // EnvironmentModels.js — Low-poly 3D bathroom/office environment for "Hold It In"
-// All functions return THREE.Group objects with polished geometry and materials.
+// All functions return THREE.Group objects with polished geometry and toon materials.
+
+import { PALETTE } from '../data/palette.js';
+import {
+    toonMat, matWall, matTileLight, matTileDark, matFixture,
+    matWood, matWhite, matDark, matInk, matCarpet, matPorcelain,
+    matGold, matDanger,
+} from '../shaders/toonMaterials.js';
 
 // ─── Shared Materials ─────────────────────────────────────────────────────────
 
 function chrome() {
-    return new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.9,
-        roughness: 0.1,
-    });
+    return matFixture();
 }
 
 function porcelain() {
-    return new THREE.MeshStandardMaterial({
-        color: 0xf0f0f0,
-        metalness: 0.05,
-        roughness: 0.2,
-    });
+    return matPorcelain();
 }
 
 function matteGrayBlue() {
-    return new THREE.MeshStandardMaterial({
-        color: 0x8899aa,
-        metalness: 0.05,
-        roughness: 0.6,
-    });
+    return matWall();
 }
 
 function whitePlastic() {
-    return new THREE.MeshStandardMaterial({
-        color: 0xe8e8e8,
-        metalness: 0.0,
-        roughness: 0.4,
-    });
+    return matWhite();
 }
 
 function darkGray() {
-    return new THREE.MeshStandardMaterial({
-        color: 0x444444,
-        metalness: 0.1,
-        roughness: 0.5,
-    });
+    return matDark();
 }
 
 // ─── 1. Bathroom Stalls ──────────────────────────────────────────────────────
@@ -51,11 +38,7 @@ export function createBathroomStalls() {
 
     const chromeMat = chrome();
     const panelMat = matteGrayBlue();
-    const footMat = new THREE.MeshStandardMaterial({
-        color: 0x999999,
-        metalness: 0.7,
-        roughness: 0.2,
-    });
+    const footMat = matFixture();
 
     function buildStallDivider(xPos, side) {
         const divider = new THREE.Group();
@@ -135,21 +118,9 @@ export function createSinks() {
 
     const porcelainMat = porcelain();
     const chromeMat = chrome();
-    const counterMat = new THREE.MeshStandardMaterial({
-        color: 0xd0cfc8,
-        metalness: 0.1,
-        roughness: 0.3,
-    });
-    const soapMat = new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.3,
-        roughness: 0.3,
-    });
-    const soapButtonMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        metalness: 0.6,
-        roughness: 0.2,
-    });
+    const counterMat = matTileLight();
+    const soapMat = matFixture();
+    const soapButtonMat = matFixture();
 
     function buildSink(zPos) {
         const sink = new THREE.Group();
@@ -187,11 +158,7 @@ export function createSinks() {
 
         // Drain (small dark circle at bottom of basin)
         const drainGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.02, 8);
-        const drainMat = new THREE.MeshStandardMaterial({
-            color: 0x333333,
-            metalness: 0.8,
-            roughness: 0.2,
-        });
+        const drainMat = matDark();
         const drain = new THREE.Mesh(drainGeo, drainMat);
         drain.position.set(0, 1.16, 0.1);
         sink.add(drain);
@@ -238,11 +205,7 @@ export function createSinks() {
 
         // Wall bracket (supports the counter from below)
         const bracketGeo = new THREE.BoxGeometry(0.08, 0.6, 0.8);
-        const bracketMat = new THREE.MeshStandardMaterial({
-            color: 0xaaaaaa,
-            metalness: 0.5,
-            roughness: 0.3,
-        });
+        const bracketMat = matFixture();
         for (const bx of [-0.7, 0.7]) {
             const bracket = new THREE.Mesh(bracketGeo, bracketMat);
             bracket.position.set(bx, 1.25, -0.1);
@@ -303,12 +266,7 @@ export function createMirror() {
 
     // Mirror reflective surface
     const mirrorSurfaceGeo = new THREE.PlaneGeometry(3.5, 2.2);
-    const mirrorSurfaceMat = new THREE.MeshStandardMaterial({
-        color: 0xaaccdd,
-        metalness: 0.95,
-        roughness: 0.05,
-        side: THREE.FrontSide,
-    });
+    const mirrorSurfaceMat = toonMat(PALETTE.rimCool);
     const mirrorSurface = new THREE.Mesh(mirrorSurfaceGeo, mirrorSurfaceMat);
     mirrorSurface.position.set(0, 0, 0.02);
     group.add(mirrorSurface);
@@ -352,11 +310,7 @@ export function createMirror() {
 
     // Backing plate (thin dark panel behind mirror)
     const backingGeo = new THREE.BoxGeometry(3.6, 2.3, 0.03);
-    const backingMat = new THREE.MeshStandardMaterial({
-        color: 0x222222,
-        metalness: 0.0,
-        roughness: 0.8,
-    });
+    const backingMat = matInk();
     const backing = new THREE.Mesh(backingGeo, backingMat);
     backing.position.set(0, 0, -0.02);
     group.add(backing);
@@ -401,57 +355,35 @@ export function createHandDryer() {
 
     // Nozzle interior (dark slot)
     const slotGeo = new THREE.BoxGeometry(0.4, 0.03, 0.1);
-    const slotMat = new THREE.MeshStandardMaterial({
-        color: 0x222222,
-        metalness: 0.0,
-        roughness: 0.8,
-    });
+    const slotMat = matInk();
     const slot = new THREE.Mesh(slotGeo, slotMat);
     slot.position.set(0, -0.48, 0.28);
     group.add(slot);
 
     // Sensor window (small dark rectangle)
     const sensorGeo = new THREE.BoxGeometry(0.15, 0.1, 0.02);
-    const sensorMat = new THREE.MeshStandardMaterial({
-        color: 0x111111,
-        metalness: 0.3,
-        roughness: 0.5,
-    });
+    const sensorMat = matInk();
     const sensor = new THREE.Mesh(sensorGeo, sensorMat);
     sensor.position.set(0, -0.15, 0.26);
     group.add(sensor);
 
     // Indicator light (emissive green dot)
     const lightGeo = new THREE.SphereGeometry(0.035, 6, 6);
-    const lightMat = new THREE.MeshStandardMaterial({
-        color: 0x00ff44,
-        emissive: 0x00ff44,
-        emissiveIntensity: 0.8,
-        metalness: 0.0,
-        roughness: 0.3,
-    });
+    const lightMat = toonMat(PALETTE.success, { emissive: PALETTE.success, emissiveIntensity: 0.5 });
     const light = new THREE.Mesh(lightGeo, lightMat);
     light.position.set(0.25, 0.3, 0.26);
     group.add(light);
 
     // Brand label area (subtle darker rectangle)
     const labelGeo = new THREE.BoxGeometry(0.4, 0.12, 0.01);
-    const labelMat = new THREE.MeshStandardMaterial({
-        color: 0xbbbbbb,
-        metalness: 0.1,
-        roughness: 0.3,
-    });
+    const labelMat = matTileLight();
     const label = new THREE.Mesh(labelGeo, labelMat);
     label.position.set(0, 0.1, 0.26);
     group.add(label);
 
     // Wall mounting plate (behind the unit)
     const mountGeo = new THREE.BoxGeometry(0.9, 1.1, 0.04);
-    const mountMat = new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa,
-        metalness: 0.4,
-        roughness: 0.3,
-    });
+    const mountMat = matFixture();
     const mount = new THREE.Mesh(mountGeo, mountMat);
     mount.position.set(0, 0, -0.27);
     group.add(mount);
@@ -469,17 +401,9 @@ export function createTrashCan() {
     const group = new THREE.Group();
     group.name = 'trashCan';
 
-    const bodyMat = darkGray();
-    const rimMat = new THREE.MeshStandardMaterial({
-        color: 0x555555,
-        metalness: 0.2,
-        roughness: 0.4,
-    });
-    const lidMat = new THREE.MeshStandardMaterial({
-        color: 0x505050,
-        metalness: 0.15,
-        roughness: 0.4,
-    });
+    const bodyMat = matInk();
+    const rimMat = matDark();
+    const lidMat = matDark();
 
     // Main body (slightly tapered cylinder)
     const bodyGeo = new THREE.CylinderGeometry(0.55, 0.45, 1.8, 10);
@@ -499,11 +423,7 @@ export function createTrashCan() {
 
     // Inner rim (dark circle visible inside)
     const innerRimGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.05, 10);
-    const innerRimMat = new THREE.MeshStandardMaterial({
-        color: 0x1a1a1a,
-        metalness: 0.0,
-        roughness: 0.9,
-    });
+    const innerRimMat = matInk();
     const innerRim = new THREE.Mesh(innerRimGeo, innerRimMat);
     innerRim.position.y = 1.78;
     group.add(innerRim);
@@ -571,24 +491,14 @@ export function createPaperTowelDispenser() {
 
     // Viewing window (slightly recessed, tinted)
     const windowGeo = new THREE.BoxGeometry(0.6, 0.2, 0.02);
-    const windowMat = new THREE.MeshStandardMaterial({
-        color: 0x667788,
-        metalness: 0.1,
-        roughness: 0.1,
-        transparent: true,
-        opacity: 0.6,
-    });
+    const windowMat = toonMat(PALETTE.wall, { transparent: true, opacity: 0.6 });
     const windowMesh = new THREE.Mesh(windowGeo, windowMat);
     windowMesh.position.set(0, 0.1, 0.21);
     group.add(windowMesh);
 
     // Dispensing slot at bottom (dark opening)
     const slotGeo = new THREE.BoxGeometry(0.7, 0.08, 0.15);
-    const slotMat = new THREE.MeshStandardMaterial({
-        color: 0x111111,
-        metalness: 0.0,
-        roughness: 0.9,
-    });
+    const slotMat = matInk();
     const slot = new THREE.Mesh(slotGeo, slotMat);
     slot.position.set(0, -0.32, 0.15);
     group.add(slot);
@@ -601,12 +511,7 @@ export function createPaperTowelDispenser() {
 
     // Dangling paper towel piece
     const paperGeo = new THREE.BoxGeometry(0.5, 0.35, 0.01);
-    const paperMat = new THREE.MeshStandardMaterial({
-        color: 0xfaf8f0,
-        metalness: 0.0,
-        roughness: 0.9,
-        side: THREE.DoubleSide,
-    });
+    const paperMat = toonMat(PALETTE.cream, { side: THREE.DoubleSide });
     const paper = new THREE.Mesh(paperGeo, paperMat);
     paper.position.set(0, -0.52, 0.15);
     paper.rotation.x = 0.08; // slight curl
@@ -614,11 +519,7 @@ export function createPaperTowelDispenser() {
 
     // Mounting plate
     const mountGeo = new THREE.BoxGeometry(1.1, 0.8, 0.04);
-    const mountMat = new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa,
-        metalness: 0.3,
-        roughness: 0.3,
-    });
+    const mountMat = matFixture();
     const mount = new THREE.Mesh(mountGeo, mountMat);
     mount.position.set(0, 0, -0.22);
     group.add(mount);
@@ -644,8 +545,6 @@ export function createBathroomWalls() {
     group.name = 'bathroomWalls';
 
     const wallHeight = 3.5;
-    const tileColor1 = 0xe8e4df; // warm off-white
-    const tileColor2 = 0xddd8d2; // slightly darker off-white
 
     // Helper: build a tiled wall segment
     function buildTiledWall(width, height, depth, transparent) {
@@ -656,15 +555,17 @@ export function createBathroomWalls() {
         const stripHeight = height / stripCount;
 
         for (let i = 0; i < stripCount; i++) {
-            const color = i % 2 === 0 ? tileColor1 : tileColor2;
-            const mat = new THREE.MeshStandardMaterial({
-                color: color,
-                metalness: 0.05,
-                roughness: 0.35,
-                transparent: !!transparent,
-                opacity: transparent ? 0.12 : 1.0,
-                side: transparent ? THREE.DoubleSide : THREE.FrontSide,
-            });
+            const mat = i % 2 === 0
+                ? toonMat(PALETTE.tileLight, {
+                    transparent: !!transparent,
+                    opacity: transparent ? 0.12 : 1.0,
+                    side: transparent ? THREE.DoubleSide : THREE.FrontSide,
+                })
+                : toonMat(PALETTE.tileDark, {
+                    transparent: !!transparent,
+                    opacity: transparent ? 0.12 : 1.0,
+                    side: transparent ? THREE.DoubleSide : THREE.FrontSide,
+                });
             const stripGeo = new THREE.BoxGeometry(width, stripHeight - 0.02, depth);
             const strip = new THREE.Mesh(stripGeo, mat);
             strip.position.y = stripHeight * i + stripHeight / 2;
@@ -676,11 +577,7 @@ export function createBathroomWalls() {
     }
 
     // Baseboard molding material
-    const baseboardMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        metalness: 0.1,
-        roughness: 0.5,
-    });
+    const baseboardMat = matFixture();
 
     // === Back wall REMOVED — camera at (0, 14, -15) needs clear view of toilet ===
 
@@ -734,69 +631,22 @@ export function createOfficePeek() {
     group.name = 'officePeek';
 
     // Shared materials
-    const deskMat = new THREE.MeshStandardMaterial({
-        color: 0x7a7a7a,
-        metalness: 0.1,
-        roughness: 0.5,
-    });
-    const deskLegMat = new THREE.MeshStandardMaterial({
-        color: 0x555555,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
-    const cubicleWallMat = new THREE.MeshStandardMaterial({
-        color: 0x9999aa,
-        metalness: 0.05,
-        roughness: 0.7,
-    });
-    const cubicleFrameMat = new THREE.MeshStandardMaterial({
-        color: 0x666666,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
-    const officeWallMat = new THREE.MeshStandardMaterial({
-        color: 0xd0ccc5,
-        metalness: 0.02,
-        roughness: 0.7,
-    });
-    const filingMat = new THREE.MeshStandardMaterial({
-        color: 0x777788,
-        metalness: 0.4,
-        roughness: 0.4,
-    });
+    const deskMat = matFixture();
+    const deskLegMat = matDark();
+    const cubicleWallMat = matWall();
+    const cubicleFrameMat = matDark();
+    const officeWallMat = matTileLight();
+    const filingMat = matWall();
     const chromeMat = chrome();
-    const keyboardMat = new THREE.MeshStandardMaterial({
-        color: 0x2a2a2a,
-        metalness: 0.1,
-        roughness: 0.6,
-    });
-    const monitorScreenMat = new THREE.MeshStandardMaterial({
-        color: 0x222244,
-        metalness: 0.1,
-        roughness: 0.3,
-        emissive: 0x111133,
+    const keyboardMat = matInk();
+    const monitorScreenMat = toonMat(PALETTE.charcoal, {
+        emissive: PALETTE.ink,
         emissiveIntensity: 0.3,
     });
-    const chairSeatMat = new THREE.MeshStandardMaterial({
-        color: 0x334466,
-        metalness: 0.05,
-        roughness: 0.7,
-    });
-    const chairFrameMat2 = new THREE.MeshStandardMaterial({
-        color: 0x222222,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
-    const potMat = new THREE.MeshStandardMaterial({
-        color: 0x8B5E3C,
-        metalness: 0.05,
-        roughness: 0.7,
-    });
-    const leafMat = new THREE.MeshStandardMaterial({
-        color: 0x44aa44,
-        metalness: 0.0,
-        roughness: 0.6,
-    });
+    const chairSeatMat = toonMat(PALETTE.wall);
+    const chairFrameMat2 = matInk();
+    const potMat = matWood();
+    const leafMat = toonMat(PALETTE.success);
 
     // ─── Helper: build a desk with monitor ─────────────────────────────────
     function buildDesk() {
@@ -928,11 +778,11 @@ export function createOfficePeek() {
         pg.add(pot);
 
         const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.06, 8),
-            new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 }));
+            toonMat(PALETTE.ink));
         soil.position.y = 0.8;
         pg.add(soil);
 
-        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6B4226, roughness: 0.8 });
+        const trunkMat = matWood();
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.7, 6), trunkMat);
         trunk.position.y = 1.1;
         pg.add(trunk);
@@ -949,33 +799,31 @@ export function createOfficePeek() {
     // ─── Helper: build a printer/copier ────────────────────────────────────
     function buildPrinter() {
         const pg = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.05, roughness: 0.4 });
-        const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 1.5), bodyMat);
+        const printerBodyMat = matWhite();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 1.5), printerBodyMat);
         body.position.y = 0.6;
         body.castShadow = true;
         body.receiveShadow = true;
         pg.add(body);
 
         // Top lid / scanner
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 1.5),
-            new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.1, roughness: 0.3 }));
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 1.5), matFixture());
         lid.position.y = 1.23;
         pg.add(lid);
 
         // Front panel (dark)
-        const panel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 0.02),
-            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 }));
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 0.02), matInk());
         panel.position.set(0, 0.9, 0.76);
         pg.add(panel);
 
         // Paper tray sticking out
-        const tray = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.6), bodyMat);
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.6), printerBodyMat);
         tray.position.set(0, 0.15, 1.0);
         pg.add(tray);
 
         // Status LED
         const led = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6),
-            new THREE.MeshStandardMaterial({ color: 0x00ff44, emissive: 0x00ff44, emissiveIntensity: 0.8 }));
+            toonMat(PALETTE.success, { emissive: PALETTE.success, emissiveIntensity: 0.5 }));
         led.position.set(0.6, 0.95, 0.76);
         pg.add(led);
 
@@ -985,8 +833,8 @@ export function createOfficePeek() {
     // ─── Helper: build a whiteboard ────────────────────────────────────────
     function buildWhiteboard() {
         const wg = new THREE.Group();
-        const boardMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, metalness: 0.1, roughness: 0.15 });
-        const wbFrameMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.5, roughness: 0.3 });
+        const boardMat = matWhite();
+        const wbFrameMat = matFixture();
 
         const board = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.08), boardMat);
         board.castShadow = true;
@@ -1012,7 +860,7 @@ export function createOfficePeek() {
         const markerColors = [0xcc2222, 0x2244cc, 0x222222];
         for (let m = 0; m < 3; m++) {
             const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6),
-                new THREE.MeshStandardMaterial({ color: markerColors[m], metalness: 0.1, roughness: 0.5 }));
+                toonMat(markerColors[m]));
             marker.rotation.z = Math.PI / 2;
             marker.position.set(-0.4 + m * 0.4, -1.03, 0.1);
             wg.add(marker);
@@ -1023,7 +871,7 @@ export function createOfficePeek() {
     // ─── Helper: build a bookshelf ─────────────────────────────────────────
     function buildBookshelf() {
         const bg = new THREE.Group();
-        const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, metalness: 0.05, roughness: 0.7 });
+        const woodMat = matWood();
 
         // Frame (back, sides, top, bottom)
         const back = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.0, 0.06), woodMat);
@@ -1055,7 +903,7 @@ export function createOfficePeek() {
                 const bw = 0.12 + Math.random() * 0.15;
                 const bh = 0.8 + Math.random() * 0.4;
                 const book = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.5),
-                    new THREE.MeshStandardMaterial({ color: bookColors[b % bookColors.length], roughness: 0.6 }));
+                    toonMat(bookColors[b % bookColors.length]));
                 book.position.set(bx + bw / 2, shelfY + bh / 2, 0);
                 bg.add(book);
                 bx += bw + 0.02;
@@ -1079,15 +927,8 @@ export function createOfficePeek() {
     const wallZStart = 12.5;
     const wallZEnd = 67.5;
     const wallHeight = 6;
-    const windowFrameMat = new THREE.MeshStandardMaterial({
-        color: 0x888899,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
-    const windowGlassMat = new THREE.MeshStandardMaterial({
-        color: 0x88bbdd,
-        metalness: 0.1,
-        roughness: 0.05,
+    const windowFrameMat = matFixture();
+    const windowGlassMat = toonMat(PALETTE.rimCool, {
         transparent: true,
         opacity: 0.15,
     });
@@ -1245,11 +1086,7 @@ export function createOfficePeek() {
     group.add(doorHeader);
 
     // Door frame — vertical posts
-    const doorFrameMat = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        metalness: 0.3,
-        roughness: 0.4,
-    });
+    const doorFrameMat = matFixture();
     for (const side of [-1, 1]) {
         const post = new THREE.Mesh(
             new THREE.BoxGeometry(0.25, 6, 0.3),
@@ -1260,17 +1097,13 @@ export function createOfficePeek() {
     }
 
     // Double doors — start closed, enemies push them open (spring physics)
-    const exitDoorMat = new THREE.MeshStandardMaterial({
-        color: 0x8B7355,
-        metalness: 0.05,
-        roughness: 0.7,
-    });
+    const exitDoorMat = matWood();
     const exitDoorHalf = exitDoorWidth / 2;
 
     // Left door — pivot on left edge (hinge at x = -exitDoorHalf)
     const leftDoor = new THREE.Mesh(
         new THREE.BoxGeometry(exitDoorHalf - 0.1, 5.0, 0.12),
-        exitDoorMat.clone()
+        matWood()
     );
     leftDoor.castShadow = true;
     const leftDoorPivot = new THREE.Group();
@@ -1283,7 +1116,7 @@ export function createOfficePeek() {
     // Right door — pivot on right edge (hinge at x = +exitDoorHalf)
     const rightDoor = new THREE.Mesh(
         new THREE.BoxGeometry(exitDoorHalf - 0.1, 5.0, 0.12),
-        exitDoorMat.clone()
+        matWood()
     );
     rightDoor.castShadow = true;
     const rightDoorPivot = new THREE.Group();
@@ -1336,21 +1169,13 @@ export function createOfficePeek() {
 
     // Sign box (red background)
     const signBoxGeo = new THREE.BoxGeometry(2.4, 0.7, 0.1);
-    const signBoxMat = new THREE.MeshStandardMaterial({
-        color: 0xcc0000,
-        metalness: 0.1,
-        roughness: 0.4,
-        emissive: 0xcc0000,
-        emissiveIntensity: 0.6,
-    });
+    const signBoxMat = matDanger();
     const signBox = new THREE.Mesh(signBoxGeo, signBoxMat);
     exitSignGroup.add(signBox);
 
     // "EXIT" text — four individual letter blocks (simple geometric approximation)
-    const letterMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.8,
+    const letterMat = new THREE.MeshBasicMaterial({
+        color: PALETTE.white,
     });
 
     // E
@@ -1394,7 +1219,7 @@ export function createOfficePeek() {
     exitSignGroup.add(tGroup);
 
     // Small red glow light under the sign
-    const exitLight = new THREE.PointLight(0xff3333, 0.4, 8, 2);
+    const exitLight = new THREE.PointLight(PALETTE.danger, 0.4, 8, 2);
     exitLight.position.set(0, -0.6, 0.3);
     exitSignGroup.add(exitLight);
 
@@ -1466,9 +1291,10 @@ export function createOfficePeek() {
     const coolerGroup = new THREE.Group();
     coolerGroup.name = 'waterCooler';
 
-    const coolerBodyMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.05, roughness: 0.4 });
-    const waterJugMat = new THREE.MeshStandardMaterial({
-        color: 0x88bbdd, metalness: 0.05, roughness: 0.1, transparent: true, opacity: 0.6,
+    const coolerBodyMat = matWhite();
+    const waterJugMat = toonMat(PALETTE.rimCool, {
+        transparent: true,
+        opacity: 0.6,
     });
 
     const coolerBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.7), coolerBodyMat);
@@ -1485,12 +1311,12 @@ export function createOfficePeek() {
     coolerGroup.add(jug);
 
     const jugCap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8),
-        new THREE.MeshStandardMaterial({ color: 0x3366aa, metalness: 0.1, roughness: 0.3 }));
+        toonMat(PALETTE.wall));
     jugCap.position.y = 2.40;
     coolerGroup.add(jugCap);
 
-    for (const [sx, color] of [[0.15, 0xcc3333], [-0.15, 0x3355cc]]) {
-        const sm = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.3 });
+    for (const [sx, color] of [[0.15, PALETTE.danger], [-0.15, PALETTE.rimCool]]) {
+        const sm = toonMat(color);
         const spigot = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6), sm);
         spigot.rotation.x = Math.PI / 2;
         spigot.position.set(sx, 1.05, 0.38);
@@ -1662,15 +1488,15 @@ export function createOfficePeek() {
     // OFFICE LIGHTING — subtle PointLights only, no visible fixtures
     // ════════════════════════════════════════════════════════════════════════
 
-    const officeLight1 = new THREE.PointLight(0xeee8dd, 0.6, 25, 2);
+    const officeLight1 = new THREE.PointLight(PALETTE.fillWarm, 0.6, 25, 2);
     officeLight1.position.set(-20, 5.5, 30);
     group.add(officeLight1);
 
-    const officeLight2 = new THREE.PointLight(0xeee8dd, 0.6, 25, 2);
+    const officeLight2 = new THREE.PointLight(PALETTE.fillWarm, 0.6, 25, 2);
     officeLight2.position.set(20, 5.5, 30);
     group.add(officeLight2);
 
-    const officeLight3 = new THREE.PointLight(0xeee8dd, 0.5, 25, 2);
+    const officeLight3 = new THREE.PointLight(PALETTE.fillWarm, 0.5, 25, 2);
     officeLight3.position.set(0, 5.5, 45);
     group.add(officeLight3);
 
@@ -1681,7 +1507,7 @@ export function createOfficePeek() {
     // Carpet transition strip on the floor at the doorway
     const transitionStrip = new THREE.Mesh(
         new THREE.BoxGeometry(6.0, 0.04, 0.15),
-        new THREE.MeshStandardMaterial({ color: 0x998877, metalness: 0.5, roughness: 0.3 })
+        matFixture()
     );
     transitionStrip.position.set(0, 0.02, 10.5);
     transitionStrip.receiveShadow = true;
@@ -1690,7 +1516,7 @@ export function createOfficePeek() {
     // Office carpet — wide enough to cover entire visible area
     const carpet = new THREE.Mesh(
         new THREE.BoxGeometry(80, 0.05, 60),
-        new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.0, roughness: 0.95 })
+        matCarpet()
     );
     carpet.position.set(0, 0.01, 42);
     carpet.receiveShadow = true;
@@ -1705,17 +1531,16 @@ export function createBathroomDoor() {
     const group = new THREE.Group();
     group.name = 'bathroomDoor';
 
-    const doorColor = 0x8B6914;
+    const doorColor = PALETTE.wood;
 
-    const doorMat = new THREE.MeshStandardMaterial({
-        color: doorColor,
-        metalness: 0.05,
-        roughness: 0.7,
+    const doorMat = toonMat(doorColor, {
         transparent: true,
         opacity: 0.2,
         side: THREE.DoubleSide,
-        depthWrite: false,
     });
+    // depthWrite: false not natively supported by toonMat — set manually
+    doorMat.depthWrite = false;
+
     const chromeMat = chrome();
 
     // ─── Door panel ────────────────────────────────────────────────────────
@@ -1748,7 +1573,7 @@ export function createBathroomDoor() {
     group.add(handleBack);
 
     // ─── Crack / damage overlay meshes (initially invisible) ───────────────
-    const crackMat = new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.6 });
+    const crackMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, transparent: true, opacity: 0.6 });
     const cracks = [];
 
     // Helper: build a jagged crack pattern from thin boxes

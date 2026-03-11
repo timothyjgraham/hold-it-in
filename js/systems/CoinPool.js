@@ -1,6 +1,7 @@
 // CoinPool.js — Mario-style collectible coin drops
 // Coins burst from enemies on death, hover upright and spin in the air.
 // Coin Magnets auto-collect them with a satisfying pull arc.
+import { PALETTE } from '../data/palette.js';
 
 const GRAVITY = 18;
 const BASE_LIFETIME = 10.0;
@@ -30,22 +31,18 @@ export class CoinPool {
         // Coin geometry — upright disc. Built as cylinder then rotated 90° on X
         // so the flat face is vertical (like a real coin standing on edge).
         this._coinGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.07, 16);
-        this._coinMat = new THREE.MeshStandardMaterial({
-            color: 0xffd700,
-            metalness: 0.95,
-            roughness: 0.05,
-            emissive: 0xffaa00,
-            emissiveIntensity: 0.6,
+        this._coinMat = new THREE.MeshToonMaterial({
+            color: PALETTE.gold,
+            emissive: new THREE.Color(PALETTE.gold),
+            emissiveIntensity: 0.4,
         });
 
         // Face detail (dollar sign / stamp circle)
         this._stampGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.01, 16);
-        this._stampMat = new THREE.MeshStandardMaterial({
-            color: 0xdaa520,
-            metalness: 0.9,
-            roughness: 0.1,
-            emissive: 0xcc8800,
-            emissiveIntensity: 0.4,
+        this._stampMat = new THREE.MeshToonMaterial({
+            color: PALETTE.magnet,
+            emissive: new THREE.Color(PALETTE.magnet),
+            emissiveIntensity: 0.3,
         });
 
     }

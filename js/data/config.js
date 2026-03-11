@@ -1,5 +1,7 @@
 // Hold It In — Game Configuration
 
+import { PALETTE } from './palette.js';
+
 export const CONFIG = {
     // Grid
     grid: 2,                    // Grid cell size in world units
@@ -26,17 +28,17 @@ export const CONFIG = {
     spawnZoneZ: 69,             // Where enemies appear (behind the exit doors at z=68)
     spawnWidth: 10,             // Spread across X at spawn (fits within 12-wide exit doorway)
 
-    // Colors
+    // Colors — all sourced from master palette
     colors: {
-        ground: 0x2a2a2a,
-        tile: 0xe8e0d0,
-        tileAlt: 0xddd5c5,
-        grid: 0xcccccc,
-        toilet: 0xf5f5f0,
-        toiletGold: 0xffd700,
-        holyLight: 0xfff4b0,
-        corridor: 0xd4e6f1,
-        enemy: 0xe67e22,
-        tower: 0x3498db,
+        ground: PALETTE.charcoal,
+        tile: PALETTE.tileLight,
+        tileAlt: PALETTE.tileDark,
+        grid: PALETTE.fixture,
+        toilet: PALETTE.white,
+        toiletGold: PALETTE.gold,
+        holyLight: PALETTE.glow,
+        corridor: PALETTE.tileLight,
+        enemy: PALETTE.polite,
+        tower: PALETTE.hoodie,
     }
 };

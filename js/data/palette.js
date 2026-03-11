@@ -1,0 +1,137 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  HOLD IT IN — Master Color Palette                                        ║
+// ║  Single source of truth for every color in the game.                      ║
+// ║  NO hex literals anywhere else. Import from here.                         ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+//
+// PALETTE RULES:
+// 1. Every color used in 3D, UI, or CSS must be defined here
+// 2. Player hoodie blue is EXCLUSIVE — no other element uses it
+// 3. Enemy colors are warm/organic, tower colors are cool/synthetic
+// 4. All outlines, borders, shadows, and fog use INK
+// 5. GOLD is the reward color (coins, badges, selections)
+// 6. DANGER is the loss color (HP, game over, warnings)
+//
+// Pure data module — no THREE.js dependency.
+
+export const PALETTE = {
+
+    // ─── FOUNDATION ───────────────────────────────────────────────────────────
+    // The structural darks and lights that frame everything
+
+    ink:        0x1a1a2e,   // Outlines, borders, text, fog, clear color, deepest darks
+    charcoal:   0x2d2b3d,   // Secondary dark surfaces, dark accents
+    cream:      0xfff4d9,   // UI card backgrounds, paper, parchment surfaces
+    white:      0xfaf5ef,   // Porcelain, brightest surfaces, highlights
+
+    // ─── ENVIRONMENT ──────────────────────────────────────────────────────────
+    // Warm institutional bathroom + office — desaturated, recedes behind characters
+
+    tileLight:  0xddd2c0,   // Floor tiles light, wall panels light
+    tileDark:   0xc4b8a5,   // Floor tiles dark, wall panels dark, grout shadow
+    wall:       0x7e8e96,   // Institutional blue-gray — stall dividers, wall surfaces
+    fixture:    0xa8a098,   // Sinks, hand dryers, neutral metal, chrome (de-PBR'd)
+    wood:       0x8b6e4e,   // Doors, desks, office furniture
+    carpet:     0x5a6658,   // Office floor (muted olive-gray)
+
+    // ─── PLAYER ───────────────────────────────────────────────────────────────
+    // The protagonist has a UNIQUE color that nothing else in the game shares
+
+    hoodie:     0x4a86c8,   // Player exclusive blue — THE player color
+    skin:       0xffccaa,   // Shared skin tone (player + all enemies)
+    pants:      0x3a3a4a,   // Dark clothing (player pants, enemy legs)
+
+    // ─── ENEMIES ──────────────────────────────────────────────────────────────
+    // Each type has a signature color. Warm/organic tones — these are people.
+    // Shared: skin (0xffccaa), pants/legs (0x3a3a4a), outline (ink)
+
+    polite:     0xd4a574,   // Polite Knocker — warm tan (baseline, unremarkable)
+    dancer:     0x59c3e8,   // Pee Dancer — sky blue (lighter/greener than player hoodie)
+    waddle:     0x8b5e3c,   // Waddle Tank — rich brown (heavy, earthy)
+    panicker:   0xf5c842,   // Panicker — gold-yellow (warning! alarm!)
+    power:      0x20b89a,   // Power Walker — jade/teal (athletic, composed)
+    girls:      0xe84888,   // The Girls — hot pink (unmistakable cluster)
+
+    // ─── TOWERS ───────────────────────────────────────────────────────────────
+    // Defensive structures — slightly cooler/synthetic vs. the warm enemy palette
+
+    magnet:     0xf0a030,   // Coin Magnet — amber/orange (economy, magnetic)
+    sign:       0xe8d44a,   // Wet Floor Sign — safety yellow (caution ⚠)
+    mop:        0x9b59b6,   // Mop Turret — purple (unique, melee)
+    ubik:       0x6bcb77,   // Ubik Spray — mint green (chemical, aerosol)
+
+    // ─── UI / EFFECTS ─────────────────────────────────────────────────────────
+    // Functional colors used in HUD, feedback, particles, highlights
+
+    gold:       0xffd93d,   // Coins, rewards, wave badge, selected state, sparkles
+    danger:     0xff6b7a,   // HP loss, game over title, critical warnings
+    success:    0x50c878,   // Valid placement, positive feedback
+    glow:       0xfff0c0,   // Warm glow effects, light beams, fill lights
+
+    // ─── LIGHTING ─────────────────────────────────────────────────────────────
+    // Scene light colors — used in THREE.js light constructors
+
+    ambient:    0x505060,   // Ambient light (cool-neutral)
+    holyGold:   0xffd080,   // Toilet spotlight (warm gold beam)
+    rimCool:    0x6688aa,   // Rim/back lighting (cool contrast)
+    fillWarm:   0xfff0d0,   // Warm fill lights
+
+    // ─── TOON SHADER PARAMS ───────────────────────────────────────────────────
+    // Shared across all toon materials for consistency
+
+    outlineColor: 0x1a1a2e, // Same as ink — unified outline language
+};
+
+// ─── OUTLINE WIDTHS ───────────────────────────────────────────────────────────
+// Consistent outline scale per category
+
+export const OUTLINE_WIDTH = {
+    // Characters (skinned, animated)
+    characterSmall: 0.02,   // Girls, small enemies
+    characterMed:   0.03,   // Polite, Panicker, Power Walker, Player
+    characterLarge: 0.04,   // Waddle Tank
+    dancer:         0.025,  // Pee Dancer (between small and med)
+
+    // Environment (static objects)
+    environmentThin:  0.015, // Small fixtures, details
+    environmentMed:   0.025, // Walls, panels, furniture
+    environmentThick: 0.035, // Large structures, doors
+
+    // Towers
+    tower:          0.025,  // All towers
+};
+
+// ─── GRADIENT MAP TONES ───────────────────────────────────────────────────────
+// The 3-tone ramp values for toon shading (0-255 per tone)
+// Shadow / Mid / Highlight — applied via gradient map or shader ramp
+
+export const TOON_RAMP = {
+    shadow:    0.35,    // Darkest tone multiplier (color * 0.35)
+    mid:       0.85,    // Mid tone multiplier (color * 0.85)
+    highlight: 1.0,     // Brightest tone (full color)
+};
+
+// ─── CSS CUSTOM PROPERTIES ────────────────────────────────────────────────────
+// Call injectCSSPalette() once at startup to make palette available in CSS
+// Usage in CSS: var(--pal-ink), var(--pal-gold), etc.
+
+function hexToCSS(hex) {
+    return '#' + hex.toString(16).padStart(6, '0');
+}
+
+export function injectCSSPalette() {
+    const root = document.documentElement.style;
+    for (const [key, value] of Object.entries(PALETTE)) {
+        root.setProperty(`--pal-${key}`, hexToCSS(value));
+    }
+}
+
+// ─── PALETTE REFERENCE (copy-pasteable) ───────────────────────────────────────
+//
+// FOUNDATION        ink #1a1a2e │ charcoal #2d2b3d │ cream #fff4d9 │ white #faf5ef
+// ENVIRONMENT       tileLight #ddd2c0 │ tileDark #c4b8a5 │ wall #7e8e96 │ fixture #a8a098 │ wood #8b6e4e │ carpet #5a6658
+// PLAYER            hoodie #4a86c8 │ skin #ffccaa │ pants #3a3a4a
+// ENEMIES           polite #d4a574 │ dancer #59c3e8 │ waddle #8b5e3c │ panicker #f5c842 │ power #20b89a │ girls #e84888
+// TOWERS            magnet #f0a030 │ sign #e8d44a │ mop #9b59b6 │ ubik #6bcb77
+// UI/EFFECTS        gold #ffd93d │ danger #ff6b7a │ success #50c878 │ glow #fff0c0
+// LIGHTING          ambient #505060 │ holyGold #ffd080 │ rimCool #6688aa │ fillWarm #fff0d0

@@ -1,30 +1,16 @@
 // The Sacred Throne — a low-poly toilet model with dramatic angled spotlight
+// All colors from master palette. All materials use toon shading.
+
+import { PALETTE } from '../data/palette.js';
+import { matPorcelain, matGold, matBeam, matParticles, toonMat } from '../shaders/toonMaterials.js';
 
 export function createToilet() {
     const group = new THREE.Group();
     group.name = 'toilet';
 
-    const porcelain = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.2,
-        metalness: 0.1,
-        emissive: 0x556677,
-        emissiveIntensity: 0.2,
-    });
-
-    const porcelainInner = new THREE.MeshStandardMaterial({
-        color: 0x88aacc,
-        roughness: 0.4,
-        metalness: 0.0,
-    });
-
-    const gold = new THREE.MeshStandardMaterial({
-        color: 0xffd700,
-        roughness: 0.15,
-        metalness: 0.85,
-        emissive: 0xffa500,
-        emissiveIntensity: 0.4,
-    });
+    const porcelain = matPorcelain();
+    const porcelainInner = toonMat(PALETTE.rimCool);
+    const gold = matGold();
 
     // === BASE / PEDESTAL ===
     const base = new THREE.Mesh(
@@ -100,7 +86,7 @@ export function createToilet() {
     // === HOLY SPOTLIGHT FROM UPPER-RIGHT (angled, dramatic) ===
     const lightOrigin = { x: -5, y: 12, z: 3 };
 
-    const holySpot = new THREE.SpotLight(0xffd700, 1.2, 25, Math.PI / 7, 0.6, 1.5);
+    const holySpot = new THREE.SpotLight(PALETTE.holyGold, 1.2, 25, Math.PI / 7, 0.6, 1.5);
     holySpot.position.set(lightOrigin.x, lightOrigin.y, lightOrigin.z);
     holySpot.castShadow = true;
     holySpot.shadow.mapSize.width = 1024;
@@ -114,12 +100,12 @@ export function createToilet() {
     holySpot.target = spotTarget;
 
     // Secondary warm fill from the other side (subtle)
-    const fillLight = new THREE.PointLight(0xfff4b0, 0.2, 8, 2);
+    const fillLight = new THREE.PointLight(PALETTE.fillWarm, 0.2, 8, 2);
     fillLight.position.set(2, 5, -1);
     group.add(fillLight);
 
     // Rim light from behind (outlines the toilet against the dark background)
-    const rimLight = new THREE.PointLight(0x6688aa, 0.6, 8, 2);
+    const rimLight = new THREE.PointLight(PALETTE.rimCool, 0.6, 8, 2);
     rimLight.position.set(0, 3, 3);
     group.add(rimLight);
 
@@ -128,14 +114,8 @@ export function createToilet() {
     const beamLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
     const beamGeo = new THREE.CylinderGeometry(3.5, 0.2, beamLength, 16, 1, true);
-    const beamMat = new THREE.MeshBasicMaterial({
-        color: 0xfff8d0,
-        transparent: true,
-        opacity: 0.05,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-    });
-    const beam = new THREE.Mesh(beamGeo, beamMat);
+    const beamMaterial = matBeam(0.05);
+    const beam = new THREE.Mesh(beamGeo, beamMaterial);
 
     // Position at midpoint between light and toilet
     beam.position.set(
@@ -155,20 +135,13 @@ export function createToilet() {
     const sparkleGeo = new THREE.BufferGeometry();
     const sparklePositions = new Float32Array(sparkleCount * 3);
     for (let i = 0; i < sparkleCount; i++) {
-        // Distribute sparkles along the beam path
         const t = Math.random();
         sparklePositions[i * 3] = lightOrigin.x * t + (Math.random() - 0.5) * 3 * (1 - t);
         sparklePositions[i * 3 + 1] = lightOrigin.y * t + (Math.random() - 0.5) * 2;
         sparklePositions[i * 3 + 2] = lightOrigin.z * t + (Math.random() - 0.5) * 3 * (1 - t);
     }
     sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
-    const sparkleMat = new THREE.PointsMaterial({
-        color: 0xffd700,
-        size: 0.2,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false,
-    });
+    const sparkleMat = matParticles(PALETTE.gold, 0.2, 0.8);
     const sparkles = new THREE.Points(sparkleGeo, sparkleMat);
     sparkles.name = 'sparkles';
     group.add(sparkles);
@@ -185,13 +158,7 @@ export function createToilet() {
         cleanPos[i * 3 + 2] = Math.sin(angle) * radius - 0.3;
     }
     cleanSparkleGeo.setAttribute('position', new THREE.BufferAttribute(cleanPos, 3));
-    const cleanSparkleMat = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 0.15,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-    });
+    const cleanSparkleMat = matParticles(PALETTE.white, 0.15, 0.9);
     const cleanSparkles = new THREE.Points(cleanSparkleGeo, cleanSparkleMat);
     cleanSparkles.name = 'cleanSparkles';
     group.add(cleanSparkles);

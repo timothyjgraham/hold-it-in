@@ -156,7 +156,7 @@
                 cost: 10,
                 range: 8,
                 hp: 1,              // Fragile — shatters on trample
-                color: 0xf39c12,
+                color: 0xf0a030,    // PALETTE.magnet
                 effect: 'magnet',
                 magnetInterval: 0.3,
                 hotkey: 'Digit1',
@@ -166,7 +166,7 @@
                 cost: 15,
                 range: 6,
                 hp: 4,              // Plastic sign — takes a beating
-                color: 0xf1c40f,
+                color: 0xe8d44a,    // PALETTE.sign
                 effect: 'slow',
                 slowFactor: 0.4,
                 hotkey: 'Digit2',
@@ -176,7 +176,7 @@
                 cost: 25,
                 range: 5,
                 hp: 6,              // Sturdy — actively fighting back
-                color: 0x8e44ad,
+                color: 0x9b59b6,    // PALETTE.mop
                 damage: 20,
                 attackRate: 1.0,
                 knockback: 2.0,
@@ -187,7 +187,7 @@
                 cost: 35,
                 range: 18,             // Spray travels 18 units forward
                 hp: 6,                 // Sturdy canister — shows progressive damage
-                color: 0x2ecc71,
+                color: 0x6bcb77,    // PALETTE.ubik
                 damage: 10,            // Per-tick spray damage (hits multiple enemies)
                 attackRate: 1.5,       // Interval between sprays
                 sprayDuration: 0.8,    // How long the spray cloud lasts
@@ -202,7 +202,7 @@
                 name: 'Polite Knocker',
                 baseSpeed: 3.0, speedVar: 0.5,
                 baseHP: 20, hpPerWave: 10,
-                size: 1.5, color: 0xd4a574, // warm tan — unremarkable, baseline
+                size: 1.5, color: 0xd4a574, // PALETTE.polite — warm tan
                 coins: 5, doorDmg: 2,
                 flankChance: 0.15, // polite, mostly center
             },
@@ -210,7 +210,7 @@
                 name: 'Pee Dancer',
                 baseSpeed: 5.5, speedVar: 1.0,
                 baseHP: 10, hpPerWave: 4,
-                size: 1.25, color: 0x3498db, // bright blue — energetic
+                size: 1.25, color: 0x59c3e8, // PALETTE.dancer — sky blue
                 coins: 3, doorDmg: 1,
                 flankChance: 0.6, // fast — darts to the sides to dodge towers
             },
@@ -218,7 +218,7 @@
                 name: 'Waddle Tank',
                 baseSpeed: 2.0, speedVar: 0.3,
                 baseHP: 60, hpPerWave: 18,
-                size: 2.0, color: 0x795548, // brown — earthy, heavy
+                size: 2.0, color: 0x8b5e3c, // PALETTE.waddle — brown
                 coins: 12, doorDmg: 4,
                 panicThreshold: 0.5, // Panics at 50% HP — speed doubles
                 flankChance: 0.1, // big and lumbering, goes straight
@@ -227,7 +227,7 @@
                 name: 'Panicker',
                 baseSpeed: 4.0, speedVar: 0.5,
                 baseHP: 40, hpPerWave: 12,
-                size: 1.6, color: 0xf1c40f, // bright yellow — WARNING
+                size: 1.6, color: 0xf5c842, // PALETTE.panicker — gold-yellow
                 coins: 10, doorDmg: 2,
                 speedAuraRange: 8, speedAuraBonus: 0.5, // Panic is contagious — priority target
                 flankChance: 0.4, // erratic — might go anywhere
@@ -236,7 +236,7 @@
                 name: 'Power Walker',
                 baseSpeed: 3.5, speedVar: 0.3,
                 baseHP: 30, hpPerWave: 10,
-                size: 1.4, color: 0x1abc9c, // teal — athletic, composed
+                size: 1.4, color: 0x20b89a, // PALETTE.power — jade
                 coins: 7, doorDmg: 2,
                 slowImmune: true, // Too much momentum — wet floor signs useless
                 flankChance: 0.7, // strategic — takes wide routes around defenses
@@ -245,7 +245,7 @@
                 name: 'The Girls',
                 baseSpeed: 3.0, speedVar: 0.3,
                 baseHP: 8, hpPerWave: 3,
-                size: 0.85, color: 0xe91e8c, // hot pink — unmistakable cluster
+                size: 0.85, color: 0xe84888, // PALETTE.girls — hot pink
                 coins: 2, doorDmg: 1,
             },
         },
@@ -375,12 +375,12 @@
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            this.renderer.setClearColor(0x1a1a2e);
+            this.renderer.setClearColor(PALETTE.ink);
             container.appendChild(this.renderer.domElement);
 
             // Scene
             this.scene = new THREE.Scene();
-            this.scene.fog = new THREE.Fog(0x1a1a2e, 60, 110);
+            this.scene.fog = new THREE.Fog(PALETTE.ink, 60, 110);
 
             // Camera — steep TD angle for clear playing field visibility
             const aspect = window.innerWidth / window.innerHeight;
@@ -390,6 +390,9 @@
 
             // Clock
             this.clock = new THREE.Clock();
+
+            // Post-processing (screen-space edges + vignette)
+            this.postFX = setupPostProcessing(this.renderer, this.scene, this.camera);
 
             // Build the scene
             this._createLighting();
@@ -409,6 +412,7 @@
                 this.camera.aspect = window.innerWidth / window.innerHeight;
                 this.camera.updateProjectionMatrix();
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
+                if (this.postFX) this.postFX.setSize(window.innerWidth, window.innerHeight);
             });
 
             // Drone delivery system
@@ -443,11 +447,11 @@
         // ============================
         _createLighting() {
             // Ambient — slightly warm, enough to see bathroom walls
-            const ambient = new THREE.AmbientLight(0x505060, 0.7);
+            const ambient = new THREE.AmbientLight(PALETTE.ambient, 0.7);
             this.scene.add(ambient);
 
             // Main directional light (slightly warm, more overhead to avoid side wash)
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+            const dirLight = new THREE.DirectionalLight(PALETTE.fillWarm, 0.8);
             dirLight.position.set(3, 35, 18);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
@@ -460,8 +464,8 @@
             dirLight.shadow.camera.bottom = -5;
             this.scene.add(dirLight);
 
-            // Subtle blue fill from opposite side
-            const fillLight = new THREE.DirectionalLight(0x4466aa, 0.3);
+            // Subtle cool fill from opposite side
+            const fillLight = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
             fillLight.position.set(-10, 20, 10);
             this.scene.add(fillLight);
         },
@@ -469,10 +473,7 @@
         _createGround() {
             // Main ground plane (dark, extends to fog)
             const groundGeo = new THREE.PlaneGeometry(200, 200);
-            const groundMat = new THREE.MeshStandardMaterial({
-                color: CONFIG.colors.ground,
-                roughness: 0.9,
-            });
+            const groundMat = toonMat(PALETTE.charcoal);
             const ground = new THREE.Mesh(groundGeo, groundMat);
             ground.rotation.x = -Math.PI / 2;
             ground.position.y = -0.05;
@@ -488,9 +489,9 @@
             const tilePx = tileCanvas.width / tilesPerRow;
             for (let r = 0; r < tilesPerRow; r++) {
                 for (let c = 0; c < tilesPerRow; c++) {
-                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#748494' : '#687888';
+                    tCtx.fillStyle = (r + c) % 2 === 0 ? '#7e8e96' : '#6e7e86';
                     tCtx.fillRect(c * tilePx, r * tilePx, tilePx, tilePx);
-                    tCtx.strokeStyle = '#5e6e7a';
+                    tCtx.strokeStyle = '#5e6e76';
                     tCtx.lineWidth = 3;
                     tCtx.strokeRect(c * tilePx + 1.5, r * tilePx + 1.5, tilePx - 3, tilePx - 3);
                 }
@@ -501,10 +502,8 @@
             tileTexture.repeat.set(3, 4);
 
             const tileGeo = new THREE.PlaneGeometry(CONFIG.corridorWidth, CONFIG.corridorStart + 4);
-            const tileMat = new THREE.MeshStandardMaterial({
+            const tileMat = new THREE.MeshToonMaterial({
                 map: tileTexture,
-                roughness: 0.65,
-                metalness: 0.05,
             });
             const tile = new THREE.Mesh(tileGeo, tileMat);
             tile.rotation.x = -Math.PI / 2;
@@ -514,10 +513,7 @@
 
             // Lane floor (buildable area — slightly lighter)
             const laneGeo = new THREE.PlaneGeometry(CONFIG.laneWidth, CONFIG.laneLength - CONFIG.corridorStart);
-            const laneMat = new THREE.MeshStandardMaterial({
-                color: 0x3a3a3a,
-                roughness: 0.85,
-            });
+            const laneMat = toonMat(PALETTE.charcoal);
             const lane = new THREE.Mesh(laneGeo, laneMat);
             lane.rotation.x = -Math.PI / 2;
             lane.position.set(0, -0.03, CONFIG.corridorStart + (CONFIG.laneLength - CONFIG.corridorStart) / 2);
@@ -575,7 +571,7 @@
             this.scene.add(this.doorGroup);
 
             // Bathroom overhead light (actual illumination for the room)
-            const bathroomLight = new THREE.PointLight(0xeee8dd, 0.4, 20, 2);
+            const bathroomLight = new THREE.PointLight(PALETTE.fillWarm, 0.4, 20, 2);
             bathroomLight.position.set(0, 4.0, 4);
             this.scene.add(bathroomLight);
         },
@@ -621,7 +617,7 @@
             // Grid hover highlight (cell square)
             const highlightGeo = new THREE.PlaneGeometry(gridSize, gridSize);
             const highlightMat = new THREE.MeshBasicMaterial({
-                color: 0xffd700,
+                color: PALETTE.gold,
                 transparent: true,
                 opacity: 0.4,
                 depthWrite: false,
@@ -637,7 +633,7 @@
             // Range circle — filled semi-transparent disc
             const rangeGeo = new THREE.CircleGeometry(1.0, 64);
             const rangeMat = new THREE.MeshBasicMaterial({
-                color: 0x00ff00,
+                color: PALETTE.success,
                 transparent: true,
                 opacity: 0.12,
                 side: THREE.DoubleSide,
@@ -654,7 +650,7 @@
             // Range circle edge ring (crisp border)
             const rangeEdgeGeo = new THREE.RingGeometry(0.97, 1.0, 64);
             const rangeEdgeMat = new THREE.MeshBasicMaterial({
-                color: 0x00ff00,
+                color: PALETTE.success,
                 transparent: true,
                 opacity: 0.5,
                 side: THREE.DoubleSide,
@@ -1060,16 +1056,9 @@
             const drone = new THREE.Group();
             drone.name = 'deliveryDrone';
 
-            const bodyMat = new THREE.MeshStandardMaterial({
-                color: 0x2a2a2a, metalness: 0.5, roughness: 0.4,
-            });
-            const armMat = new THREE.MeshStandardMaterial({
-                color: 0x3a3a3a, metalness: 0.3, roughness: 0.5,
-            });
-            const rotorMat = new THREE.MeshStandardMaterial({
-                color: 0x777777, metalness: 0.2, roughness: 0.3,
-                transparent: true, opacity: 0.5, side: THREE.DoubleSide,
-            });
+            const bodyMat = toonMat(PALETTE.charcoal);
+            const armMat = toonMat(PALETTE.pants);
+            const rotorMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.5, side: THREE.DoubleSide });
 
             // Central body
             const body = new THREE.Mesh(
@@ -1081,7 +1070,7 @@
             // Top cover (slightly rounded look)
             const cover = new THREE.Mesh(
                 new THREE.BoxGeometry(0.5, 0.08, 0.5),
-                new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.4, roughness: 0.3 })
+                toonMat(PALETTE.charcoal)
             );
             cover.position.y = 0.13;
             drone.add(cover);
@@ -1089,9 +1078,7 @@
             // Camera/sensor on bottom
             const sensor = new THREE.Mesh(
                 new THREE.SphereGeometry(0.07, 8, 6),
-                new THREE.MeshStandardMaterial({
-                    color: 0x111111, emissive: 0x440000, emissiveIntensity: 0.8,
-                })
+                toonMat(PALETTE.ink, { emissive: PALETTE.danger, emissiveIntensity: 0.5 })
             );
             sensor.position.y = -0.12;
             drone.add(sensor);
@@ -1147,14 +1134,14 @@
             // LED lights — green front, red back
             const greenLed = new THREE.Mesh(
                 new THREE.SphereGeometry(0.03, 6, 6),
-                new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1.5 })
+                toonMat(PALETTE.success, { emissive: PALETTE.success, emissiveIntensity: 1.5 })
             );
             greenLed.position.set(0, 0.02, 0.38);
             drone.add(greenLed);
 
             const redLed = new THREE.Mesh(
                 new THREE.SphereGeometry(0.03, 6, 6),
-                new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.5 })
+                toonMat(PALETTE.danger, { emissive: PALETTE.danger, emissiveIntensity: 1.5 })
             );
             redLed.position.set(0, 0.02, -0.38);
             drone.add(redLed);
@@ -1162,7 +1149,7 @@
             // Package hook (thin line hanging below)
             const hook = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4),
-                new THREE.MeshStandardMaterial({ color: 0x333333 })
+                toonMat(PALETTE.charcoal)
             );
             hook.position.y = -0.25;
             hook.name = 'hook';
@@ -1174,9 +1161,7 @@
         _createPackageModel() {
             const pkg = new THREE.Group();
             pkg.name = 'package';
-            const boxMat = new THREE.MeshStandardMaterial({
-                color: 0xB5834A, roughness: 0.8, metalness: 0.0,
-            });
+            const boxMat = toonMat(PALETTE.wood);
             const box = new THREE.Mesh(
                 new THREE.BoxGeometry(0.6, 0.4, 0.6),
                 boxMat
@@ -1186,7 +1171,7 @@
             // Tape stripe on top
             const tape = new THREE.Mesh(
                 new THREE.BoxGeometry(0.08, 0.005, 0.62),
-                new THREE.MeshStandardMaterial({ color: 0xCCB077, roughness: 0.6 })
+                toonMat(PALETTE.tileLight)
             );
             tape.position.y = 0.201;
             pkg.add(tape);
@@ -1412,17 +1397,13 @@
 
         _createTowerMesh(type, def) {
             const group = new THREE.Group();
-            const mat = new THREE.MeshStandardMaterial({
-                color: def.color,
-                roughness: 0.5,
-                metalness: 0.1,
-            });
+            const mat = toonMat(def.color);
 
             if (type === 'coinmagnet') {
                 // Base platform
                 const base = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.4, 0.5, 0.2, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7, metalness: 0.3 })
+                    toonMat(PALETTE.charcoal)
                 );
                 base.position.y = 0.1;
                 group.add(base);
@@ -1430,7 +1411,7 @@
                 // Stand pole
                 const pole = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.06, 0.06, 0.6, 6),
-                    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.5, roughness: 0.3 })
+                    toonMat(PALETTE.fixture)
                 );
                 pole.position.y = 0.5;
                 group.add(pole);
@@ -1443,17 +1424,17 @@
                 // Horseshoe magnet — half torus
                 const horseshoe = new THREE.Mesh(
                     new THREE.TorusGeometry(0.25, 0.08, 8, 12, Math.PI),
-                    new THREE.MeshStandardMaterial({ color: 0xe74c3c, roughness: 0.4, metalness: 0.2 })
+                    toonMat(PALETTE.danger)
                 );
                 horseshoe.rotation.z = Math.PI; // U-shape opening downward
                 magnetHead.add(horseshoe);
 
                 // Magnet tips (silver spheres at ends)
-                const tipMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.7, roughness: 0.2 });
-                const tipL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat);
+                const tipMat2 = toonMat(PALETTE.fixture);
+                const tipL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat2);
                 tipL.position.set(-0.25, 0, 0);
                 magnetHead.add(tipL);
-                const tipR = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat);
+                const tipR = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), tipMat2);
                 tipR.position.set(0.25, 0, 0);
                 magnetHead.add(tipR);
 
@@ -1462,10 +1443,7 @@
                 // Collection jar (transparent, at base)
                 const jar = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.3, 0.35, 0.4, 8),
-                    new THREE.MeshStandardMaterial({
-                        color: 0x88bbff, roughness: 0.1, metalness: 0.1,
-                        transparent: true, opacity: 0.35,
-                    })
+                    toonMat(PALETTE.rimCool, { transparent: true, opacity: 0.35 })
                 );
                 jar.position.y = 0.3;
                 group.add(jar);
@@ -1473,17 +1451,17 @@
                 // Small gold coins visible inside jar
                 const coinsInside = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8),
-                    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 })
+                    matGold()
                 );
                 coinsInside.position.y = 0.2;
                 group.add(coinsInside);
             } else if (type === 'wetfloor') {
                 // A-frame "Caution: Wet Floor" sign
-                const signMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.4 });
+                const signMat2 = toonMat(PALETTE.sign);
                 // Left panel (angled)
                 const panelL = new THREE.Mesh(
                     new THREE.BoxGeometry(0.9, 1.3, 0.06),
-                    signMat
+                    signMat2
                 );
                 panelL.position.set(0, 0.75, 0.15);
                 panelL.rotation.x = 0.25;
@@ -1491,7 +1469,7 @@
                 // Right panel (angled opposite)
                 const panelR = new THREE.Mesh(
                     new THREE.BoxGeometry(0.9, 1.3, 0.06),
-                    signMat
+                    signMat2
                 );
                 panelR.position.set(0, 0.75, -0.15);
                 panelR.rotation.x = -0.25;
@@ -1499,7 +1477,7 @@
                 // Black warning stripe across front panel
                 const stripe = new THREE.Mesh(
                     new THREE.BoxGeometry(0.7, 0.15, 0.065),
-                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                    toonMat(PALETTE.ink)
                 );
                 stripe.position.set(0, 0.55, 0.18);
                 stripe.rotation.x = 0.25;
@@ -1507,7 +1485,7 @@
                 // Exclamation mark on front — line
                 const exLine = new THREE.Mesh(
                     new THREE.BoxGeometry(0.08, 0.35, 0.065),
-                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                    toonMat(PALETTE.ink)
                 );
                 exLine.position.set(0, 1.0, 0.2);
                 exLine.rotation.x = 0.25;
@@ -1515,7 +1493,7 @@
                 // Exclamation mark — dot
                 const exDot = new THREE.Mesh(
                     new THREE.BoxGeometry(0.1, 0.1, 0.065),
-                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                    toonMat(PALETTE.ink)
                 );
                 exDot.position.set(0, 0.75, 0.19);
                 exDot.rotation.x = 0.25;
@@ -1524,21 +1502,21 @@
                 // Mop bucket (grey cylinder)
                 const bucket = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.45, 0.35, 0.6, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.4, metalness: 0.3 })
+                    toonMat(PALETTE.fixture)
                 );
                 bucket.position.y = 0.3;
                 group.add(bucket);
                 // Water in bucket (blue disc)
                 const water = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.4, 0.4, 0.05, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x5599cc, roughness: 0.1, metalness: 0.1 })
+                    toonMat(PALETTE.rimCool)
                 );
                 water.position.y = 0.55;
                 group.add(water);
                 // Mop handle (brown stick, angled)
                 const handle = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6),
-                    new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+                    toonMat(PALETTE.wood)
                 );
                 handle.position.set(0.15, 1.2, 0);
                 handle.rotation.z = -0.15;
@@ -1551,7 +1529,7 @@
                 mopHead.position.set(0.25, 0.25, 0);
                 group.add(mopHead);
                 // Mop strand details (smaller boxes hanging down)
-                const strandMat = new THREE.MeshStandardMaterial({ color: 0x9b59b6, roughness: 0.8 });
+                const strandMat = toonMat(PALETTE.mop);
                 for (let si = -1; si <= 1; si++) {
                     const strand = new THREE.Mesh(
                         new THREE.BoxGeometry(0.12, 0.15, 0.4),
@@ -1568,7 +1546,7 @@
 
                 // Outline edges (inverted-hull style — dark shell behind geometry)
                 const outlineMat = new THREE.MeshBasicMaterial({
-                    color: 0x111111, side: THREE.BackSide
+                    color: PALETTE.ink, side: THREE.BackSide
                 });
                 const outlineGeo = new THREE.CylinderGeometry(
                     canRadius + 0.04, canRadius + 0.04, canHeight + 0.04, segments
@@ -1606,14 +1584,14 @@
                 group.add(shoulderOutline);
 
                 // Nozzle cap (white plastic top)
-                const capMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+                const capMat = toonMat(PALETTE.white);
                 const capGeo = new THREE.CylinderGeometry(canRadius * 0.55, canRadius * 0.7, 0.2, segments);
                 const cap = new THREE.Mesh(capGeo, capMat);
                 cap.position.y = canHeight + 0.35;
                 group.add(cap);
 
                 // Spray nozzle (small protruding tip, faces +Z toward enemies)
-                const nozzleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+                const nozzleMat = toonMat(PALETTE.fixture);
                 const nozzleGeo = new THREE.CylinderGeometry(0.06, 0.1, 0.15, 6);
                 const nozzle = new THREE.Mesh(nozzleGeo, nozzleMat);
                 nozzle.rotation.x = Math.PI / 2; // Point forward
@@ -1701,10 +1679,8 @@
 
                 const labelTex = new THREE.CanvasTexture(labelCanvas);
                 labelTex.needsUpdate = true;
-                const labelMat = new THREE.MeshStandardMaterial({
+                const labelMat = new THREE.MeshToonMaterial({
                     map: labelTex,
-                    emissive: 0x222211,
-                    emissiveIntensity: 0.1,
                 });
                 const labelGeo = new THREE.CylinderGeometry(
                     canRadius + 0.01, canRadius + 0.01, canHeight * 0.45, segments
@@ -1714,7 +1690,7 @@
                 group.add(label);
 
                 // Label outline (ring edges at top and bottom of label)
-                const labelEdgeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+                const labelEdgeMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
                 const labelEdgeGeo = new THREE.TorusGeometry(canRadius + 0.02, 0.02, 4, segments);
                 const labelTop = new THREE.Mesh(labelEdgeGeo, labelEdgeMat);
                 labelTop.rotation.x = Math.PI / 2;
@@ -2476,9 +2452,10 @@
                                 child.material.emissive.setHex(0xff1100);
                                 child.material.emissiveIntensity = pulse + dmgPct * 0.2;
                             }
-                            // Progressive desaturation — colors wash out when damaged
-                            if (child.material._origRoughness === undefined) child.material._origRoughness = child.material.roughness;
-                            child.material.roughness = Math.min(1, child.material._origRoughness + dmgPct * 0.4);
+                            // Progressive desaturation — darken base color when damaged
+                            if (!child.material._origColor) child.material._origColor = child.material.color.clone();
+                            const darkFactor = 1 - dmgPct * 0.3; // up to 30% darker
+                            child.material.color.copy(child.material._origColor).multiplyScalar(darkFactor);
                         }
                     });
 
@@ -2693,7 +2670,7 @@
 
             const mesh = new THREE.Mesh(
                 new THREE.SphereGeometry(0.15, 6, 6),
-                new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+                new THREE.MeshBasicMaterial({ color: PALETTE.success })
             );
             mesh.position.set(tower.gridX, 0.8, tower.gridZ);
             this.scene.add(mesh);
@@ -2736,7 +2713,7 @@
             // 5 spray particles in a fan pattern
             const particles = [];
             const sprayMat = new THREE.MeshBasicMaterial({
-                color: 0x88ffaa,
+                color: PALETTE.ubik,
                 transparent: true,
                 opacity: 0.7,
                 depthWrite: false,
@@ -2878,14 +2855,14 @@
             // Color: green if can place, red if occupied or can't afford
             const def = this.TOWERS[this.selectedTower];
             const canPlace = !this._isCellOccupied(pos.x, pos.z) && this.coins >= def.cost;
-            const hoverColor = canPlace ? 0x00ff00 : 0xff4444;
+            const hoverColor = canPlace ? PALETTE.success : PALETTE.danger;
             this.gridHighlight.material.color.setHex(hoverColor);
             this.gridHighlight.material.opacity = canPlace ? 0.4 : 0.25;
 
             // Range circle
             const range = def.range;
             if (range > 0) {
-                const rangeColor = (this.selectedTower === 'coinmagnet') ? 0xffd700 : hoverColor;
+                const rangeColor = (this.selectedTower === 'coinmagnet') ? PALETTE.gold : hoverColor;
                 this.rangeCircle.scale.set(range, range, range);
                 this.rangeCircle.position.set(pos.x, 0.04, pos.z);
                 this.rangeCircle.material.color.setHex(rangeColor);
@@ -2997,19 +2974,14 @@
         // ============================
         _spawnDoorChips(x, z) {
             const chipCount = 8 + Math.floor(Math.random() * 6);
-            const chipColors = [0x8B6914, 0x7A5C10, 0x9B7924, 0xA08030, 0x6B4E0C, 0xB8942A];
 
             for (let i = 0; i < chipCount; i++) {
                 const size = 0.08 + Math.random() * 0.15;
                 const geo = Math.random() > 0.5
                     ? new THREE.BoxGeometry(size, size * 0.5, size * 0.3)
                     : new THREE.TetrahedronGeometry(size * 0.6, 0);
-                const mat = new THREE.MeshStandardMaterial({
-                    color: chipColors[Math.floor(Math.random() * chipColors.length)],
-                    roughness: 0.7,
-                    metalness: 0.05,
-                });
-                const chip = new THREE.Mesh(geo, mat);
+                const mat2 = toonMat(PALETTE.wood);
+                const chip = new THREE.Mesh(geo, mat2);
                 chip.position.set(
                     x + (Math.random() - 0.5) * 2,
                     1.5 + Math.random() * 3,
@@ -3046,7 +3018,6 @@
 
             // === MASSIVE DOOR EXPLOSION — 50 shards blasting forward ===
             const shardCount = 50;
-            const woodColors = [0x8B6914, 0x7A5C10, 0x9B7924, 0xA08030, 0x6B4E0C, 0xB8942A];
 
             for (let i = 0; i < shardCount; i++) {
                 const size = 0.15 + Math.random() * 0.5;
@@ -3056,12 +3027,8 @@
                     : new THREE.TetrahedronGeometry(size * 0.6, 0);
                 // Last 5 shards are chrome handle bits
                 const isChrome = i >= shardCount - 5;
-                const mat = new THREE.MeshStandardMaterial({
-                    color: isChrome ? 0xcccccc : woodColors[Math.floor(Math.random() * woodColors.length)],
-                    roughness: isChrome ? 0.1 : 0.7,
-                    metalness: isChrome ? 0.9 : 0.05,
-                });
-                const shard = new THREE.Mesh(geo, mat);
+                const mat2 = toonMat(isChrome ? PALETTE.fixture : PALETTE.wood);
+                const shard = new THREE.Mesh(geo, mat2);
                 shard.position.set(
                     (Math.random() - 0.5) * 5,
                     0.3 + Math.random() * 3.5,
@@ -3222,8 +3189,8 @@
                 this._updateCinematic(dt);
             }
 
-            // Render
-            this.renderer.render(this.scene, this.camera);
+            // Render (post-processing: edges + vignette)
+            this.postFX.render();
 
             // 6E: Performance profiling (debug overlay, toggle with backtick key)
             if (this._showPerfStats) {
