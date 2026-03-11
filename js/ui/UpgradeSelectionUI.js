@@ -7,6 +7,7 @@
 
 import { PALETTE } from '../data/palette.js';
 import { toonMat } from '../shaders/toonMaterials.js';
+import { drawUpgradeIcon } from '../data/upgradeIcons.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -31,46 +32,9 @@ const PRESENT_WAIT_DUR = 1.5;     // Hold close-up before card drop
 // Card drop animation
 const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 
-// ─── DESCRIPTION TOOLTIP ────────────────────────────────────────────────────
-
-let _descEl = null;
-
-function _ensureDescElement() {
-    if (_descEl) return _descEl;
-    _descEl = document.createElement('div');
-    _descEl.id = 'upgrade-desc-tooltip';
-    _descEl.style.cssText = `
-        position: fixed;
-        pointer-events: none;
-        z-index: 100;
-        max-width: 260px;
-        padding: 10px 14px;
-        background: var(--pal-cream, #fff4d9);
-        border: 3px solid var(--pal-ink, #1a1a2e);
-        border-radius: 8px;
-        font-family: 'Bangers', sans-serif;
-        font-size: 15px;
-        color: var(--pal-ink, #1a1a2e);
-        opacity: 0;
-        transition: opacity 0.15s;
-        text-align: center;
-        line-height: 1.3;
-    `;
-    document.body.appendChild(_descEl);
-    return _descEl;
-}
-
-function _showDesc(text, screenX, screenY) {
-    const el = _ensureDescElement();
-    el.textContent = text;
-    el.style.opacity = '1';
-    el.style.left = (screenX - 130) + 'px';
-    el.style.top = (screenY + 20) + 'px';
-}
-
-function _hideDesc() {
-    if (_descEl) _descEl.style.opacity = '0';
-}
+// Card drop display dimensions
+const CARD_DROP_W = 280;
+const CARD_DROP_H = 140;
 
 // ─── SCREEN FLASH OVERLAY ───────────────────────────────────────────────────
 
@@ -276,9 +240,6 @@ export class UpgradeSelectionUI {
         window.removeEventListener('mousemove', this._onMouseMove);
         window.removeEventListener('click', this._onClick);
 
-        // Hide tooltip
-        _hideDesc();
-
         // Restore background
         if (this._scene) {
             this._dimBackground(this._scene, false);
@@ -315,7 +276,6 @@ export class UpgradeSelectionUI {
         if (this.phase !== 'choosing' || !this._camera || this.drones.length === 0) {
             if (this.hoveredIndex !== -1) {
                 this.hoveredIndex = -1;
-                _hideDesc();
             }
             return;
         }
@@ -345,27 +305,7 @@ export class UpgradeSelectionUI {
         // Update hovered index
         if (bestIndex !== this.hoveredIndex) {
             this.hoveredIndex = bestIndex;
-            if (bestIndex >= 0) {
-                // Show description tooltip
-                const upgrade = this.options[bestIndex];
-                _showDesc(upgrade.description, this._mouseScreenX || 0, this._mouseScreenY || 0);
-                document.body.style.cursor = 'pointer';
-            } else {
-                _hideDesc();
-                document.body.style.cursor = '';
-            }
-        } else if (bestIndex >= 0) {
-            // Update tooltip position while hovering
-            const upgrade = this.options[bestIndex];
-            // Project drone sign position to screen for stable tooltip
-            const drone = this.drones[bestIndex];
-            const signWorldPos = new THREE.Vector3();
-            drone.userData.signGroup.getWorldPosition(signWorldPos);
-            signWorldPos.y -= 1.0; // Below the sign
-            signWorldPos.project(this._camera);
-            const screenX = (signWorldPos.x * 0.5 + 0.5) * window.innerWidth;
-            const screenY = (-signWorldPos.y * 0.5 + 0.5) * window.innerHeight;
-            _showDesc(upgrade.description, screenX, screenY);
+            document.body.style.cursor = bestIndex >= 0 ? 'pointer' : '';
         }
     }
 
@@ -441,7 +381,6 @@ export class UpgradeSelectionUI {
     _selectDrone(index) {
         this.selectedIndex = index;
         this.phase = 'selecting';
-        _hideDesc();
         document.body.style.cursor = '';
 
         // Remove click/move listeners during animation
@@ -796,16 +735,104 @@ export class UpgradeSelectionUI {
     }
 
     _createCardDropElement(upgrade, screenX, screenY) {
-        const rarityBorders = {
-            common: 'var(--pal-ink, #1a1a2e)',
-            rare: 'var(--pal-rarityRare, #9b8ec4)',
-            legendary: 'var(--pal-rarityLegendary, #ffd93d)',
-        };
-        const rarityBg = {
-            common: 'var(--pal-white, #faf5ef)',
-            rare: '#ede8f5',
-            legendary: '#fff5d0',
-        };
+        const rarity = upgrade.rarity;
+
+        // ── Render card content onto a canvas (mirrors the 3D placard sign) ──
+        const cW = 512, cH = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = cW;
+        canvas.height = cH;
+        const ctx = canvas.getContext('2d');
+
+        // Rounded-rect background
+        const bgColors = { legendary: '#ffd93d', rare: '#fff4d9', common: '#ffffff' };
+        ctx.fillStyle = bgColors[rarity] || bgColors.common;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, cW, cH, 20);
+        ctx.fill();
+
+        // Border
+        const borderColor = rarity === 'rare' ? '#9b8ec4' : '#1a1a2e';
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.roundRect(4, 4, cW - 8, cH - 8, 16);
+        ctx.stroke();
+
+        ctx.fillStyle = '#1a1a2e';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Icon
+        drawUpgradeIcon(ctx, upgrade.icon || 'star', 256, 50, 60);
+
+        // Name (Bangers font, word-wrapped)
+        const nameFontSize = upgrade.name.length > 16 ? 26 : 32;
+        ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
+        const nameWords = upgrade.name.split(' ');
+        const nameLines = [];
+        let curLine = nameWords[0];
+        for (let w = 1; w < nameWords.length; w++) {
+            const test = curLine + ' ' + nameWords[w];
+            if (ctx.measureText(test).width > 460) {
+                nameLines.push(curLine);
+                curLine = nameWords[w];
+            } else {
+                curLine = test;
+            }
+        }
+        nameLines.push(curLine);
+
+        const nLineH = nameFontSize + 4;
+        const nStartY = 110 - (nameLines.length - 1) * nLineH / 2;
+        for (let i = 0; i < nameLines.length; i++) {
+            if (rarity !== 'common') {
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.fillText(nameLines[i], 258, nStartY + i * nLineH + 2);
+            }
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillText(nameLines[i], 256, nStartY + i * nLineH);
+        }
+
+        // Divider
+        const divY = nStartY + nameLines.length * nLineH + 6;
+        ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(60, divY);
+        ctx.lineTo(452, divY);
+        ctx.stroke();
+
+        // Description (smaller Bangers)
+        if (upgrade.description) {
+            ctx.fillStyle = '#3a3a4a';
+            ctx.font = "20px 'Bangers', sans-serif";
+            const dWords = upgrade.description.split(' ');
+            const dLines = [];
+            let dLine = dWords[0] || '';
+            for (let w = 1; w < dWords.length; w++) {
+                const test = dLine + ' ' + dWords[w];
+                if (ctx.measureText(test).width > 440) {
+                    dLines.push(dLine);
+                    dLine = dWords[w];
+                } else {
+                    dLine = test;
+                }
+            }
+            dLines.push(dLine);
+            const dLineH = 24;
+            const dStartY = divY + 18;
+            for (let i = 0; i < dLines.length; i++) {
+                ctx.fillText(dLines[i], 256, dStartY + i * dLineH);
+            }
+        }
+
+        // ── Build DOM element ──
+        const shadowGlow = rarity === 'legendary'
+            ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 30px rgba(255,217,61,0.6)'
+            : rarity === 'rare'
+                ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 18px rgba(155,142,196,0.4)'
+                : '3px 4px 0px rgba(26,26,46,0.5)';
 
         const el = document.createElement('div');
         el.id = 'upgrade-card-drop';
@@ -813,29 +840,18 @@ export class UpgradeSelectionUI {
             position: fixed;
             pointer-events: none;
             z-index: 110;
-            width: 72px;
-            height: 72px;
-            border-radius: 10px;
-            border: 3px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
-            background: ${rarityBg[upgrade.rarity] || rarityBg.common};
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: ${CARD_DROP_W}px;
+            height: ${CARD_DROP_H}px;
+            border-radius: 12px;
+            overflow: hidden;
             opacity: 0;
-            box-shadow: 3px 4px 0px var(--pal-ink, #1a1a2e),
-                        0 0 20px rgba(255, 217, 61, 0.4);
-            left: ${screenX - 36}px;
-            top: ${screenY - 36}px;
+            box-shadow: ${shadowGlow};
+            left: ${screenX - CARD_DROP_W / 2}px;
+            top: ${screenY - CARD_DROP_H / 2}px;
         `;
 
-        if (window.createIconDataURL) {
-            const img = document.createElement('img');
-            img.src = window.createIconDataURL(upgrade.icon || 'star', 96);
-            img.width = 48;
-            img.height = 48;
-            img.style.pointerEvents = 'none';
-            el.appendChild(img);
-        }
+        canvas.style.cssText = 'width:100%;height:100%;display:block;';
+        el.appendChild(canvas);
 
         document.body.appendChild(el);
         return el;
@@ -861,13 +877,15 @@ export class UpgradeSelectionUI {
         const y = u*u*u*start.y + 3*u*u*t*cp1y + 3*u*t*t*cp2y + t*t*t*target.y;
 
         if (this._cardDropEl) {
-            this._cardDropEl.style.left = (x - 36) + 'px';
-            this._cardDropEl.style.top = (y - 36) + 'px';
+            this._cardDropEl.style.left = (x - CARD_DROP_W / 2) + 'px';
+            this._cardDropEl.style.top = (y - CARD_DROP_H / 2) + 'px';
 
-            // Juicy scale: slight grow then settle
-            const scale = 1 + Math.sin(t * Math.PI) * 0.15;
+            // Scale: shrink from full size with juicy pop in the middle
+            const shrink = 1.0 - t * 0.65;
+            const pop = Math.sin(t * Math.PI) * 0.15;
+            const scale = shrink + pop;
             // Wobble rotation that damps out
-            const rot = Math.sin(t * Math.PI * 4) * 12 * (1 - t);
+            const rot = Math.sin(t * Math.PI * 4) * 15 * (1 - t);
             this._cardDropEl.style.transform = `scale(${scale}) rotate(${rot}deg)`;
 
             // Fade in quickly, stay visible, fade out at end
@@ -1019,10 +1037,8 @@ export class UpgradeSelectionUI {
 
     dispose() {
         this.deactivate();
-        if (_descEl && _descEl.parentNode) _descEl.parentNode.removeChild(_descEl);
         if (_flashEl && _flashEl.parentNode) _flashEl.parentNode.removeChild(_flashEl);
         if (_dimEl && _dimEl.parentNode) _dimEl.parentNode.removeChild(_dimEl);
-        _descEl = null;
         _flashEl = null;
         _dimEl = null;
     }

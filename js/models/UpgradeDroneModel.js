@@ -83,7 +83,7 @@ function createPlacardTexture(upgrade, rarity) {
 
     // Name (middle area, larger bold text)
     const nameFontSize = upgrade.name.length > 16 ? 26 : 32;
-    ctx.font = `bold ${nameFontSize}px sans-serif`;
+    ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
 
     // Word wrap name
     const nameWords = upgrade.name.split(' ');
@@ -124,7 +124,7 @@ function createPlacardTexture(upgrade, rarity) {
     if (upgrade.description) {
         ctx.fillStyle = '#3a3a4a';
         const descFontSize = 20;
-        ctx.font = `${descFontSize}px sans-serif`;
+        ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
 
         const descWords = upgrade.description.split(' ');
         const descLines = [];
