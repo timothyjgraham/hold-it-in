@@ -21,7 +21,7 @@ const ENEMY_SETTLE_DUR = 0.2;     // Scale 1.1→1.0
 const PEDESTAL_FADE_DELAY = 0.5;
 const PARTICLE_BURST_DELAY = 1.0;
 const INPUT_ENABLE_DELAY = 1.8;
-const AUTO_DISMISS_TIME = 6.0;    // Auto-dismiss if no input
+// No auto-dismiss — waits for player input
 const EXIT_DURATION = 0.8;        // Phase 3
 const ENEMY_EXIT_DUR = 0.5;
 
@@ -102,26 +102,6 @@ function _createIntroSignTexture(enemyType) {
     return texture;
 }
 
-// ─── DIM OVERLAY ─────────────────────────────────────────────────────────────
-
-let _introDimEl = null;
-
-function _ensureIntroDimElement() {
-    if (_introDimEl) return _introDimEl;
-    _introDimEl = document.createElement('div');
-    _introDimEl.id = 'enemy-intro-dim';
-    _introDimEl.style.cssText = `
-        position: fixed; inset: 0;
-        pointer-events: none;
-        z-index: 5;
-        background: rgba(26, 26, 46, 0.5);
-        opacity: 0;
-        transition: opacity 0.5s;
-    `;
-    document.body.appendChild(_introDimEl);
-    return _introDimEl;
-}
-
 // ─── TAP TO CONTINUE TEXT ────────────────────────────────────────────────────
 
 let _tapTextEl = null;
@@ -158,11 +138,11 @@ export class EnemyIntroUI {
         this.active = false;
         this._phase = 'idle'; // idle | entering | display | exiting
         this._timer = 0;
-        this._autoTimer = 0;
         this._inputEnabled = false;
 
         // 3D objects
         this._drone = null;
+        this._dimPlane = null;
         this._signGroup = null;
         this._signTexture = null;
         this._enemyGroup = null;
@@ -204,7 +184,6 @@ export class EnemyIntroUI {
         this.active = true;
         this._phase = 'entering';
         this._timer = 0;
-        this._autoTimer = 0;
         this._inputEnabled = false;
         this._scene = scene;
         this._camera = camera;
@@ -214,10 +193,8 @@ export class EnemyIntroUI {
         const introData = ENEMY_INTRO_DATA[enemyType];
         const visualConfig = ENEMY_VISUAL_CONFIG[enemyType];
 
-        // ── Background dim ──
-        const dimEl = _ensureIntroDimElement();
-        dimEl.style.opacity = '0';
-        requestAnimationFrame(() => { dimEl.style.opacity = '1'; });
+        // ── Background dim (3D plane behind intro elements) ──
+        this._createDimPlane();
 
         // ── Create drone with sign ──
         this._createDroneWithSign(enemyType, windowPositions);
@@ -233,6 +210,29 @@ export class EnemyIntroUI {
         window.addEventListener('click', this._onDismiss);
         window.addEventListener('touchstart', this._onDismiss);
         window.addEventListener('keydown', this._onDismiss);
+    }
+
+    /**
+     * Create a 3D dim plane behind intro elements so the game world is dimmed
+     * but the sign and enemy remain fully lit and clear.
+     */
+    _createDimPlane() {
+        const geo = new THREE.PlaneGeometry(80, 80);
+        const mat = new THREE.MeshBasicMaterial({
+            color: 0x1a1a2e,
+            transparent: true,
+            opacity: 0.5,
+            depthWrite: false,
+        });
+        this._dimPlane = new THREE.Mesh(geo, mat);
+        // Position behind the intro elements but in front of the game world
+        // Camera is at z=-15, intro elements at z=-2 to z=-1, game world at z=0+
+        this._dimPlane.position.set(0, 18, 1);
+        // Face toward camera (default PlaneGeometry faces +Z, camera is at -Z)
+        this._dimPlane.rotation.y = Math.PI;
+        // Render on both sides so orientation doesn't matter
+        mat.side = THREE.DoubleSide;
+        this._scene.add(this._dimPlane);
     }
 
     /**
@@ -267,8 +267,8 @@ export class EnemyIntroUI {
             signGroup.scale.set(1.2, 1.2, 1.2);
         }
 
-        // Flight path: pick random window → hover position
-        const hoverPos = new THREE.Vector3(0, 22, -4);
+        // Flight path: pick random window → hover position (left side, so enemy is visible on right)
+        const hoverPos = new THREE.Vector3(-3.5, 22, -2);
         let startPos;
 
         if (windowPositions && windowPositions.length > 0) {
@@ -313,7 +313,7 @@ export class EnemyIntroUI {
         const displayScale = config.size * 1.5;
         const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
         this._enemyGroup = result.group;
-        this._enemyGroup.position.set(0, 16, -1);
+        this._enemyGroup.position.set(3.5, 17, -1);
         this._enemyGroup.scale.setScalar(0); // Start at 0, will pop in
 
         // Rotate to face camera (face -Z direction is toward camera at Z=-15)
@@ -331,7 +331,7 @@ export class EnemyIntroUI {
         const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
         const pedMat = toonMat(PALETTE.cream);
         this._pedestal = new THREE.Mesh(pedGeo, pedMat);
-        this._pedestal.position.set(0, 16 - pedH / 2, -1);
+        this._pedestal.position.set(3.5, 17 - pedH / 2, -1);
         this._pedestal.scale.setScalar(0);
         this._scene.add(this._pedestal);
 
@@ -349,7 +349,7 @@ export class EnemyIntroUI {
     _spawnEnemyParticles() {
         const config = ENEMY_VISUAL_CONFIG[this._enemyType];
         const color = config.materialColors.body;
-        const center = new THREE.Vector3(0, 17.5, -1);
+        const center = new THREE.Vector3(3.5, 18.5, -1);
 
         for (let i = 0; i < 20; i++) {
             const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);
@@ -410,7 +410,6 @@ export class EnemyIntroUI {
 
             if (this._timer >= ENTRY_DURATION) {
                 this._phase = 'display';
-                this._autoTimer = 0;
 
                 // Ensure drone is in hover state
                 const ud = this._drone.userData;
@@ -422,12 +421,9 @@ export class EnemyIntroUI {
             }
         }
 
-        // ── Phase 2: Display ──
+        // ── Phase 2: Display (waits for player input) ──
         if (this._phase === 'display') {
-            this._autoTimer += dt;
-            if (this._autoTimer >= AUTO_DISMISS_TIME) {
-                this._beginExit();
-            }
+            // No auto-dismiss — player must click/tap/press to continue
         }
 
         // ── Phase 3: Exit ──
@@ -598,9 +594,6 @@ export class EnemyIntroUI {
         // Hide tap text
         if (_tapTextEl) _tapTextEl.style.opacity = '0';
 
-        // Dim overlay fade out
-        if (_introDimEl) _introDimEl.style.opacity = '0';
-
         // Set drone exit flight
         if (this._drone) {
             const ud = this._drone.userData;
@@ -652,6 +645,12 @@ export class EnemyIntroUI {
             const t = Math.min(1, exitT / ENEMY_EXIT_DUR);
             this._pedestal.scale.setScalar(Math.max(0, 1 - t));
             this._pedestalOutline.scale.setScalar(Math.max(0, 1 - t));
+        }
+
+        // Dim plane fade out
+        if (this._dimPlane) {
+            const t = Math.min(1, exitT / EXIT_DURATION);
+            this._dimPlane.material.opacity = 0.5 * (1 - t);
         }
 
         // Complete
@@ -725,6 +724,14 @@ export class EnemyIntroUI {
             this._pedestalOutline = null;
         }
 
+        // Clean up dim plane
+        if (this._dimPlane && this._scene) {
+            this._scene.remove(this._dimPlane);
+            this._dimPlane.geometry.dispose();
+            this._dimPlane.material.dispose();
+            this._dimPlane = null;
+        }
+
         // Clean up particles
         if (this._scene) {
             for (const p of this._particles) {
@@ -736,7 +743,6 @@ export class EnemyIntroUI {
         this._particles = [];
 
         // Hide DOM elements
-        if (_introDimEl) _introDimEl.style.opacity = '0';
         if (_tapTextEl) {
             _tapTextEl.style.opacity = '0';
             _tapTextEl.style.animation = '';
@@ -752,10 +758,6 @@ export class EnemyIntroUI {
 
     dispose() {
         this.deactivate();
-        if (_introDimEl && _introDimEl.parentNode) {
-            _introDimEl.parentNode.removeChild(_introDimEl);
-            _introDimEl = null;
-        }
         if (_tapTextEl && _tapTextEl.parentNode) {
             _tapTextEl.parentNode.removeChild(_tapTextEl);
             _tapTextEl = null;
