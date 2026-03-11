@@ -6,6 +6,7 @@
 
 import { PALETTE, OUTLINE_WIDTH } from '../data/palette.js';
 import { toonMat, outlineMatStatic } from '../shaders/toonMaterials.js';
+import { drawUpgradeIcon } from '../data/upgradeIcons.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -78,9 +79,8 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Icon (large, top half)
-    ctx.font = '42px sans-serif';
-    ctx.fillText(upgrade.icon || '?', 128, 38);
+    // Icon (canvas-drawn, top half)
+    drawUpgradeIcon(ctx, upgrade.icon || 'star', 128, 38, 48);
 
     // Name (bottom half, wrapping if long)
     const fontSize = upgrade.name.length > 16 ? 16 : 20;
@@ -284,8 +284,8 @@ export function createUpgradeDrone(upgrade, slotIndex) {
         toonMat(PALETTE.cream), // left
         toonMat(PALETTE.cream), // top
         toonMat(PALETTE.cream), // bottom
-        placardFrontMat,        // front (+Z face)
-        placardBackMat,         // back (-Z face)
+        placardBackMat,         // front (+Z face, faces away from camera)
+        placardFrontMat,        // back (-Z face, faces camera)
     ];
     const placard = new THREE.Mesh(placardGeo, placardMaterials);
     placard.position.y = -chainLength - placardH / 2 + 0.05;

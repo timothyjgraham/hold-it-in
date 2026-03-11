@@ -1254,6 +1254,10 @@
             if (this.upgradeSelectionUI) {
                 this.upgradeSelectionUI.deactivate();
             }
+            // Clear upgrade HUD cards
+            if (this._upgradeHUD) {
+                this._upgradeHUD.innerHTML = '';
+            }
 
             this.selectedTower = null;
             this._updateTowerButtons();
@@ -1984,10 +1988,10 @@
             this._upgradePhase = true;
             this._upgradeOptions = options;
 
-            // Target hover positions: 3 drones in a row, centered
-            const spacing = 6;
-            const hoverY = 8;     // Above eye level
-            const hoverZ = 20;    // In front of camera, above the play area
+            // Target hover positions: 3 drones in a row, centered, close to camera
+            const spacing = 5;
+            const hoverY = 14;    // Roughly mid-camera height
+            const hoverZ = 6;     // Close to camera (cam at Z=-15, looks at Z=22)
             const startX = -(options.length - 1) * spacing / 2;
 
             for (let i = 0; i < options.length; i++) {
@@ -2153,55 +2157,189 @@
             this._setInterWaveTimer();
         },
 
-        /** Show a brief toast notification when an upgrade is acquired */
+        /** Ensure the persistent upgrade HUD bar exists in bottom-left */
+        _ensureUpgradeHUD() {
+            if (this._upgradeHUD) return this._upgradeHUD;
+            const hud = document.createElement('div');
+            hud.id = 'upgrade-hud';
+            hud.style.cssText = `
+                position: fixed;
+                bottom: 16px;
+                left: 16px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                z-index: 50;
+                max-width: 320px;
+            `;
+            document.body.appendChild(hud);
+            this._upgradeHUD = hud;
+
+            // Shared tooltip
+            const tip = document.createElement('div');
+            tip.id = 'upgrade-hud-tip';
+            tip.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                z-index: 110;
+                padding: 8px 12px;
+                background: var(--pal-cream, #fff4d9);
+                border: 2.5px solid var(--pal-ink, #1a1a2e);
+                border-radius: 6px;
+                font-family: 'Bangers', sans-serif;
+                font-size: 14px;
+                color: var(--pal-ink, #1a1a2e);
+                opacity: 0;
+                transition: opacity 0.12s;
+                max-width: 220px;
+                text-align: center;
+                line-height: 1.3;
+            `;
+            document.body.appendChild(tip);
+            this._upgradeHUDTip = tip;
+            return hud;
+        },
+
+        /** Add a card to the upgrade HUD bar for an acquired upgrade */
+        _addUpgradeCard(upgrade) {
+            const hud = this._ensureUpgradeHUD();
+            const tip = this._upgradeHUDTip;
+
+            const rarityBorders = {
+                common: 'var(--pal-ink, #1a1a2e)',
+                rare: 'var(--pal-rarityRare, #9b8ec4)',
+                legendary: 'var(--pal-rarityLegendary, #ffd93d)',
+            };
+            const rarityBg = {
+                common: 'var(--pal-white, #faf5ef)',
+                rare: '#ede8f5',
+                legendary: '#fff5d0',
+            };
+
+            // Create icon data URL using canvas icon system
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 48) : '';
+
+            const card = document.createElement('div');
+            card.className = 'upgrade-hud-card';
+            card.style.cssText = `
+                width: 36px; height: 36px;
+                border: 2.5px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
+                border-radius: 6px;
+                background: ${rarityBg[upgrade.rarity] || rarityBg.common};
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer;
+                transition: transform 0.15s, box-shadow 0.15s;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            `;
+            if (iconURL) {
+                const img = document.createElement('img');
+                img.src = iconURL;
+                img.width = 24;
+                img.height = 24;
+                img.style.pointerEvents = 'none';
+                card.appendChild(img);
+            }
+
+            // Hover: show tooltip
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'scale(1.15)';
+                card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                tip.innerHTML = `<b>${upgrade.name}</b><br>${upgrade.description}`;
+                const rect = card.getBoundingClientRect();
+                tip.style.left = rect.left + 'px';
+                tip.style.top = (rect.top - 8) + 'px';
+                tip.style.transform = 'translateY(-100%)';
+                tip.style.opacity = '1';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+                card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+                tip.style.opacity = '0';
+            });
+
+            hud.appendChild(card);
+            return card;
+        },
+
+        /** Show toast then animate it down to the upgrade HUD bar */
         _showUpgradeToast(upgrade) {
+            // Toast element (reused)
             let toast = document.getElementById('upgrade-toast');
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'upgrade-toast';
                 toast.style.cssText = `
                     position: fixed;
-                    top: 15%;
-                    left: 50%;
-                    transform: translateX(-50%) translateY(-20px);
                     z-index: 120;
-                    padding: 12px 28px;
+                    padding: 10px 22px;
                     background: var(--pal-cream, #fff4d9);
                     border: 3px solid var(--pal-ink, #1a1a2e);
                     border-radius: 10px;
                     font-family: 'Bangers', sans-serif;
                     font-size: 22px;
                     color: var(--pal-ink, #1a1a2e);
-                    opacity: 0;
-                    transition: opacity 0.3s, transform 0.3s;
                     pointer-events: none;
                     text-align: center;
                     white-space: nowrap;
+                    display: flex; align-items: center; gap: 8px;
                 `;
                 document.body.appendChild(toast);
             }
 
-            const rarityColors = {
+            const rarityBg = {
                 common: 'var(--pal-white, #faf5ef)',
-                rare: '#e8e0f5',
+                rare: '#ede8f5',
                 legendary: 'var(--pal-gold, #ffd93d)',
             };
-            toast.style.background = rarityColors[upgrade.rarity] || rarityColors.common;
-            toast.textContent = `${upgrade.icon || '?'} ${upgrade.name}`;
+            toast.style.background = rarityBg[upgrade.rarity] || rarityBg.common;
 
-            // Animate in
+            // Icon (canvas-rendered, no emoji)
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 48) : '';
+            toast.innerHTML = '';
+            if (iconURL) {
+                const img = document.createElement('img');
+                img.src = iconURL;
+                img.width = 28;
+                img.height = 28;
+                toast.appendChild(img);
+            }
+            const label = document.createElement('span');
+            label.textContent = upgrade.name;
+            toast.appendChild(label);
+
+            // Phase 1: Appear at top-center
+            toast.style.transition = 'none';
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            toast.style.left = '50%';
+            toast.style.top = '13%';
+            toast.style.transform = 'translateX(-50%) translateY(-20px) scale(1)';
             void toast.offsetWidth;
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(-50%) translateY(0)';
 
-            // Fade out after 2s
+            toast.style.transition = 'opacity 0.25s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+
+            // Phase 2: After 1s hold, shrink and fly to bottom-left HUD position
             clearTimeout(this._upgradeToastTimer);
             this._upgradeToastTimer = setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(-50%) translateY(-20px)';
-            }, 2000);
+                const hud = this._ensureUpgradeHUD();
+                const hudRect = hud.getBoundingClientRect();
+                const targetX = hudRect.left + hudRect.width;
+                const targetY = hudRect.bottom - 20;
+
+                toast.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                toast.style.left = targetX + 'px';
+                toast.style.top = targetY + 'px';
+                toast.style.transform = 'translateX(0) translateY(0) scale(0.4)';
+                toast.style.opacity = '0.5';
+
+                // Phase 3: After flight completes, hide toast and add card to HUD
+                setTimeout(() => {
+                    toast.style.transition = 'none';
+                    toast.style.opacity = '0';
+                    this._addUpgradeCard(upgrade);
+                }, 520);
+            }, 1000);
         },
 
         _createTowerMesh(type, def) {
