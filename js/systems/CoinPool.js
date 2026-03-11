@@ -48,15 +48,6 @@ export class CoinPool {
             emissiveIntensity: 0.4,
         });
 
-        // Inner ring detail for the face
-        this._ringGeo = new THREE.TorusGeometry(0.3, 0.025, 8, 24);
-        this._ringMat = new THREE.MeshStandardMaterial({
-            color: 0xeec900,
-            metalness: 0.9,
-            roughness: 0.1,
-            emissive: 0xddaa00,
-            emissiveIntensity: 0.3,
-        });
     }
 
     preAllocate(count = 60) {
@@ -351,19 +342,6 @@ export class CoinPool {
         stampBack.receiveShadow = false;
         pivot.add(stampBack);
 
-        // Ring detail on front
-        const ringFront = new THREE.Mesh(this._ringGeo, this._ringMat.clone());
-        ringFront.position.y = 0.04;
-        ringFront.castShadow = false;
-        ringFront.receiveShadow = false;
-        pivot.add(ringFront);
-
-        // Ring detail on back
-        const ringBack = new THREE.Mesh(this._ringGeo, this._ringMat.clone());
-        ringBack.position.y = -0.04;
-        ringBack.castShadow = false;
-        ringBack.receiveShadow = false;
-        pivot.add(ringBack);
 
         group.add(pivot);
         group.scale.set(COIN_SCALE, COIN_SCALE, COIN_SCALE);
@@ -390,12 +368,10 @@ export class CoinPool {
                 child.material.opacity = 1;
                 // Reset emissive back to gold (expiry warning shifts it orange/red)
                 child.material.emissive.setHex(
-                    child.material.color.getHex() === 0xffd700 ? 0xffaa00 :
-                    child.material.color.getHex() === 0xdaa520 ? 0xcc8800 : 0xddaa00
+                    child.material.color.getHex() === 0xffd700 ? 0xffaa00 : 0xcc8800
                 );
                 child.material.emissiveIntensity =
-                    child.material.color.getHex() === 0xffd700 ? 0.6 :
-                    child.material.color.getHex() === 0xdaa520 ? 0.4 : 0.3;
+                    child.material.color.getHex() === 0xffd700 ? 0.6 : 0.4;
             }
         });
         c.mesh.scale.set(COIN_SCALE, COIN_SCALE, COIN_SCALE);
