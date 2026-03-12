@@ -682,8 +682,8 @@ export function createOuthouseDoor() {
     group.userData.maxDoorHP = 100;
     group.userData.originalColor = doorColor;
 
-    // Position: centered at the corridor start area
-    group.position.set(0, 0, 7);
+    // Position: flush with the outhouse front wall (outhouse at z=3, front wall at z=4.5)
+    group.position.set(0, 0, 4.5);
 
     return group;
 }
