@@ -84,6 +84,13 @@ export const PALETTE = {
     droneBeta:   0xa8d8ea,  // Powder blue — cool pastel, distinct from player hoodie
     droneGamma:  0xc5e8b7,  // Sage green — neutral pastel, complements both others
 
+    // ─── MEDIC DRONES ──────────────────────────────────────────────────────
+    // Ambulance-themed rescue drones that collect defeated enemies
+
+    medicBody:    0xf5f0e8,   // Off-white ambulance body — warm, not sterile
+    medicCross:   0xe05050,   // Red cross accent — classic rescue, pops against cream
+    medicBed:     0xddd2c0,   // Stretcher bed — matches tileLight, institutional
+
     // ─── RARITY GLOW ────────────────────────────────────────────────────────
     // Emissive/glow colors per upgrade rarity tier
 
@@ -151,4 +158,5 @@ export function injectCSSPalette() {
 // UI/EFFECTS        gold #ffd93d │ danger #ff6b7a │ success #50c878 │ glow #fff0c0
 // LIGHTING          ambient #505060 │ holyGold #ffd080 │ rimCool #6688aa │ fillWarm #fff0d0
 // DRONES            alpha #f2b8c6 │ beta #a8d8ea │ gamma #c5e8b7
+// MEDIC             medicBody #f5f0e8 │ medicCross #e05050 │ medicBed #ddd2c0
 // RARITY            common #faf5ef │ rare #9b8ec4 │ legendary #ffd93d

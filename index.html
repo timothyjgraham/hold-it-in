@@ -736,6 +736,13 @@
                 console.log('Coin pool pre-allocated:', this.coinPool.getStats().poolSize);
             }
 
+            // Medic drone system (corpse collection ambulances)
+            if (window.MedicDroneSystem) {
+                this.medicDroneSystem = new MedicDroneSystem();
+                this.medicDroneSystem.preAllocate();
+                console.log('Medic drone system initialized');
+            }
+
             // Upgrade system
             if (window.UpgradeManager) {
                 this.upgradeManager = new UpgradeManager();
@@ -1350,6 +1357,11 @@
                     e.mesh.rotation.set(0, 0, 0);
                     e.mesh.position.y = 0;
                 }
+            }
+
+            // Clear medic drone system (release queued/in-flight corpses back to pool)
+            if (this.medicDroneSystem) {
+                this.medicDroneSystem.cleanup(this.scene, this.enemyPool);
             }
 
             // Clear entities (6A: release to pool or dispose)
@@ -4443,27 +4455,31 @@
                         this._spawnCoinText(e.x, e.z, e.coins);
                     }
 
-                    // Death animation then release to pool (or dispose)
+                    // Death animation then queue for medic drone pickup
                     if (!e.dying) {
                         e.dying = true;
                         e.animController.playDeath('death');
-                        // Delay removal by death clip duration
                         const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
                         const enemyRef = e;
+                        const deathPos = new THREE.Vector3(e.x, 0, e.z);
                         setTimeout(() => {
-                            if (this.enemyPool) {
-                                // 6A: release back to pool for reuse
-                                this.enemyPool.release({
-                                    group: enemyRef.mesh,
-                                    skinnedMesh: enemyRef.skinnedMesh,
-                                    skeleton: enemyRef.skeleton,
-                                    boneMap: enemyRef.boneMap,
-                                    outlineMesh: enemyRef.outlineMesh,
-                                    materials: enemyRef.materials,
-                                    animController: enemyRef.animController,
-                                    enemyType: enemyRef.type,
-                                });
+                            const model = {
+                                group: enemyRef.mesh,
+                                skinnedMesh: enemyRef.skinnedMesh,
+                                skeleton: enemyRef.skeleton,
+                                boneMap: enemyRef.boneMap,
+                                outlineMesh: enemyRef.outlineMesh,
+                                materials: enemyRef.materials,
+                                animController: enemyRef.animController,
+                                enemyType: enemyRef.type,
+                            };
+                            if (this.medicDroneSystem) {
+                                // Queue corpse for medic drone collection
+                                this.medicDroneSystem.queueCorpse(model, deathPos);
+                            } else if (this.enemyPool) {
+                                // Fallback: direct pool release
+                                this.enemyPool.release(model);
                             } else {
                                 enemyRef.animController.dispose();
                                 this.scene.remove(enemyRef.mesh);
@@ -6348,6 +6364,11 @@
 
             // Update active drones
             this._updateDrones(dt);
+
+            // Update medic drones (corpse collection)
+            if (this.medicDroneSystem) {
+                this.medicDroneSystem.update(dt, this.scene, this.enemyPool);
+            }
 
             // Update upgrade drones
             this._updateUpgradeDrones(dt);

@@ -11,6 +11,7 @@ import { CoinPool } from './systems/CoinPool.js';
 import { UpgradeManager } from './systems/UpgradeManager.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
+import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
 import { createIconDataURL } from './data/upgradeIcons.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
@@ -87,6 +88,7 @@ window.updateUpgradeDrone = updateUpgradeDrone;
 window.disposeUpgradeDrone = disposeUpgradeDrone;
 window.UpgradeSelectionUI = UpgradeSelectionUI;
 window.EnemyIntroUI = EnemyIntroUI;
+window.MedicDroneSystem = MedicDroneSystem;
 window.createIconDataURL = createIconDataURL;
 window.outlineMatStatic = outlineMatStatic;
 
