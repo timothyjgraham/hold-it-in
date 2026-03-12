@@ -215,11 +215,143 @@
         <div class="tip-desc"></div>
     </div>
 
-    <!-- Start Screen -->
-    <div id="start-screen">
-        <h1>HOLD IT IN</h1>
+    <!-- ===== TITLE MENU SYSTEM ===== -->
+
+    <!-- Main Title Screen -->
+    <div id="title-screen" class="menu-screen">
+        <h1 class="title-logo">HOLD IT IN</h1>
         <div class="tagline">Your toilet. Your rules.</div>
-        <button id="start-btn">DEFEND THE THRONE</button>
+        <div class="menu-buttons">
+            <button class="menu-btn" id="btn-campaign">CAMPAIGN</button>
+            <button class="menu-btn" id="btn-endless">ENDLESS MODE</button>
+            <button class="menu-btn menu-btn-small" id="btn-settings">SETTINGS</button>
+            <button class="menu-btn menu-btn-small" id="btn-credits">CREDITS</button>
+        </div>
+    </div>
+
+    <!-- Scenario Select Screen (shared by campaign & endless) -->
+    <div id="scenario-screen" class="menu-screen" style="display:none;">
+        <h2 class="screen-title" id="scenario-screen-title">CAMPAIGN</h2>
+        <div class="scenario-grid">
+            <!-- The Office -->
+            <div class="scenario-card playable" id="card-office" data-scenario="office">
+                <div class="scenario-card-inner">
+                    <div class="scenario-icon">
+                        <svg viewBox="0 0 64 64" width="56" height="56">
+                            <rect x="8" y="12" width="48" height="40" rx="4" fill="#c4b8a5" stroke="#1a1a2e" stroke-width="3"/>
+                            <rect x="16" y="18" width="14" height="10" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
+                            <rect x="34" y="18" width="14" height="10" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
+                            <rect x="16" y="32" width="32" height="14" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
+                            <circle cx="44" cy="31" r="3" fill="#ffd93d" stroke="#1a1a2e" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="scenario-name">THE OFFICE</div>
+                    <div class="scenario-desc">Corporate bathroom. Desperate coworkers.</div>
+                    <div class="scenario-stats" id="stats-office">
+                        <span class="stat-item">Best Wave: --</span>
+                        <span class="stat-item">High Score: --</span>
+                    </div>
+                </div>
+            </div>
+            <!-- The Forest -->
+            <div class="scenario-card locked" id="card-forest" data-scenario="forest">
+                <div class="scenario-card-inner">
+                    <div class="scenario-icon">
+                        <svg viewBox="0 0 64 64" width="56" height="56">
+                            <polygon points="32,8 12,40 52,40" fill="#50c878" stroke="#1a1a2e" stroke-width="3" stroke-linejoin="round"/>
+                            <polygon points="32,18 18,44 46,44" fill="#3da863" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+                            <rect x="28" y="40" width="8" height="14" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="scenario-name">THE FOREST</div>
+                    <div class="scenario-desc">Wooden outhouse. Wild animals.</div>
+                    <div class="scenario-coming-soon">COMING SOON</div>
+                </div>
+            </div>
+            <!-- The Ocean -->
+            <div class="scenario-card locked" id="card-ocean" data-scenario="ocean">
+                <div class="scenario-card-inner">
+                    <div class="scenario-icon">
+                        <svg viewBox="0 0 64 64" width="56" height="56">
+                            <path d="M4 36 Q16 28 32 36 Q48 44 60 36" fill="none" stroke="#59c3e8" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M4 44 Q16 36 32 44 Q48 52 60 44" fill="none" stroke="#59c3e8" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+                            <rect x="22" y="14" width="20" height="22" rx="3" fill="#a8a098" stroke="#1a1a2e" stroke-width="3"/>
+                            <rect x="26" y="10" width="12" height="6" rx="2" fill="#c4b8a5" stroke="#1a1a2e" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="scenario-name">THE OCEAN</div>
+                    <div class="scenario-desc">Toilet on a boat. Sea creatures.</div>
+                    <div class="scenario-coming-soon">COMING SOON</div>
+                </div>
+            </div>
+            <!-- The Airplane -->
+            <div class="scenario-card locked" id="card-airplane" data-scenario="airplane">
+                <div class="scenario-card-inner">
+                    <div class="scenario-icon">
+                        <svg viewBox="0 0 64 64" width="56" height="56">
+                            <ellipse cx="32" cy="32" rx="24" ry="10" fill="#ddd2c0" stroke="#1a1a2e" stroke-width="3"/>
+                            <polygon points="8,32 2,20 14,28" fill="#a8a098" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+                            <polygon points="56,32 62,20 50,28" fill="#a8a098" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+                            <polygon points="30,22 34,22 36,18 28,18" fill="#59c3e8" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+                            <circle cx="20" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
+                            <circle cx="28" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
+                            <circle cx="36" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
+                            <circle cx="44" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <div class="scenario-name">THE AIRPLANE</div>
+                    <div class="scenario-desc">Mile-high bathroom. Impatient passengers.</div>
+                    <div class="scenario-coming-soon">COMING SOON</div>
+                </div>
+            </div>
+        </div>
+        <button class="menu-btn menu-btn-small" id="btn-scenario-back">BACK</button>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="menu-screen" style="display:none;">
+        <h2 class="screen-title">SETTINGS</h2>
+        <div class="settings-list">
+            <div class="setting-row">
+                <span class="setting-label">MUSIC</span>
+                <input type="range" class="setting-slider" id="slider-music" min="0" max="100" value="70">
+                <span class="setting-value" id="val-music">70%</span>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">SFX</span>
+                <input type="range" class="setting-slider" id="slider-sfx" min="0" max="100" value="80">
+                <span class="setting-value" id="val-sfx">80%</span>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">SCREEN SHAKE</span>
+                <label class="setting-toggle">
+                    <input type="checkbox" id="toggle-shake" checked>
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+        </div>
+        <button class="menu-btn menu-btn-small" id="btn-settings-back">BACK</button>
+    </div>
+
+    <!-- Credits Screen -->
+    <div id="credits-screen" class="menu-screen" style="display:none;">
+        <h2 class="screen-title">CREDITS</h2>
+        <div class="credits-content">
+            <div class="credit-section">
+                <div class="credit-role">DESIGN & DEVELOPMENT</div>
+                <div class="credit-name">Timothy Graham</div>
+            </div>
+            <div class="credit-section">
+                <div class="credit-role">BUILT WITH</div>
+                <div class="credit-name">Three.js + Vite</div>
+            </div>
+            <div class="credit-section">
+                <div class="credit-role">FONT</div>
+                <div class="credit-name">Bangers by Vernon Adams</div>
+            </div>
+            <div class="credit-section tagline-credit">Your toilet. Your rules.</div>
+        </div>
+        <button class="menu-btn menu-btn-small" id="btn-credits-back">BACK</button>
     </div>
 
     <!-- Fade Overlay (cinematic fade to black) -->
@@ -230,7 +362,10 @@
         <h1>OCCUPIED</h1>
         <div class="subtitle" id="game-over-subtitle">They broke through the door!</div>
         <div class="stats" id="game-over-stats"></div>
-        <button id="restart-btn">TRY AGAIN</button>
+        <div class="gameover-buttons">
+            <button id="restart-btn">TRY AGAIN</button>
+            <button id="menu-btn-gameover" class="menu-btn menu-btn-small">MAIN MENU</button>
+        </div>
     </div>
 
     <!-- Game Logic -->
@@ -245,11 +380,16 @@
         enemyPool: null,  // Phase 6A: object pool
 
         state: 'title',  // title | playing | paused | gameover
+        _gameMode: 'campaign',  // campaign | endless
+        _menuMode: 'campaign',
         wave: 0,
         coins: 50,
         score: 0,
         time: 0,
         doorGroup: null,
+
+        // Best stats per scenario (persisted to localStorage)
+        _bestStats: { office: { wave: 0, score: 0 } },
 
         // Entity arrays
         enemies: [],
@@ -565,6 +705,7 @@
 
             // UI
             this._setupUI();
+            this._loadBestStats();
 
             // Handle resize
             window.addEventListener('resize', () => {
@@ -913,16 +1054,86 @@
         // UI
         // ============================
         _setupUI() {
-            // Start button
-            document.getElementById('start-btn').addEventListener('click', () => {
-                document.getElementById('start-screen').style.display = 'none';
+            // === MENU NAVIGATION ===
+            const hud = document.getElementById('hud');
+            const towerPanel = document.getElementById('tower-panel');
+            const waveDisplay = document.getElementById('wave-display');
+
+            const setGameUIVisible = (visible) => {
+                const v = visible ? '' : 'none';
+                hud.style.display = visible ? 'flex' : 'none';
+                towerPanel.style.display = visible ? 'flex' : 'none';
+                waveDisplay.style.display = visible ? '' : 'none';
+            };
+
+            // Hide game UI initially (we're on title screen)
+            setGameUIVisible(false);
+
+            const showScreen = (id) => {
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'flex';
+                setGameUIVisible(false);
+            };
+
+            // Main menu buttons
+            document.getElementById('btn-campaign').addEventListener('click', () => {
+                this._menuMode = 'campaign';
+                document.getElementById('scenario-screen-title').textContent = 'CAMPAIGN';
+                showScreen('scenario-screen');
+            });
+            document.getElementById('btn-endless').addEventListener('click', () => {
+                this._menuMode = 'endless';
+                document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
+                showScreen('scenario-screen');
+            });
+            document.getElementById('btn-settings').addEventListener('click', () => {
+                showScreen('settings-screen');
+            });
+            document.getElementById('btn-credits').addEventListener('click', () => {
+                showScreen('credits-screen');
+            });
+
+            // Back buttons
+            document.getElementById('btn-scenario-back').addEventListener('click', () => {
+                showScreen('title-screen');
+            });
+            document.getElementById('btn-settings-back').addEventListener('click', () => {
+                showScreen('title-screen');
+            });
+            document.getElementById('btn-credits-back').addEventListener('click', () => {
+                showScreen('title-screen');
+            });
+
+            // Scenario cards — only office is playable
+            document.getElementById('card-office').addEventListener('click', () => {
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                setGameUIVisible(true);
+                this._gameMode = this._menuMode; // 'campaign' or 'endless'
                 this.start();
             });
 
-            // Restart button
+            // Settings sliders
+            document.getElementById('slider-music').addEventListener('input', (e) => {
+                document.getElementById('val-music').textContent = e.target.value + '%';
+            });
+            document.getElementById('slider-sfx').addEventListener('input', (e) => {
+                document.getElementById('val-sfx').textContent = e.target.value + '%';
+            });
+
+            // Restart button (game over)
             document.getElementById('restart-btn').addEventListener('click', () => {
                 document.getElementById('game-over-screen').classList.remove('active');
+                setGameUIVisible(true);
                 this.start();
+            });
+
+            // Main menu button (game over)
+            document.getElementById('menu-btn-gameover').addEventListener('click', () => {
+                document.getElementById('game-over-screen').classList.remove('active');
+                this.state = 'title';
+                showScreen('title-screen');
+                this._updateBestStats();
             });
 
             // Tower panel buttons
@@ -1347,9 +1558,40 @@
 
         gameOver() {
             this.state = 'gameover';
+            // Save best stats
+            this._saveBestStats();
+            const modeLabel = this._gameMode === 'endless' ? ' (ENDLESS)' : '';
             const stats = document.getElementById('game-over-stats');
-            stats.innerHTML = `Survived to Wave ${this.wave}<br>Score: ${this.score}<br>Enemies repelled: ${this._totalRepelled || 0}`;
+            stats.innerHTML = `${modeLabel ? '<span style="color:var(--pal-gold)">' + modeLabel + '</span><br>' : ''}Survived to Wave ${this.wave}<br>Score: ${this.score}<br>Enemies repelled: ${this._totalRepelled || 0}`;
             document.getElementById('game-over-screen').classList.add('active');
+        },
+
+        _loadBestStats() {
+            try {
+                const saved = localStorage.getItem('holditin_stats');
+                if (saved) this._bestStats = JSON.parse(saved);
+            } catch(e) { /* ignore */ }
+            this._updateBestStats();
+        },
+
+        _saveBestStats() {
+            const s = this._bestStats.office;
+            if (this.wave > s.wave) s.wave = this.wave;
+            if (this.score > s.score) s.score = this.score;
+            try {
+                localStorage.setItem('holditin_stats', JSON.stringify(this._bestStats));
+            } catch(e) { /* ignore */ }
+            this._updateBestStats();
+        },
+
+        _updateBestStats() {
+            const s = this._bestStats.office;
+            const el = document.getElementById('stats-office');
+            if (el) {
+                const w = s.wave > 0 ? s.wave : '--';
+                const sc = s.score > 0 ? s.score : '--';
+                el.innerHTML = `<span class="stat-item">Best Wave: ${w}</span><span class="stat-item">High Score: ${sc}</span>`;
+            }
         },
 
         // ============================
