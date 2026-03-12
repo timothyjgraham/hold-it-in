@@ -66,11 +66,15 @@ export function toonMat(color, opts = {}) {
 // Inverted hull outline — same technique as the skinned shader but simpler.
 
 const _outlineVertStatic = /* glsl */ `
+#include <fog_pars_vertex>
+
 uniform float uOutlineWidth;
 
 void main() {
     vec3 pos = position + normal * uOutlineWidth;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <fog_vertex>
 }
 `;
 
@@ -118,6 +122,8 @@ export function outlineMatStatic(width = 0.025, color) {
 // ─── JITTERY OUTLINE (Borderlands ink jitter — legendary drones) ──────────────
 
 const _outlineVertJittery = /* glsl */ `
+#include <fog_pars_vertex>
+
 uniform float uOutlineWidth;
 uniform float uTime;
 
@@ -125,7 +131,9 @@ void main() {
     float jitter = sin(position.x * 40.0 + uTime * 8.0) *
                    sin(position.y * 40.0 + uTime * 6.0) * 0.005;
     vec3 pos = position + normal * (uOutlineWidth + jitter);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <fog_vertex>
 }
 `;
 
