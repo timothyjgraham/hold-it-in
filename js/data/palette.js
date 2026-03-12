@@ -125,6 +125,41 @@ export const PALETTE = {
     forestSun:       0xfff0c0,  // Warm sunlight through trees
     forestRim:       0x88aa66,  // Green-tinted rim light
 
+    // ─── OCEAN ENVIRONMENT ─────────────────────────────────────────────────
+    // Deep blues and teals for the ocean scenario
+
+    oceanDeep:       0x1a3a5c,  // Deep ocean water — darkest blue
+    oceanMid:        0x2e6b8a,  // Mid-depth water — teal blue
+    oceanSurf:       0x4ab8c8,  // Surface water — bright cyan (distinct from player hoodie)
+    oceanFoam:       0xe8f4f8,  // Whitecap foam — near-white with cool tint
+    oceanBoatWood:   0x9b7850,  // Dinghy planks — warm weathered wood
+    oceanBoatDark:   0x6b5030,  // Dinghy keel/trim — darker wood
+    oceanRope:       0xc4b090,  // Rope/rigging — sandy tan
+    oceanBuoy:       0xe05050,  // Red buoy — classic maritime red
+    oceanBuoyYellow: 0xf0d040,  // Yellow buoy — safety yellow
+    oceanFog:        0x2a4a6a,  // Ocean mist fog — deep blue-gray
+    oceanHorizon:    0x88b8d8,  // Horizon sky blend — pale blue
+    oceanSky:        0x6ca0c8,  // Sky above ocean — warm blue
+
+    // ─── OCEAN ENEMIES ─────────────────────────────────────────────────────
+    // Marine creatures + pirate — cool ocean tones
+
+    oceanDolphin:    0x7a9ab0,  // Blue-gray dolphin — friendly, sleek
+    oceanFlyfish:    0xc0d8e8,  // Silver-blue flying fish — bright, quick
+    oceanShark:      0x506878,  // Dark slate shark — menacing, cool
+    oceanPirate:     0x8b2020,  // Crimson pirate coat — bold, dangerous
+    oceanPirateSkin: 0xddb88a,  // Pirate sun-weathered skin
+    oceanTurtle:     0x4a8a50,  // Green sea turtle shell — earthy green
+    oceanTurtleBelly:0xd4c890,  // Turtle underbelly — pale sandy
+    oceanJelly:      0xd080c0,  // Pink-purple jellyfish bell — ethereal
+    oceanJellyGlow:  0xe8a0e0,  // Jellyfish inner glow — brighter pink
+
+    // ─── OCEAN LIGHTING ────────────────────────────────────────────────────
+
+    oceanAmbient:    0x3a5a7a,  // Cool blue ambient
+    oceanSun:        0xfff0d0,  // Warm sunlight on water
+    oceanRim:        0x80b0d0,  // Cool rim light — ocean reflection
+
     // ─── RARITY GLOW ────────────────────────────────────────────────────────
     // Emissive/glow colors per upgrade rarity tier
 
@@ -160,6 +195,11 @@ export const OUTLINE_WIDTH = {
     forestSmall:    0.02,   // Squirrel, Raccoon
     forestMed:      0.03,   // Deer, Fox
     forestLarge:    0.04,   // Bear, Moose
+
+    // Ocean characters
+    oceanSmall:     0.02,   // Flying Fish, Jellyfish
+    oceanMed:       0.03,   // Dolphin, Sea Turtle, Pirate
+    oceanLarge:     0.04,   // Shark
 };
 
 // ─── GRADIENT MAP TONES ───────────────────────────────────────────────────────

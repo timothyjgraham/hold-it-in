@@ -25,6 +25,11 @@ export function createSkeleton(enemyType, size) {
         return _createQuadrupedSkeleton(enemyType, size, config);
     }
 
+    // Marine skeleton branch (ocean creatures)
+    if (config.skeletonType === 'marine') {
+        return _createMarineSkeleton(enemyType, size, config);
+    }
+
     const bones = [];
     const boneMap = {};
     const bp = config.bonePositions;
@@ -200,6 +205,113 @@ function _createQuadrupedSkeleton(enemyType, size, config) {
     // ── Belly jiggle bone (bear only) ──
     if (flags.belly) {
         makeBone('belly', root);
+    }
+
+    // ── Apply rest pose rotations ──
+    if (config.restPose) {
+        for (const [boneName, rotation] of Object.entries(config.restPose)) {
+            const bone = boneMap[boneName];
+            if (bone) {
+                bone.rotation.set(
+                    rotation.x || 0,
+                    rotation.y || 0,
+                    rotation.z || 0
+                );
+            }
+        }
+    }
+
+    root.updateMatrixWorld(true);
+    return { bones, rootBone: root, boneMap };
+}
+
+
+// ═══════════════════════════════════════
+// MARINE SKELETON — horizontal body, tail chain, flipper bones
+// Used for: dolphin, shark, flyfish, seaturtle, jellyfish
+// ═══════════════════════════════════════
+
+function _createMarineSkeleton(enemyType, size, config) {
+    const bones = [];
+    const boneMap = {};
+    const bp = config.bonePositions;
+    const flags = config.bones;
+
+    function makeBone(name, parent) {
+        const bone = new THREE.Bone();
+        bone.name = name;
+        const pos = bp[name];
+        if (pos) {
+            bone.position.set(
+                (pos.x || 0) * size,
+                (pos.y || 0) * size,
+                (pos.z || 0) * size
+            );
+        }
+        if (parent) parent.add(bone);
+        bones.push(bone);
+        boneMap[name] = bone;
+        return bone;
+    }
+
+    // ── Core: root → body_front → head ──
+    const root = makeBone('root', null);
+    const bodyFront = makeBone('body_front', root);
+
+    // ── Optional snout (dolphin, shark) ──
+    let headParent = bodyFront;
+    if (flags.snout) {
+        headParent = makeBone('snout', bodyFront);
+    }
+    makeBone('head', headParent);
+
+    // ── Dorsal fin (optional, attached to body_front) ──
+    if (flags.dorsal) {
+        makeBone('dorsal', bodyFront);
+    }
+
+    // ── Pectoral flippers: body_front → flipper_L/R ──
+    if (flags.flippers) {
+        makeBone('flipper_L', bodyFront);
+        makeBone('flipper_R', bodyFront);
+    }
+
+    // ── Tail chain: root → body_rear → tail_01 → tail_02 → ... ──
+    const bodyRear = makeBone('body_rear', root);
+    const tailCount = flags.tailCount || 0;
+    let tailParent = bodyRear;
+    for (let i = 1; i <= tailCount; i++) {
+        tailParent = makeBone(`tail_0${i}`, tailParent);
+    }
+
+    // ── Tail flukes/fins (optional, at end of tail chain) ──
+    if (flags.tailFlukes) {
+        makeBone('fluke_L', tailParent);
+        makeBone('fluke_R', tailParent);
+    }
+
+    // ── Tentacles (jellyfish) ──
+    if (flags.tentacleCount) {
+        for (let t = 0; t < flags.tentacleCount; t++) {
+            const tentBase = makeBone(`tent_${t}_01`, root);
+            makeBone(`tent_${t}_02`, tentBase);
+            if (flags.tentacleLength >= 3) {
+                makeBone(`tent_${t}_03`, boneMap[`tent_${t}_02`]);
+            }
+        }
+    }
+
+    // ── Shell bone (turtle) ──
+    if (flags.shell) {
+        makeBone('shell', root);
+    }
+
+    // ── Legs/flippers for turtle (uses front/hind like quadruped) ──
+    if (flags.turtleFlippers) {
+        makeBone('frontFlipper_L', bodyFront);
+        makeBone('frontFlipper_R', bodyFront);
+        makeBone('hindFlipper_L', bodyRear);
+        makeBone('hindFlipper_R', bodyRear);
     }
 
     // ── Apply rest pose rotations ──

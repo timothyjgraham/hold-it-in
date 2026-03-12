@@ -19,6 +19,13 @@ const PRE_ALLOC = {
     fox: 5,
     moose: 5,
     raccoon: 7,
+    // Ocean
+    dolphin: 10,
+    flyfish: 5,
+    shark: 5,
+    pirate: 5,
+    seaturtle: 5,
+    jellyfish: 7,
 };
 
 /**
@@ -230,6 +237,13 @@ export class EnemyPool {
             fox: 0xe0842a,
             moose: 0x6a5a4a,
             raccoon: 0x7a7a7a,
+            // Ocean
+            dolphin: 0x7a9ab0,
+            flyfish: 0xc0d8e8,
+            shark: 0x506878,
+            pirate: 0x8b2020,
+            seaturtle: 0x4a8a50,
+            jellyfish: 0xd080c0,
         };
         return colors[type] || 0xcccccc;
     }

@@ -46,6 +46,15 @@ import {
     createButterflies,
     createForestProps,
 } from './models/ForestEnvironmentModels.js';
+import {
+    createOceanWater,
+    createDinghy,
+    createBoatDoor,
+    createBuoyPlatform,
+    createSeagulls,
+    createSunSparkles,
+    createOceanProps,
+} from './models/OceanEnvironmentModels.js';
 
 // Inject CSS palette variables
 injectCSSPalette();
@@ -99,6 +108,15 @@ window.createOuthouseDoor = createOuthouseDoor;
 window.createSunbeams = createSunbeams;
 window.createButterflies = createButterflies;
 window.createForestProps = createForestProps;
+
+// Ocean environment
+window.createOceanWater = createOceanWater;
+window.createDinghy = createDinghy;
+window.createBoatDoor = createBoatDoor;
+window.createBuoyPlatform = createBuoyPlatform;
+window.createSeagulls = createSeagulls;
+window.createSunSparkles = createSunSparkles;
+window.createOceanProps = createOceanProps;
 
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;

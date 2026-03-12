@@ -1,5 +1,5 @@
-// AnimationLibrary.js — AAA keyframe clips for 12 enemy types (6 office + 6 forest)
-// 50 clips: walk/bash/hit/death per type + waddle/bear panic_sprint
+// AnimationLibrary.js — AAA keyframe clips for 18 enemy types (6 office + 6 forest + 6 ocean)
+// 74 clips: walk/bash/hit/death per type + waddle/bear panic_sprint
 // Rich multi-bone animation with proper weight shift, secondary motion,
 // and unique character personality in every movement.
 // Clip cache + lazy construction. Quaternion/keyframe helpers.
@@ -2468,6 +2468,1131 @@ function _raccoonDeath() {
 
 
 // ═══════════════════════════════════════════════════════════════════════
+// OCEAN SCENARIO — marine creatures & pirate
+// Smooth aquatic movement, tail propulsion, flipper dynamics,
+// and one salty pirate rowing furiously toward the toilet.
+// ═══════════════════════════════════════════════════════════════════════
+
+
+// ─── DOLPHIN ─── smooth undulating swimmer, friendly, nose-first curiosity
+// Personality: playful, graceful, rhythmic sine-wave body motion
+// ─────────────────────────────────────────────────────────────────────────
+
+function _dolphinWalk() {
+    const c = ENEMY_VISUAL_CONFIG.dolphin;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const und = a.bodyUndulate;
+    const tsw = a.tailSwing;
+    const fp = a.flipperPaddle;
+    const ds = a.dorsalSway || 0.04;
+
+    // Smooth 8-keyframe cycle for fluid undulation
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('dolphin_walk', dur, [
+        // Root: gentle sine-wave bob — dolphin porpoising
+        posTrack('root', t8, [
+            [0, ry, 0], [0, ry + bob * 0.7, 0], [0, ry + bob, 0], [0, ry + bob * 0.7, 0],
+            [0, ry, 0], [0, ry - bob * 0.7, 0], [0, ry - bob, 0], [0, ry - bob * 0.7, 0],
+            [0, ry, 0]
+        ]),
+        // Body front: gentle pitch undulation — nose dips on descent
+        eulerTrack('body_front', t, [
+            [und, 0, 0], [0, 0, 0], [-und, 0, 0], [0, 0, 0], [und, 0, 0]
+        ]),
+        // Head: counter-pitch to stabilize gaze + slight curious tilt
+        eulerTrack('head', t, [
+            [-und * 0.4, 0.03, 0], [0, -0.02, 0], [und * 0.4, 0.03, 0],
+            [0, -0.02, 0], [-und * 0.4, 0.03, 0]
+        ]),
+        // Snout: stays relatively stable, tiny nod
+        buildRotationTrack('snout', t, [-0.02, 0.01, -0.02, 0.01, -0.02], AXIS_X),
+        // Dorsal: passive sway — follows body, very subtle
+        buildRotationTrack('dorsal', t, [ds, 0, -ds, 0, ds], AXIS_Z),
+        // Flippers: gentle paddling — sweep back and forward
+        buildRotationTrack('flipper_L', t8, [
+            fp, fp * 0.5, 0, -fp * 0.5, -fp, -fp * 0.5, 0, fp * 0.5, fp
+        ], AXIS_X),
+        buildRotationTrack('flipper_R', t8, [
+            -fp, -fp * 0.5, 0, fp * 0.5, fp, fp * 0.5, 0, -fp * 0.5, -fp
+        ], AXIS_X),
+        // Body rear: delayed undulation — creates wave propagation
+        eulerTrack('body_rear', t, [
+            [-und, 0, 0], [0, 0, 0], [und, 0, 0], [0, 0, 0], [-und, 0, 0]
+        ]),
+        // Tail chain: progressive sine wave with increasing amplitude
+        buildRotationTrack('tail_01', t8, [
+            tsw * 0.6, tsw * 0.3, 0, -tsw * 0.3, -tsw * 0.6, -tsw * 0.3, 0, tsw * 0.3, tsw * 0.6
+        ], AXIS_Y),
+        buildRotationTrack('tail_02', t8, [
+            0, tsw * 0.5, tsw, tsw * 0.5, 0, -tsw * 0.5, -tsw, -tsw * 0.5, 0
+        ], AXIS_Y),
+        // Flukes: fan out on power stroke, tuck on recovery
+        buildRotationTrack('fluke_L', t, [0.06, -0.04, 0.06, -0.04, 0.06], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [-0.06, 0.04, -0.06, 0.04, -0.06], AXIS_Z),
+    ]);
+}
+
+function _dolphinBash() {
+    const c = ENEMY_VISUAL_CONFIG.dolphin;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 1.0;
+
+    // Wind-up → nose-ram → impact → recoil → settle
+    const t = [0, 0.18, 0.32, 0.42, 0.58, 0.75, dur];
+
+    return new THREE.AnimationClip('dolphin_bash_door', dur, [
+        // Root: pulls back then lunges nose-first into door
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.04, -0.10 * s], [0, ry - 0.02, 0.18 * s],
+            [0, ry - 0.04, 0.12 * s], [0, ry, 0.06 * s],
+            [0, ry + 0.02, 0.02 * s], [0, ry, 0]
+        ]),
+        // Body front: pitches down for the ram, snaps back on impact
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.12, 0, 0], [-0.20, 0, 0],
+            [0.08, 0, 0], [0.02, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head: dips down on charge, pushes forward at impact
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.10, 0, 0], [-0.18, 0, 0],
+            [0.10, 0, 0.04], [0.03, 0, -0.02], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Snout: extends into the ram
+        buildRotationTrack('snout', t, [0, 0.06, -0.14, 0.06, 0.02, 0, 0], AXIS_X),
+        // Tail powers the lunge — big sweep then settles
+        buildRotationTrack('tail_01', t, [0, -0.20, 0.35, 0.18, 0.06, 0.02, 0], AXIS_Y),
+        buildRotationTrack('tail_02', t, [0, -0.30, 0.45, 0.22, 0.08, 0.02, 0], AXIS_Y),
+        // Flippers brace outward on impact
+        buildRotationTrack('flipper_L', t, [0, 0.15, -0.30, -0.15, -0.06, 0, 0], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, 0.15, -0.30, -0.15, -0.06, 0, 0], AXIS_X),
+        // Body rear drives the charge
+        eulerTrack('body_rear', t, [
+            [0, 0, 0], [-0.10, 0, 0], [0.14, 0, 0],
+            [0.06, 0, 0], [0.02, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+    ]);
+}
+
+function _dolphinHit() {
+    const dur = 0.3;
+    const t = [0, 0.04, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('dolphin_hit_react', dur, [
+        // Quick lateral flinch — body tilts to side
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.02, -0.06], [0, 0.01, -0.03], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        // Body front rocks to the side
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.06, 0, 0.18], [0.02, 0, 0.06], [0, 0, 0.02], [0, 0, 0]
+        ]),
+        // Flippers flare outward in surprise
+        buildRotationTrack('flipper_L', t, [0, -0.35, -0.12, -0.03, 0], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, -0.35, -0.12, -0.03, 0], AXIS_X),
+        // Tail whips reactively
+        buildRotationTrack('tail_01', t, [0, 0.22, 0.08, 0.02, 0], AXIS_Y),
+    ]);
+}
+
+function _dolphinDeath() {
+    const c = ENEMY_VISUAL_CONFIG.dolphin;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.9;
+    const t = [0, 0.12, 0.28, 0.45, 0.65, 0.80, dur];
+
+    return new THREE.AnimationClip('dolphin_death', dur, [
+        // Roll to side, sink down — beached dolphin
+        posTrack('root', t, [
+            [0, ry, 0], [0.06 * s, ry * 0.85, 0], [0.12 * s, ry * 0.60, 0.02 * s],
+            [0.16 * s, ry * 0.35, 0.03 * s], [0.18 * s, ry * 0.12, 0.02 * s],
+            [0.18 * s, ry * 0.04, 0.01 * s], [0.18 * s, 0, 0]
+        ]),
+        // Root rotates on Z — rolling to side, belly up
+        buildRotationTrack('root', t, [0, -0.20, -0.55, -1.0, -1.35, -1.50, -1.57], AXIS_Z),
+        // Body front goes limp — slight droop
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [-0.04, 0, 0.03], [-0.10, 0, 0.06],
+            [-0.16, 0, 0.08], [-0.20, 0, 0.06], [-0.22, 0, 0.04], [-0.24, 0, 0.03]
+        ]),
+        // Head droops
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.06, 0.05, 0], [-0.14, 0.08, 0.06],
+            [-0.20, 0.06, 0.10], [-0.24, 0.04, 0.08], [-0.26, 0.02, 0.06], [-0.28, 0, 0.04]
+        ]),
+        // Tail goes limp — droops with gravity
+        buildRotationTrack('tail_01', t, [0, 0.06, 0.14, 0.22, 0.28, 0.32, 0.35], AXIS_X),
+        buildRotationTrack('tail_02', t, [0, 0.04, 0.10, 0.18, 0.24, 0.28, 0.30], AXIS_X),
+        // Flippers droop outward
+        buildRotationTrack('flipper_L', t, [0, -0.10, -0.22, -0.35, -0.42, -0.46, -0.48], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, -0.10, -0.22, -0.35, -0.42, -0.46, -0.48], AXIS_X),
+    ]);
+}
+
+
+// ─── FLYING FISH ─── rapid darting, wing-flapping frenzy, hyperactive
+// Personality: twitchy, breakneck speed, panicky energy, wings beating furiously
+// ───────────────────────────────────────────────────────────────────────────────
+
+function _flyfishWalk() {
+    const c = ENEMY_VISUAL_CONFIG.flyfish;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const und = a.bodyUndulate;
+    const tsw = a.tailSwing;
+    const fp = a.flipperPaddle;
+    const ds = a.dorsalSway || 0.06;
+
+    // Very fast cycle — 8 keyframes for rapid wing beats
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('flyfish_walk', dur, [
+        // Root: exaggerated bob — flying fish leaping out of water
+        posTrack('root', t8, [
+            [0, ry, 0], [0, ry + bob * 0.8, 0], [0, ry + bob, 0], [0, ry + bob * 0.6, 0],
+            [0, ry, 0], [0, ry - bob * 0.3, 0], [0, ry - bob * 0.5, 0], [0, ry - bob * 0.2, 0],
+            [0, ry, 0]
+        ]),
+        // Squash/stretch on bob — exaggerated since it's so fast
+        scaleTrack('root', t8, [
+            [1.06, 0.90, 1.06], [0.94, 1.08, 0.94], [0.90, 1.14, 0.90], [0.96, 1.04, 0.96],
+            [1.06, 0.90, 1.06], [1.10, 0.86, 1.10], [1.08, 0.88, 1.08], [1.04, 0.94, 1.04],
+            [1.06, 0.90, 1.06]
+        ]),
+        // Body front: quick pitch oscillation — darting motion
+        eulerTrack('body_front', t8, [
+            [und, 0, 0], [und * 0.5, 0, 0.04], [0, 0, 0], [-und * 0.5, 0, -0.04],
+            [-und, 0, 0], [-und * 0.5, 0, 0.03], [0, 0, 0], [und * 0.5, 0, -0.03],
+            [und, 0, 0]
+        ]),
+        // Head: frenetic twitching — looking around while flying
+        eulerTrack('head', t8, [
+            [-0.05, 0.08, 0], [0.02, -0.06, 0.03], [-0.04, -0.10, 0],
+            [0.03, 0.06, -0.03], [-0.05, 0.08, 0], [0.02, -0.08, 0.02],
+            [-0.04, 0.10, 0], [0.03, -0.06, -0.02], [-0.05, 0.08, 0]
+        ]),
+        // Wings (flippers): RAPID beating + lateral spread combined
+        // X = flapping arc, Z = spread at top / tuck on downstroke
+        eulerTrack('flipper_L', t8, [
+            [fp, 0, -0.15], [-fp * 0.8, 0, -0.30], [fp, 0, -0.15], [-fp * 0.6, 0, -0.28],
+            [fp, 0, -0.15], [-fp * 0.9, 0, -0.32], [fp, 0, -0.15], [-fp * 0.7, 0, -0.26],
+            [fp, 0, -0.15]
+        ]),
+        eulerTrack('flipper_R', t8, [
+            [-fp, 0, 0.15], [fp * 0.8, 0, 0.30], [-fp, 0, 0.15], [fp * 0.6, 0, 0.28],
+            [-fp, 0, 0.15], [fp * 0.9, 0, 0.32], [-fp, 0, 0.15], [fp * 0.7, 0, 0.26],
+            [-fp, 0, 0.15]
+        ]),
+        // Dorsal: bounces with body
+        buildRotationTrack('dorsal', t, [ds, -ds, ds, -ds, ds], AXIS_Z),
+        // Body rear: whips side to side — energetic propulsion
+        eulerTrack('body_rear', t8, [
+            [0, und * 0.8, 0], [0, und * 0.4, 0], [0, 0, 0], [0, -und * 0.4, 0],
+            [0, -und * 0.8, 0], [0, -und * 0.4, 0], [0, 0, 0], [0, und * 0.4, 0],
+            [0, und * 0.8, 0]
+        ]),
+        // Tail: rapid snap back and forth
+        buildRotationTrack('tail_01', t8, [
+            tsw, tsw * 0.5, 0, -tsw * 0.5, -tsw, -tsw * 0.5, 0, tsw * 0.5, tsw
+        ], AXIS_Y),
+        // Flukes: tight whip at the tip
+        buildRotationTrack('fluke_L', t, [0.08, -0.06, 0.08, -0.06, 0.08], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [-0.08, 0.06, -0.08, 0.06, -0.08], AXIS_Z),
+    ]);
+}
+
+function _flyfishBash() {
+    const c = ENEMY_VISUAL_CONFIG.flyfish;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 1.0;
+
+    // Quick headbutt — springs forward, wings fold, SLAM
+    const t = [0, 0.12, 0.22, 0.32, 0.48, 0.68, dur];
+
+    return new THREE.AnimationClip('flyfish_bash_door', dur, [
+        // Root: darts forward in a burst
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.06, -0.06 * s], [0, ry, 0.16 * s],
+            [0, ry - 0.04, 0.10 * s], [0, ry + 0.04, 0.04 * s],
+            [0, ry + 0.02, 0.02 * s], [0, ry, 0]
+        ]),
+        // Squash on impact, stretch on recoil
+        scaleTrack('root', t, [
+            [1, 1, 1], [0.90, 1.12, 0.90], [1.22, 0.76, 1.22],
+            [0.92, 1.10, 0.92], [1, 1, 1], [1, 1, 1], [1, 1, 1]
+        ]),
+        // Body front: pitches into headbutt
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.10, 0, 0], [-0.24, 0, 0],
+            [0.06, 0, 0], [0.02, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head: drives into door
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.08, 0, 0], [-0.16, 0, 0],
+            [0.10, 0, 0.05], [0.03, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Wings fold in on approach, flare on recoil
+        buildRotationTrack('flipper_L', t, [0, 0.30, 0.50, -0.20, -0.08, 0, 0], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, 0.30, 0.50, -0.20, -0.08, 0, 0], AXIS_X),
+        // Tail whips on the strike
+        buildRotationTrack('tail_01', t, [0, -0.25, 0.40, 0.20, 0.08, 0.02, 0], AXIS_Y),
+    ]);
+}
+
+function _flyfishHit() {
+    const dur = 0.3;
+    const t = [0, 0.03, 0.10, 0.18, dur];
+    return new THREE.AnimationClip('flyfish_hit_react', dur, [
+        // Spin/tumble reaction — body rocks dramatically
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.05, -0.08], [0, -0.02, -0.04], [0, 0.01, -0.01], [0, 0, 0]
+        ]),
+        // Body front rocks hard — tumbling fish
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.16, 0.12, 0.20], [0.05, 0.04, 0.06], [0.01, 0.01, 0.02], [0, 0, 0]
+        ]),
+        // Root spins slightly
+        buildRotationTrack('root', t, [0, 0.30, 0.10, 0.02, 0], AXIS_Z),
+        // Wings flare in shock
+        buildRotationTrack('flipper_L', t, [0, -0.45, -0.15, -0.04, 0], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, -0.45, -0.15, -0.04, 0], AXIS_X),
+    ]);
+}
+
+function _flyfishDeath() {
+    const c = ENEMY_VISUAL_CONFIG.flyfish;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.8;
+    const t = [0, 0.10, 0.22, 0.38, 0.55, 0.70, dur];
+
+    return new THREE.AnimationClip('flyfish_death', dur, [
+        // Wings fold in, spiral downward
+        posTrack('root', t, [
+            [0, ry, 0], [0.04 * s, ry * 0.80, 0], [0.08 * s, ry * 0.55, 0.02 * s],
+            [0.10 * s, ry * 0.30, 0.03 * s], [0.08 * s, ry * 0.10, 0.02 * s],
+            [0.06 * s, ry * 0.03, 0.01 * s], [0.04 * s, 0, 0]
+        ]),
+        // Root spins in a spiral + tilts as it spirals
+        eulerTrack('root', t, [
+            [0, 0, 0], [0, 0.80, -0.10], [0, 2.0, -0.30],
+            [0, 3.50, -0.55], [0, 5.0, -0.80], [0, 5.80, -1.10], [0, 6.28, -1.30]
+        ]),
+        // Wings fold in progressively — losing lift
+        buildRotationTrack('flipper_L', t, [0, 0.20, 0.45, 0.70, 0.90, 1.05, 1.10], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, 0.20, 0.45, 0.70, 0.90, 1.05, 1.10], AXIS_X),
+        // Body front droops
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [-0.06, 0, 0], [-0.14, 0, 0.04],
+            [-0.22, 0, 0.06], [-0.28, 0, 0.04], [-0.32, 0, 0.02], [-0.34, 0, 0]
+        ]),
+        // Tail goes limp
+        buildRotationTrack('tail_01', t, [0, 0.08, 0.18, 0.28, 0.34, 0.38, 0.40], AXIS_X),
+        // Shrinks slightly — crumpling
+        scaleTrack('root', t, [
+            [1, 1, 1], [1, 1, 1], [0.96, 0.96, 0.96],
+            [0.90, 0.90, 0.90], [0.84, 0.84, 0.84], [0.80, 0.80, 0.80], [0.78, 0.78, 0.78]
+        ]),
+    ]);
+}
+
+
+// ─── SHARK ─── slow menacing tank, barely moves but radiates danger
+// Personality: relentless, powerful, cold efficiency, the tail does all the talking
+// ─────────────────────────────────────────────────────────────────────────────────
+
+function _sharkWalk() {
+    const c = ENEMY_VISUAL_CONFIG.shark;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const und = a.bodyUndulate;
+    const tsw = a.tailSwing;
+    const fp = a.flipperPaddle;
+    const ds = a.dorsalSway || 0.02;
+
+    // Slow 8-keyframe cycle — measured, powerful strokes
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('shark_walk', dur, [
+        // Root: barely bobs — dead-level menace
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
+        ]),
+        // Subtle lateral rock — weight shifts side to side
+        eulerTrack('root', t8, [
+            [0, 0, und * 0.3], [0, 0, und * 0.15], [0, 0, 0], [0, 0, -und * 0.15],
+            [0, 0, -und * 0.3], [0, 0, -und * 0.15], [0, 0, 0], [0, 0, und * 0.15],
+            [0, 0, und * 0.3]
+        ]),
+        // Body front: barely moves — stiff, predatory
+        eulerTrack('body_front', t, [
+            [und * 0.3, 0, 0], [0, 0, 0], [-und * 0.3, 0, 0], [0, 0, 0], [und * 0.3, 0, 0]
+        ]),
+        // Head: locked forward — minimal movement, dead-eyed stare
+        eulerTrack('head', t, [
+            [-0.01, 0, 0], [0.01, 0, 0], [-0.01, 0, 0], [0.01, 0, 0], [-0.01, 0, 0]
+        ]),
+        // Snout: locked, barely perceptible
+        buildRotationTrack('snout', t, [0, 0.005, 0, -0.005, 0], AXIS_X),
+        // Dorsal: eerily stable — iconic fin slicing through water
+        buildRotationTrack('dorsal', t, [0, ds, 0, -ds, 0], AXIS_Z),
+        // Flippers: subtle stabilization — barely visible
+        buildRotationTrack('flipper_L', t, [fp, 0, -fp, 0, fp], AXIS_X),
+        buildRotationTrack('flipper_R', t, [-fp, 0, fp, 0, -fp], AXIS_X),
+        // Body rear: powerful lateral swing — this is where the POWER lives
+        eulerTrack('body_rear', t8, [
+            [0, und, 0], [0, und * 0.5, 0], [0, 0, 0], [0, -und * 0.5, 0],
+            [0, -und, 0], [0, -und * 0.5, 0], [0, 0, 0], [0, und * 0.5, 0],
+            [0, und, 0]
+        ]),
+        // Tail chain: SLOW powerful sweep — progressive amplitude
+        buildRotationTrack('tail_01', t8, [
+            tsw * 0.5, tsw * 0.25, 0, -tsw * 0.25, -tsw * 0.5, -tsw * 0.25, 0, tsw * 0.25, tsw * 0.5
+        ], AXIS_Y),
+        buildRotationTrack('tail_02', t8, [
+            0, tsw * 0.4, tsw * 0.7, tsw * 0.4, 0, -tsw * 0.4, -tsw * 0.7, -tsw * 0.4, 0
+        ], AXIS_Y),
+        buildRotationTrack('tail_03', t8, [
+            -tsw * 0.3, 0, tsw * 0.5, tsw * 0.8, tsw * 0.5, 0, -tsw * 0.5, -tsw * 0.8, -tsw * 0.3
+        ], AXIS_Y),
+        // Flukes: massive power — the engine of the shark
+        buildRotationTrack('fluke_L', t, [0.04, -0.03, 0.04, -0.03, 0.04], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [-0.04, 0.03, -0.04, 0.03, -0.04], AXIS_Z),
+    ]);
+}
+
+function _sharkBash() {
+    const c = ENEMY_VISUAL_CONFIG.shark;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 1.0;
+
+    // Massive body slam — slow wind-up, devastating impact
+    const t = [0, 0.25, 0.40, 0.50, 0.62, 0.80, dur];
+
+    return new THREE.AnimationClip('shark_bash_door', dur, [
+        // Root: slow menacing lunge — the WHOLE shark slams forward
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.02, -0.08 * s], [0, ry - 0.06, 0.22 * s],
+            [0, ry - 0.08, 0.16 * s], [0, ry - 0.03, 0.08 * s],
+            [0, ry, 0.03 * s], [0, ry, 0]
+        ]),
+        // Body front: drives forward, head tilts back (jaw opening) on impact
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.06, 0, 0], [-0.16, 0, 0],
+            [0.10, 0, 0], [0.04, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head: tilts BACK on impact — jaw opens wide, menacing
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.04, 0, 0], [0.22, 0, 0],
+            [-0.08, 0, 0], [-0.02, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Snout: lifts to expose jaw
+        buildRotationTrack('snout', t, [0, 0.04, 0.18, -0.06, -0.02, 0, 0], AXIS_X),
+        // Tail drives the charge with massive sweep
+        buildRotationTrack('tail_01', t, [0, -0.18, 0.30, 0.16, 0.06, 0.02, 0], AXIS_Y),
+        buildRotationTrack('tail_02', t, [0, -0.28, 0.42, 0.22, 0.10, 0.03, 0], AXIS_Y),
+        buildRotationTrack('tail_03', t, [0, -0.35, 0.50, 0.28, 0.12, 0.04, 0], AXIS_Y),
+        // Flippers brace — preparing for impact
+        buildRotationTrack('flipper_L', t, [0, 0.12, -0.25, -0.12, -0.04, 0, 0], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, 0.12, -0.25, -0.12, -0.04, 0, 0], AXIS_X),
+        // Body rear powers the slam
+        eulerTrack('body_rear', t, [
+            [0, 0, 0], [-0.08, 0, 0], [0.18, 0, 0],
+            [0.08, 0, 0], [0.03, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+    ]);
+}
+
+function _sharkHit() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.14, 0.24, dur];
+    return new THREE.AnimationClip('shark_hit_react', dur, [
+        // Barely flinches — slight lateral shift, quick recovery
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Body barely tilts — shrugs off the hit
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.02, 0, 0.06], [0.008, 0, 0.02], [0, 0, 0.005], [0, 0, 0]
+        ]),
+        // Quick tail flick — annoyed, not hurt
+        buildRotationTrack('tail_01', t, [0, 0.10, 0.04, 0.01, 0], AXIS_Y),
+    ]);
+}
+
+function _sharkDeath() {
+    const c = ENEMY_VISUAL_CONFIG.shark;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 1.0;
+    const t = [0, 0.15, 0.32, 0.50, 0.70, 0.85, dur];
+
+    return new THREE.AnimationClip('shark_death', dur, [
+        // Dramatic slow roll — belly up, the classic shark death
+        posTrack('root', t, [
+            [0, ry, 0], [0.04 * s, ry * 0.90, 0], [0.10 * s, ry * 0.70, 0],
+            [0.16 * s, ry * 0.45, 0.02 * s], [0.20 * s, ry * 0.18, 0.02 * s],
+            [0.22 * s, ry * 0.06, 0.01 * s], [0.22 * s, 0, 0]
+        ]),
+        // Slow, DRAMATIC roll — belly up
+        buildRotationTrack('root', t, [0, -0.12, -0.40, -0.85, -1.25, -1.48, -1.57], AXIS_Z),
+        // Body front: stiffens then droops
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.03, 0, 0], [0.06, 0, 0.02],
+            [0.04, 0, 0.04], [0, 0, 0.06], [-0.06, 0, 0.05], [-0.10, 0, 0.04]
+        ]),
+        // Head: jaw drops open (head tilts back)
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.04, 0, 0], [0.10, 0, 0.04],
+            [0.16, 0, 0.06], [0.20, 0, 0.04], [0.22, 0, 0.02], [0.24, 0, 0]
+        ]),
+        // Tail: goes completely limp — slow droop
+        buildRotationTrack('tail_01', t, [0, 0.04, 0.10, 0.18, 0.24, 0.28, 0.30], AXIS_X),
+        buildRotationTrack('tail_02', t, [0, 0.03, 0.08, 0.14, 0.20, 0.24, 0.26], AXIS_X),
+        buildRotationTrack('tail_03', t, [0, 0.02, 0.06, 0.12, 0.18, 0.22, 0.24], AXIS_X),
+        // Flippers splay out — lifeless
+        buildRotationTrack('flipper_L', t, [0, -0.08, -0.18, -0.30, -0.40, -0.46, -0.50], AXIS_X),
+        buildRotationTrack('flipper_R', t, [0, -0.08, -0.18, -0.30, -0.40, -0.46, -0.50], AXIS_X),
+        // Dorsal: the iconic fin — slowly tilts over
+        buildRotationTrack('dorsal', t, [0, -0.04, -0.10, -0.20, -0.30, -0.38, -0.42], AXIS_Z),
+    ]);
+}
+
+
+// ─── PIRATE ─── salty seadog in a rowboat, arms pumping oars
+// Personality: determined, grizzled, rowing with furious intensity
+// ─────────────────────────────────────────────────────────────────
+
+function _pirateWalk() {
+    const c = ENEMY_VISUAL_CONFIG.pirate;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const asw = a.armSwing;
+    const lean = -a.spineForwardLean;
+    const twist = a.spineTwist;
+
+    // Rowing cycle: pull — catch — pull — catch
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('pirate_walk', dur, [
+        // Root: bobs with each rowing stroke — sits in boat
+        posTrack('root', t8, [
+            [0, ry, 0], [0, ry - bob * 0.5, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
+            [0, ry, 0], [0, ry - bob * 0.5, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
+            [0, ry, 0]
+        ]),
+        // Spine: leans forward on pull, extends back on catch + twist for rowing
+        eulerTrack('spine', t, [
+            [lean - 0.14, twist, 0], [lean + 0.06, 0, 0],
+            [lean - 0.14, -twist, 0], [lean + 0.06, 0, 0],
+            [lean - 0.14, twist, 0]
+        ]),
+        // Chest: follows with twist delay — secondary motion
+        eulerTrack('chest', t, [
+            [0, twist * 0.5, 0], [0, -twist * 0.3, 0],
+            [0, -twist * 0.5, 0], [0, twist * 0.3, 0],
+            [0, twist * 0.5, 0]
+        ]),
+        // Neck: counter-twist to stabilize head
+        eulerTrack('neck', t, [
+            [0, -twist * 0.3, 0], [0, twist * 0.2, 0],
+            [0, twist * 0.3, 0], [0, -twist * 0.2, 0],
+            [0, -twist * 0.3, 0]
+        ]),
+        // Head: locked forward — intense stare at the toilet, slight bob
+        eulerTrack('head', t, [
+            [-0.08, 0, 0], [-0.04, 0, 0], [-0.08, 0, 0], [-0.04, 0, 0], [-0.08, 0, 0]
+        ]),
+        // Left arm: rowing — pull back (high), push forward (low)
+        eulerTrack('upperArm_L', t, [
+            [asw * 0.6, 0, 0.20], [-asw * 0.4, 0, 0.30],
+            [asw * 0.6, 0, 0.20], [-asw * 0.4, 0, 0.30],
+            [asw * 0.6, 0, 0.20]
+        ]),
+        // Right arm: OPPOSITE phase — alternating oar strokes
+        eulerTrack('upperArm_R', t, [
+            [-asw * 0.4, 0, -0.30], [asw * 0.6, 0, -0.20],
+            [-asw * 0.4, 0, -0.30], [asw * 0.6, 0, -0.20],
+            [-asw * 0.4, 0, -0.30]
+        ]),
+        // Forearms: flex on pull, extend on push — oar mechanics
+        buildRotationTrack('forearm_L', t, [-0.60, -0.20, -0.60, -0.20, -0.60], AXIS_X),
+        buildRotationTrack('forearm_R', t, [-0.20, -0.60, -0.20, -0.60, -0.20], AXIS_X),
+        // Legs: minimal movement — seated in boat, slight brace against strokes
+        buildRotationTrack('upperLeg_L', t, [0.03, -0.02, 0.03, -0.02, 0.03], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [-0.02, 0.03, -0.02, 0.03, -0.02], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.06, -0.02, -0.06, -0.02, -0.06], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.02, -0.06, -0.02, -0.06, -0.02], AXIS_X),
+    ]);
+}
+
+function _pirateBash() {
+    const c = ENEMY_VISUAL_CONFIG.pirate;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 1.0;
+    const PI = Math.PI;
+
+    // Cutlass swing: wind-up → overhead arc → slash down → recover
+    const t = [0, 0.18, 0.32, 0.42, 0.55, 0.72, 0.88, dur];
+
+    return new THREE.AnimationClip('pirate_bash_door', dur, [
+        // Root: leans into the swing
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.02, 0], [0, ry + 0.04, 0.04 * s],
+            [0, ry - 0.02, 0.08 * s], [0, ry - 0.04, 0.06 * s],
+            [0, ry, 0.04 * s], [0, ry, 0.02 * s], [0, ry, 0]
+        ]),
+        // Spine: twists hard for the cutlass swing
+        eulerTrack('spine', t, [
+            [-0.17, 0, 0], [-0.12, -0.30, 0.06], [-0.08, -0.45, 0.10],
+            [-0.25, 0.35, -0.08], [-0.20, 0.20, -0.04],
+            [-0.17, 0.08, 0], [-0.17, 0.02, 0], [-0.17, 0, 0]
+        ]),
+        // Right arm (cutlass arm): overhead arc → slash down
+        eulerTrack('upperArm_R', t, [
+            [0, 0, -0.3], [-PI * 0.6, 0.20, -0.2], [-PI * 0.8, 0.30, -0.15],
+            [0.5, -0.20, -0.1], [0.3, -0.10, -0.15],
+            [0.1, 0, -0.2], [0, 0, -0.25], [0, 0, -0.3]
+        ]),
+        // Right forearm: extends on swing
+        buildRotationTrack('forearm_R', t, [-0.3, -0.8, -0.2, -0.5, -0.4, -0.35, -0.32, -0.3], AXIS_X),
+        // Left arm: braces against the boat
+        eulerTrack('upperArm_L', t, [
+            [0.3, 0, 0.3], [0.4, 0, 0.35], [0.5, 0, 0.40],
+            [0.3, 0, 0.32], [0.3, 0, 0.30],
+            [0.3, 0, 0.30], [0.3, 0, 0.30], [0.3, 0, 0.3]
+        ]),
+        // Left forearm: grips gunwale
+        buildRotationTrack('forearm_L', t, [-0.4, -0.5, -0.55, -0.45, -0.42, -0.40, -0.40, -0.4], AXIS_X),
+        // Head: tracks the swing
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.04, -0.15, 0], [-0.02, -0.20, 0.04],
+            [-0.10, 0.12, -0.02], [-0.08, 0.06, 0],
+            [-0.06, 0.02, 0], [-0.06, 0, 0], [-0.06, 0, 0]
+        ]),
+    ]);
+}
+
+function _pirateHit() {
+    const dur = 0.3;
+    const t = [0, 0.04, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('pirate_hit_react', dur, [
+        // Falls back in seat — jolted by impact
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.03, -0.08], [0, 0, -0.04], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        // Spine extends back — knocked backward in boat
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0.22, 0, 0.05], [0.08, 0, 0.02], [0.02, 0, 0.005], [0, 0, 0]
+        ]),
+        // Head tilts back — whiplash
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.16, 0.06, 0], [0.05, 0.02, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        // Arms flail outward
+        buildRotationTrack('upperArm_L', t, [0, -0.30, -0.10, -0.02, 0], AXIS_Z),
+        buildRotationTrack('upperArm_R', t, [0, 0.30, 0.10, 0.02, 0], AXIS_Z),
+    ]);
+}
+
+function _pirateDeath() {
+    const c = ENEMY_VISUAL_CONFIG.pirate;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.8;
+    const t = [0, 0.10, 0.22, 0.38, 0.55, 0.70, dur];
+
+    return new THREE.AnimationClip('pirate_death', dur, [
+        // Topples out of boat — spine extends, rolls to side
+        posTrack('root', t, [
+            [0, ry, 0], [0.04 * s, ry * 0.90, -0.04 * s], [0.10 * s, ry * 0.65, -0.06 * s],
+            [0.16 * s, ry * 0.35, -0.04 * s], [0.20 * s, ry * 0.12, -0.02 * s],
+            [0.22 * s, ry * 0.03, -0.01 * s], [0.22 * s, 0, 0]
+        ]),
+        // Root rolls sideways — falling out of boat
+        buildRotationTrack('root', t, [0, -0.15, -0.45, -0.85, -1.20, -1.42, -1.57], AXIS_Z),
+        // Spine: extends back then goes limp
+        eulerTrack('spine', t, [
+            [-0.17, 0, 0], [0.10, 0, 0.06], [0.25, 0, 0.10],
+            [0.15, 0, 0.12], [0.06, 0, 0.08], [0.02, 0, 0.04], [0, 0, 0.02]
+        ]),
+        // Head: dramatic head-back fall
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [0.12, 0.08, 0.06], [0.22, 0.12, 0.10],
+            [0.16, 0.08, 0.14], [0.10, 0.04, 0.10], [0.06, 0.02, 0.06], [0.04, 0, 0.04]
+        ]),
+        // Arms: reach out then go limp
+        eulerTrack('upperArm_L', t, [
+            [0, 0, 0], [0.4, 0, -0.30], [0.8, 0, -0.50],
+            [0.5, 0, -0.55], [0.2, 0, -0.40], [0, 0, -0.25], [-0.2, 0, -0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0, 0, 0], [0.3, 0, 0.25], [0.7, 0, 0.45],
+            [0.4, 0, 0.50], [0.15, 0, 0.35], [0, 0, 0.20], [-0.15, 0, 0.12]
+        ]),
+        // Forearms: flop
+        buildRotationTrack('forearm_L', t, [0, -0.2, -0.5, -0.7, -0.8, -0.85, -0.9], AXIS_X),
+        buildRotationTrack('forearm_R', t, [0, -0.15, -0.4, -0.6, -0.7, -0.75, -0.8], AXIS_X),
+        // Legs: dangle from boat edge
+        buildRotationTrack('upperLeg_L', t, [0, 0.10, 0.25, 0.40, 0.50, 0.55, 0.60], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.08, 0.20, 0.35, 0.45, 0.52, 0.56], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [0, -0.12, -0.30, -0.50, -0.65, -0.72, -0.78], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [0, -0.10, -0.25, -0.42, -0.58, -0.66, -0.72], AXIS_X),
+    ]);
+}
+
+
+// ─── SEA TURTLE ─── steady, deliberate paddle strokes, armored serenity
+// Personality: unflappable, methodical, ancient wisdom, front flippers do butterfly
+// ─────────────────────────────────────────────────────────────────────────────────
+
+function _seaturtleWalk() {
+    const c = ENEMY_VISUAL_CONFIG.seaturtle;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const und = a.bodyUndulate || 0.02;
+    const fp = a.flipperPaddle;
+    const tsw = a.tailSwing;
+
+    // 8-keyframe for smooth flipper strokes
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('seaturtle_walk', dur, [
+        // Root: very stable — barely bobs, shell mass dampens everything
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
+        ]),
+        // Body front: head extends forward and retracts — searching motion
+        eulerTrack('body_front', t8, [
+            [und, 0, 0], [und * 0.5, 0, 0], [0, 0, 0], [-und * 0.5, 0, 0],
+            [-und, 0, 0], [-und * 0.5, 0, 0], [0, 0, 0], [und * 0.5, 0, 0],
+            [und, 0, 0]
+        ]),
+        // Head: stretches forward then tucks back — deliberate and wise
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.02, 0.03, 0], [-0.06, 0, 0], [-0.02, -0.03, 0], [-0.06, 0, 0]
+        ]),
+        // Shell: very slight rock — massive inertia
+        buildRotationTrack('shell', t, [0, 0.008, 0, -0.008, 0], AXIS_Z),
+        // Front flippers: BIG sweeping butterfly strokes — the main propulsion
+        // Downstroke (power): sweep backward and down
+        // Upstroke (recovery): sweep forward and up
+        eulerTrack('frontFlipper_L', t8, [
+            [-fp * 0.3, 0, -0.10], [-fp * 0.8, 0, -0.25], [-fp, 0, -0.35],
+            [-fp * 0.6, 0, -0.20], [fp * 0.2, 0, 0.10], [fp * 0.6, 0, 0.20],
+            [fp, 0, 0.30], [fp * 0.4, 0, 0.15], [-fp * 0.3, 0, -0.10]
+        ]),
+        eulerTrack('frontFlipper_R', t8, [
+            [-fp * 0.3, 0, 0.10], [-fp * 0.8, 0, 0.25], [-fp, 0, 0.35],
+            [-fp * 0.6, 0, 0.20], [fp * 0.2, 0, -0.10], [fp * 0.6, 0, -0.20],
+            [fp, 0, -0.30], [fp * 0.4, 0, -0.15], [-fp * 0.3, 0, 0.10]
+        ]),
+        // Body rear: stable, slight counter-motion to front flippers
+        eulerTrack('body_rear', t, [
+            [0, 0, 0], [und * 0.3, 0, 0], [0, 0, 0], [-und * 0.3, 0, 0], [0, 0, 0]
+        ]),
+        // Hind flippers: smaller alternating kicks — rudder action
+        buildRotationTrack('hindFlipper_L', t, [
+            fp * 0.3, -fp * 0.2, fp * 0.3, -fp * 0.2, fp * 0.3
+        ], AXIS_X),
+        buildRotationTrack('hindFlipper_R', t, [
+            -fp * 0.2, fp * 0.3, -fp * 0.2, fp * 0.3, -fp * 0.2
+        ], AXIS_X),
+        // Tail: subtle rudder wag
+        buildRotationTrack('tail_01', t, [tsw, 0, -tsw, 0, tsw], AXIS_Y),
+    ]);
+}
+
+function _seaturtleBash() {
+    const c = ENEMY_VISUAL_CONFIG.seaturtle;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 1.0;
+
+    // Head extends forward, shell rocks with forward momentum
+    const t = [0, 0.20, 0.35, 0.48, 0.62, 0.80, dur];
+
+    return new THREE.AnimationClip('seaturtle_bash_door', dur, [
+        // Root: deliberate lunge — shell momentum carries it forward
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry, -0.04 * s], [0, ry - 0.02, 0.14 * s],
+            [0, ry - 0.03, 0.10 * s], [0, ry, 0.05 * s],
+            [0, ry, 0.02 * s], [0, ry, 0]
+        ]),
+        // Body front: extends way forward for the push
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.06, 0, 0], [-0.16, 0, 0],
+            [-0.08, 0, 0], [-0.03, 0, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Head: stretches forward, pushes into door
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.02, 0, 0], [-0.22, 0, 0],
+            [-0.10, 0, 0.03], [-0.06, 0, 0], [-0.06, 0, 0], [-0.06, 0, 0]
+        ]),
+        // Shell: rocks forward on impact
+        buildRotationTrack('shell', t, [0, 0.02, -0.08, -0.04, -0.02, 0, 0], AXIS_X),
+        // Front flippers: power stroke to drive body forward
+        buildRotationTrack('frontFlipper_L', t, [0, 0.20, -0.40, -0.20, -0.08, 0, 0], AXIS_X),
+        buildRotationTrack('frontFlipper_R', t, [0, 0.20, -0.40, -0.20, -0.08, 0, 0], AXIS_X),
+        // Hind flippers: kick for extra push
+        buildRotationTrack('hindFlipper_L', t, [0, -0.10, 0.20, 0.10, 0.04, 0, 0], AXIS_X),
+        buildRotationTrack('hindFlipper_R', t, [0, -0.10, 0.20, 0.10, 0.04, 0, 0], AXIS_X),
+    ]);
+}
+
+function _seaturtleHit() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.14, 0.24, dur];
+    return new THREE.AnimationClip('seaturtle_hit_react', dur, [
+        // Shell absorbs — minimal body reaction, head retracts
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0, -0.04], [0, 0, -0.02], [0, 0, -0.005], [0, 0, 0]
+        ]),
+        // Head retracts toward shell — protective reflex
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.14, 0, 0], [0.05, 0, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        // Body front: pulls back slightly
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [0.08, 0, 0], [0.03, 0, 0], [0.008, 0, 0], [0, 0, 0]
+        ]),
+        // Shell: tilts back slightly from impact
+        buildRotationTrack('shell', t, [0, 0.06, 0.02, 0.005, 0], AXIS_X),
+    ]);
+}
+
+function _seaturtleDeath() {
+    const c = ENEMY_VISUAL_CONFIG.seaturtle;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 1.0;
+    const t = [0, 0.15, 0.32, 0.50, 0.70, 0.85, dur];
+
+    return new THREE.AnimationClip('seaturtle_death', dur, [
+        // Flips upside down — classic turtle on its back
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry * 0.95, 0], [0, ry * 0.80, 0],
+            [0, ry * 0.55, 0], [0, ry * 0.25, 0],
+            [0, ry * 0.08, 0], [0, 0, 0]
+        ]),
+        // Root rotates 180 on Z — flipped on back, belly up
+        buildRotationTrack('root', t, [0, -0.30, -0.80, -1.40, -2.20, -2.90, -3.14], AXIS_Z),
+        // Head: droops out from shell
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.10, 0.04, 0], [-0.16, 0.06, 0.04],
+            [-0.22, 0.04, 0.06], [-0.26, 0.02, 0.04], [-0.28, 0, 0.02], [-0.30, 0, 0]
+        ]),
+        // Body front: goes limp
+        eulerTrack('body_front', t, [
+            [0, 0, 0], [-0.04, 0, 0], [-0.10, 0, 0.02],
+            [-0.16, 0, 0.04], [-0.20, 0, 0.03], [-0.22, 0, 0.02], [-0.24, 0, 0]
+        ]),
+        // All flippers go limp — drooping with gravity
+        buildRotationTrack('frontFlipper_L', t, [0, -0.10, -0.25, -0.45, -0.60, -0.70, -0.75], AXIS_X),
+        buildRotationTrack('frontFlipper_R', t, [0, -0.10, -0.25, -0.45, -0.60, -0.70, -0.75], AXIS_X),
+        buildRotationTrack('hindFlipper_L', t, [0, -0.06, -0.14, -0.25, -0.34, -0.40, -0.44], AXIS_X),
+        buildRotationTrack('hindFlipper_R', t, [0, -0.06, -0.14, -0.25, -0.34, -0.40, -0.44], AXIS_X),
+        // Tail: limp
+        buildRotationTrack('tail_01', t, [0, 0.04, 0.10, 0.16, 0.20, 0.22, 0.24], AXIS_X),
+        // Shell: stays rigid (it's a shell)
+        buildRotationTrack('shell', t, [0, 0, 0, 0, 0, 0, 0], AXIS_X),
+    ]);
+}
+
+
+// ─── JELLYFISH ─── pulsing bell propulsion, trailing tentacles, ethereal drift
+// Personality: dreamy, alien, hypnotic bell contractions, tentacle ballet
+// ─────────────────────────────────────────────────────────────────────────────────
+
+function _jellyfishWalk() {
+    const c = ENEMY_VISUAL_CONFIG.jellyfish;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const pulse = a.bellPulse;
+    const tentSway = a.tentacleSway;
+    const drift = a.bodyDrift || 0.08;
+
+    // 8-keyframe for smooth pulsing
+    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
+    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+
+    return new THREE.AnimationClip('jellyfish_walk', dur, [
+        // Root: large pulsing bob — rises on bell contraction, sinks on relaxation
+        posTrack('root', t8, [
+            [0, ry, 0], [0, ry + bob * 0.6, 0], [0, ry + bob, 0], [0, ry + bob * 0.6, 0],
+            [0, ry, 0], [0, ry - bob * 0.4, 0], [0, ry - bob * 0.6, 0], [0, ry - bob * 0.3, 0],
+            [0, ry, 0]
+        ]),
+        // Gentle lateral drift — ethereal, organic
+        eulerTrack('root', t, [
+            [0, 0, drift * 0.5], [0, 0, 0], [0, 0, -drift * 0.5], [0, 0, 0], [0, 0, drift * 0.5]
+        ]),
+        // Bell: body_front scale Y pulsing — squash on contraction, stretch on relaxation
+        scaleTrack('body_front', t8, [
+            [1.0 + pulse * 0.5, 1.0 - pulse, 1.0 + pulse * 0.5],
+            [1.0 + pulse, 1.0 - pulse * 1.5, 1.0 + pulse],
+            [1.0 + pulse * 0.5, 1.0 - pulse * 0.5, 1.0 + pulse * 0.5],
+            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
+            [1.0 - pulse, 1.0 + pulse, 1.0 - pulse],
+            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
+            [1.0, 1.0, 1.0],
+            [1.0 + pulse * 0.3, 1.0 - pulse * 0.3, 1.0 + pulse * 0.3],
+            [1.0 + pulse * 0.5, 1.0 - pulse, 1.0 + pulse * 0.5]
+        ]),
+        // Head (bell top): pulses with body_front but delayed — secondary motion
+        scaleTrack('head', t8, [
+            [1, 1, 1], [1.0 + pulse * 0.3, 1.0 - pulse * 0.5, 1.0 + pulse * 0.3],
+            [1.0 + pulse * 0.5, 1.0 - pulse * 0.8, 1.0 + pulse * 0.5],
+            [1.0 + pulse * 0.2, 1.0 - pulse * 0.3, 1.0 + pulse * 0.2],
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.3, 1.0 - pulse * 0.3],
+            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
+            [1.0 - pulse * 0.2, 1.0 + pulse * 0.2, 1.0 - pulse * 0.2],
+            [1, 1, 1], [1, 1, 1]
+        ]),
+        // Body rear: inverse pulse — expands when bell contracts (water pushed down)
+        scaleTrack('body_rear', t8, [
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.5, 1.0 - pulse * 0.3],
+            [1.0 - pulse * 0.5, 1.0 + pulse * 0.8, 1.0 - pulse * 0.5],
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.3, 1.0 - pulse * 0.3],
+            [1.0, 1.0, 1.0],
+            [1.0 + pulse * 0.3, 1.0 - pulse * 0.3, 1.0 + pulse * 0.3],
+            [1.0 + pulse * 0.2, 1.0 - pulse * 0.2, 1.0 + pulse * 0.2],
+            [1.0, 1.0, 1.0],
+            [1.0 - pulse * 0.2, 1.0 + pulse * 0.3, 1.0 - pulse * 0.2],
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.5, 1.0 - pulse * 0.3]
+        ]),
+        // ── 5 tentacles, each with 3 bones, phase-offset for organic trailing ──
+        // Tentacle 0 (front-center) — phase 0
+        buildRotationTrack('tent_0_01', t8, [
+            tentSway, tentSway * 0.5, 0, -tentSway * 0.5, -tentSway, -tentSway * 0.5, 0, tentSway * 0.5, tentSway
+        ], AXIS_X),
+        buildRotationTrack('tent_0_02', t8, [
+            0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0
+        ], AXIS_X),
+        buildRotationTrack('tent_0_03', t8, [
+            -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6
+        ], AXIS_X),
+        // Tentacle 1 (front-left) — phase offset ~72°, X=forward/back + Z=lateral sway
+        eulerTrack('tent_1_01', t8, [
+            [0, 0, tentSway * 0.3], [-tentSway * 0.5, 0, tentSway * 0.15], [-tentSway, 0, 0],
+            [-tentSway * 0.5, 0, -tentSway * 0.15], [0, 0, -tentSway * 0.3],
+            [tentSway * 0.5, 0, -tentSway * 0.15], [tentSway, 0, 0],
+            [tentSway * 0.5, 0, tentSway * 0.15], [0, 0, tentSway * 0.3]
+        ]),
+        buildRotationTrack('tent_1_02', t8, [
+            tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7
+        ], AXIS_X),
+        buildRotationTrack('tent_1_03', t8, [
+            tentSway * 0.8, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 0.8
+        ], AXIS_X),
+        // Tentacle 2 (front-right) — phase offset ~144°, X=forward/back + Z=lateral sway
+        eulerTrack('tent_2_01', t8, [
+            [-tentSway, 0, -tentSway * 0.3], [-tentSway * 0.5, 0, -tentSway * 0.15], [0, 0, 0],
+            [tentSway * 0.5, 0, tentSway * 0.15], [tentSway, 0, tentSway * 0.3],
+            [tentSway * 0.5, 0, tentSway * 0.15], [0, 0, 0],
+            [-tentSway * 0.5, 0, -tentSway * 0.15], [-tentSway, 0, -tentSway * 0.3]
+        ]),
+        buildRotationTrack('tent_2_02', t8, [
+            -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7
+        ], AXIS_X),
+        buildRotationTrack('tent_2_03', t8, [
+            0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0
+        ], AXIS_X),
+        // Tentacle 3 (rear-left) — phase offset ~216°, X=forward/back + Z=lateral sway
+        eulerTrack('tent_3_01', t8, [
+            [-tentSway * 0.5, 0, tentSway * 0.2], [-tentSway, 0, 0],
+            [-tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, -tentSway * 0.2],
+            [tentSway * 0.5, 0, tentSway * 0.2], [tentSway, 0, 0],
+            [tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, tentSway * 0.2],
+            [-tentSway * 0.5, 0, tentSway * 0.2]
+        ]),
+        buildRotationTrack('tent_3_02', t8, [
+            -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2
+        ], AXIS_X),
+        buildRotationTrack('tent_3_03', t8, [
+            -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8
+        ], AXIS_X),
+        // Tentacle 4 (rear-right) — phase offset ~288°, X=forward/back + Z=lateral sway
+        eulerTrack('tent_4_01', t8, [
+            [tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, 0],
+            [-tentSway * 0.5, 0, tentSway * 0.2], [-tentSway, 0, 0],
+            [-tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, 0],
+            [tentSway * 0.5, 0, tentSway * 0.2], [tentSway, 0, 0],
+            [tentSway * 0.5, 0, -tentSway * 0.2]
+        ]),
+        buildRotationTrack('tent_4_02', t8, [
+            0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0
+        ], AXIS_X),
+        buildRotationTrack('tent_4_03', t8, [
+            tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0
+        ], AXIS_X),
+    ]);
+}
+
+function _jellyfishBash() {
+    const c = ENEMY_VISUAL_CONFIG.jellyfish;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const pulse = a.bellPulse;
+    const tentSway = a.tentacleSway;
+    const dur = 1.0;
+
+    // Bell contracts HARD, tentacles whip forward
+    const t = [0, 0.18, 0.30, 0.42, 0.58, 0.76, dur];
+
+    return new THREE.AnimationClip('jellyfish_bash_door', dur, [
+        // Root: pulse forward into door
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.06, 0], [0, ry - 0.02, 0.12 * s],
+            [0, ry - 0.04, 0.08 * s], [0, ry, 0.04 * s],
+            [0, ry + 0.02, 0.02 * s], [0, ry, 0]
+        ]),
+        // Bell: violent contraction (squash) → slow recovery
+        scaleTrack('body_front', t, [
+            [1, 1, 1], [1 + pulse * 2, 1 - pulse * 3, 1 + pulse * 2],
+            [1 + pulse * 3, 1 - pulse * 4, 1 + pulse * 3],
+            [1 - pulse, 1 + pulse * 1.5, 1 - pulse],
+            [1, 1, 1], [1, 1, 1], [1, 1, 1]
+        ]),
+        // All tentacles whip FORWARD on impact — the sting!
+        // Tentacle 0
+        buildRotationTrack('tent_0_01', t, [0, 0.15, -0.50, -0.25, -0.08, 0, 0], AXIS_X),
+        buildRotationTrack('tent_0_02', t, [0, 0.10, -0.60, -0.30, -0.10, -0.02, 0], AXIS_X),
+        buildRotationTrack('tent_0_03', t, [0, 0.05, -0.70, -0.35, -0.12, -0.03, 0], AXIS_X),
+        // Tentacle 1
+        buildRotationTrack('tent_1_01', t, [0, 0.12, -0.45, -0.22, -0.08, 0, 0], AXIS_X),
+        buildRotationTrack('tent_1_02', t, [0, 0.08, -0.55, -0.28, -0.10, -0.02, 0], AXIS_X),
+        buildRotationTrack('tent_1_03', t, [0, 0.04, -0.65, -0.32, -0.12, -0.03, 0], AXIS_X),
+        // Tentacle 2
+        buildRotationTrack('tent_2_01', t, [0, 0.12, -0.45, -0.22, -0.08, 0, 0], AXIS_X),
+        buildRotationTrack('tent_2_02', t, [0, 0.08, -0.55, -0.28, -0.10, -0.02, 0], AXIS_X),
+        buildRotationTrack('tent_2_03', t, [0, 0.04, -0.65, -0.32, -0.12, -0.03, 0], AXIS_X),
+        // Tentacle 3
+        buildRotationTrack('tent_3_01', t, [0, 0.10, -0.40, -0.20, -0.06, 0, 0], AXIS_X),
+        buildRotationTrack('tent_3_02', t, [0, 0.06, -0.50, -0.25, -0.08, -0.02, 0], AXIS_X),
+        buildRotationTrack('tent_3_03', t, [0, 0.03, -0.60, -0.30, -0.10, -0.03, 0], AXIS_X),
+        // Tentacle 4
+        buildRotationTrack('tent_4_01', t, [0, 0.10, -0.40, -0.20, -0.06, 0, 0], AXIS_X),
+        buildRotationTrack('tent_4_02', t, [0, 0.06, -0.50, -0.25, -0.08, -0.02, 0], AXIS_X),
+        buildRotationTrack('tent_4_03', t, [0, 0.03, -0.60, -0.30, -0.10, -0.03, 0], AXIS_X),
+    ]);
+}
+
+function _jellyfishHit() {
+    const c = ENEMY_VISUAL_CONFIG.jellyfish;
+    const a = c.animationParams;
+    const pulse = a.bellPulse;
+    const dur = 0.3;
+    const t = [0, 0.04, 0.12, 0.22, dur];
+
+    return new THREE.AnimationClip('jellyfish_hit_react', dur, [
+        // Bell flares wide (shock expansion) then contracts (recoil)
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.04, -0.06], [0, -0.02, -0.03], [0, 0.01, -0.01], [0, 0, 0]
+        ]),
+        // Bell flares — shock wave through the body
+        scaleTrack('body_front', t, [
+            [1, 1, 1], [1 + pulse * 2.5, 1 - pulse * 2, 1 + pulse * 2.5],
+            [1 - pulse, 1 + pulse * 0.5, 1 - pulse], [1, 1, 1], [1, 1, 1]
+        ]),
+        // Tentacles splay outward in shock
+        buildRotationTrack('tent_0_01', t, [0, 0.30, 0.10, 0.02, 0], AXIS_X),
+        buildRotationTrack('tent_1_01', t, [0, 0.25, 0.08, 0.02, 0], AXIS_X),
+        buildRotationTrack('tent_2_01', t, [0, 0.25, 0.08, 0.02, 0], AXIS_X),
+        buildRotationTrack('tent_3_01', t, [0, 0.20, 0.06, 0.015, 0], AXIS_X),
+        buildRotationTrack('tent_4_01', t, [0, 0.20, 0.06, 0.015, 0], AXIS_X),
+    ]);
+}
+
+function _jellyfishDeath() {
+    const c = ENEMY_VISUAL_CONFIG.jellyfish;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const a = c.animationParams;
+    const pulse = a.bellPulse;
+    const dur = 1.0;
+    const t = [0, 0.12, 0.28, 0.45, 0.65, 0.82, dur];
+
+    return new THREE.AnimationClip('jellyfish_death', dur, [
+        // Bell deflates, sinks slowly — tragically beautiful
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry * 0.88, 0], [0, ry * 0.65, 0],
+            [0, ry * 0.40, 0], [0, ry * 0.18, 0],
+            [0, ry * 0.05, 0], [0, 0, 0]
+        ]),
+        // Bell deflates — scale shrinks progressively
+        scaleTrack('body_front', t, [
+            [1, 1, 1], [1.05, 0.92, 1.05], [0.95, 0.80, 0.95],
+            [0.82, 0.65, 0.82], [0.70, 0.50, 0.70],
+            [0.60, 0.40, 0.60], [0.55, 0.35, 0.55]
+        ]),
+        // Head (bell top) also deflates
+        scaleTrack('head', t, [
+            [1, 1, 1], [1.02, 0.95, 1.02], [0.96, 0.85, 0.96],
+            [0.86, 0.72, 0.86], [0.76, 0.58, 0.76],
+            [0.68, 0.48, 0.68], [0.62, 0.42, 0.62]
+        ]),
+        // Root tilts as it sinks — asymmetric, organic
+        eulerTrack('root', t, [
+            [0, 0, 0], [0.02, 0, 0.04], [0.04, 0, 0.10],
+            [0.06, 0.04, 0.18], [0.06, 0.06, 0.24],
+            [0.05, 0.05, 0.28], [0.04, 0.04, 0.30]
+        ]),
+        // All tentacles curl upward — dying jellyfish reflex
+        // Tentacle 0: curls tight
+        buildRotationTrack('tent_0_01', t, [0, 0.15, 0.35, 0.55, 0.72, 0.82, 0.88], AXIS_X),
+        buildRotationTrack('tent_0_02', t, [0, 0.10, 0.28, 0.48, 0.65, 0.76, 0.82], AXIS_X),
+        buildRotationTrack('tent_0_03', t, [0, 0.08, 0.22, 0.40, 0.56, 0.68, 0.74], AXIS_X),
+        // Tentacle 1
+        buildRotationTrack('tent_1_01', t, [0, 0.12, 0.30, 0.50, 0.68, 0.78, 0.84], AXIS_X),
+        buildRotationTrack('tent_1_02', t, [0, 0.08, 0.24, 0.44, 0.60, 0.72, 0.78], AXIS_X),
+        buildRotationTrack('tent_1_03', t, [0, 0.06, 0.18, 0.36, 0.52, 0.64, 0.70], AXIS_X),
+        // Tentacle 2
+        buildRotationTrack('tent_2_01', t, [0, 0.12, 0.30, 0.50, 0.68, 0.78, 0.84], AXIS_X),
+        buildRotationTrack('tent_2_02', t, [0, 0.08, 0.24, 0.44, 0.60, 0.72, 0.78], AXIS_X),
+        buildRotationTrack('tent_2_03', t, [0, 0.06, 0.18, 0.36, 0.52, 0.64, 0.70], AXIS_X),
+        // Tentacle 3
+        buildRotationTrack('tent_3_01', t, [0, 0.10, 0.26, 0.45, 0.62, 0.74, 0.80], AXIS_X),
+        buildRotationTrack('tent_3_02', t, [0, 0.07, 0.20, 0.38, 0.54, 0.66, 0.72], AXIS_X),
+        buildRotationTrack('tent_3_03', t, [0, 0.05, 0.15, 0.32, 0.48, 0.58, 0.64], AXIS_X),
+        // Tentacle 4
+        buildRotationTrack('tent_4_01', t, [0, 0.10, 0.26, 0.45, 0.62, 0.74, 0.80], AXIS_X),
+        buildRotationTrack('tent_4_02', t, [0, 0.07, 0.20, 0.38, 0.54, 0.66, 0.72], AXIS_X),
+        buildRotationTrack('tent_4_03', t, [0, 0.05, 0.15, 0.32, 0.48, 0.58, 0.64], AXIS_X),
+    ]);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
 // CLIP REGISTRY & CACHE
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -2536,6 +3661,50 @@ const _clipBuilders = {
     raccoon_bash_door:      _raccoonBash,
     raccoon_hit_react:      _raccoonHitReact,
     raccoon_death:          _raccoonDeath,
+
+    // Ocean entries
+    dolphin_walk:           _dolphinWalk,
+    dolphin_bash_door:      _dolphinBash,
+    dolphin_bash_door_L:    _dolphinBash,
+    dolphin_bash_door_R:    _dolphinBash,
+    dolphin_hit_react:      _dolphinHit,
+    dolphin_death:          _dolphinDeath,
+
+    flyfish_walk:           _flyfishWalk,
+    flyfish_bash_door:      _flyfishBash,
+    flyfish_bash_door_L:    _flyfishBash,
+    flyfish_bash_door_R:    _flyfishBash,
+    flyfish_hit_react:      _flyfishHit,
+    flyfish_death:          _flyfishDeath,
+
+    shark_walk:             _sharkWalk,
+    shark_panic_sprint:     _sharkWalk,
+    shark_bash_door:        _sharkBash,
+    shark_bash_door_L:      _sharkBash,
+    shark_bash_door_R:      _sharkBash,
+    shark_hit_react:        _sharkHit,
+    shark_death:            _sharkDeath,
+
+    pirate_walk:            _pirateWalk,
+    pirate_bash_door:       _pirateBash,
+    pirate_bash_door_L:     _pirateBash,
+    pirate_bash_door_R:     _pirateBash,
+    pirate_hit_react:       _pirateHit,
+    pirate_death:           _pirateDeath,
+
+    seaturtle_walk:         _seaturtleWalk,
+    seaturtle_bash_door:    _seaturtleBash,
+    seaturtle_bash_door_L:  _seaturtleBash,
+    seaturtle_bash_door_R:  _seaturtleBash,
+    seaturtle_hit_react:    _seaturtleHit,
+    seaturtle_death:        _seaturtleDeath,
+
+    jellyfish_walk:         _jellyfishWalk,
+    jellyfish_bash_door:    _jellyfishBash,
+    jellyfish_bash_door_L:  _jellyfishBash,
+    jellyfish_bash_door_R:  _jellyfishBash,
+    jellyfish_hit_react:    _jellyfishHit,
+    jellyfish_death:        _jellyfishDeath,
 };
 
 const _clipCache = new Map();

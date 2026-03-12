@@ -1068,6 +1068,557 @@ function _buildBearGeometry(size, config) {
 }
 
 
+// ═══════════════════════════════════════════════════════
+// MARINE world-position helper — resolves chain for marine skeleton
+// ═══════════════════════════════════════════════════════
+
+function _marineBoneWorldPos(bp, s) {
+    const w = {};
+    w.root = { x: bp.root.x * s, y: bp.root.y * s, z: bp.root.z * s };
+    // body_front from root
+    w.body_front = bp.body_front ? { x: w.root.x + bp.body_front.x * s, y: w.root.y + bp.body_front.y * s, z: w.root.z + bp.body_front.z * s } : w.root;
+    // snout from body_front
+    w.snout = bp.snout ? { x: w.body_front.x + bp.snout.x * s, y: w.body_front.y + bp.snout.y * s, z: w.body_front.z + bp.snout.z * s } : null;
+    // head from snout or body_front
+    const headParent = w.snout || w.body_front;
+    w.head = bp.head ? { x: headParent.x + bp.head.x * s, y: headParent.y + bp.head.y * s, z: headParent.z + bp.head.z * s } : null;
+    // dorsal from body_front
+    w.dorsal = bp.dorsal ? { x: w.body_front.x + bp.dorsal.x * s, y: w.body_front.y + bp.dorsal.y * s, z: w.body_front.z + bp.dorsal.z * s } : null;
+    // flippers from body_front
+    w.flipper_L = bp.flipper_L ? { x: w.body_front.x + bp.flipper_L.x * s, y: w.body_front.y + bp.flipper_L.y * s, z: w.body_front.z + bp.flipper_L.z * s } : null;
+    w.flipper_R = bp.flipper_R ? { x: w.body_front.x + bp.flipper_R.x * s, y: w.body_front.y + bp.flipper_R.y * s, z: w.body_front.z + bp.flipper_R.z * s } : null;
+    // body_rear from root
+    w.body_rear = bp.body_rear ? { x: w.root.x + bp.body_rear.x * s, y: w.root.y + bp.body_rear.y * s, z: w.root.z + bp.body_rear.z * s } : null;
+    // tail chain from body_rear
+    let tailParent = w.body_rear || w.root;
+    for (let i = 1; i <= 5; i++) {
+        const key = 'tail_0' + i;
+        if (bp[key]) {
+            w[key] = { x: tailParent.x + bp[key].x * s, y: tailParent.y + bp[key].y * s, z: tailParent.z + bp[key].z * s };
+            tailParent = w[key];
+        }
+    }
+    // flukes from last tail
+    w.fluke_L = bp.fluke_L ? { x: tailParent.x + bp.fluke_L.x * s, y: tailParent.y + bp.fluke_L.y * s, z: tailParent.z + bp.fluke_L.z * s } : null;
+    w.fluke_R = bp.fluke_R ? { x: tailParent.x + bp.fluke_R.x * s, y: tailParent.y + bp.fluke_R.y * s, z: tailParent.z + bp.fluke_R.z * s } : null;
+    // shell from root
+    w.shell = bp.shell ? { x: w.root.x + bp.shell.x * s, y: w.root.y + bp.shell.y * s, z: w.root.z + bp.shell.z * s } : null;
+    // turtle flippers
+    w.frontFlipper_L = bp.frontFlipper_L ? { x: w.body_front.x + bp.frontFlipper_L.x * s, y: w.body_front.y + bp.frontFlipper_L.y * s, z: w.body_front.z + bp.frontFlipper_L.z * s } : null;
+    w.frontFlipper_R = bp.frontFlipper_R ? { x: w.body_front.x + bp.frontFlipper_R.x * s, y: w.body_front.y + bp.frontFlipper_R.y * s, z: w.body_front.z + bp.frontFlipper_R.z * s } : null;
+    w.hindFlipper_L = bp.hindFlipper_L && w.body_rear ? { x: w.body_rear.x + bp.hindFlipper_L.x * s, y: w.body_rear.y + bp.hindFlipper_L.y * s, z: w.body_rear.z + bp.hindFlipper_L.z * s } : null;
+    w.hindFlipper_R = bp.hindFlipper_R && w.body_rear ? { x: w.body_rear.x + bp.hindFlipper_R.x * s, y: w.body_rear.y + bp.hindFlipper_R.y * s, z: w.body_rear.z + bp.hindFlipper_R.z * s } : null;
+    // tentacles from root
+    for (let t = 0; t < 6; t++) {
+        let tParent = w.root;
+        for (let seg = 1; seg <= 3; seg++) {
+            const key = `tent_${t}_0${seg}`;
+            if (bp[key]) {
+                w[key] = { x: tParent.x + bp[key].x * s, y: tParent.y + bp[key].y * s, z: tParent.z + bp[key].z * s };
+                tParent = w[key];
+            }
+        }
+    }
+    return w;
+}
+
+
+// ═══════════════════════════════════════════════════════
+// OCEAN ENEMY GEOMETRY BUILDERS
+// ═══════════════════════════════════════════════════════
+
+// ─── DOLPHIN — sleek torpedo body, dorsal fin, flippers, tail flukes ───
+function _buildDolphinGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const bp = config.bonePositions;
+    const s = size;
+    const w = _marineBoneWorldPos(bp, s);
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+
+    // --- Main torpedo body (body=0) ---
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+    const bodyGeo = new THREE.SphereGeometry(1, 12, 10);
+    bodyGeo.scale(bodyW * 0.5, bodyH * 0.5, bodyLen * 0.5);
+    const bodyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y, w.root.z);
+    geometries.push(bodyGeo); transforms.push(bodyM); materialIndices.push(0); boneNames.push(null);
+
+    // --- Lighter underbelly (skin=1) — flattened sphere on bottom ---
+    const bellyGeo = new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, Math.PI * 0.4, Math.PI * 0.4);
+    bellyGeo.scale(bodyW * 0.45, bodyH * 0.35, bodyLen * 0.4);
+    const bellyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y - bodyH * 0.15, w.root.z);
+    geometries.push(bellyGeo); transforms.push(bellyM); materialIndices.push(1); boneNames.push(null);
+
+    // --- Head/snout — elongated sphere (skin=1) ---
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    headGeo.scale(0.8, 0.9, 1.3); // elongated forward
+    const headM = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y, w.head.z);
+    geometries.push(headGeo); transforms.push(headM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Snout/beak — tapered cone (skin=1) ---
+    const snoutLen = d.snoutLength * s;
+    const snoutGeo = new THREE.ConeGeometry(headR * 0.4, snoutLen, 8);
+    const snoutRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+    const snoutPos = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y - headR * 0.1, w.head.z - snoutLen * 0.4);
+    const snoutM = snoutPos.multiply(snoutRot);
+    geometries.push(snoutGeo); transforms.push(snoutM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Dorsal fin (body=0) — triangle/cone ---
+    const dorsH = d.dorsalHeight * s;
+    const dorsL = d.dorsalLength * s;
+    const dorsGeo = new THREE.ConeGeometry(dorsL * 0.5, dorsH, 4);
+    const dorsM = new THREE.Matrix4().makeTranslation(w.dorsal.x, w.dorsal.y + dorsH * 0.3, w.dorsal.z);
+    geometries.push(dorsGeo); transforms.push(dorsM); materialIndices.push(0); boneNames.push('dorsal');
+
+    // --- Pectoral flippers (body=0) — flat paddles ---
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = new THREE.BoxGeometry(flipLen, flipW * 0.3, flipW * 1.5, 2, 1, 2);
+    const flipLRot = new THREE.Matrix4().makeRotationZ(-0.4);
+    const flipLPos = new THREE.Matrix4().makeTranslation(w.flipper_L.x - flipLen * 0.3, w.flipper_L.y, w.flipper_L.z);
+    geometries.push(flipGeo); transforms.push(flipLPos.multiply(flipLRot)); materialIndices.push(0); boneNames.push('flipper_L');
+    const flipRRot = new THREE.Matrix4().makeRotationZ(0.4);
+    const flipRPos = new THREE.Matrix4().makeTranslation(w.flipper_R.x + flipLen * 0.3, w.flipper_R.y, w.flipper_R.z);
+    geometries.push(flipGeo.clone()); transforms.push(flipRPos.multiply(flipRRot)); materialIndices.push(0); boneNames.push('flipper_R');
+
+    // --- Tail section (body=0) — tapered cylinder ---
+    const tailMid = w.tail_01 || w.body_rear;
+    const tailEnd = w.tail_02 || tailMid;
+    const tailGeo = new THREE.CylinderGeometry(bodyW * 0.15, bodyW * 0.08, _dist(w.body_rear, tailEnd) || s * 0.2, 6);
+    const tailRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+    const tailPos = new THREE.Matrix4().makeTranslation(_mid(w.body_rear, tailEnd).x, _mid(w.body_rear, tailEnd).y, _mid(w.body_rear, tailEnd).z);
+    geometries.push(tailGeo); transforms.push(tailPos.multiply(tailRot)); materialIndices.push(0); boneNames.push('tail_01');
+
+    // --- Tail flukes (body=0) — two flat triangular fins ---
+    const flukeSpan = d.flukeSpan * s;
+    const flukeGeo = new THREE.BoxGeometry(flukeSpan, flukeSpan * 0.1, flukeSpan * 0.6, 2, 1, 2);
+    if (w.fluke_L) {
+        const flkLM = new THREE.Matrix4().makeTranslation(w.fluke_L.x, w.fluke_L.y, w.fluke_L.z);
+        geometries.push(flukeGeo); transforms.push(flkLM); materialIndices.push(0); boneNames.push('fluke_L');
+    }
+    if (w.fluke_R) {
+        const flkRM = new THREE.Matrix4().makeTranslation(w.fluke_R.x, w.fluke_R.y, w.fluke_R.z);
+        geometries.push(flukeGeo.clone()); transforms.push(flkRM); materialIndices.push(0); boneNames.push('fluke_R');
+    }
+
+    // --- Eye dots (skin=1) ---
+    const eyeR = headR * 0.12;
+    const eyeGeo = new THREE.SphereGeometry(eyeR, 6, 6);
+    const eyeLM = new THREE.Matrix4().makeTranslation(w.head.x - headR * 0.65, w.head.y + headR * 0.2, w.head.z - headR * 0.4);
+    const eyeRM = new THREE.Matrix4().makeTranslation(w.head.x + headR * 0.65, w.head.y + headR * 0.2, w.head.z - headR * 0.4);
+    geometries.push(eyeGeo); transforms.push(eyeLM); materialIndices.push(2); boneNames.push('head');
+    geometries.push(eyeGeo); transforms.push(eyeRM); materialIndices.push(2); boneNames.push('head');
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+// ─── FLYING FISH — sleek fish with large wing-like pectoral fins ───
+function _buildFlyfishGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const bp = config.bonePositions;
+    const s = size;
+    const w = _marineBoneWorldPos(bp, s);
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+
+    // --- Streamlined body (body=0) ---
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+    const bodyGeo = new THREE.SphereGeometry(1, 10, 8);
+    bodyGeo.scale(bodyW * 0.5, bodyH * 0.5, bodyLen * 0.5);
+    const bodyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y, w.root.z);
+    geometries.push(bodyGeo); transforms.push(bodyM); materialIndices.push(0); boneNames.push(null);
+
+    // --- Lighter belly (skin=1) ---
+    const bellyGeo = new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.35);
+    bellyGeo.scale(bodyW * 0.42, bodyH * 0.3, bodyLen * 0.35);
+    const bellyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y - bodyH * 0.12, w.root.z);
+    geometries.push(bellyGeo); transforms.push(bellyM); materialIndices.push(1); boneNames.push(null);
+
+    // --- Head — pointed (skin=1) ---
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    headGeo.scale(0.7, 0.8, 1.2);
+    const headM = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y, w.head.z);
+    geometries.push(headGeo); transforms.push(headM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Large wing-like pectoral fins (body=0) — the signature feature ---
+    const wingLen = d.flipperLength * s;
+    const wingW = d.flipperWidth * s;
+    const wingGeo = new THREE.PlaneGeometry(wingLen, wingW * 2);
+    const wingLRot = new THREE.Matrix4().makeRotationZ(-0.3);
+    const wingLPos = new THREE.Matrix4().makeTranslation(w.flipper_L.x - wingLen * 0.4, w.flipper_L.y, w.flipper_L.z);
+    geometries.push(wingGeo); transforms.push(wingLPos.multiply(wingLRot)); materialIndices.push(0); boneNames.push('flipper_L');
+    const wingRRot = new THREE.Matrix4().makeRotationZ(0.3);
+    const wingRPos = new THREE.Matrix4().makeTranslation(w.flipper_R.x + wingLen * 0.4, w.flipper_R.y, w.flipper_R.z);
+    geometries.push(wingGeo.clone()); transforms.push(wingRPos.multiply(wingRRot)); materialIndices.push(0); boneNames.push('flipper_R');
+
+    // --- Dorsal fin (body=0) ---
+    const dorsH = d.dorsalHeight * s;
+    const dorsGeo = new THREE.ConeGeometry(d.dorsalLength * s * 0.4, dorsH, 4);
+    const dorsM = new THREE.Matrix4().makeTranslation(w.dorsal.x, w.dorsal.y + dorsH * 0.3, w.dorsal.z);
+    geometries.push(dorsGeo); transforms.push(dorsM); materialIndices.push(0); boneNames.push('dorsal');
+
+    // --- Tail section + flukes (body=0) ---
+    const tailEnd = w.tail_01 || w.body_rear;
+    const tailGeo = new THREE.CylinderGeometry(bodyW * 0.12, bodyW * 0.06, s * 0.1, 6);
+    const tailRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+    const tailMidPt = _mid(w.body_rear, tailEnd);
+    const tailPos = new THREE.Matrix4().makeTranslation(tailMidPt.x, tailMidPt.y, tailMidPt.z);
+    geometries.push(tailGeo); transforms.push(tailPos.multiply(tailRot)); materialIndices.push(0); boneNames.push('tail_01');
+
+    // Tail fork
+    const forkSpan = d.flukeSpan * s;
+    const forkGeo = new THREE.BoxGeometry(forkSpan, forkSpan * 0.08, forkSpan * 0.4);
+    if (w.fluke_L) {
+        geometries.push(forkGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.fluke_L.x, w.fluke_L.y, w.fluke_L.z)); materialIndices.push(0); boneNames.push('fluke_L');
+    }
+    if (w.fluke_R) {
+        geometries.push(forkGeo.clone()); transforms.push(new THREE.Matrix4().makeTranslation(w.fluke_R.x, w.fluke_R.y, w.fluke_R.z)); materialIndices.push(0); boneNames.push('fluke_R');
+    }
+
+    // --- Eyes (legs=2, dark) ---
+    const eyeR = headR * 0.15;
+    const eyeGeo = new THREE.SphereGeometry(eyeR, 5, 5);
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x - headR * 0.55, w.head.y + headR * 0.15, w.head.z - headR * 0.3)); materialIndices.push(2); boneNames.push('head');
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x + headR * 0.55, w.head.y + headR * 0.15, w.head.z - headR * 0.3)); materialIndices.push(2); boneNames.push('head');
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+// ─── SHARK — massive menacing predator, thick body, huge dorsal, jaw ───
+function _buildSharkGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const bp = config.bonePositions;
+    const s = size;
+    const w = _marineBoneWorldPos(bp, s);
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+
+    // --- Massive torpedo body (body=0) ---
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+    const bodyGeo = new THREE.SphereGeometry(1, 12, 10);
+    bodyGeo.scale(bodyW * 0.5, bodyH * 0.55, bodyLen * 0.5);
+    const bodyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y, w.root.z);
+    geometries.push(bodyGeo); transforms.push(bodyM); materialIndices.push(0); boneNames.push(null);
+
+    // --- White underbelly (skin=1) — the classic shark coloring ---
+    const bellyGeo = new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, Math.PI * 0.4, Math.PI * 0.4);
+    bellyGeo.scale(bodyW * 0.48, bodyH * 0.4, bodyLen * 0.45);
+    const bellyM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y - bodyH * 0.2, w.root.z);
+    geometries.push(bellyGeo); transforms.push(bellyM); materialIndices.push(1); boneNames.push(null);
+
+    // --- Blunt head (skin=1 for lighter underbelly) ---
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    headGeo.scale(1.1, 0.7, 1.4);
+    const headM = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y, w.head.z);
+    geometries.push(headGeo); transforms.push(headM); materialIndices.push(0); boneNames.push('head');
+
+    // --- Jaw (skin=1) — wide flat box under head ---
+    const jawW = (d.jawWidth || 0.10) * s;
+    const jawGeo = new THREE.BoxGeometry(jawW * 2, jawW * 0.3, jawW * 1.5);
+    const jawM = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y - headR * 0.5, w.head.z - headR * 0.2);
+    geometries.push(jawGeo); transforms.push(jawM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Teeth — small triangles along jaw edge (body=0 for dark color) ---
+    const toothGeo = new THREE.ConeGeometry(jawW * 0.08, jawW * 0.2, 3);
+    for (let i = 0; i < 5; i++) {
+        const tx = w.head.x - jawW * 0.7 + i * jawW * 0.35;
+        const toothM = new THREE.Matrix4().makeTranslation(tx, w.head.y - headR * 0.6, w.head.z - headR * 0.3);
+        geometries.push(toothGeo); transforms.push(toothM); materialIndices.push(1); boneNames.push('head');
+    }
+
+    // --- HUGE dorsal fin (body=0) — the iconic shark silhouette ---
+    const dorsH = d.dorsalHeight * s;
+    const dorsL = d.dorsalLength * s;
+    const dorsGeo = new THREE.ConeGeometry(dorsL * 0.5, dorsH, 4);
+    // Lean the dorsal back slightly
+    const dorsRot = new THREE.Matrix4().makeRotationX(0.15);
+    const dorsPos = new THREE.Matrix4().makeTranslation(w.dorsal.x, w.dorsal.y + dorsH * 0.35, w.dorsal.z);
+    geometries.push(dorsGeo); transforms.push(dorsPos.multiply(dorsRot)); materialIndices.push(0); boneNames.push('dorsal');
+
+    // --- Pectoral fins (body=0) — wider, more rigid than dolphin ---
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = new THREE.BoxGeometry(flipLen, flipW * 0.2, flipW * 2, 2, 1, 2);
+    const flipLM = new THREE.Matrix4().makeRotationZ(-0.5).setPosition(w.flipper_L.x - flipLen * 0.3, w.flipper_L.y, w.flipper_L.z);
+    geometries.push(flipGeo); transforms.push(flipLM); materialIndices.push(0); boneNames.push('flipper_L');
+    const flipRM = new THREE.Matrix4().makeRotationZ(0.5).setPosition(w.flipper_R.x + flipLen * 0.3, w.flipper_R.y, w.flipper_R.z);
+    geometries.push(flipGeo.clone()); transforms.push(flipRM); materialIndices.push(0); boneNames.push('flipper_R');
+
+    // --- Thick tail section (body=0) ---
+    const tailChain = [w.body_rear, w.tail_01, w.tail_02, w.tail_03].filter(Boolean);
+    for (let i = 0; i < tailChain.length - 1; i++) {
+        const top = tailChain[i];
+        const bot = tailChain[i + 1];
+        const segLen = _dist(top, bot);
+        if (segLen < 0.001) continue;
+        const taper = 1 - (i / tailChain.length) * 0.5;
+        const segGeo = new THREE.CylinderGeometry(bodyW * 0.18 * taper, bodyW * 0.14 * taper, segLen, 6);
+        const segRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+        const segMid = _mid(top, bot);
+        const segPos = new THREE.Matrix4().makeTranslation(segMid.x, segMid.y, segMid.z);
+        geometries.push(segGeo); transforms.push(segPos.multiply(segRot)); materialIndices.push(0); boneNames.push(`tail_0${i + 1}`);
+    }
+
+    // --- Tail flukes — large crescent (body=0) ---
+    const flukeSpan = d.flukeSpan * s;
+    const flukeGeo = new THREE.BoxGeometry(flukeSpan * 0.6, flukeSpan * 0.08, flukeSpan * 0.8);
+    if (w.fluke_L) {
+        geometries.push(flukeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.fluke_L.x, w.fluke_L.y, w.fluke_L.z)); materialIndices.push(0); boneNames.push('fluke_L');
+    }
+    if (w.fluke_R) {
+        geometries.push(flukeGeo.clone()); transforms.push(new THREE.Matrix4().makeTranslation(w.fluke_R.x, w.fluke_R.y, w.fluke_R.z)); materialIndices.push(0); boneNames.push('fluke_R');
+    }
+
+    // --- Eyes (legs=2, dark) ---
+    const eyeR = headR * 0.1;
+    const eyeGeo = new THREE.SphereGeometry(eyeR, 6, 6);
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x - headR * 0.9, w.head.y + headR * 0.1, w.head.z - headR * 0.3)); materialIndices.push(2); boneNames.push('head');
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x + headR * 0.9, w.head.y + headR * 0.1, w.head.z - headR * 0.3)); materialIndices.push(2); boneNames.push('head');
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+// ─── PIRATE — biped human seated in a tiny rowboat ───
+function _buildPirateGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+    const s = size;
+
+    // --- Rowboat hull (body=0) — sits below the pirate ---
+    const boatLen = d.boatLength * s;
+    const boatW = d.boatWidth * s;
+    const boatH = d.boatHeight * s;
+    // Hull bottom — elongated box tapered slightly
+    const hullGeo = new THREE.BoxGeometry(boatW, boatH, boatLen, 3, 1, 3);
+    const hullM = new THREE.Matrix4().makeTranslation(0, s * 0.5, 0);
+    geometries.push(hullGeo); transforms.push(hullM); materialIndices.push(0); boneNames.push(null);
+
+    // Boat gunwales (thin rim)
+    const gunwaleGeo = new THREE.BoxGeometry(boatW * 1.1, boatH * 0.2, boatLen * 1.02);
+    const gunwaleM = new THREE.Matrix4().makeTranslation(0, s * 0.5 + boatH * 0.55, 0);
+    geometries.push(gunwaleGeo); transforms.push(gunwaleM); materialIndices.push(0); boneNames.push(null);
+
+    // Boat pointed bow (front)
+    const bowGeo = new THREE.ConeGeometry(boatW * 0.5, boatLen * 0.3, 4);
+    const bowRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+    const bowPos = new THREE.Matrix4().makeTranslation(0, s * 0.55, -boatLen * 0.6);
+    geometries.push(bowGeo); transforms.push(bowPos.multiply(bowRot)); materialIndices.push(0); boneNames.push(null);
+
+    // --- Pirate torso (body=0, crimson coat) ---
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.4, d.torsoDepth * s, 3, 3, 3);
+    const tM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.25 + 0.15), 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0); boneNames.push(null);
+
+    // --- Pirate head (skin=1) ---
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.80 + 0.25 + 0.30 + 0.20 + 0.25);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Tricorn hat (body=0) — flat disc + upturned brim ---
+    const hatBase = new THREE.CylinderGeometry(d.hatBrim * s, d.hatBrim * s, d.hatHeight * s * 0.3, 8);
+    const hatBaseM = new THREE.Matrix4().makeTranslation(0, headY + d.headRadius * s * 0.8, 0);
+    geometries.push(hatBase); transforms.push(hatBaseM); materialIndices.push(2); boneNames.push('head');
+
+    const hatTop = new THREE.ConeGeometry(d.hatBrim * s * 0.7, d.hatHeight * s * 0.7, 6);
+    const hatTopM = new THREE.Matrix4().makeTranslation(0, headY + d.headRadius * s * 1.1, 0);
+    geometries.push(hatTop); transforms.push(hatTopM); materialIndices.push(2); boneNames.push('head');
+
+    // --- Arms — rowing position (body=0) ---
+    const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, s * 0.55, 6, 2);
+    const armLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.5 - d.limbThickness * s * 0.3, s * (0.80 + 0.25 + 0.1), 0);
+    const armRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.3, s * (0.80 + 0.25 + 0.1), 0);
+    geometries.push(armGeo); transforms.push(armLM); materialIndices.push(0); boneNames.push('upperArm_L');
+    geometries.push(armGeo); transforms.push(armRM); materialIndices.push(0); boneNames.push('upperArm_R');
+
+    // Forearms (skin=1 for hands showing)
+    const foreGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.32, d.limbThickness * s * 0.28, s * 0.35, 6, 2);
+    const foreLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.55, s * (0.80 + 0.1), s * 0.15);
+    const foreRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.55, s * (0.80 + 0.1), s * 0.15);
+    geometries.push(foreGeo); transforms.push(foreLM); materialIndices.push(1); boneNames.push('forearm_L');
+    geometries.push(foreGeo); transforms.push(foreRM); materialIndices.push(1); boneNames.push('forearm_R');
+
+    // --- Legs (legs=2) — seated, bent ---
+    const legGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.38, d.legHeight * s * 0.5, 6, 2);
+    const legLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.2, 0);
+    const legRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.2, 0);
+    geometries.push(legGeo); transforms.push(legLM); materialIndices.push(2); boneNames.push(null);
+    geometries.push(legGeo); transforms.push(legRM); materialIndices.push(2); boneNames.push(null);
+
+    // Lower legs
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.38, d.limbThickness * s * 0.34, d.legHeight * s * 0.5, 6, 2);
+    geometries.push(lowerLegGeo); transforms.push(new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.5, s * 0.2)); materialIndices.push(2); boneNames.push(null);
+    geometries.push(lowerLegGeo); transforms.push(new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.5, s * 0.2)); materialIndices.push(2); boneNames.push(null);
+
+    // --- Eyepatch (legs=2 for dark color) ---
+    const patchGeo = new THREE.CircleGeometry(d.headRadius * s * 0.18, 6);
+    const patchM = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.5, headY + d.headRadius * s * 0.1, -d.headRadius * s * 0.85);
+    geometries.push(patchGeo); transforms.push(patchM); materialIndices.push(2); boneNames.push('head');
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+// ─── SEA TURTLE — domed shell, four paddle flippers, ancient head ───
+function _buildSeaTurtleGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const bp = config.bonePositions;
+    const s = size;
+    const w = _marineBoneWorldPos(bp, s);
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+
+    // --- Domed shell (body=0) — the iconic turtle feature ---
+    const shellW = d.shellWidth * s;
+    const shellH = d.shellHeight * s;
+    const shellL = d.shellLength * s;
+    // Top dome: squashed sphere
+    const shellGeo = new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55);
+    shellGeo.scale(shellW * 0.5, shellH, shellL * 0.5);
+    const shellPos = w.shell || w.root;
+    const shellM = new THREE.Matrix4().makeTranslation(shellPos.x, shellPos.y, shellPos.z);
+    geometries.push(shellGeo); transforms.push(shellM); materialIndices.push(0); boneNames.push('shell');
+
+    // Shell pattern — hexagonal plates (thin discs on surface)
+    const plateGeo = new THREE.CylinderGeometry(shellW * 0.08, shellW * 0.08, shellH * 0.05, 6);
+    for (let i = 0; i < 7; i++) {
+        const angle = (i / 7) * Math.PI * 2;
+        const px = shellPos.x + Math.cos(angle) * shellW * 0.22;
+        const pz = shellPos.z + Math.sin(angle) * shellL * 0.22;
+        const plateM = new THREE.Matrix4().makeTranslation(px, shellPos.y + shellH * 0.85, pz);
+        geometries.push(plateGeo); transforms.push(plateM); materialIndices.push(2); boneNames.push('shell');
+    }
+    // Center plate
+    geometries.push(plateGeo); transforms.push(new THREE.Matrix4().makeTranslation(shellPos.x, shellPos.y + shellH * 0.95, shellPos.z)); materialIndices.push(2); boneNames.push('shell');
+
+    // --- Underbelly plastron (skin=1) — flat bottom plate ---
+    const plastronGeo = new THREE.BoxGeometry(shellW * 0.8, shellH * 0.15, shellL * 0.85);
+    const plastronM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y - shellH * 0.2, w.root.z);
+    geometries.push(plastronGeo); transforms.push(plastronM); materialIndices.push(1); boneNames.push(null);
+
+    // --- Head — small rounded with wrinkly texture effect (skin=1) ---
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    headGeo.scale(0.9, 0.8, 1.1);
+    const headM = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y, w.head.z);
+    geometries.push(headGeo); transforms.push(headM); materialIndices.push(1); boneNames.push('head');
+
+    // --- Four paddle-like flippers ---
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+
+    // Front flippers — larger, paddle-shaped
+    const frontFlipGeo = new THREE.BoxGeometry(flipLen, flipW * 0.25, flipW * 1.8, 3, 1, 2);
+    if (w.frontFlipper_L) {
+        const fflM = new THREE.Matrix4().makeRotationZ(-0.3).setPosition(w.frontFlipper_L.x - flipLen * 0.35, w.frontFlipper_L.y, w.frontFlipper_L.z);
+        geometries.push(frontFlipGeo); transforms.push(fflM); materialIndices.push(0); boneNames.push('frontFlipper_L');
+    }
+    if (w.frontFlipper_R) {
+        const ffrM = new THREE.Matrix4().makeRotationZ(0.3).setPosition(w.frontFlipper_R.x + flipLen * 0.35, w.frontFlipper_R.y, w.frontFlipper_R.z);
+        geometries.push(frontFlipGeo.clone()); transforms.push(ffrM); materialIndices.push(0); boneNames.push('frontFlipper_R');
+    }
+
+    // Hind flippers — smaller
+    const hindFlipGeo = new THREE.BoxGeometry(flipLen * 0.6, flipW * 0.2, flipW * 1.2, 2, 1, 2);
+    if (w.hindFlipper_L) {
+        const hflM = new THREE.Matrix4().makeRotationZ(-0.25).setPosition(w.hindFlipper_L.x - flipLen * 0.2, w.hindFlipper_L.y, w.hindFlipper_L.z);
+        geometries.push(hindFlipGeo); transforms.push(hflM); materialIndices.push(0); boneNames.push('hindFlipper_L');
+    }
+    if (w.hindFlipper_R) {
+        const hfrM = new THREE.Matrix4().makeRotationZ(0.25).setPosition(w.hindFlipper_R.x + flipLen * 0.2, w.hindFlipper_R.y, w.hindFlipper_R.z);
+        geometries.push(hindFlipGeo.clone()); transforms.push(hfrM); materialIndices.push(0); boneNames.push('hindFlipper_R');
+    }
+
+    // --- Small tail (body=0) ---
+    if (w.tail_01) {
+        const tailGeo = new THREE.ConeGeometry(shellW * 0.04, s * 0.08, 4);
+        const tailRot = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+        const tailPos = new THREE.Matrix4().makeTranslation(w.tail_01.x, w.tail_01.y, w.tail_01.z);
+        geometries.push(tailGeo); transforms.push(tailPos.multiply(tailRot)); materialIndices.push(0); boneNames.push('tail_01');
+    }
+
+    // --- Eyes (legs=2, dark) ---
+    const eyeR = headR * 0.15;
+    const eyeGeo = new THREE.SphereGeometry(eyeR, 5, 5);
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x - headR * 0.6, w.head.y + headR * 0.25, w.head.z - headR * 0.5)); materialIndices.push(2); boneNames.push('head');
+    geometries.push(eyeGeo); transforms.push(new THREE.Matrix4().makeTranslation(w.head.x + headR * 0.6, w.head.y + headR * 0.25, w.head.z - headR * 0.5)); materialIndices.push(2); boneNames.push('head');
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+// ─── JELLYFISH — translucent bell with trailing tentacles ───
+function _buildJellyfishGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const bp = config.bonePositions;
+    const s = size;
+    const w = _marineBoneWorldPos(bp, s);
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const boneNames = [];
+
+    // --- Bell dome (body=0) — the main body, hemisphere ---
+    const bellR = d.bellRadius * s;
+    const bellH = d.bellHeight * s;
+    const bellGeo = new THREE.SphereGeometry(bellR, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    const bellM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y + bellH * 0.3, w.root.z);
+    geometries.push(bellGeo); transforms.push(bellM); materialIndices.push(0); boneNames.push(null);
+
+    // --- Inner glow (skin=1) — smaller sphere inside bell ---
+    const glowR = d.innerGlowRadius * s;
+    const glowGeo = new THREE.SphereGeometry(glowR, 8, 6);
+    const glowM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y + bellH * 0.2, w.root.z);
+    geometries.push(glowGeo); transforms.push(glowM); materialIndices.push(1); boneNames.push(null);
+
+    // --- Bell rim/skirt (body=0) — wavy bottom edge ---
+    const skirtGeo = new THREE.TorusGeometry(bellR * 0.85, bellR * 0.1, 6, 12);
+    const skirtM = new THREE.Matrix4().makeTranslation(w.root.x, w.root.y, w.root.z);
+    geometries.push(skirtGeo); transforms.push(skirtM); materialIndices.push(0); boneNames.push(null);
+
+    // --- Tentacles (body=0) — thin dangling cylinders ---
+    const tentThick = d.tentacleThickness * s;
+    const tentLen = d.tentacleLength * s;
+
+    for (let t = 0; t < 5; t++) {
+        for (let seg = 1; seg <= 3; seg++) {
+            const key = `tent_${t}_0${seg}`;
+            const prevKey = seg === 1 ? null : `tent_${t}_0${seg - 1}`;
+            const topPos = prevKey && w[prevKey] ? w[prevKey] : w.root;
+            const botPos = w[key];
+            if (!botPos) continue;
+            const segLen = _dist(topPos, botPos);
+            if (segLen < 0.001) continue;
+            const taper = 1 - (seg - 1) * 0.25;
+            const tentGeo = new THREE.CylinderGeometry(tentThick * taper, tentThick * taper * 0.7, segLen, 4, 1);
+            const tentMid = _mid(topPos, botPos);
+            const tentM = new THREE.Matrix4().makeTranslation(tentMid.x, tentMid.y, tentMid.z);
+            geometries.push(tentGeo); transforms.push(tentM); materialIndices.push(0); boneNames.push(key);
+        }
+    }
+
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+
 // ─── Geometry builder map ───
 const _geometryBuilders = {
     polite: _buildPoliteKnockerGeometry,
@@ -1083,6 +1634,13 @@ const _geometryBuilders = {
     fox: _buildFoxGeometry,
     moose: _buildMooseGeometry,
     raccoon: _buildRaccoonGeometry,
+    // Ocean
+    dolphin: _buildDolphinGeometry,
+    flyfish: _buildFlyfishGeometry,
+    shark: _buildSharkGeometry,
+    pirate: _buildPirateGeometry,
+    seaturtle: _buildSeaTurtleGeometry,
+    jellyfish: _buildJellyfishGeometry,
 };
 
 

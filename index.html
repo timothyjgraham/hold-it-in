@@ -282,19 +282,24 @@
                 </div>
             </div>
             <!-- The Ocean -->
-            <div class="scenario-card locked" id="card-ocean" data-scenario="ocean">
+            <div class="scenario-card playable" id="card-ocean" data-scenario="ocean">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
                         <svg viewBox="0 0 64 64" width="56" height="56">
-                            <path d="M4 36 Q16 28 32 36 Q48 44 60 36" fill="none" stroke="#59c3e8" stroke-width="4" stroke-linecap="round"/>
-                            <path d="M4 44 Q16 36 32 44 Q48 52 60 44" fill="none" stroke="#59c3e8" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
-                            <rect x="22" y="14" width="20" height="22" rx="3" fill="#a8a098" stroke="#1a1a2e" stroke-width="3"/>
-                            <rect x="26" y="10" width="12" height="6" rx="2" fill="#c4b8a5" stroke="#1a1a2e" stroke-width="2"/>
+                            <path d="M4 36 Q16 28 32 36 Q48 44 60 36" fill="none" stroke="#4ab8c8" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M4 44 Q16 36 32 44 Q48 52 60 44" fill="none" stroke="#2e6b8a" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+                            <path d="M20 22 L32 18 L44 22 L44 30 Q32 34 20 30 Z" fill="#9b7850" stroke="#1a1a2e" stroke-width="2.5" stroke-linejoin="round"/>
+                            <rect x="28" y="10" width="8" height="10" rx="1" fill="#faf5ef" stroke="#1a1a2e" stroke-width="2"/>
+                            <circle cx="32" cy="13" r="1.5" fill="#ffd93d"/>
                         </svg>
                     </div>
                     <div class="scenario-name">THE OCEAN</div>
-                    <div class="scenario-desc">Toilet on a boat. Sea creatures.</div>
-                    <div class="scenario-coming-soon">COMING SOON</div>
+                    <div class="scenario-desc">Dinghy on open water. Sea creatures.</div>
+                    <div class="scenario-stats" id="stats-ocean">
+                        <span class="stat-item">Best Wave: --</span>
+                        <span class="stat-item">High Score: --</span>
+                    </div>
+                    <button class="scenario-continue-btn" id="continue-ocean" style="display:none;">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Airplane -->
@@ -627,6 +632,59 @@
                 size: 2.55, color: 0x7a7a7a, // PALETTE.forestRaccoon
                 coins: 2, doorDmg: 1,
             },
+
+            // ─── OCEAN ENEMIES ───────────────────────────────────────────
+            dolphin: {
+                name: 'Dolphin',
+                baseSpeed: 3.0, speedVar: 0.5,
+                baseHP: 22, hpPerWave: 10,
+                size: 4.0, color: 0x7a9ab0, // PALETTE.oceanDolphin
+                coins: 5, doorDmg: 2,
+                flankChance: 0.20,
+            },
+            flyfish: {
+                name: 'Flying Fish',
+                baseSpeed: 5.5, speedVar: 1.0,
+                baseHP: 10, hpPerWave: 4,
+                size: 2.5, color: 0xc0d8e8, // PALETTE.oceanFlyfish
+                coins: 3, doorDmg: 1,
+                canJumpBarrier: true,
+                flankChance: 0.60,
+            },
+            shark: {
+                name: 'Shark',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 70, hpPerWave: 22,
+                size: 6.0, color: 0x506878, // PALETTE.oceanShark
+                coins: 15, doorDmg: 5,
+                panicThreshold: 0.5,
+                flankChance: 0.08,
+            },
+            pirate: {
+                name: 'Pirate',
+                baseSpeed: 4.0, speedVar: 0.5,
+                baseHP: 42, hpPerWave: 13,
+                size: 1.5, color: 0x8b2020, // PALETTE.oceanPirate
+                coins: 11, doorDmg: 3,
+                speedAuraRange: 8, speedAuraBonus: 0.5,
+                flankChance: 0.40,
+            },
+            seaturtle: {
+                name: 'Sea Turtle',
+                baseSpeed: 3.5, speedVar: 0.3,
+                baseHP: 38, hpPerWave: 12,
+                size: 5.0, color: 0x4a8a50, // PALETTE.oceanTurtle
+                coins: 8, doorDmg: 2,
+                slowImmune: true,
+                flankChance: 0.55,
+            },
+            jellyfish: {
+                name: 'Jellyfish',
+                baseSpeed: 3.0, speedVar: 0.3,
+                baseHP: 8, hpPerWave: 3,
+                size: 2.2, color: 0xd080c0, // PALETTE.oceanJelly
+                coins: 2, doorDmg: 1,
+            },
         },
 
         // Curated wave compositions — one new enemy per introduction wave
@@ -791,6 +849,79 @@
             },
         },
 
+        // ─── OCEAN WAVE COMPOSITIONS ─────────────────────────────────────
+        OCEAN_WAVE_COMPOSITIONS: [
+            null,
+            // Wave 1: Dolphins only — gentle ocean intro
+            { enemies: [['dolphin', 5]], interval: 2.5, delay: 5 },
+            // Wave 2: More dolphins
+            { enemies: [['dolphin', 7]], interval: 2.0, delay: 4 },
+            // Wave 3: FLYING FISH — fast, darting, swarm
+            { enemies: [['dolphin', 4], ['flyfish', 4]], interval: 1.8, delay: 4 },
+            // Wave 4: Harder mix
+            { enemies: [['dolphin', 5], ['flyfish', 5]], interval: 1.5, delay: 3.5 },
+            // Wave 5: SHARK — massive tank, panics at 50% HP
+            { enemies: [['dolphin', 4], ['flyfish', 3], ['shark', 2]], interval: 1.3, delay: 3 },
+            // Wave 6: More sharks
+            { enemies: [['dolphin', 5], ['flyfish', 5], ['shark', 3]], interval: 1.2, delay: 3 },
+            // Wave 7: PIRATE — speed aura, priority target
+            { enemies: [['dolphin', 4], ['flyfish', 4], ['shark', 2], ['pirate', 1]], interval: 1.0, delay: 3 },
+            // Wave 8: More pirates
+            { enemies: [['dolphin', 5], ['flyfish', 5], ['shark', 3], ['pirate', 2]], interval: 0.9, delay: 3 },
+            // Wave 9: SEA TURTLE — slow immune
+            { enemies: [['dolphin', 4], ['flyfish', 4], ['shark', 2], ['pirate', 1], ['seaturtle', 3]], interval: 0.8, delay: 3 },
+            // Wave 10: JELLYFISH — cluster swarm
+            { enemies: [['dolphin', 3], ['flyfish', 3], ['shark', 2], ['pirate', 1], ['seaturtle', 2], ['jellyfish_group', 1]], interval: 0.8, delay: 3 },
+        ],
+
+        OCEAN_WAVE_EVENTS: {
+            15: {
+                name: 'FEEDING FRENZY',
+                announcement: "IT'S A FEEDING FRENZY!",
+                enemyMult: 2.5,
+                spawnMult: 0.5,
+                weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.20, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05 },
+            },
+            20: {
+                name: 'TIDAL WAVE',
+                announcement: 'TIDAL WAVE INCOMING!',
+                enemyMult: 3.0,
+                spawnMult: 0.4,
+                weights: { dolphin: 0.30, seaturtle: 0.25, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05 },
+            },
+            25: {
+                name: 'BLOOD MOON',
+                announcement: 'BLOOD MOON TIDE!',
+                enemyMult: 2.5,
+                spawnMult: 0.35,
+                speedMult: 1.4,
+                desperateChance: 0.6,
+            },
+            30: {
+                name: 'PIRATE ARMADA',
+                announcement: 'THE PIRATE ARMADA ATTACKS!',
+                enemyMult: 3.5,
+                spawnMult: 0.3,
+                weights: { pirate: 0.40, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, jellyfish_group: 0.05 },
+            },
+            35: {
+                name: 'KRAKEN STIRS',
+                announcement: 'THE KRAKEN STIRS THE DEEP!',
+                enemyMult: 3.0,
+                spawnMult: 0.3,
+                speedMult: 1.3,
+                weights: { shark: 0.35, seaturtle: 0.20, pirate: 0.20, dolphin: 0.15, jellyfish_group: 0.10 },
+            },
+            40: {
+                name: 'MAELSTROM',
+                announcement: 'MAELSTROM!',
+                enemyMult: 4.0,
+                spawnMult: 0.2,
+                speedMult: 1.5,
+                desperateChance: 0.8,
+            },
+        },
+
         // Coin drop table — physical coins scattered on enemy death
         // Values are ~30% higher than old instant rewards (skill bonus for collection)
         COIN_DROPS: {
@@ -807,6 +938,13 @@
             fox:         { value: 13, count: 3 },
             moose:       { value: 10, count: 2 },
             raccoon:     { value: 3,  count: 1 },
+            // Ocean
+            dolphin:     { value: 6,  count: 2 },
+            flyfish:     { value: 4,  count: 1 },
+            shark:       { value: 20, count: 4 },
+            pirate:      { value: 14, count: 3 },
+            seaturtle:   { value: 10, count: 2 },
+            jellyfish:   { value: 3,  count: 1 },
         },
 
         coinPool: null,
@@ -1094,9 +1232,12 @@
             this._teardownEnvironment();
             this._currentScenario = scenario;
             this._forestAnimData = null;
+            this._oceanAnimData = null;
 
             if (scenario === 'forest') {
                 this._setupForestScenario();
+            } else if (scenario === 'ocean') {
+                this._setupOceanScenario();
             } else {
                 this._setupOfficeScenario();
             }
@@ -1140,6 +1281,7 @@
             this.toilet = null;
             this.doorGroup = null;
             this.officeGroup = null;
+            this._oceanDinghy = null;
             if (this.playerCharacter) {
                 if (this.playerCharacter.group && this.playerCharacter.group.parent) {
                     this.playerCharacter.group.parent.remove(this.playerCharacter.group);
@@ -1276,12 +1418,144 @@
             }
         },
 
+        // ─── OCEAN SCENARIO SETUP ────────────────────────────────────────────
+
+        _setupOceanScenario() {
+            // Scenario layout — ocean has wide-open water (same width as forest)
+            this._layout = {
+                laneWidth: CONFIG.laneWidth * 2,      // 60 — wide open ocean
+                corridorWidth: CONFIG.corridorWidth * 2, // 24
+                corridorStart: CONFIG.corridorStart,   // 12
+                spawnWidth: CONFIG.spawnWidth * 2,     // 20
+                doorZ: 4.5,                            // boat bow position
+                doorHalfWidth: 1.5,                    // boat width
+                minBuildZ: 8,                          // near the boat
+            };
+
+            // Ocean lighting — bright sun overhead, cool blue ambient
+            const ambient = new THREE.AmbientLight(PALETTE.oceanAmbient, 0.75);
+            ambient.name = 'sceneLight';
+            this.scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(PALETTE.oceanSun, 1.0);
+            sunLight.name = 'sceneLight';
+            sunLight.position.set(10, 45, 20);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 100;
+            sunLight.shadow.camera.left = -35;
+            sunLight.shadow.camera.right = 35;
+            sunLight.shadow.camera.top = 70;
+            sunLight.shadow.camera.bottom = -5;
+            this.scene.add(sunLight);
+
+            const rimLight = new THREE.DirectionalLight(PALETTE.oceanRim, 0.4);
+            rimLight.name = 'sceneLight';
+            rimLight.position.set(-12, 20, 10);
+            this.scene.add(rimLight);
+
+            // Ocean fog — deep blue, moderate range
+            this.scene.fog = new THREE.Fog(PALETTE.oceanFog, 55, 105);
+
+            // Ocean water — the gorgeous animated water surface
+            const water = createOceanWater();
+            this._environmentGroup.add(water);
+
+            // The dinghy (boat)
+            const dinghy = createDinghy();
+            this._environmentGroup.add(dinghy);
+            this._oceanDinghy = dinghy;
+
+            // Toilet on the boat — slightly smaller
+            this.toilet = createToilet();
+            this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y + 0.3, CONFIG.toiletPos.z);
+            this.toilet.rotation.y = 0;
+            this.toilet.scale.set(0.65, 0.65, 0.65);
+            this._environmentGroup.add(this.toilet);
+
+            // Player character on the seat
+            this._createPlayerCharacter();
+
+            // Boat door (bow that enemies attack)
+            this.doorGroup = createBoatDoor();
+            this._environmentGroup.add(this.doorGroup);
+
+            // Ocean props — floating barrels, crates, debris
+            this._environmentGroup.add(createOceanProps());
+
+            // Atmospheric effects
+            const seagulls = createSeagulls();
+            this._environmentGroup.add(seagulls);
+
+            const sparkles = createSunSparkles();
+            this._environmentGroup.add(sparkles);
+
+            // Store references for per-frame animation
+            this._oceanAnimData = {
+                waterMesh: water.userData.waterMesh || null,
+                seagulls: seagulls.userData.seagulls || [],
+                sparkles: sparkles.userData.sparkles || [],
+                dinghy: dinghy,
+            };
+        },
+
+        _updateOceanEffects(time, dt) {
+            if (!this._oceanAnimData) return;
+
+            // Animate water shader
+            const waterMesh = this._oceanAnimData.waterMesh;
+            if (waterMesh && waterMesh.material && waterMesh.material.uniforms) {
+                waterMesh.material.uniforms.uTime.value = time;
+            }
+
+            // Animate seagulls — lazy orbiting + wing flap
+            const gulls = this._oceanAnimData.seagulls;
+            for (let i = 0; i < gulls.length; i++) {
+                const g = gulls[i];
+                if (!g || !g.mesh) continue;
+                const angle = time * g.speed + g.phase;
+                g.mesh.position.x = g.center.x + Math.cos(angle) * g.radius;
+                g.mesh.position.z = g.center.z + Math.sin(angle) * g.radius;
+                g.mesh.position.y = g.center.y + Math.sin(time * 0.8 + g.phase) * 0.5;
+                // Wing flap
+                const flapAngle = Math.sin(time * 4 + g.phase * 2) * 0.4;
+                if (g.leftWing) g.leftWing.rotation.z = flapAngle;
+                if (g.rightWing) g.rightWing.rotation.z = -flapAngle;
+                // Face direction of travel
+                g.mesh.rotation.y = angle + Math.PI / 2;
+            }
+
+            // Animate sun sparkles — twinkle opacity
+            const sparkles = this._oceanAnimData.sparkles;
+            for (let i = 0; i < sparkles.length; i++) {
+                const sp = sparkles[i];
+                if (!sp || !sp.mesh) continue;
+                sp.mesh.material.opacity = 0.3 + 0.5 * Math.abs(Math.sin(time * 3 + sp.phase));
+                sp.mesh.position.y = sp.baseY + Math.sin(time * 0.5 + sp.phase) * 0.1;
+                sp.mesh.rotation.y = time * 2 + sp.phase;
+            }
+
+            // Animate dinghy — gentle rocking on waves
+            const dinghy = this._oceanAnimData.dinghy;
+            if (dinghy) {
+                dinghy.rotation.x = Math.sin(time * 0.7) * 0.015;
+                dinghy.rotation.z = Math.sin(time * 0.5 + 0.5) * 0.02;
+                dinghy.position.y = 0.3 + Math.sin(time * 0.6) * 0.08;
+            }
+        },
+
         // Returns current scenario's wave compositions and events
         _getWaveCompositions() {
-            return this._currentScenario === 'forest' ? this.FOREST_WAVE_COMPOSITIONS : this.WAVE_COMPOSITIONS;
+            if (this._currentScenario === 'forest') return this.FOREST_WAVE_COMPOSITIONS;
+            if (this._currentScenario === 'ocean') return this.OCEAN_WAVE_COMPOSITIONS;
+            return this.WAVE_COMPOSITIONS;
         },
         _getWaveEvents() {
-            return this._currentScenario === 'forest' ? this.FOREST_WAVE_EVENTS : this.WAVE_EVENTS;
+            if (this._currentScenario === 'forest') return this.FOREST_WAVE_EVENTS;
+            if (this._currentScenario === 'ocean') return this.OCEAN_WAVE_EVENTS;
+            return this.WAVE_EVENTS;
         },
 
         _createGrid() {
@@ -1553,6 +1827,11 @@
                 startScenario('forest');
             });
 
+            document.getElementById('card-ocean').addEventListener('click', (e) => {
+                if (e.target.closest('.scenario-continue-btn')) return;
+                startScenario('ocean');
+            });
+
             // Continue saved game — office
             document.getElementById('continue-office').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1572,6 +1851,19 @@
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('forest');
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                setGameUIVisible(true);
+                const loaded = this._loadGame();
+                if (!loaded) this.start();
+                this._updateContinueButtons();
+            });
+
+            // Continue saved game — ocean
+            document.getElementById('continue-ocean').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SFX) SFX.play('ui_game_start');
+                this._gameMode = this._menuMode;
+                this._setupScenario('ocean');
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
                 const loaded = this._loadGame();
@@ -2152,7 +2444,7 @@
         },
 
         _updateBestStats() {
-            for (const scenario of ['office', 'forest']) {
+            for (const scenario of ['office', 'forest', 'ocean']) {
                 const s = this._bestStats[scenario] || { wave: 0, score: 0 };
                 const el = document.getElementById(`stats-${scenario}`);
                 if (el) {
@@ -2521,7 +2813,7 @@
         },
 
         _updateContinueButtons() {
-            for (const scenario of ['office', 'forest']) {
+            for (const scenario of ['office', 'forest', 'ocean']) {
                 const btn = document.getElementById(`continue-${scenario}`);
                 if (btn) {
                     const hasSave = this._hasSave(scenario, this._menuMode);
@@ -2630,6 +2922,15 @@
             tower.tileWidth = tw;
             tower.mesh.castShadow = true;
             tower.delivering = true; // Tower is inactive until drone delivers it
+
+            // Ocean scenario: add buoy platform under tower
+            if (this._currentScenario === 'ocean' && window.createBuoyPlatform) {
+                const buoy = createBuoyPlatform();
+                buoy.position.set(0, -0.1, 0);
+                tower.mesh.add(buoy);
+                tower.buoy = buoy;
+            }
+
             this.towers.push(tower);
 
             // Launch drone delivery!
@@ -4331,7 +4632,15 @@
 
             // Enemy type weights — scenario-specific
             const isForest = this._currentScenario === 'forest';
-            const defaultWeights = isForest ? [
+            const isOcean = this._currentScenario === 'ocean';
+            const defaultWeights = isOcean ? [
+                ['jellyfish_group', 0.06],
+                ['pirate', Math.min(0.14, 0.08 + wave * 0.002)],
+                ['shark', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['seaturtle', Math.min(0.18, 0.14 + wave * 0.001)],
+                ['flyfish', 0.25],
+                // remainder = dolphin (fallback)
+            ] : isForest ? [
                 ['raccoon_group', 0.06],
                 ['fox', Math.min(0.14, 0.08 + wave * 0.002)],
                 ['bear', Math.min(0.18, 0.12 + wave * 0.002)],
@@ -4346,7 +4655,7 @@
                 ['dancer', 0.25],
                 // remainder = polite (fallback)
             ];
-            const fallbackType = isForest ? 'deer' : 'polite';
+            const fallbackType = isOcean ? 'dolphin' : isForest ? 'deer' : 'polite';
 
             for (let i = 0; i < total; i++) {
                 const roll = Math.random();
@@ -4376,9 +4685,9 @@
 
             const enemyType = this._spawnQueue.shift();
 
-            // The Girls / Raccoons — spawn as a tight cluster picking a lane
-            if (enemyType === 'girls_group' || enemyType === 'raccoon_group') {
-                const actualType = enemyType === 'girls_group' ? 'girls' : 'raccoon';
+            // The Girls / Raccoons / Jellyfish — spawn as a tight cluster picking a lane
+            if (enemyType === 'girls_group' || enemyType === 'raccoon_group' || enemyType === 'jellyfish_group') {
+                const actualType = enemyType === 'girls_group' ? 'girls' : enemyType === 'raccoon_group' ? 'raccoon' : 'jellyfish';
                 const def = this.ENEMY_TYPES[actualType];
                 if (!def) return;
                 const laneOptions = [-4, 0, 4];
@@ -4540,12 +4849,19 @@
                 fox: 'dart',
                 moose: 'charge',
                 raccoon: 'waddle',
+                // Ocean
+                dolphin: 'walk',
+                flyfish: 'walk',
+                shark: 'walk',
+                pirate: 'walk',
+                seaturtle: 'walk',
+                jellyfish: 'walk',
             };
             enemy.walkState = initialStates[enemyType] || 'walk';
             ac.setState(enemy.walkState);
 
-            // Girls/Raccoons: random phase offset for visual variety in clusters
-            if (enemyType === 'girls' || enemyType === 'raccoon') {
+            // Girls/Raccoons/Jellyfish: random phase offset for visual variety in clusters
+            if (enemyType === 'girls' || enemyType === 'raccoon' || enemyType === 'jellyfish') {
                 ac.mixer.time = Math.random() * 2.0;
             }
 
@@ -4562,7 +4878,7 @@
             }
 
             // L11: False Alarm — mark one panicker per wave for inverted aura
-            if ((enemyType === 'panicker' || enemyType === 'fox') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
+            if ((enemyType === 'panicker' || enemyType === 'fox' || enemyType === 'pirate') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
                 if (!this._falseAlarmUsed) {
                     enemy._falseAlarmInverted = true;
                     this._falseAlarmUsed = true;
@@ -4747,10 +5063,10 @@
                 // Speed aura — panicker/fox make nearby enemies 50% faster
                 // L11: False Alarm — inverted panickers slow nearby enemies instead
                 let auraMult = 1.0;
-                const isAuraType = e.type === 'panicker' || e.type === 'fox';
+                const isAuraType = e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate';
                 if (!isAuraType) {
                     for (const other of this.enemies) {
-                        if ((other.type !== 'panicker' && other.type !== 'fox') || other.bashing) continue;
+                        if ((other.type !== 'panicker' && other.type !== 'fox' && other.type !== 'pirate') || other.bashing) continue;
                         const adx = e.x - other.x;
                         const adz = e.z - other.z;
                         if (adx * adx + adz * adz < 64) { // range 8
@@ -4877,7 +5193,7 @@
                         e.bashingBarrier = null;
                         // Reset animation from bash_door back to walk state
                         if (e.animController) {
-                            const walkState = ((e.type === 'waddle' || e.type === 'bear') && e.panicked) ? 'panic_sprint' : e.walkState;
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                         }
                     }
@@ -4904,7 +5220,7 @@
                         }
                         // Resume walk animation
                         if (e.animController) {
-                            const walkState = ((e.type === 'waddle' || e.type === 'bear') && e.panicked) ? 'panic_sprint' : e.walkState;
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                             e.animController.setTimeScale(1.0);
                         }
@@ -4977,8 +5293,8 @@
 
                 // Move toward toilet (skip if bashing the door or stunned)
                 if (!e.bashing && e.stunTimer <= 0) {
-                    // Tank panic — speeds up when badly hurt (waddle tank + bear)
-                    if ((e.type === 'waddle' || e.type === 'bear') && !e.panicked && e.hp < e.maxHp * 0.5) {
+                    // Tank panic — speeds up when badly hurt (waddle tank + bear + shark)
+                    if ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && !e.panicked && e.hp < e.maxHp * 0.5) {
                         e.panicked = true;
                         e.speed *= 2.0;
                         e.animController.setState('panic_sprint');
@@ -5014,8 +5330,8 @@
                         e.x += dxToTarget * dt * 2.5;
                     }
 
-                    // Panicker/Fox zig-zag — slight lateral wobble
-                    if (e.type === 'panicker' || e.type === 'fox') {
+                    // Panicker/Fox/Pirate zig-zag — slight lateral wobble
+                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate') {
                         e.x += Math.sin(e.walkPhase * 0.5) * dt * 0.5;
                     }
 
@@ -5115,8 +5431,8 @@
                         e.animController.setTimeScale(animSpeed);
                     }
 
-                    // 6D: Panicker/Fox pulsing aura glow
-                    if (e.type === 'panicker' || e.type === 'fox') {
+                    // 6D: Panicker/Fox/Pirate pulsing aura glow
+                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate') {
                         const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -5338,8 +5654,8 @@
                     // Bash animation
                     e.bashTimer -= dt;
                     const camDist = e.mesh.position.distanceTo(this.camera.position);
-                    // 6D: panicker/fox aura glow while bashing
-                    if (e.type === 'panicker' || e.type === 'fox') {
+                    // 6D: panicker/fox/pirate aura glow while bashing
+                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate') {
                         const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -5514,7 +5830,7 @@
                             this._dyingAnimControllers.add(e.animController);
                         }
 
-                        const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5, deer: 0.6, squirrel: 0.5, bear: 0.8, fox: 0.6, moose: 0.6, raccoon: 0.5 };
+                        const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5, deer: 0.6, squirrel: 0.5, bear: 0.8, fox: 0.6, moose: 0.6, raccoon: 0.5, dolphin: 0.6, flyfish: 0.5, shark: 0.8, pirate: 0.6, seaturtle: 0.6, jellyfish: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
                         const enemyRef = e;
                         const deathPos = new THREE.Vector3(e.x, 0, e.z);
@@ -7222,9 +7538,11 @@
             // Always update toilet glow (if it exists)
             if (this.toilet) updateToilet(this.toilet, this.clock.elapsedTime);
 
-            // Forest-specific ambient effects
+            // Scenario-specific ambient effects
             if (this._currentScenario === 'forest') {
                 this._updateForestEffects(this.clock.elapsedTime, rawDt);
+            } else if (this._currentScenario === 'ocean') {
+                this._updateOceanEffects(this.clock.elapsedTime, rawDt);
             }
 
             // Update player character animation
