@@ -55,6 +55,14 @@ import {
     createSunSparkles,
     createOceanProps,
 } from './models/OceanEnvironmentModels.js';
+import {
+    createAirplaneCabin,
+    createAirplaneSeats,
+    createAirplaneCubicle,
+    createAirplaneDoor,
+    createAirplaneProps,
+    createCabinLightStrips,
+} from './models/AirplaneEnvironmentModels.js';
 
 // Inject CSS palette variables
 injectCSSPalette();
@@ -117,6 +125,14 @@ window.createBuoyPlatform = createBuoyPlatform;
 window.createSeagulls = createSeagulls;
 window.createSunSparkles = createSunSparkles;
 window.createOceanProps = createOceanProps;
+
+// Airplane environment
+window.createAirplaneCabin = createAirplaneCabin;
+window.createAirplaneSeats = createAirplaneSeats;
+window.createAirplaneCubicle = createAirplaneCubicle;
+window.createAirplaneDoor = createAirplaneDoor;
+window.createAirplaneProps = createAirplaneProps;
+window.createCabinLightStrips = createCabinLightStrips;
 
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;

@@ -685,6 +685,64 @@
                 size: 2.2, color: 0xd080c0, // PALETTE.oceanJelly
                 coins: 2, doorDmg: 1,
             },
+
+            // ─── AIRPLANE ENEMIES ───────────────────────────────────────────
+            nervous: {
+                name: 'Nervous Flyer',
+                baseSpeed: 3.0, speedVar: 0.5,
+                baseHP: 20, hpPerWave: 10,
+                size: 1.5, color: 0xd4c4a4, // PALETTE.airplaneNervous
+                coins: 5, doorDmg: 2,
+                flankChance: 0.15,
+            },
+            business: {
+                name: 'Business Class',
+                baseSpeed: 3.5, speedVar: 0.3,
+                baseHP: 35, hpPerWave: 12,
+                size: 1.5, color: 0x2a3a5a, // PALETTE.airplaneBusiness
+                coins: 8, doorDmg: 2,
+                knockbackImmune: true, // Anti-mop: can't be pushed around
+                flankChance: 0.6,
+            },
+            stumbler: {
+                name: 'Turbulence Stumbler',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 65, hpPerWave: 18,
+                size: 2.0, color: 0x7ab87a, // PALETTE.airplaneStumbler
+                coins: 12, doorDmg: 4,
+                barrierBust: true, // Anti-sign: stumbles through barriers, destroying them
+                panicThreshold: 0.5,
+                flankChance: 0.1,
+            },
+            attendant: {
+                name: 'Flight Attendant',
+                baseSpeed: 5.0, speedVar: 1.0,
+                baseHP: 15, hpPerWave: 5,
+                size: 1.3, color: 0xc03040, // PALETTE.airplaneAttendant
+                coins: 4, doorDmg: 1,
+                sprayResist: 0.5, // Anti-spray: takes 50% less Ubik damage
+                canJumpBarrier: true,
+                flankChance: 0.5,
+            },
+            marshal: {
+                name: 'Air Marshal',
+                baseSpeed: 3.5, speedVar: 0.3,
+                baseHP: 40, hpPerWave: 14,
+                size: 1.6, color: 0x4a4a5a, // PALETTE.airplaneMarshal
+                coins: 10, doorDmg: 3,
+                slowImmune: true,
+                magnetDisableRange: 6, // Anti-magnet: disables nearby coin magnets
+                speedAuraRange: 6, speedAuraBonus: 0.4,
+                flankChance: 0.5,
+            },
+            unruly: {
+                name: 'Unruly Passengers',
+                baseSpeed: 3.0, speedVar: 0.3,
+                baseHP: 8, hpPerWave: 3,
+                size: 0.85, color: 0xe87830, // PALETTE.airplaneUnruly
+                coins: 2, doorDmg: 1,
+                tripImmune: true, // Anti-potplant: too drunk to trip
+            },
         },
 
         // Curated wave compositions — one new enemy per introduction wave
@@ -922,6 +980,94 @@
             },
         },
 
+        // ─── AIRPLANE WAVE COMPOSITIONS ─────────────────────────────────────
+        AIRPLANE_WAVE_COMPOSITIONS: [
+            null,
+            // Wave 1: Nervous Flyers only — welcome aboard
+            { enemies: [['nervous', 5]], interval: 2.5, delay: 5 },
+            // Wave 2: More nervous flyers
+            { enemies: [['nervous', 7]], interval: 2.0, delay: 4 },
+            // Wave 3: BUSINESS CLASS — knockback immune
+            { enemies: [['nervous', 4], ['business', 4]], interval: 1.8, delay: 4 },
+            // Wave 4: Harder mix
+            { enemies: [['nervous', 5], ['business', 5]], interval: 1.5, delay: 3.5 },
+            // Wave 5: TURBULENCE STUMBLER — barrier buster tank
+            { enemies: [['nervous', 4], ['business', 3], ['stumbler', 2]], interval: 1.3, delay: 3 },
+            // Wave 6: More stumblers
+            { enemies: [['nervous', 5], ['business', 5], ['stumbler', 3]], interval: 1.2, delay: 3 },
+            // Wave 7: FLIGHT ATTENDANT — spray resistant, fast, jumps barriers
+            { enemies: [['nervous', 4], ['business', 4], ['stumbler', 2], ['attendant', 2]], interval: 1.0, delay: 3 },
+            // Wave 8: More attendants
+            { enemies: [['nervous', 5], ['business', 5], ['stumbler', 3], ['attendant', 3]], interval: 0.9, delay: 3 },
+            // Wave 9: AIR MARSHAL — slow immune, disables magnets, speed aura
+            { enemies: [['nervous', 4], ['business', 4], ['stumbler', 2], ['attendant', 1], ['marshal', 3]], interval: 0.8, delay: 3 },
+            // Wave 10: UNRULY PASSENGERS — swarm cluster, trip immune
+            { enemies: [['nervous', 3], ['business', 3], ['stumbler', 2], ['attendant', 1], ['marshal', 2], ['unruly_group', 1]], interval: 0.8, delay: 3 },
+        ],
+
+        AIRPLANE_WAVE_EVENTS: {
+            15: {
+                name: 'TURBULENCE',
+                announcement: "WE'RE HITTING TURBULENCE!",
+                enemyMult: 2.5,
+                spawnMult: 0.5,
+                weights: { stumbler: 0.35, nervous: 0.20, business: 0.20, attendant: 0.10, marshal: 0.10, unruly_group: 0.05 },
+            },
+            20: {
+                name: 'MEAL SERVICE',
+                announcement: 'MEAL SERVICE IS OVER!',
+                enemyMult: 3.0,
+                spawnMult: 0.4,
+                weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.15, marshal: 0.10, unruly_group: 0.05 },
+            },
+            25: {
+                name: 'SEATBELT SIGN OFF',
+                announcement: 'THE SEATBELT SIGN IS OFF!',
+                enemyMult: 2.5,
+                spawnMult: 0.35,
+                speedMult: 1.4,
+                desperateChance: 0.6,
+            },
+            30: {
+                name: 'BAD FISH',
+                announcement: 'SOMEONE ATE THE FISH!',
+                enemyMult: 3.5,
+                spawnMult: 0.3,
+                weights: { stumbler: 0.35, nervous: 0.25, attendant: 0.15, business: 0.15, unruly_group: 0.10 },
+            },
+            35: {
+                name: 'DUTY FREE',
+                announcement: 'DUTY FREE TROLLEY INCOMING!',
+                enemyMult: 3.0,
+                spawnMult: 0.3,
+                speedMult: 1.3,
+                weights: { business: 0.30, nervous: 0.25, marshal: 0.20, attendant: 0.15, stumbler: 0.10 },
+            },
+            40: {
+                name: 'EMERGENCY LANDING',
+                announcement: 'BRACE FOR IMPACT!',
+                enemyMult: 4.0,
+                spawnMult: 0.2,
+                speedMult: 1.5,
+                desperateChance: 0.8,
+            },
+            45: {
+                name: 'OPEN BAR',
+                announcement: 'OPEN BAR IN FIRST CLASS!',
+                enemyMult: 4.0,
+                spawnMult: 0.25,
+                weights: { unruly_group: 0.30, stumbler: 0.25, nervous: 0.20, business: 0.15, attendant: 0.10 },
+            },
+            50: {
+                name: 'FINAL DESCENT',
+                announcement: 'FINAL DESCENT — ALL PASSENGERS!',
+                enemyMult: 5.0,
+                spawnMult: 0.15,
+                speedMult: 1.6,
+                desperateChance: 0.5,
+            },
+        },
+
         // Coin drop table — physical coins scattered on enemy death
         // Values are ~30% higher than old instant rewards (skill bonus for collection)
         COIN_DROPS: {
@@ -945,6 +1091,13 @@
             pirate:      { value: 14, count: 3 },
             seaturtle:   { value: 10, count: 2 },
             jellyfish:   { value: 3,  count: 1 },
+            // Airplane
+            nervous:     { value: 6,  count: 2 },
+            business:    { value: 10, count: 3 },
+            stumbler:    { value: 16, count: 4 },
+            attendant:   { value: 5,  count: 1 },
+            marshal:     { value: 13, count: 3 },
+            unruly:      { value: 3,  count: 1 },
         },
 
         coinPool: null,
@@ -1233,11 +1386,14 @@
             this._currentScenario = scenario;
             this._forestAnimData = null;
             this._oceanAnimData = null;
+            this._airplaneAnimData = null;
 
             if (scenario === 'forest') {
                 this._setupForestScenario();
             } else if (scenario === 'ocean') {
                 this._setupOceanScenario();
+            } else if (scenario === 'airplane') {
+                this._setupAirplaneScenario();
             } else {
                 this._setupOfficeScenario();
             }
@@ -1559,15 +1715,148 @@
             }
         },
 
+        // ─── AIRPLANE SCENARIO SETUP ────────────────────────────────────────
+
+        _setupAirplaneScenario() {
+            // Airplane layout — two aisles separated by seat columns, dual doors
+            this._layout = {
+                laneWidth: CONFIG.laneWidth,           // 30
+                corridorWidth: CONFIG.corridorWidth,    // 12
+                corridorStart: CONFIG.corridorStart,    // 12
+                spawnWidth: 18,                         // enemies spawn across both aisles
+                doorZ: 8,                               // cubicle front wall
+                doorHalfWidth: 2,                       // each door opening half-width
+                minBuildZ: 10,                          // grid starts right at cubicle
+                // Dual-door / dual-lane airplane specifics
+                dualDoor: true,
+                leftDoorX: -5,
+                rightDoorX: 5,
+                leftAisleCenter: -6,
+                rightAisleCenter: 6,
+                aisleHalfWidth: 3,                      // each aisle is 6 units wide
+                seatColumns: [
+                    { xMin: -15, xMax: -9 },            // left window seats
+                    { xMin: -3, xMax: 3 },              // middle seats
+                    { xMin: 9, xMax: 15 },              // right window seats
+                ],
+                seatZMin: 12,
+                seatZMax: 66,
+            };
+
+            // Airplane lighting — warm dim cabin with cool window light
+            const ambient = new THREE.AmbientLight(PALETTE.airplaneAmbient, 0.7);
+            ambient.name = 'sceneLight';
+            this.scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(PALETTE.airplaneSun, 0.85);
+            sunLight.name = 'sceneLight';
+            sunLight.position.set(6, 40, 20);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 100;
+            sunLight.shadow.camera.left = -25;
+            sunLight.shadow.camera.right = 25;
+            sunLight.shadow.camera.top = 70;
+            sunLight.shadow.camera.bottom = -5;
+            this.scene.add(sunLight);
+
+            const rimLight = new THREE.DirectionalLight(PALETTE.airplaneRim, 0.35);
+            rimLight.name = 'sceneLight';
+            rimLight.position.set(-10, 15, 10);
+            this.scene.add(rimLight);
+
+            // Airplane fog — pressurized cabin atmosphere, short range
+            this.scene.fog = new THREE.Fog(PALETTE.airplaneFog, 55, 100);
+
+            // Cabin structure
+            const cabin = createAirplaneCabin();
+            this._environmentGroup.add(cabin);
+
+            // Seat columns
+            const seats = createAirplaneSeats();
+            this._environmentGroup.add(seats);
+
+            // Toilet cubicle
+            const cubicle = createAirplaneCubicle();
+            this._environmentGroup.add(cubicle);
+
+            // Toilet inside cubicle
+            this.toilet = createToilet();
+            this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
+            this.toilet.rotation.y = 0;
+            this.toilet.scale.set(0.7, 0.7, 0.7);
+            this._environmentGroup.add(this.toilet);
+
+            // Player character on the seat
+            this._createPlayerCharacter();
+
+            // Dual door (left + right, shared HP)
+            this.doorGroup = createAirplaneDoor();
+            this._environmentGroup.add(this.doorGroup);
+
+            // Props
+            this._environmentGroup.add(createAirplaneProps());
+
+            // Atmospheric LED strips
+            const lights = createCabinLightStrips();
+            this._environmentGroup.add(lights);
+
+            this._airplaneAnimData = {
+                lightStrips: lights.userData.strips || [],
+                lightSpots: lights.userData.spots || [],
+            };
+        },
+
+        _updateAirplaneEffects(time, dt) {
+            if (!this._airplaneAnimData) return;
+
+            // Subtle LED strip pulse
+            const strips = this._airplaneAnimData.lightStrips;
+            for (let i = 0; i < strips.length; i++) {
+                if (strips[i] && strips[i].material) {
+                    strips[i].material.opacity = 0.35 + 0.1 * Math.sin(time * 0.8 + i * 1.5);
+                }
+            }
+
+            // Reading lights flicker subtly
+            const spots = this._airplaneAnimData.lightSpots;
+            for (let i = 0; i < spots.length; i++) {
+                if (spots[i] && spots[i].material) {
+                    spots[i].material.opacity = 0.25 + 0.1 * Math.sin(time * 1.5 + i * 0.7);
+                }
+            }
+        },
+
+        // Helper: check if a grid cell is blocked by airplane seat columns
+        _isAirplaneBlocked(gridX, gridZ) {
+            if (this._currentScenario !== 'airplane') return false;
+            const layout = this._layout;
+            // Within seat row zone — check seat columns
+            if (gridZ >= layout.seatZMin && gridZ <= layout.seatZMax) {
+                for (const col of layout.seatColumns) {
+                    if (gridX >= col.xMin && gridX <= col.xMax) return true;
+                }
+            }
+            // Below seat rows — block cubicle center area
+            if (gridZ < layout.seatZMin && gridZ >= layout.minBuildZ) {
+                if (gridX >= -3 && gridX <= 3) return true; // cubicle center pillar
+            }
+            return false;
+        },
+
         // Returns current scenario's wave compositions and events
         _getWaveCompositions() {
             if (this._currentScenario === 'forest') return this.FOREST_WAVE_COMPOSITIONS;
             if (this._currentScenario === 'ocean') return this.OCEAN_WAVE_COMPOSITIONS;
+            if (this._currentScenario === 'airplane') return this.AIRPLANE_WAVE_COMPOSITIONS;
             return this.WAVE_COMPOSITIONS;
         },
         _getWaveEvents() {
             if (this._currentScenario === 'forest') return this.FOREST_WAVE_EVENTS;
             if (this._currentScenario === 'ocean') return this.OCEAN_WAVE_EVENTS;
+            if (this._currentScenario === 'airplane') return this.AIRPLANE_WAVE_EVENTS;
             return this.WAVE_EVENTS;
         },
 
@@ -2177,16 +2466,20 @@
                 const ud = this.doorGroup.userData;
                 ud.maxDoorHP = 100; // Reset to base (L1 modifies on acquire)
                 ud.doorHP = ud.maxDoorHP;
-                // Reset door color
-                if (ud.door) {
-                    ud.door.material.color.setHex(ud.originalColor);
-                    ud.door.material.emissive.setHex(0x000000);
-                    ud.door.material.emissiveIntensity = 0;
-                    ud.door.visible = true;
+                // Reset door color (all panels for dual-door)
+                const panels = ud.doorPanels || (ud.door ? [ud.door] : []);
+                for (const panel of panels) {
+                    panel.material.color.setHex(ud.originalColor);
+                    panel.material.emissive.setHex(0x000000);
+                    panel.material.emissiveIntensity = 0;
+                    panel.visible = true;
                 }
-                // Hide all cracks
+                // Hide all cracks (both doors)
                 if (ud.cracks) {
                     ud.cracks.forEach(c => { c.visible = false; });
+                }
+                if (ud.cracksRight) {
+                    ud.cracksRight.forEach(c => { c.visible = false; });
                 }
             }
             this.score = 0;
@@ -2644,17 +2937,25 @@
                         ud.cracks[2].visible = pct <= 0.40;
                         ud.cracks[3].visible = pct <= 0.20;
                         ud.cracks[4].visible = pct <= 0.10;
+                        if (ud.cracksRight) {
+                            ud.cracksRight[0].visible = pct <= 0.80;
+                            ud.cracksRight[1].visible = pct <= 0.60;
+                            ud.cracksRight[2].visible = pct <= 0.40;
+                            ud.cracksRight[3].visible = pct <= 0.20;
+                            ud.cracksRight[4].visible = pct <= 0.10;
+                        }
                     }
-                    // Update door color tint
-                    if (ud.door) {
-                        const pct = ud.doorHP / ud.maxDoorHP;
-                        if (pct < 1.0) {
-                            const r = Math.min(1.0, 0.55 + (1 - pct) * 0.45);
-                            const g = 0.41 * pct;
-                            const b = 0.08 * pct;
-                            ud.door.material.color.setRGB(r, g, b);
-                            ud.door.material.emissive.setHex(0xff0000);
-                            ud.door.material.emissiveIntensity = (1 - pct) * 0.3;
+                    // Update door color tint (all panels for dual-door)
+                    const restorePanels = ud.doorPanels || (ud.door ? [ud.door] : []);
+                    const pctRestore = ud.doorHP / ud.maxDoorHP;
+                    if (pctRestore < 1.0) {
+                        const r = Math.min(1.0, 0.55 + (1 - pctRestore) * 0.45);
+                        const g = 0.41 * pctRestore;
+                        const b = 0.08 * pctRestore;
+                        for (const panel of restorePanels) {
+                            panel.material.color.setRGB(r, g, b);
+                            panel.material.emissive.setHex(0xff0000);
+                            panel.material.emissiveIntensity = (1 - pctRestore) * 0.3;
                         }
                     }
                 }
@@ -2881,6 +3182,8 @@
             const maxZ = CONFIG.laneLength - 4; // leave clearance before exit doors
 
             if (gx < -halfW || gx > halfW || gz < minZ || gz > maxZ) return null;
+            // Airplane: reject cells blocked by seat columns or cubicle center
+            if (this._isAirplaneBlocked(gx, gz)) return null;
             return { x: gx, z: gz };
         },
 
@@ -3089,21 +3392,28 @@
 
             this._slidingPots.push(slidingPot);
 
-            // Trip the kicker — face-plant stun
-            if (window.SFX) { SFX.play('pot_trip'); SFX.play('stun_impact'); }
-            kicker.hp -= def.tripDamage;
-            kicker.hitFlash = 0.15;
-            kicker.stunTimer = def.stunDuration;
-            kicker.tripFallDuration = def.stunDuration;
-            if (kicker.animController) {
-                kicker.animController.playOneShot('hit_react');
-                kicker.animController.setTimeScale(0);
+            // Trip the kicker — face-plant stun (skipped for tripImmune enemies)
+            const kickerDef = this.ENEMY_TYPES[kicker.type];
+            if (kickerDef && kickerDef.tripImmune) {
+                // tripImmune: takes damage but no stun
+                kicker.hp -= def.tripDamage;
+                kicker.hitFlash = 0.15;
+            } else {
+                if (window.SFX) { SFX.play('pot_trip'); SFX.play('stun_impact'); }
+                kicker.hp -= def.tripDamage;
+                kicker.hitFlash = 0.15;
+                kicker.stunTimer = def.stunDuration;
+                kicker.tripFallDuration = def.stunDuration;
+                if (kicker.animController) {
+                    kicker.animController.playOneShot('hit_react');
+                    kicker.animController.setTimeScale(0);
+                }
+                if (kicker.bashing) {
+                    kicker.bashing = false;
+                    kicker.bashingBarrier = null;
+                }
+                kicker._impactSquash = 0.18;
             }
-            if (kicker.bashing) {
-                kicker.bashing = false;
-                kicker.bashingBarrier = null;
-            }
-            kicker._impactSquash = 0.18;
 
             this._globalHitstop = Math.max(this._globalHitstop, 0.04);
             this._cameraShake = 0.1;
@@ -4705,8 +5015,8 @@
             const enemyType = this._spawnQueue.shift();
 
             // The Girls / Raccoons / Jellyfish — spawn as a tight cluster picking a lane
-            if (enemyType === 'girls_group' || enemyType === 'raccoon_group' || enemyType === 'jellyfish_group') {
-                const actualType = enemyType === 'girls_group' ? 'girls' : enemyType === 'raccoon_group' ? 'raccoon' : 'jellyfish';
+            if (enemyType === 'girls_group' || enemyType === 'raccoon_group' || enemyType === 'jellyfish_group' || enemyType === 'unruly_group') {
+                const actualType = enemyType === 'girls_group' ? 'girls' : enemyType === 'raccoon_group' ? 'raccoon' : enemyType === 'unruly_group' ? 'unruly' : 'jellyfish';
                 const def = this.ENEMY_TYPES[actualType];
                 if (!def) return;
                 const laneOptions = [-4, 0, 4];
@@ -4731,8 +5041,29 @@
         },
 
         _pickLane(enemyType, def, opts) {
-            // Girls use their pre-assigned shared lane
+            // Girls/Unruly use their pre-assigned shared lane
             if (opts.targetLane !== undefined) return opts.targetLane;
+
+            // Airplane dual-lane: pick left or right aisle
+            if (this._currentScenario === 'airplane' && this._layout && this._layout.dualDoor) {
+                const layout = this._layout;
+                const isLeftAisle = Math.random() < 0.5;
+                const aisleCenter = isLeftAisle ? layout.leftAisleCenter : layout.rightAisleCenter;
+                const flankChance = def.flankChance || 0.15;
+                let offset;
+                if (Math.random() < flankChance) {
+                    // Flankers go toward the outer/inner edge of their aisle
+                    offset = (Math.random() < 0.5 ? -1 : 1) * (1.5 + Math.random() * 1.0);
+                } else {
+                    // Center of aisle with jitter
+                    offset = (Math.random() - 0.5) * 3;
+                }
+                // Clamp within aisle bounds
+                return Math.max(
+                    aisleCenter - layout.aisleHalfWidth + 0.5,
+                    Math.min(aisleCenter + layout.aisleHalfWidth - 0.5, aisleCenter + offset)
+                );
+            }
 
             // Scale lane positions based on scenario lane width
             const scale = this._layout ? this._layout.laneWidth / 30 : 1;
@@ -4875,12 +5206,19 @@
                 pirate: 'walk',
                 seaturtle: 'walk',
                 jellyfish: 'walk',
+                // Airplane
+                nervous: 'walk',
+                business: 'walk',
+                stumbler: 'waddle',
+                attendant: 'walk',
+                marshal: 'power_walk',
+                unruly: 'walk',
             };
             enemy.walkState = initialStates[enemyType] || 'walk';
             ac.setState(enemy.walkState);
 
             // Girls/Raccoons/Jellyfish: random phase offset for visual variety in clusters
-            if (enemyType === 'girls' || enemyType === 'raccoon' || enemyType === 'jellyfish') {
+            if (enemyType === 'girls' || enemyType === 'raccoon' || enemyType === 'jellyfish' || enemyType === 'unruly') {
                 ac.mixer.time = Math.random() * 2.0;
             }
 
@@ -4897,7 +5235,7 @@
             }
 
             // L11: False Alarm — mark one panicker per wave for inverted aura
-            if ((enemyType === 'panicker' || enemyType === 'fox' || enemyType === 'pirate') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
+            if ((enemyType === 'panicker' || enemyType === 'fox' || enemyType === 'pirate' || enemyType === 'marshal') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
                 if (!this._falseAlarmUsed) {
                     enemy._falseAlarmInverted = true;
                     this._falseAlarmUsed = true;
@@ -5068,32 +5406,37 @@
 
                     // L9: Ubik Flood — lingering spray damage zones
                     if (this._ubikFloodZones.length > 0) {
+                        const floodDef = this.ENEMY_TYPES[e.type] || {};
+                        const floodSprayMult = 1.0 - (floodDef.sprayResist || 0);
                         for (const fz of this._ubikFloodZones) {
                             const fdx = e.x - fz.x;
                             const fdz = e.z - fz.z;
                             if (fdx * fdx + fdz * fdz < fz.radius * fz.radius) {
-                                e.hp -= 2 * dt; // 2 dps
+                                e.hp -= 2 * floodSprayMult * dt; // 2 dps (reduced by sprayResist)
                                 break;
                             }
                         }
                     }
                 }
 
-                // Speed aura — panicker/fox make nearby enemies 50% faster
+                // Speed aura — panicker/fox/pirate/marshal make nearby enemies faster
                 // L11: False Alarm — inverted panickers slow nearby enemies instead
                 let auraMult = 1.0;
-                const isAuraType = e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate';
+                const isAuraType = e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate' || e.type === 'marshal';
                 if (!isAuraType) {
                     for (const other of this.enemies) {
-                        if ((other.type !== 'panicker' && other.type !== 'fox' && other.type !== 'pirate') || other.bashing) continue;
+                        if ((other.type !== 'panicker' && other.type !== 'fox' && other.type !== 'pirate' && other.type !== 'marshal') || other.bashing) continue;
+                        const oDef = this.ENEMY_TYPES[other.type] || {};
+                        const auraRange = oDef.speedAuraRange || 8;
+                        const auraBonus = oDef.speedAuraBonus || 0.5;
                         const adx = e.x - other.x;
                         const adz = e.z - other.z;
-                        if (adx * adx + adz * adz < 64) { // range 8
+                        if (adx * adx + adz * adz < auraRange * auraRange) {
                             if (other._falseAlarmInverted) {
                                 // L11: Inverted aura — slows 30%
                                 auraMult = Math.min(auraMult, 0.7);
                             } else {
-                                auraMult = Math.max(auraMult, 1.5);
+                                auraMult = Math.max(auraMult, 1.0 + auraBonus);
                             }
                         }
                     }
@@ -5313,7 +5656,7 @@
                 // Move toward toilet (skip if bashing the door or stunned)
                 if (!e.bashing && e.stunTimer <= 0) {
                     // Tank panic — speeds up when badly hurt (waddle tank + bear + shark)
-                    if ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && !e.panicked && e.hp < e.maxHp * 0.5) {
+                    if ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark' || e.type === 'stumbler') && !e.panicked && e.hp < e.maxHp * 0.5) {
                         e.panicked = true;
                         e.speed *= 2.0;
                         e.animController.setState('panic_sprint');
@@ -5339,18 +5682,38 @@
                     } else {
                         // Phase 3: Converge toward toilet — funnel into corridor
                         const t = Math.max(0, (e.z - CONFIG.toiletPos.z) / (convergeZ - CONFIG.toiletPos.z));
-                        const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
-                            ? this._layout.doorHalfWidth : 6;
-                        // Clamp target to door width as enemies approach
-                        const rawTarget = e.targetLane * t;
-                        const maxSpread = doorHW + (Math.abs(e.targetLane) - doorHW) * Math.pow(t, 0.5);
-                        const targetX = Math.max(-maxSpread, Math.min(maxSpread, rawTarget));
-                        const dxToTarget = targetX - e.x;
-                        e.x += dxToTarget * dt * 2.5;
+
+                        if (this._currentScenario === 'airplane' && this._layout && this._layout.dualDoor) {
+                            // Airplane: converge toward the appropriate door based on aisle
+                            const doorX = e.x < 0 ? this._layout.leftDoorX : this._layout.rightDoorX;
+                            const dxToDoor = doorX - e.x;
+                            e.x += dxToDoor * dt * (2.0 + (1 - t) * 1.5);
+                        } else {
+                            const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
+                                ? this._layout.doorHalfWidth : 6;
+                            // Clamp target to door width as enemies approach
+                            const rawTarget = e.targetLane * t;
+                            const maxSpread = doorHW + (Math.abs(e.targetLane) - doorHW) * Math.pow(t, 0.5);
+                            const targetX = Math.max(-maxSpread, Math.min(maxSpread, rawTarget));
+                            const dxToTarget = targetX - e.x;
+                            e.x += dxToTarget * dt * 2.5;
+                        }
                     }
 
-                    // Panicker/Fox/Pirate zig-zag — slight lateral wobble
-                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate') {
+                    // Airplane: clamp enemies to their aisle (prevent crossing seat columns)
+                    if (this._currentScenario === 'airplane' && this._layout && this._layout.dualDoor) {
+                        const layout = this._layout;
+                        if (e.z >= layout.seatZMin && e.z <= layout.seatZMax) {
+                            const inLeftAisle = e.targetLane < 0;
+                            const aisleCenter = inLeftAisle ? layout.leftAisleCenter : layout.rightAisleCenter;
+                            const aisleMin = aisleCenter - layout.aisleHalfWidth;
+                            const aisleMax = aisleCenter + layout.aisleHalfWidth;
+                            e.x = Math.max(aisleMin, Math.min(aisleMax, e.x));
+                        }
+                    }
+
+                    // Panicker/Fox/Pirate/Marshal zig-zag — slight lateral wobble
+                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate' || e.type === 'marshal') {
                         e.x += Math.sin(e.walkPhase * 0.5) * dt * 0.5;
                     }
 
@@ -5371,7 +5734,13 @@
                             const barrierBashRange = bt.gridZ + 1.2;
                             if (e.z <= barrierBashRange && e.z >= bt.gridZ - 1.5) {
                                 const eDef = this.ENEMY_TYPES[e.type];
-                                if (eDef && eDef.canJumpBarrier) {
+                                if (eDef && eDef.barrierBust) {
+                                    // Stumbler plows through the barrier, destroying it instantly
+                                    bt.hp = 0;
+                                    if (window.SFX) SFX.play('barrier_hit');
+                                    this._destroyTower(ti);
+                                    break;
+                                } else if (eDef && eDef.canJumpBarrier) {
                                     // Dancer jumps over the barrier
                                     e.jumping = true;
                                     e.jumpTimer = 0;
@@ -5423,6 +5792,7 @@
                                     this._spawnPotShatter(t.gridX, t.gridZ);
                                     if (window.SFX) SFX.play('pot_shatter');
                                 }
+                                // tripImmune handled inside _kickPotPlant
                                 this._kickPotPlant(ti, e);
                                 continue;
                             }
@@ -5648,12 +6018,23 @@
                     e.mesh.position.z = e.z;
 
                     // Clamp X to door opening width (enemies must bash the actual door)
-                    const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
-                        ? this._layout.doorHalfWidth : 5;
-                    if (Math.abs(e.x) > doorHW) {
-                        const pullTarget = Math.sign(e.x) * doorHW;
-                        e.x += (pullTarget - e.x) * Math.min(1, dt * 6);
-                        e.mesh.position.x = e.x;
+                    if (this._layout && this._layout.dualDoor) {
+                        // Dual-door: pull toward left or right door based on aisle
+                        const doorX = e.x < 0 ? this._layout.leftDoorX : this._layout.rightDoorX;
+                        const doorHW = this._layout.doorHalfWidth || 2;
+                        if (Math.abs(e.x - doorX) > doorHW) {
+                            const pullTarget = doorX + Math.sign(e.x - doorX) * doorHW;
+                            e.x += (pullTarget - e.x) * Math.min(1, dt * 6);
+                            e.mesh.position.x = e.x;
+                        }
+                    } else {
+                        const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
+                            ? this._layout.doorHalfWidth : 5;
+                        if (Math.abs(e.x) > doorHW) {
+                            const pullTarget = Math.sign(e.x) * doorHW;
+                            e.x += (pullTarget - e.x) * Math.min(1, dt * 6);
+                            e.mesh.position.x = e.x;
+                        }
                     }
 
                     // Initialize bashing state (5G)
@@ -5673,8 +6054,8 @@
                     // Bash animation
                     e.bashTimer -= dt;
                     const camDist = e.mesh.position.distanceTo(this.camera.position);
-                    // 6D: panicker/fox/pirate aura glow while bashing
-                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate') {
+                    // 6D: panicker/fox/pirate/marshal aura glow while bashing
+                    if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate' || e.type === 'marshal') {
                         const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -5739,6 +6120,14 @@
                             ud.cracks[2].visible = pct <= 0.40;
                             ud.cracks[3].visible = pct <= 0.20;
                             ud.cracks[4].visible = pct <= 0.10;
+                            // Dual-door: mirror cracks on right door
+                            if (ud.cracksRight) {
+                                ud.cracksRight[0].visible = pct <= 0.80;
+                                ud.cracksRight[1].visible = pct <= 0.60;
+                                ud.cracksRight[2].visible = pct <= 0.40;
+                                ud.cracksRight[3].visible = pct <= 0.20;
+                                ud.cracksRight[4].visible = pct <= 0.10;
+                            }
                         }
 
                         // Tint door color toward red as HP decreases
@@ -5747,9 +6136,13 @@
                             const r = Math.min(1.0, 0.55 + (1 - pct) * 0.45);
                             const g = 0.41 * pct;
                             const b = 0.08 * pct;
-                            ud.door.material.color.setRGB(r, g, b);
-                            ud.door.material.emissive.setHex(0xff0000);
-                            ud.door.material.emissiveIntensity = (1 - pct) * 0.3;
+                            // Apply tint to all door panels (dual-door: both left + right)
+                            const panels = ud.doorPanels || [ud.door];
+                            for (const panel of panels) {
+                                panel.material.color.setRGB(r, g, b);
+                                panel.material.emissive.setHex(0xff0000);
+                                panel.material.emissiveIntensity = (1 - pct) * 0.3;
+                            }
                         }
 
                         this.updateHUD();
@@ -5979,8 +6372,21 @@
 
                 // Coin Magnet — auto-collect dropped coins in range
                 if (t.type === 'coinmagnet') {
+                    // magnetDisableRange: Air Marshal jams nearby coin magnets
+                    let magnetJammed = false;
+                    for (const e of this.enemies) {
+                        if (e.dying) continue;
+                        const eDef = this.ENEMY_TYPES[e.type] || {};
+                        if (eDef.magnetDisableRange) {
+                            const dx = e.x - t.gridX, dz = e.z - t.gridZ;
+                            if (dx * dx + dz * dz < eDef.magnetDisableRange * eDef.magnetDisableRange) {
+                                magnetJammed = true;
+                                break;
+                            }
+                        }
+                    }
                     t.magnetTimer = (t.magnetTimer || 0) - dt;
-                    if (t.magnetTimer <= 0) {
+                    if (t.magnetTimer <= 0 && !magnetJammed) {
                         t.magnetTimer = t.def.magnetInterval;
                         if (this.coinPool) {
                             // C1: Overclocked Magnet — extended range
@@ -6242,8 +6648,15 @@
                                     // L8: Nuclear Mop — 4x knockback
                                     const nuclearMopMult = (this.upgradeManager && this.upgradeManager.hasUpgrade('L8')) ? 4 : 1;
                                     const kbForce = t.def.knockback * kbMult * nuclearMopMult * leverScale * KNOCKBACK_DECAY;
-                                    e.knockbackVX = kbX * kbForce;
-                                    e.knockbackVZ = kbZ * kbForce;
+                                    // knockbackImmune enemies (business class) resist knockback entirely
+                                    const eDef = this.ENEMY_TYPES[e.type];
+                                    if (eDef && eDef.knockbackImmune) {
+                                        e.knockbackVX = 0;
+                                        e.knockbackVZ = 0;
+                                    } else {
+                                        e.knockbackVX = kbX * kbForce;
+                                        e.knockbackVZ = kbZ * kbForce;
+                                    }
                                     // R2: tag for Mop Splash (knockback through wet floor zone)
                                     e._mopKnockbackActive = true;
                                     e._mopSplashDone = false;
@@ -6575,8 +6988,11 @@
                             lateral < halfWidth + e.size * 0.5) {
                             // R1: Wet & Soapy — 2x damage if enemy is in a slow zone
                             const dmgMult = (hasWetSoapy && e._inSlowZone) ? 2 : 1;
+                            // sprayResist: Flight Attendant takes reduced Ubik damage
+                            const eDef = this.ENEMY_TYPES[e.type] || {};
+                            const sprayMult = 1.0 - (eDef.sprayResist || 0);
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            e.hp -= s.damage * dmgMult * (this._desperateMeasures ? 2 : 1);
+                            e.hp -= s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1);
                             e.hitFlash = 0.15;
                             if (e.animController && !e.dying) {
                                 e.animController.playOneShot('hit_react');
@@ -7026,10 +7442,12 @@
             // SFX: toilet flush + door shatter for epic cinematic
             if (window.SFX) { SFX.play('toilet_flush'); SFX.play('door_shatter'); }
 
-            // Hide the intact door panel and cracks
+            // Hide the intact door panels and cracks (all panels for dual-door)
             const ud = this.doorGroup.userData;
-            if (ud.door) ud.door.visible = false;
+            const shatterPanels = ud.doorPanels || (ud.door ? [ud.door] : []);
+            for (const panel of shatterPanels) panel.visible = false;
             if (ud.cracks) ud.cracks.forEach(c => c.visible = false);
+            if (ud.cracksRight) ud.cracksRight.forEach(c => c.visible = false);
 
             // === MASSIVE DOOR EXPLOSION — 50 shards blasting forward ===
             const shardCount = 50;
@@ -7562,6 +7980,8 @@
                 this._updateForestEffects(this.clock.elapsedTime, rawDt);
             } else if (this._currentScenario === 'ocean') {
                 this._updateOceanEffects(this.clock.elapsedTime, rawDt);
+            } else if (this._currentScenario === 'airplane') {
+                this._updateAirplaneEffects(this.clock.elapsedTime, rawDt);
             }
 
             // Update player character animation

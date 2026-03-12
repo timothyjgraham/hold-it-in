@@ -353,3 +353,23 @@ export function matForestSunbeam(opacity = 0.1) {
         depthWrite: false,
     });
 }
+
+// ─── Airplane scenario presets ───────────────────────────────────────────────
+export function matAirplaneCarpet()   { return toonMat(PALETTE.airplaneCarpet); }
+export function matAirplaneFloor()    { return toonMat(PALETTE.airplaneFloor); }
+export function matAirplaneSeat()     { return toonMat(PALETTE.airplaneSeat); }
+export function matAirplaneSeatBack() { return toonMat(PALETTE.airplaneSeatBack); }
+export function matAirplaneOverhead() { return toonMat(PALETTE.airplaneOverhead); }
+export function matAirplaneWall()     { return toonMat(PALETTE.airplaneWall); }
+export function matAirplaneWindow()   { return toonMat(PALETTE.airplaneWindow, { emissive: PALETTE.airplaneWindow, emissiveIntensity: 0.3 }); }
+export function matAirplaneCeiling()  { return toonMat(PALETTE.airplaneCeiling); }
+export function matAirplaneCubicle()  { return toonMat(PALETTE.airplaneCubicle); }
+export function matAirplaneStrip(opacity = 0.6) {
+    return new THREE.MeshBasicMaterial({
+        color: PALETTE.airplaneStrip,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+}

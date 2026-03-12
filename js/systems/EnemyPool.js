@@ -26,6 +26,13 @@ const PRE_ALLOC = {
     pirate: 5,
     seaturtle: 5,
     jellyfish: 7,
+    // Airplane
+    nervous: 10,
+    business: 5,
+    stumbler: 5,
+    attendant: 5,
+    marshal: 5,
+    unruly: 7,
 };
 
 /**
@@ -244,6 +251,13 @@ export class EnemyPool {
             pirate: 0x8b2020,
             seaturtle: 0x4a8a50,
             jellyfish: 0xd080c0,
+            // Airplane
+            nervous: 0xd4c4a4,
+            business: 0x2a3a5a,
+            stumbler: 0x7ab87a,
+            attendant: 0xc03040,
+            marshal: 0x4a4a5a,
+            unruly: 0xe87830,
         };
         return colors[type] || 0xcccccc;
     }

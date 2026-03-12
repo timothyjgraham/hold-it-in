@@ -160,6 +160,38 @@ export const PALETTE = {
     oceanSun:        0xfff0d0,  // Warm sunlight on water
     oceanRim:        0x80b0d0,  // Cool rim light — ocean reflection
 
+    // ─── AIRPLANE ENVIRONMENT ─────────────────────────────────────────────
+    // Commercial airliner cabin interior — warm dim lighting, neutral upholstery
+
+    airplaneCarpet:     0x2a3a5a,  // Dark navy cabin carpet
+    airplaneSeat:       0x5a6a7a,  // Grey-blue fabric seat cushion
+    airplaneSeatBack:   0x4a5a6a,  // Slightly darker seat back
+    airplaneOverhead:   0xd8d4cc,  // Off-white overhead bin panels
+    airplaneWall:       0xc8c4bc,  // Beige cabin wall panel
+    airplaneWindow:     0x88c8e8,  // Sky blue through window portals
+    airplaneCeiling:    0xe0dcd4,  // Light cream cabin ceiling
+    airplaneCubicle:    0xb8b2a8,  // Light grey toilet cubicle panels
+    airplaneDoor:       0xa8a298,  // Cubicle fold-door panel
+    airplaneFog:        0x2a2a3a,  // Dark pressurized-cabin atmosphere
+    airplaneStrip:      0xffeebb,  // Warm LED strip light glow
+    airplaneFloor:      0x3a4a5a,  // Darker aisle carpet strip
+
+    // ─── AIRPLANE ENEMIES ─────────────────────────────────────────────────
+    // Air travelers — each a distinct archetype with warm/human tones
+
+    airplaneNervous:    0xd4c4a4,  // Sandy beige — anxious, sweating
+    airplaneBusiness:   0x2a3a5a,  // Dark navy — expensive suit
+    airplaneStumbler:   0x7ab87a,  // Queasy green — motion sick
+    airplaneAttendant:  0xc03040,  // Airline burgundy — professional
+    airplaneMarshal:    0x4a4a5a,  // Dark charcoal — undercover authority
+    airplaneUnruly:     0xe87830,  // Party orange — rowdy passenger
+
+    // ─── AIRPLANE LIGHTING ────────────────────────────────────────────────
+
+    airplaneAmbient:    0x504848,  // Warm dim cabin ambient
+    airplaneSun:        0xfff8e0,  // Warm overhead LED strip
+    airplaneRim:        0x6080a0,  // Cool window-spill blue
+
     // ─── RARITY GLOW ────────────────────────────────────────────────────────
     // Emissive/glow colors per upgrade rarity tier
 
@@ -200,6 +232,11 @@ export const OUTLINE_WIDTH = {
     oceanSmall:     0.02,   // Flying Fish, Jellyfish
     oceanMed:       0.03,   // Dolphin, Sea Turtle, Pirate
     oceanLarge:     0.04,   // Shark
+
+    // Airplane characters
+    airplaneSmall:  0.02,   // Unruly Passengers
+    airplaneMed:    0.03,   // Nervous Flyer, Business Class, Flight Attendant
+    airplaneLarge:  0.04,   // Turbulence Stumbler
 };
 
 // ─── GRADIENT MAP TONES ───────────────────────────────────────────────────────

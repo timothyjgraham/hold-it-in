@@ -1050,4 +1050,305 @@ export const ENEMY_VISUAL_CONFIG = {
         },
         restPose: {},
     },
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // AIRPLANE ENEMIES — air travelers, all biped humanoids
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // ─── NERVOUS FLYER ─── wave 1, baseline, 11 bones
+    nervous: {
+        size: 1.5,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.80,  z: 0 },
+            spine:       { x: 0,     y: 0.25,  z: 0 },
+            chest:       { x: 0,     y: 0.30,  z: 0 },
+            neck:        { x: 0,     y: 0.20,  z: 0 },
+            head:        { x: 0,     y: 0.25,  z: 0 },
+            upperArm_L:  { x: -0.45, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.45,  y: 0.05,  z: 0 },
+            upperLeg_L:  { x: -0.15, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.15,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.40, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.40, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.80,
+            torsoHeight: 1.40,
+            torsoDepth: 0.50,
+            headRadius: 0.35,
+            limbThickness: 0.25,
+            legHeight: 0.80,
+            legSpacing: 0.15,
+        },
+        materialColors: {
+            body: PALETTE.airplaneNervous,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 1.0,
+            bobHeight: 0.06,
+            legSwing: 0.52,
+            armSwing: 0.40,
+            spineForwardLean: 0.12,    // slightly hunched, anxious
+        },
+        restPose: {},
+    },
+
+    // ─── BUSINESS CLASS ─── wave 3, mop-immune, 11 bones
+    business: {
+        size: 1.5,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.85,  z: 0 },
+            spine:       { x: 0,     y: 0.28,  z: 0 },
+            chest:       { x: 0,     y: 0.32,  z: 0 },
+            neck:        { x: 0,     y: 0.22,  z: 0 },
+            head:        { x: 0,     y: 0.25,  z: 0 },
+            upperArm_L:  { x: -0.50, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.50,  y: 0.05,  z: 0 },
+            upperLeg_L:  { x: -0.17, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.17,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.42, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.42, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.90,      // broader shoulders
+            torsoHeight: 1.50,
+            torsoDepth: 0.50,
+            headRadius: 0.33,
+            limbThickness: 0.24,
+            legHeight: 0.85,
+            legSpacing: 0.17,
+        },
+        materialColors: {
+            body: PALETTE.airplaneBusiness,
+            skin: PALETTE.skin,
+            legs: PALETTE.airplaneBusiness,  // matching suit pants
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.9,
+            bobHeight: 0.03,       // minimal bounce — dignified
+            legSwing: 0.45,
+            armSwing: 0.20,        // arms close to body
+            spineForwardLean: 0.04, // very upright, entitled posture
+        },
+        restPose: {},
+    },
+
+    // ─── TURBULENCE STUMBLER ─── wave 5, barrier buster tank, 15 bones
+    stumbler: {
+        size: 2.0,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: true,
+            feet: true,
+            belly: true,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.85,  z: 0 },
+            spine:       { x: 0,     y: 0.25,  z: 0 },
+            chest:       { x: 0,     y: 0.28,  z: 0 },
+            neck:        { x: 0,     y: 0.18,  z: 0 },
+            head:        { x: 0,     y: 0.22,  z: 0 },
+            belly:       { x: 0,     y: 0.15,  z: 0.12 },
+            upperArm_L:  { x: -0.50, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.50,  y: 0.05,  z: 0 },
+            forearm_L:   { x: 0,     y: -0.30, z: 0 },
+            forearm_R:   { x: 0,     y: -0.30, z: 0 },
+            upperLeg_L:  { x: -0.20, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.20,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.38, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.38, z: 0 },
+            foot_L:      { x: 0,     y: -0.38, z: 0.10 },
+            foot_R:      { x: 0,     y: -0.38, z: 0.10 },
+        },
+        bodyDimensions: {
+            torsoWidth: 1.00,
+            torsoHeight: 1.30,
+            torsoDepth: 0.65,
+            headRadius: 0.38,
+            limbThickness: 0.30,
+            legHeight: 0.75,
+            legSpacing: 0.20,
+            bellyRadius: 0.45,     // big belly — ate the fish
+        },
+        materialColors: {
+            body: PALETTE.airplaneStumbler,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 1.4,
+            bobHeight: 0.08,
+            legSwing: 0.40,
+            armSwing: 0.55,        // arms out for balance
+            spineForwardLean: 0.18, // hunched, nauseous
+            bodyRock: 0.20,        // side-to-side stumble
+            bellyJiggle: 0.06,
+        },
+        restPose: {},
+    },
+
+    // ─── FLIGHT ATTENDANT ─── wave 7, spray resistant, 9 bones (slim, fast)
+    attendant: {
+        size: 1.3,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.75,  z: 0 },
+            spine:       { x: 0,     y: 0.25,  z: 0 },
+            chest:       { x: 0,     y: 0.30,  z: 0 },
+            neck:        { x: 0,     y: 0.20,  z: 0 },
+            head:        { x: 0,     y: 0.23,  z: 0 },
+            upperArm_L:  { x: -0.38, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.38,  y: 0.05,  z: 0 },
+            upperLeg_L:  { x: -0.12, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.12,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.38, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.38, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.70,
+            torsoHeight: 1.45,
+            torsoDepth: 0.40,
+            headRadius: 0.30,
+            limbThickness: 0.20,
+            legHeight: 0.75,
+            legSpacing: 0.12,
+        },
+        materialColors: {
+            body: PALETTE.airplaneAttendant,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.6,
+            bobHeight: 0.04,
+            legSwing: 0.55,
+            armSwing: 0.30,
+            spineForwardLean: 0.05, // very upright, professional
+        },
+        restPose: {},
+    },
+
+    // ─── AIR MARSHAL ─── wave 9, slow immune + magnet disabler, 13 bones
+    marshal: {
+        size: 1.6,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: true,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.85,  z: 0 },
+            spine:       { x: 0,     y: 0.28,  z: 0 },
+            chest:       { x: 0,     y: 0.32,  z: 0 },
+            neck:        { x: 0,     y: 0.20,  z: 0 },
+            head:        { x: 0,     y: 0.25,  z: 0 },
+            upperArm_L:  { x: -0.48, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.48,  y: 0.05,  z: 0 },
+            forearm_L:   { x: 0,     y: -0.32, z: 0 },
+            forearm_R:   { x: 0,     y: -0.32, z: 0 },
+            upperLeg_L:  { x: -0.18, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.18,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.42, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.42, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.88,
+            torsoHeight: 1.50,
+            torsoDepth: 0.52,
+            headRadius: 0.34,
+            limbThickness: 0.26,
+            legHeight: 0.85,
+            legSpacing: 0.18,
+        },
+        materialColors: {
+            body: PALETTE.airplaneMarshal,
+            skin: PALETTE.skin,
+            legs: PALETTE.airplaneMarshal, // matching dark suit
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.85,
+            bobHeight: 0.03,
+            legSwing: 0.48,
+            armSwing: 0.25,        // arms close, compact stride
+            spineForwardLean: 0.06,
+        },
+        restPose: {},
+    },
+
+    // ─── UNRULY PASSENGERS ─── wave 10, swarm, trip immune, 9 bones (no arms)
+    unruly: {
+        size: 0.85,
+        bones: {
+            neck: true,
+            upperArms: false,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.65,  z: 0 },
+            spine:       { x: 0,     y: 0.20,  z: 0 },
+            chest:       { x: 0,     y: 0.22,  z: 0 },
+            neck:        { x: 0,     y: 0.15,  z: 0 },
+            head:        { x: 0,     y: 0.20,  z: 0 },
+            upperLeg_L:  { x: -0.10, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.10,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.32, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.32, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.75,
+            torsoHeight: 1.30,
+            torsoDepth: 0.45,
+            headRadius: 0.33,
+            limbThickness: 0.22,
+            legHeight: 0.65,
+            legSpacing: 0.10,
+        },
+        materialColors: {
+            body: PALETTE.airplaneUnruly,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.5,
+            bobHeight: 0.12,
+            legSwing: 0.20,
+            armSwing: 0,
+            spineForwardLean: 0.10,
+            bodyRock: 0.22,        // swaying, unsteady
+        },
+        restPose: {},
+    },
 };
