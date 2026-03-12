@@ -34,7 +34,9 @@ export function createEnemyModel(enemyType, color, isDesperate, size) {
     if (!builder) {
         throw new Error(`EnemyModelFactory: no geometry builder for "${enemyType}"`);
     }
-    const { geometries, transforms, materialIndices } = builder(size, config);
+    const builderResult = builder(size, config);
+    const { geometries, transforms, materialIndices } = builderResult;
+    const boneNames = builderResult.boneNames || null;
 
     // 4. We need to merge geometry per material group
     // Group geometry by material index: 0=body, 1=skin, 2=legs
@@ -43,6 +45,28 @@ export function createEnemyModel(enemyType, color, isDesperate, size) {
         const mi = materialIndices[i];
         groups[mi].geoms.push(geometries[i]);
         groups[mi].xforms.push(transforms[i]);
+    }
+
+    // Build per-vertex bone override mapping (follows final merge order: groups 0,1,2)
+    let vertexBoneMap = null;
+    if (boneNames) {
+        const vertexCounts = geometries.map(g => g.attributes.position.count);
+        // Track which original geometry indices went into each material group
+        const groupOrigIndices = { 0: [], 1: [], 2: [] };
+        for (let i = 0; i < geometries.length; i++) {
+            groupOrigIndices[materialIndices[i]].push(i);
+        }
+        vertexBoneMap = [];
+        for (const mi of [0, 1, 2]) {
+            if (groups[mi].geoms.length === 0) continue;
+            for (const origIdx of groupOrigIndices[mi]) {
+                const bn = boneNames[origIdx];
+                const vc = vertexCounts[origIdx];
+                for (let v = 0; v < vc; v++) {
+                    vertexBoneMap.push(bn);
+                }
+            }
+        }
     }
 
     // Merge all groups into one geometry with material groups
@@ -72,7 +96,7 @@ export function createEnemyModel(enemyType, color, isDesperate, size) {
     }
 
     // 5. Compute skinIndex and skinWeight
-    _computeSkinWeights(finalGeometry, bones, boneMap, enemyType, size);
+    _computeSkinWeights(finalGeometry, bones, boneMap, enemyType, size, vertexBoneMap);
 
     // 6. Create SkinnedMesh with multi-material
     const materialArray = [materials.body, materials.skin, materials.legs];
@@ -142,7 +166,8 @@ function _buildPoliteKnockerGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    return { geometries, transforms, materialIndices };
+    const boneNames = [null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
 }
 
 function _buildPeeDancerGeometry(size, config) {
@@ -234,7 +259,8 @@ function _buildWaddleTankGeometry(size, config) {
     geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
     geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
 
-    return { geometries, transforms, materialIndices };
+    const boneNames = [null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
 }
 
 function _buildPanickerGeometry(size, config) {
@@ -280,7 +306,8 @@ function _buildPanickerGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    return { geometries, transforms, materialIndices };
+    const boneNames = [null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
 }
 
 function _buildPowerWalkerGeometry(size, config) {
@@ -333,7 +360,8 @@ function _buildPowerWalkerGeometry(size, config) {
     geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
     geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
 
-    return { geometries, transforms, materialIndices };
+    const boneNames = [null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
 }
 
 function _buildGirlsGeometry(size, config) {
@@ -390,7 +418,7 @@ const _geometryBuilders = {
 // Auto-skinning — assign skinIndex/skinWeight by proximity
 // ═══════════════════════════════════════════════════════
 
-function _computeSkinWeights(geometry, bones, boneMap, enemyType, size) {
+function _computeSkinWeights(geometry, bones, boneMap, enemyType, size, vertexBoneMap) {
     const posAttr = geometry.getAttribute('position');
     const vertCount = posAttr.count;
 
@@ -460,6 +488,26 @@ function _computeSkinWeights(geometry, bones, boneMap, enemyType, size) {
                     skinIndices[idx + 1] = bellyIdx;
                     skinWeights[idx] = 1.0;
                     skinWeights[idx + 1] = 0.0;
+                }
+            }
+        }
+    }
+
+    // Override: explicitly assigned bone weights (arms, forearms)
+    if (vertexBoneMap) {
+        for (let v = 0; v < vertCount; v++) {
+            const boneName = vertexBoneMap[v];
+            if (boneName) {
+                const bone = boneMap[boneName];
+                if (bone) {
+                    const boneIdx = bones.indexOf(bone);
+                    if (boneIdx >= 0) {
+                        const idx = v * 4;
+                        skinIndices[idx] = boneIdx;
+                        skinIndices[idx + 1] = boneIdx;
+                        skinWeights[idx] = 1.0;
+                        skinWeights[idx + 1] = 0.0;
+                    }
                 }
             }
         }
