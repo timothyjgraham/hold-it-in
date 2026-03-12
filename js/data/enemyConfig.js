@@ -51,10 +51,7 @@ export const ENEMY_VISUAL_CONFIG = {
             armSwing: 0.35,     // ~20°
             spineForwardLean: 0.087, // ~5°
         },
-        restPose: {
-            spine: { x: -0.087 }, // slight forward lean
-            // Arms: no rest pose — walk/bash animations set absolute rotations
-        },
+        restPose: {},
     },
 
     // ─── PEE DANCER ─── wave 3, fast swarm, 9 bones (no arms)
@@ -101,10 +98,7 @@ export const ENEMY_VISUAL_CONFIG = {
             spineForwardLean: 0.26, // ~15° hunched
             bodyRock: 0.26,     // side-to-side 15°
         },
-        restPose: {
-            spine: { x: -0.15 },  // hunched forward
-            chest: { x: -0.10 },
-        },
+        restPose: {},
     },
 
     // ─── WADDLE TANK ─── wave 5, big slow tank, 15 bones (+ belly, no neck)
@@ -160,9 +154,7 @@ export const ENEMY_VISUAL_CONFIG = {
             bellyDelay: 0.1,    // seconds of follow-through delay
             bellyOvershoot: 1.2, // 20% overshoot on belly jiggle
         },
-        restPose: {
-            spine: { x: -0.20 }, // forward lean
-        },
+        restPose: {},
     },
 
     // ─── PANICKER ─── wave 7, priority target, 13 bones
@@ -216,10 +208,7 @@ export const ENEMY_VISUAL_CONFIG = {
             armFreqL: 1.3,      // left arm 1.3x speed (asymmetric)
             armFreqR: 1.0,
         },
-        restPose: {
-            upperArm_L: { x: 3.14159 }, // arms raised overhead
-            upperArm_R: { x: 3.14159 },
-        },
+        restPose: {},
     },
 
     // ─── POWER WALKER ─── wave 9, slow immune, 15 bones (full hierarchy)
@@ -271,10 +260,7 @@ export const ENEMY_VISUAL_CONFIG = {
             armSwing: 0.61,     // matches leg swing
             spineForwardLean: 0, // perfectly upright
         },
-        restPose: {
-            upperArm_L: { x: -1.5708 }, // forearms bent forward 90°
-            upperArm_R: { x: -1.5708 },
-        },
+        restPose: {},
     },
 
     // ─── THE GIRLS ─── wave 10, cluster swarm, 9 bones (no arms)
