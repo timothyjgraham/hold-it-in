@@ -210,52 +210,60 @@ function _buildWaddleTankGeometry(size, config) {
     const materialIndices = [];
     const s = size;
 
-    // Wide rounded torso (body)
-    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.4, d.torsoDepth * s, 4, 4, 4);
-    _roundifyBox(torso, 0.15 * s);
-    const tM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.20 + 0.15), 0);
+    // Stocky torso (body) — wide but not absurd, no roundifyBox
+    const torsoH = d.torsoHeight * s * 0.4;
+    const torsoY = s * (0.80 + 0.20 + 0.15);
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, torsoH, d.torsoDepth * s, 4, 4, 4);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
     geometries.push(torso); transforms.push(tM); materialIndices.push(0);
 
-    // Extended belly sphere (body)
+    // Belly sphere (body) — moderate bump on front of lower torso
     const belly = new THREE.SphereGeometry(d.bellyRadius * s, 12, 10);
-    const bM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.20 - 0.10), s * 0.30);
+    const bM = new THREE.Matrix4().makeTranslation(0, torsoY - s * 0.08, s * 0.25);
     geometries.push(belly); transforms.push(bM); materialIndices.push(0);
 
-    // Head (skin)
+    // Head (skin) — slightly larger to balance the stocky body
     const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
     const hM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.20 + 0.30 + 0.30), 0);
     geometries.push(head); transforms.push(hM); materialIndices.push(1);
 
-    // Arms (body) — with forearms
-    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, s * 0.35, 6, 2);
-    const uaLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.55, s * (0.80 + 0.20 + 0.15), 0);
-    const uaRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.55, s * (0.80 + 0.20 + 0.15), 0);
+    // Arms — hang from shoulder level at torso edges
+    const armX = d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.25;
+    const shoulderY = torsoY + torsoH * 0.3;
+    const upperArmLen = s * 0.35;
+    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.38, upperArmLen, 6, 2);
+    const uaY = shoulderY - upperArmLen * 0.15;
+    const uaLM = new THREE.Matrix4().makeTranslation(-armX, uaY, 0);
+    const uaRM = new THREE.Matrix4().makeTranslation(armX, uaY, 0);
     geometries.push(upperArmGeo); transforms.push(uaLM); materialIndices.push(0);
     geometries.push(upperArmGeo); transforms.push(uaRM); materialIndices.push(0);
 
-    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.3, s * 0.30, 6, 2);
-    const faLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.55, s * (0.80 + 0.20 + 0.15) - s * 0.32, 0);
-    const faRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.55, s * (0.80 + 0.20 + 0.15) - s * 0.32, 0);
+    // Forearms — below upper arms
+    const forearmLen = s * 0.30;
+    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.38, d.limbThickness * s * 0.32, forearmLen, 6, 2);
+    const faY = uaY - upperArmLen * 0.5 - forearmLen * 0.35;
+    const faLM = new THREE.Matrix4().makeTranslation(-armX, faY, 0);
+    const faRM = new THREE.Matrix4().makeTranslation(armX, faY, 0);
     geometries.push(forearmGeo); transforms.push(faLM); materialIndices.push(0);
     geometries.push(forearmGeo); transforms.push(faRM); materialIndices.push(0);
 
-    // Wide-set legs (legs material)
-    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.5, d.limbThickness * s * 0.45, d.legHeight * s * 0.5, 6, 2);
+    // Stocky legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.55, d.limbThickness * s * 0.48, d.legHeight * s * 0.5, 6, 2);
     const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.2, 0);
     const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.2, 0);
     geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
     geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
 
-    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.4, d.legHeight * s * 0.5, 6, 2);
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.48, d.limbThickness * s * 0.42, d.legHeight * s * 0.5, 6, 2);
     const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.6, 0);
     const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.6, 0);
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    // Feet (legs material)
-    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.6, d.limbThickness * s * 0.25, d.limbThickness * s * 0.8, 2, 2, 2);
-    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 1.0, s * 0.05);
-    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 1.0, s * 0.05);
+    // Feet (legs material) — positioned at leg bottoms
+    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.65, d.limbThickness * s * 0.25, d.limbThickness * s * 0.85, 2, 2, 2);
+    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.84, s * 0.05);
+    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.84, s * 0.05);
     geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
     geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
 
@@ -270,9 +278,11 @@ function _buildPanickerGeometry(size, config) {
     const materialIndices = [];
     const s = size;
 
-    // Elongated thin torso (body)
-    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.45, d.torsoDepth * s * 0.8, 3, 4, 3);
-    const tM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.30 + 0.18), 0);
+    // Thin nervous torso (body) — narrower and shorter than polite
+    const torsoH = d.torsoHeight * s * 0.35;
+    const torsoY = s * (0.80 + 0.30 + 0.15);
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, torsoH, d.torsoDepth * s, 3, 4, 3);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
     geometries.push(torso); transforms.push(tM); materialIndices.push(0);
 
     // Head (skin)
@@ -280,27 +290,34 @@ function _buildPanickerGeometry(size, config) {
     const hM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.30 + 0.35 + 0.20 + 0.25), 0);
     geometries.push(head); transforms.push(hM); materialIndices.push(1);
 
-    // Long arms with forearms (body) — exaggerated length
-    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.3, s * 0.40, 6, 2);
-    const uaLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.5 - d.limbThickness * s * 0.2, s * (0.80 + 0.30 + 0.35) + s * 0.10, 0);
-    const uaRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.2, s * (0.80 + 0.30 + 0.35) + s * 0.10, 0);
+    // Arms — hang from shoulder level, slightly long for frantic flailing
+    const armX = d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.3;
+    const shoulderY = torsoY + torsoH * 0.35;
+    const upperArmLen = s * 0.38;
+    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.35, upperArmLen, 6, 2);
+    const uaY = shoulderY - upperArmLen * 0.15;
+    const uaLM = new THREE.Matrix4().makeTranslation(-armX, uaY, 0);
+    const uaRM = new THREE.Matrix4().makeTranslation(armX, uaY, 0);
     geometries.push(upperArmGeo); transforms.push(uaLM); materialIndices.push(0);
     geometries.push(upperArmGeo); transforms.push(uaRM); materialIndices.push(0);
 
-    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.3, d.limbThickness * s * 0.25, s * 0.35, 6, 2);
-    const faLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.5 - d.limbThickness * s * 0.2, s * (0.80 + 0.30 + 0.35) + s * 0.45, 0);
-    const faRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.2, s * (0.80 + 0.30 + 0.35) + s * 0.45, 0);
+    // Forearms — below upper arms (NOT above like the old bug!)
+    const forearmLen = s * 0.32;
+    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.28, forearmLen, 6, 2);
+    const faY = uaY - upperArmLen * 0.5 - forearmLen * 0.35;
+    const faLM = new THREE.Matrix4().makeTranslation(-armX, faY, 0);
+    const faRM = new THREE.Matrix4().makeTranslation(armX, faY, 0);
     geometries.push(forearmGeo); transforms.push(faLM); materialIndices.push(0);
     geometries.push(forearmGeo); transforms.push(faRM); materialIndices.push(0);
 
     // Narrow legs (legs material)
-    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, d.legHeight * s * 0.5, 6, 2);
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.4, d.legHeight * s * 0.5, 6, 2);
     const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.2, 0);
     const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.2, 0);
     geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
     geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
 
-    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.3, d.legHeight * s * 0.5, 6, 2);
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, d.legHeight * s * 0.5, 6, 2);
     const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.6, 0);
     const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.6, 0);
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
@@ -353,10 +370,10 @@ function _buildPowerWalkerGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    // Feet (legs material)
-    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.55, d.limbThickness * s * 0.2, d.limbThickness * s * 0.7, 2, 2, 2);
-    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 1.0, s * 0.10);
-    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 1.0, s * 0.10);
+    // Feet (legs material) — positioned at leg bottoms
+    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.55, d.limbThickness * s * 0.25, d.limbThickness * s * 0.7, 2, 2, 2);
+    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.85, s * 0.10);
+    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.85, s * 0.10);
     geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
     geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
 
