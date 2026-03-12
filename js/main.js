@@ -35,6 +35,17 @@ import {
     createOfficePeek,
     createBathroomDoor,
 } from './models/EnvironmentModels.js';
+import {
+    createForestGround,
+    createForestTrees,
+    createForestBushes,
+    createForestRocks,
+    createOuthouse,
+    createOuthouseDoor,
+    createSunbeams,
+    createButterflies,
+    createForestProps,
+} from './models/ForestEnvironmentModels.js';
 
 // Inject CSS palette variables
 injectCSSPalette();
@@ -77,6 +88,17 @@ window.createPaperTowelDispenser = createPaperTowelDispenser;
 window.createBathroomWalls = createBathroomWalls;
 window.createOfficePeek = createOfficePeek;
 window.createBathroomDoor = createBathroomDoor;
+
+// Forest environment
+window.createForestGround = createForestGround;
+window.createForestTrees = createForestTrees;
+window.createForestBushes = createForestBushes;
+window.createForestRocks = createForestRocks;
+window.createOuthouse = createOuthouse;
+window.createOuthouseDoor = createOuthouseDoor;
+window.createSunbeams = createSunbeams;
+window.createButterflies = createButterflies;
+window.createForestProps = createForestProps;
 
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;

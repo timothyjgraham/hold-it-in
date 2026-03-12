@@ -12,6 +12,13 @@ const PRE_ALLOC = {
     panicker: 5,
     powerwalker: 5,
     girls: 7,
+    // Forest
+    deer: 10,
+    squirrel: 5,
+    bear: 5,
+    fox: 5,
+    moose: 5,
+    raccoon: 7,
 };
 
 /**
@@ -216,6 +223,13 @@ export class EnemyPool {
             panicker: 0xf1c40f,
             powerwalker: 0x1abc9c,
             girls: 0xe91e8c,
+            // Forest
+            deer: 0xc4a882,
+            squirrel: 0xd4874a,
+            bear: 0x5a4030,
+            fox: 0xe0842a,
+            moose: 0x6a5a4a,
+            raccoon: 0x7a7a7a,
         };
         return colors[type] || 0xcccccc;
     }

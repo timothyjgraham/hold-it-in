@@ -332,3 +332,24 @@ export function matRangeCircle(color) {
         depthWrite: false,
     });
 }
+
+// ─── FOREST MATERIALS ──────────────────────────────────────────────────────
+export function matForestGrass()   { return toonMat(PALETTE.forestGrass); }
+export function matForestDirt()    { return toonMat(PALETTE.forestDirt); }
+export function matForestBark()    { return toonMat(PALETTE.forestBark); }
+export function matForestLeaf()    { return toonMat(PALETTE.forestLeaf); }
+export function matForestLeafDk()  { return toonMat(PALETTE.forestLeafDark); }
+export function matForestBush()    { return toonMat(PALETTE.forestBush); }
+export function matForestPlanks()  { return toonMat(PALETTE.forestPlanks); }
+export function matForestRoof()    { return toonMat(PALETTE.forestRoof); }
+export function matForestStone()   { return toonMat(PALETTE.forestStone); }
+export function matForestMoss()    { return toonMat(PALETTE.forestMoss, { transparent: true, opacity: 0.7 }); }
+export function matForestSunbeam(opacity = 0.1) {
+    return new THREE.MeshBasicMaterial({
+        color: PALETTE.forestSunbeam,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+}

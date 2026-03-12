@@ -420,6 +420,540 @@ function _buildGirlsGeometry(size, config) {
 }
 
 
+// ═══════════════════════════════════════════════════════
+// Forest enemy geometry builders
+// ═══════════════════════════════════════════════════════
+
+function _buildDeerGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Torso — slender, slightly elongated (body material)
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.4, d.torsoDepth * s, 3, 3, 3);
+    const tM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.25 + 0.15), 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Head — elongated sphere (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    head.scale(1.0, 1.3, 1.0); // vertically stretched for deer face
+    const headY = s * (0.80 + 0.25 + 0.30 + 0.25 + 0.20);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Antlers — two main branches angled outward (body material)
+    const antlerThick = d.antlerSize * s * 0.15;
+    const antlerLen = d.antlerSize * s * 1.2;
+    const antlerGeo = new THREE.CylinderGeometry(antlerThick * 0.6, antlerThick, antlerLen, 5, 1);
+    // Left antler — angled outward
+    const alM = new THREE.Matrix4()
+        .makeRotationZ(Math.PI * 0.2)
+        .setPosition(-d.headRadius * s * 0.5, headY + d.headRadius * s * 0.9 + antlerLen * 0.4, 0);
+    const arM = new THREE.Matrix4()
+        .makeRotationZ(-Math.PI * 0.2)
+        .setPosition(d.headRadius * s * 0.5, headY + d.headRadius * s * 0.9 + antlerLen * 0.4, 0);
+    geometries.push(antlerGeo); transforms.push(alM); materialIndices.push(0);
+    geometries.push(antlerGeo); transforms.push(arM); materialIndices.push(0);
+
+    // Antler tips — small branch tips (body material)
+    const tipLen = d.antlerSize * s * 0.6;
+    const tipGeo = new THREE.CylinderGeometry(antlerThick * 0.3, antlerThick * 0.5, tipLen, 4, 1);
+    const tipY = headY + d.headRadius * s * 0.9 + antlerLen * 0.75;
+    const tlM = new THREE.Matrix4()
+        .makeRotationZ(Math.PI * 0.45)
+        .setPosition(-d.headRadius * s * 0.8, tipY, 0);
+    const trM = new THREE.Matrix4()
+        .makeRotationZ(-Math.PI * 0.45)
+        .setPosition(d.headRadius * s * 0.8, tipY, 0);
+    geometries.push(tipGeo); transforms.push(tlM); materialIndices.push(0);
+    geometries.push(tipGeo); transforms.push(trM); materialIndices.push(0);
+
+    // Pointed ears — small cones on sides of head (body material)
+    const earGeo = new THREE.ConeGeometry(d.earSize * s * 0.5, d.earSize * s * 1.2, 6);
+    const earY = headY + d.headRadius * s * 0.5;
+    const elM = new THREE.Matrix4()
+        .makeRotationZ(Math.PI * 0.25)
+        .setPosition(-d.headRadius * s * 0.85, earY, 0);
+    const erM = new THREE.Matrix4()
+        .makeRotationZ(-Math.PI * 0.25)
+        .setPosition(d.headRadius * s * 0.85, earY, 0);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Arms — thin, elegant (body material)
+    const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.28, s * 0.50, 6, 2);
+    const armLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.5 - d.limbThickness * s * 0.25, s * (0.80 + 0.25 + 0.15) - s * 0.08, 0);
+    const armRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.25, s * (0.80 + 0.25 + 0.15) - s * 0.08, 0);
+    geometries.push(armGeo); transforms.push(armLM); materialIndices.push(0);
+    geometries.push(armGeo); transforms.push(armRM); materialIndices.push(0);
+
+    // Tail nub — small sphere behind (body material)
+    const tail = new THREE.SphereGeometry(d.limbThickness * s * 0.5, 6, 6);
+    const tailM = new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.25 + 0.05), -d.torsoDepth * s * 0.5 - d.limbThickness * s * 0.2);
+    geometries.push(tail); transforms.push(tailM); materialIndices.push(0);
+
+    // Upper legs — thin, elegant (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.2, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.2, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Lower legs — thin (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.28, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.80 - s * 0.6, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.80 - s * 0.6, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    // boneNames: torso, head, antlerL, antlerR, tipL, tipR, earL, earR, armL, armR, tail, ulL, ulR, llL, llR
+    const boneNames = [null, null, null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+function _buildSquirrelGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Compact, roundish torso (body material)
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.35, d.torsoDepth * s, 3, 3, 3);
+    const torsoY = s * (0.60 + 0.18 + 0.12);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Head — large for cuteness (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.60 + 0.18 + 0.22 + 0.12 + 0.18);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Small round ears (body material)
+    const earGeo = new THREE.SphereGeometry(d.earSize * s * 0.8, 6, 6);
+    const earY = headY + d.headRadius * s * 0.75;
+    const elM = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.6, earY, 0);
+    const erM = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.6, earY, 0);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Bushy tail — S-curve of overlapping spheres behind (body material)
+    const tailR = d.tailRadius * s;
+    const tail1 = new THREE.SphereGeometry(tailR * 1.0, 8, 8);
+    const t1M = new THREE.Matrix4().makeTranslation(0, torsoY - s * 0.05, -d.torsoDepth * s * 0.45);
+    geometries.push(tail1); transforms.push(t1M); materialIndices.push(0);
+
+    const tail2 = new THREE.SphereGeometry(tailR * 1.2, 8, 8);
+    const t2M = new THREE.Matrix4().makeTranslation(0, torsoY + s * 0.08, -d.torsoDepth * s * 0.55 - tailR * 0.8);
+    geometries.push(tail2); transforms.push(t2M); materialIndices.push(0);
+
+    const tail3 = new THREE.SphereGeometry(tailR * 1.4, 8, 8);
+    const t3M = new THREE.Matrix4().makeTranslation(0, torsoY + s * 0.25, -d.torsoDepth * s * 0.50 - tailR * 1.2);
+    geometries.push(tail3); transforms.push(t3M); materialIndices.push(0);
+
+    const tail4 = new THREE.SphereGeometry(tailR * 1.2, 8, 8);
+    const t4M = new THREE.Matrix4().makeTranslation(0, torsoY + s * 0.42, -d.torsoDepth * s * 0.40 - tailR * 0.8);
+    geometries.push(tail4); transforms.push(t4M); materialIndices.push(0);
+
+    const tail5 = new THREE.SphereGeometry(tailR * 0.9, 8, 8);
+    const t5M = new THREE.Matrix4().makeTranslation(0, torsoY + s * 0.55, -d.torsoDepth * s * 0.30 - tailR * 0.3);
+    geometries.push(tail5); transforms.push(t5M); materialIndices.push(0);
+
+    // Tiny arm nubs on torso sides (body material)
+    const armNubGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.25, d.limbThickness * s * 0.2, s * 0.15, 5, 1);
+    const anLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.45, torsoY + s * 0.05, 0);
+    const anRM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.45, torsoY + s * 0.05, 0);
+    geometries.push(armNubGeo); transforms.push(anLM); materialIndices.push(0);
+    geometries.push(armNubGeo); transforms.push(anRM); materialIndices.push(0);
+
+    // Upper legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.4, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.60 - s * 0.15, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.60 - s * 0.15, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Lower legs (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.60 - s * 0.45, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.60 - s * 0.45, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    return { geometries, transforms, materialIndices };
+}
+
+function _buildBearGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Stocky wide torso (body material)
+    const torsoH = d.torsoHeight * s * 0.4;
+    const torsoY = s * (0.85 + 0.22 + 0.15);
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, torsoH, d.torsoDepth * s, 4, 4, 4);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Belly sphere (body material) — round bear belly
+    const belly = new THREE.SphereGeometry(d.bellyRadius * s, 12, 10);
+    const bM = new THREE.Matrix4().makeTranslation(0, torsoY - s * 0.08, s * 0.28);
+    geometries.push(belly); transforms.push(bM); materialIndices.push(0);
+
+    // Head — round (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.85 + 0.22 + 0.30 + 0.30);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Small round ears on top of head (body material)
+    const earGeo = new THREE.SphereGeometry(d.earSize * s * 0.8, 6, 6);
+    const earY = headY + d.headRadius * s * 0.8;
+    const elM = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.6, earY, 0);
+    const erM = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.6, earY, 0);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Short snout (body material)
+    const snout = new THREE.CylinderGeometry(d.snoutLength * s * 0.45, d.snoutLength * s * 0.55, d.snoutLength * s, 6, 1);
+    const snM = new THREE.Matrix4()
+        .makeRotationX(Math.PI * 0.5)
+        .setPosition(0, headY - d.headRadius * s * 0.15, d.headRadius * s * 0.85);
+    geometries.push(snout); transforms.push(snM); materialIndices.push(0);
+
+    // Upper arms — thick (body material)
+    const armX = d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.25;
+    const shoulderY = torsoY + torsoH * 0.3;
+    const upperArmLen = s * 0.35;
+    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.5, d.limbThickness * s * 0.42, upperArmLen, 6, 2);
+    const uaY = shoulderY - upperArmLen * 0.15;
+    const uaLM = new THREE.Matrix4().makeTranslation(-armX, uaY, 0);
+    const uaRM = new THREE.Matrix4().makeTranslation(armX, uaY, 0);
+    geometries.push(upperArmGeo); transforms.push(uaLM); materialIndices.push(0);
+    geometries.push(upperArmGeo); transforms.push(uaRM); materialIndices.push(0);
+
+    // Forearms — thick (body material)
+    const forearmLen = s * 0.30;
+    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.36, forearmLen, 6, 2);
+    const faY = uaY - upperArmLen * 0.5 - forearmLen * 0.35;
+    const faLM = new THREE.Matrix4().makeTranslation(-armX, faY, 0);
+    const faRM = new THREE.Matrix4().makeTranslation(armX, faY, 0);
+    geometries.push(forearmGeo); transforms.push(faLM); materialIndices.push(0);
+    geometries.push(forearmGeo); transforms.push(faRM); materialIndices.push(0);
+
+    // Stocky upper legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.58, d.limbThickness * s * 0.50, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.2, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.2, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Sturdy lower legs (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.50, d.limbThickness * s * 0.45, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.6, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.6, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    // Feet — big bear paws (legs material)
+    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.7, d.limbThickness * s * 0.28, d.limbThickness * s * 0.9, 2, 2, 2);
+    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.84, s * 0.05);
+    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.84, s * 0.05);
+    geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
+    geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
+
+    // boneNames: torso, belly, head, earL, earR, snout, uaL, uaR, faL, faR, ulL, ulR, llL, llR, footL, footR
+    const boneNames = [null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+function _buildFoxGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Sleek, lean torso (body material)
+    const torsoH = d.torsoHeight * s * 0.35;
+    const torsoY = s * (0.75 + 0.25 + 0.15);
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, torsoH, d.torsoDepth * s, 3, 4, 3);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Cream/white chest patch on front of torso (skin material)
+    const chestPatch = new THREE.BoxGeometry(d.torsoWidth * s * 0.55, torsoH * 0.65, d.torsoDepth * s * 0.12, 2, 2, 1);
+    const cpM = new THREE.Matrix4().makeTranslation(0, torsoY - s * 0.02, d.torsoDepth * s * 0.48);
+    geometries.push(chestPatch); transforms.push(cpM); materialIndices.push(1);
+
+    // Head — pointed triangular shape (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.75 + 0.25 + 0.30 + 0.18 + 0.22);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Pointed snout — cone (skin material)
+    const snout = new THREE.ConeGeometry(d.snoutLength * s * 0.35, d.snoutLength * s * 1.2, 6);
+    const snM = new THREE.Matrix4()
+        .makeRotationX(Math.PI * 0.5)
+        .setPosition(0, headY - d.headRadius * s * 0.25, d.headRadius * s * 0.85 + d.snoutLength * s * 0.3);
+    geometries.push(snout); transforms.push(snM); materialIndices.push(1);
+
+    // Large pointed ears — triangular (body material)
+    const earGeo = new THREE.ConeGeometry(d.earSize * s * 0.45, d.earSize * s * 1.5, 6);
+    const earY = headY + d.headRadius * s * 0.7;
+    const elM = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.55, earY, 0);
+    const erM = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.55, earY, 0);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Fluffy tail — 4 overlapping spheres curving up (body material)
+    const tailR = d.tailRadius * s;
+    const tailBase = torsoY - s * 0.05;
+    const tail1 = new THREE.SphereGeometry(tailR * 1.0, 8, 8);
+    const ft1M = new THREE.Matrix4().makeTranslation(0, tailBase, -d.torsoDepth * s * 0.45);
+    geometries.push(tail1); transforms.push(ft1M); materialIndices.push(0);
+
+    const tail2 = new THREE.SphereGeometry(tailR * 1.3, 8, 8);
+    const ft2M = new THREE.Matrix4().makeTranslation(0, tailBase + s * 0.08, -d.torsoDepth * s * 0.55 - tailR * 0.8);
+    geometries.push(tail2); transforms.push(ft2M); materialIndices.push(0);
+
+    const tail3 = new THREE.SphereGeometry(tailR * 1.4, 8, 8);
+    const ft3M = new THREE.Matrix4().makeTranslation(0, tailBase + s * 0.20, -d.torsoDepth * s * 0.50 - tailR * 1.3);
+    geometries.push(tail3); transforms.push(ft3M); materialIndices.push(0);
+
+    const tail4 = new THREE.SphereGeometry(tailR * 1.1, 8, 8);
+    const ft4M = new THREE.Matrix4().makeTranslation(0, tailBase + s * 0.35, -d.torsoDepth * s * 0.40 - tailR * 1.0);
+    geometries.push(tail4); transforms.push(ft4M); materialIndices.push(0);
+
+    // Arms — thin (body material)
+    const armX = d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.3;
+    const shoulderY = torsoY + torsoH * 0.35;
+    const upperArmLen = s * 0.35;
+    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.32, upperArmLen, 6, 2);
+    const uaY = shoulderY - upperArmLen * 0.15;
+    const uaLM = new THREE.Matrix4().makeTranslation(-armX, uaY, 0);
+    const uaRM = new THREE.Matrix4().makeTranslation(armX, uaY, 0);
+    geometries.push(upperArmGeo); transforms.push(uaLM); materialIndices.push(0);
+    geometries.push(upperArmGeo); transforms.push(uaRM); materialIndices.push(0);
+
+    // Forearms — thin (body material)
+    const forearmLen = s * 0.28;
+    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.32, d.limbThickness * s * 0.25, forearmLen, 6, 2);
+    const faY = uaY - upperArmLen * 0.5 - forearmLen * 0.35;
+    const faLM = new THREE.Matrix4().makeTranslation(-armX, faY, 0);
+    const faRM = new THREE.Matrix4().makeTranslation(armX, faY, 0);
+    geometries.push(forearmGeo); transforms.push(faLM); materialIndices.push(0);
+    geometries.push(forearmGeo); transforms.push(faRM); materialIndices.push(0);
+
+    // Thin upper legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.36, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.75 - s * 0.2, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.75 - s * 0.2, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Thin lower legs (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.36, d.limbThickness * s * 0.30, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.75 - s * 0.58, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.75 - s * 0.58, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    // boneNames: torso, chestPatch, head, snout, earL, earR, tail1-4, uaL, uaR, faL, faR, ulL, ulR, llL, llR
+    const boneNames = [null, null, null, null, null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+function _buildMooseGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Large, powerful torso (body material)
+    const torsoH = d.torsoHeight * s * 0.4;
+    const torsoY = s * (0.85 + 0.25 + 0.16);
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, torsoH, d.torsoDepth * s, 4, 4, 3);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Head (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.85 + 0.25 + 0.32 + 0.22 + 0.22);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Droopy muzzle/snout (skin material)
+    const snout = new THREE.BoxGeometry(d.snoutLength * s * 1.2, d.snoutLength * s * 0.8, d.snoutLength * s * 1.5, 2, 2, 2);
+    const snM = new THREE.Matrix4().makeTranslation(0, headY - d.headRadius * s * 0.45, d.headRadius * s * 0.75);
+    geometries.push(snout); transforms.push(snM); materialIndices.push(1);
+
+    // HUGE palmate antlers — flat, wide, branching (body material) — the signature feature
+    const antlerW = d.antlerSize * s * 1.2;
+    const antlerH = d.antlerSize * s * 0.8;
+    const antlerD = d.antlerSize * s * 0.12; // flat!
+
+    // Left palmate antler — flat wide plate
+    const antlerLGeo = new THREE.BoxGeometry(antlerW, antlerH, antlerD, 3, 3, 1);
+    const antlerLY = headY + d.headRadius * s * 0.6 + antlerH * 0.4;
+    const alM = new THREE.Matrix4()
+        .makeRotationZ(Math.PI * 0.15)
+        .setPosition(-d.headRadius * s * 0.5 - antlerW * 0.35, antlerLY, 0);
+    geometries.push(antlerLGeo); transforms.push(alM); materialIndices.push(0);
+
+    // Right palmate antler — flat wide plate
+    const antlerRGeo = new THREE.BoxGeometry(antlerW, antlerH, antlerD, 3, 3, 1);
+    const arM = new THREE.Matrix4()
+        .makeRotationZ(-Math.PI * 0.15)
+        .setPosition(d.headRadius * s * 0.5 + antlerW * 0.35, antlerLY, 0);
+    geometries.push(antlerRGeo); transforms.push(arM); materialIndices.push(0);
+
+    // Antler tines — vertical prongs on top of palmate plates (body material)
+    const tineGeo = new THREE.CylinderGeometry(d.antlerSize * s * 0.04, d.antlerSize * s * 0.06, d.antlerSize * s * 0.4, 4, 1);
+    const tineTopY = antlerLY + antlerH * 0.35;
+    // Left antler tines (3)
+    const lt1M = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.5 - antlerW * 0.15, tineTopY, 0);
+    const lt2M = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.5 - antlerW * 0.45, tineTopY, 0);
+    const lt3M = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.5 - antlerW * 0.65, tineTopY - d.antlerSize * s * 0.1, 0);
+    geometries.push(tineGeo); transforms.push(lt1M); materialIndices.push(0);
+    geometries.push(tineGeo); transforms.push(lt2M); materialIndices.push(0);
+    geometries.push(tineGeo); transforms.push(lt3M); materialIndices.push(0);
+    // Right antler tines (3)
+    const rt1M = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.5 + antlerW * 0.15, tineTopY, 0);
+    const rt2M = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.5 + antlerW * 0.45, tineTopY, 0);
+    const rt3M = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.5 + antlerW * 0.65, tineTopY - d.antlerSize * s * 0.1, 0);
+    geometries.push(tineGeo); transforms.push(rt1M); materialIndices.push(0);
+    geometries.push(tineGeo); transforms.push(rt2M); materialIndices.push(0);
+    geometries.push(tineGeo); transforms.push(rt3M); materialIndices.push(0);
+
+    // Small ears behind antlers (body material)
+    const earGeo = new THREE.ConeGeometry(d.earSize * s * 0.5, d.earSize * s * 1.0, 5);
+    const earY = headY + d.headRadius * s * 0.5;
+    const elM = new THREE.Matrix4()
+        .makeRotationZ(Math.PI * 0.2)
+        .setPosition(-d.headRadius * s * 0.8, earY, -d.headRadius * s * 0.3);
+    const erM = new THREE.Matrix4()
+        .makeRotationZ(-Math.PI * 0.2)
+        .setPosition(d.headRadius * s * 0.8, earY, -d.headRadius * s * 0.3);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Strong upper arms (body material)
+    const armX = d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.25;
+    const shoulderY = torsoY + torsoH * 0.3;
+    const upperArmLen = s * 0.38;
+    const upperArmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.48, d.limbThickness * s * 0.38, upperArmLen, 6, 2);
+    const uaY = shoulderY - upperArmLen * 0.15;
+    const uaLM = new THREE.Matrix4().makeTranslation(-armX, uaY, 0);
+    const uaRM = new THREE.Matrix4().makeTranslation(armX, uaY, 0);
+    geometries.push(upperArmGeo); transforms.push(uaLM); materialIndices.push(0);
+    geometries.push(upperArmGeo); transforms.push(uaRM); materialIndices.push(0);
+
+    // Forearms (body material)
+    const forearmLen = s * 0.30;
+    const forearmGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.38, d.limbThickness * s * 0.30, forearmLen, 6, 2);
+    const faY = uaY - upperArmLen * 0.5 - forearmLen * 0.35;
+    const faLM = new THREE.Matrix4().makeTranslation(-armX, faY, 0);
+    const faRM = new THREE.Matrix4().makeTranslation(armX, faY, 0);
+    geometries.push(forearmGeo); transforms.push(faLM); materialIndices.push(0);
+    geometries.push(forearmGeo); transforms.push(faRM); materialIndices.push(0);
+
+    // Powerful upper legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.52, d.limbThickness * s * 0.46, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.2, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.2, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Lower legs (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.46, d.limbThickness * s * 0.40, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.62, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.62, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    // Feet — big hooves (legs material)
+    const footGeo = new THREE.BoxGeometry(d.limbThickness * s * 0.6, d.limbThickness * s * 0.25, d.limbThickness * s * 0.8, 2, 2, 2);
+    const fLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.85 - s * 0.88, s * 0.08);
+    const fRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.85 - s * 0.88, s * 0.08);
+    geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
+    geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
+
+    // boneNames: torso, head, snout, antlerL, antlerR, tineL1-3, tineR1-3, earL, earR, uaL, uaR, faL, faR, ulL, ulR, llL, llR, footL, footR
+    const boneNames = [null, null, null, null, null, null, null, null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null, null, null];
+    return { geometries, transforms, materialIndices, boneNames };
+}
+
+function _buildRaccoonGeometry(size, config) {
+    const d = config.bodyDimensions;
+    const geometries = [];
+    const transforms = [];
+    const materialIndices = [];
+    const s = size;
+
+    // Chubby compact torso (body material)
+    const torso = new THREE.BoxGeometry(d.torsoWidth * s, d.torsoHeight * s * 0.35, d.torsoDepth * s, 3, 3, 3);
+    const torsoY = s * (0.65 + 0.18 + 0.12);
+    const tM = new THREE.Matrix4().makeTranslation(0, torsoY, 0);
+    geometries.push(torso); transforms.push(tM); materialIndices.push(0);
+
+    // Head — round, lighter cream face (skin material)
+    const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
+    const headY = s * (0.65 + 0.18 + 0.22 + 0.14 + 0.18);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
+    geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Dark eye mask — horizontal box across face (body material — darker color)
+    const mask = new THREE.BoxGeometry(d.maskWidth * s * 2, d.headRadius * s * 0.35, d.headRadius * s * 0.55, 2, 2, 2);
+    const maskM = new THREE.Matrix4().makeTranslation(0, headY + d.headRadius * s * 0.08, d.headRadius * s * 0.55);
+    geometries.push(mask); transforms.push(maskM); materialIndices.push(0);
+
+    // Small rounded ears (body material)
+    const earGeo = new THREE.SphereGeometry(d.earSize * s * 0.7, 6, 6);
+    const earY = headY + d.headRadius * s * 0.8;
+    const elM = new THREE.Matrix4().makeTranslation(-d.headRadius * s * 0.55, earY, 0);
+    const erM = new THREE.Matrix4().makeTranslation(d.headRadius * s * 0.55, earY, 0);
+    geometries.push(earGeo); transforms.push(elM); materialIndices.push(0);
+    geometries.push(earGeo); transforms.push(erM); materialIndices.push(0);
+
+    // Striped tail — alternating dark/light cylinder segments (body material for all — visible stripe from geometry shape)
+    const tailR = d.tailRadius * s;
+    const segH = d.tailLength * s * 0.18;
+    const tailBaseZ = -d.torsoDepth * s * 0.45;
+    // 5 segments going upward/backward
+    for (let i = 0; i < 5; i++) {
+        const segGeo = new THREE.CylinderGeometry(tailR * (1.1 - i * 0.05), tailR * (1.15 - i * 0.05), segH, 6, 1);
+        const segY = torsoY - s * 0.08 + i * segH * 0.7 + i * s * 0.03;
+        const segZ = tailBaseZ - i * tailR * 0.4;
+        const segM = new THREE.Matrix4().makeTranslation(0, segY, segZ);
+        geometries.push(segGeo); transforms.push(segM); materialIndices.push(0);
+    }
+
+    // Upper legs (legs material)
+    const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.45, d.limbThickness * s * 0.4, d.legHeight * s * 0.5, 6, 2);
+    const ulLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.65 - s * 0.16, 0);
+    const ulRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.65 - s * 0.16, 0);
+    geometries.push(upperLegGeo); transforms.push(ulLM); materialIndices.push(2);
+    geometries.push(upperLegGeo); transforms.push(ulRM); materialIndices.push(2);
+
+    // Lower legs (legs material)
+    const lowerLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.4, d.limbThickness * s * 0.35, d.legHeight * s * 0.5, 6, 2);
+    const llLM = new THREE.Matrix4().makeTranslation(-d.legSpacing * s, s * 0.65 - s * 0.48, 0);
+    const llRM = new THREE.Matrix4().makeTranslation(d.legSpacing * s, s * 0.65 - s * 0.48, 0);
+    geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
+    geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
+
+    return { geometries, transforms, materialIndices };
+}
+
+
 // ─── Geometry builder map ───
 const _geometryBuilders = {
     polite: _buildPoliteKnockerGeometry,
@@ -428,6 +962,13 @@ const _geometryBuilders = {
     panicker: _buildPanickerGeometry,
     powerwalker: _buildPowerWalkerGeometry,
     girls: _buildGirlsGeometry,
+    // Forest
+    deer: _buildDeerGeometry,
+    squirrel: _buildSquirrelGeometry,
+    bear: _buildBearGeometry,
+    fox: _buildFoxGeometry,
+    moose: _buildMooseGeometry,
+    raccoon: _buildRaccoonGeometry,
 };
 
 

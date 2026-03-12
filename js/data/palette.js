@@ -91,6 +91,40 @@ export const PALETTE = {
     medicCross:   0xe05050,   // Red cross accent — classic rescue, pops against cream
     medicBed:     0xddd2c0,   // Stretcher bed — matches tileLight, institutional
 
+    // ─── FOREST ENVIRONMENT ────────────────────────────────────────────────
+    // Earthy greens and browns for the forest scenario
+
+    forestGrass:     0x5a7247,  // Forest floor grass
+    forestDirt:      0x8b7355,  // Dirt path
+    forestBark:      0x6b4423,  // Tree bark dark
+    forestLeaf:      0x4a8c3f,  // Tree leaves bright
+    forestLeafDark:  0x3a6b30,  // Canopy shadows, darker leaves
+    forestBush:      0x5a8a4a,  // Bush foliage
+    forestMoss:      0x7a9b6a,  // Moss, lichen, soft highlights
+    forestPlanks:    0xa08060,  // Outhouse planks — weathered pine
+    forestRoof:      0x6b5a4a,  // Outhouse roof shingles
+    forestFog:       0x3a4a3a,  // Misty forest fog (replaces ink for forest scene)
+    forestSunbeam:   0xffe8b0,  // Dappled sunlight shafts
+    forestStone:     0x8a8a7a,  // Boulders, rocks
+    forestFlower:    0xe87090,  // Wildflower pink
+    forestFlowerY:   0xf0d060,  // Wildflower yellow
+
+    // ─── FOREST ENEMIES ─────────────────────────────────────────────────────
+    // Nature-themed, warm/earthy animal tones
+
+    forestDeer:      0xc4a882,  // Fawn tan — gentle, warm
+    forestSquirrel:  0xd4874a,  // Orange-brown — quick, bright
+    forestBear:      0x5a4030,  // Dark umber — heavy, imposing
+    forestFox:       0xe0842a,  // Bright orange — cunning, alert
+    forestMoose:     0x6a5a4a,  // Gray-brown — massive, stoic
+    forestRaccoon:   0x7a7a7a,  // Charcoal gray — sneaky, masked
+
+    // ─── FOREST LIGHTING ────────────────────────────────────────────────────
+
+    forestAmbient:   0x506850,  // Warm green ambient
+    forestSun:       0xfff0c0,  // Warm sunlight through trees
+    forestRim:       0x88aa66,  // Green-tinted rim light
+
     // ─── RARITY GLOW ────────────────────────────────────────────────────────
     // Emissive/glow colors per upgrade rarity tier
 
@@ -121,6 +155,11 @@ export const OUTLINE_WIDTH = {
 
     // Towers
     tower:          0.025,  // All towers
+
+    // Forest characters
+    forestSmall:    0.02,   // Squirrel, Raccoon
+    forestMed:      0.03,   // Deer, Fox
+    forestLarge:    0.04,   // Bear, Moose
 };
 
 // ─── GRADIENT MAP TONES ───────────────────────────────────────────────────────

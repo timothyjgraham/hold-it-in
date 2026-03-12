@@ -263,7 +263,7 @@
                 </div>
             </div>
             <!-- The Forest -->
-            <div class="scenario-card locked" id="card-forest" data-scenario="forest">
+            <div class="scenario-card playable" id="card-forest" data-scenario="forest">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
                         <svg viewBox="0 0 64 64" width="56" height="56">
@@ -274,7 +274,11 @@
                     </div>
                     <div class="scenario-name">THE FOREST</div>
                     <div class="scenario-desc">Wooden outhouse. Wild animals.</div>
-                    <div class="scenario-coming-soon">COMING SOON</div>
+                    <div class="scenario-stats" id="stats-forest">
+                        <span class="stat-item">Best Wave: --</span>
+                        <span class="stat-item">High Score: --</span>
+                    </div>
+                    <button class="scenario-continue-btn" id="continue-forest" style="display:none;">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Ocean -->
@@ -402,6 +406,9 @@
         state: 'title',  // title | playing | paused | gameover
         _gameMode: 'campaign',  // campaign | endless
         _menuMode: 'campaign',
+        _currentScenario: 'office',
+        _environmentGroup: null,  // Group holding all scenario environment objects
+        _forestAnimData: null,    // Sunbeams + butterflies for per-frame update
         wave: 0,
         coins: 50,
         score: 0,
@@ -409,7 +416,7 @@
         doorGroup: null,
 
         // Best stats per scenario (persisted to localStorage)
-        _bestStats: { office: { wave: 0, score: 0 } },
+        _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 } },
 
         // Entity arrays
         enemies: [],
@@ -567,6 +574,59 @@
                 size: 0.85, color: 0xe84888, // PALETTE.girls — hot pink
                 coins: 2, doorDmg: 1,
             },
+
+            // ─── FOREST ENEMIES ───────────────────────────────────────────
+            deer: {
+                name: 'Deer',
+                baseSpeed: 3.0, speedVar: 0.5,
+                baseHP: 20, hpPerWave: 10,
+                size: 1.5, color: 0xc4a882, // PALETTE.forestDeer
+                coins: 5, doorDmg: 2,
+                flankChance: 0.20,
+            },
+            squirrel: {
+                name: 'Squirrel',
+                baseSpeed: 5.5, speedVar: 1.0,
+                baseHP: 10, hpPerWave: 4,
+                size: 1.0, color: 0xd4874a, // PALETTE.forestSquirrel
+                coins: 3, doorDmg: 1,
+                canJumpBarrier: true,
+                flankChance: 0.55,
+            },
+            bear: {
+                name: 'Bear',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 65, hpPerWave: 20,
+                size: 2.2, color: 0x5a4030, // PALETTE.forestBear
+                coins: 14, doorDmg: 5,
+                panicThreshold: 0.5,
+                flankChance: 0.08,
+            },
+            fox: {
+                name: 'Fox',
+                baseSpeed: 4.0, speedVar: 0.5,
+                baseHP: 40, hpPerWave: 12,
+                size: 1.4, color: 0xe0842a, // PALETTE.forestFox
+                coins: 10, doorDmg: 2,
+                speedAuraRange: 8, speedAuraBonus: 0.5,
+                flankChance: 0.45,
+            },
+            moose: {
+                name: 'Moose',
+                baseSpeed: 3.5, speedVar: 0.3,
+                baseHP: 35, hpPerWave: 12,
+                size: 1.8, color: 0x6a5a4a, // PALETTE.forestMoose
+                coins: 8, doorDmg: 3,
+                slowImmune: true,
+                flankChance: 0.60,
+            },
+            raccoon: {
+                name: 'Raccoon',
+                baseSpeed: 3.0, speedVar: 0.3,
+                baseHP: 8, hpPerWave: 3,
+                size: 0.85, color: 0x7a7a7a, // PALETTE.forestRaccoon
+                coins: 2, doorDmg: 1,
+            },
         },
 
         // Curated wave compositions — one new enemy per introduction wave
@@ -658,6 +718,79 @@
             },
         },
 
+        // ─── FOREST WAVE COMPOSITIONS ─────────────────────────────────────
+        FOREST_WAVE_COMPOSITIONS: [
+            null,
+            // Wave 1: Deer only — gentle intro
+            { enemies: [['deer', 5]], interval: 2.5, delay: 5 },
+            // Wave 2: More deer
+            { enemies: [['deer', 7]], interval: 2.0, delay: 4 },
+            // Wave 3: SQUIRRELS — fast, bouncy, swarm
+            { enemies: [['deer', 4], ['squirrel', 4]], interval: 1.8, delay: 4 },
+            // Wave 4: Harder mix
+            { enemies: [['deer', 5], ['squirrel', 5]], interval: 1.5, delay: 3.5 },
+            // Wave 5: BEAR — slow tank, panics at 50% HP
+            { enemies: [['deer', 4], ['squirrel', 3], ['bear', 2]], interval: 1.3, delay: 3 },
+            // Wave 6: More bears
+            { enemies: [['deer', 5], ['squirrel', 5], ['bear', 3]], interval: 1.2, delay: 3 },
+            // Wave 7: FOX — speed aura, priority
+            { enemies: [['deer', 4], ['squirrel', 4], ['bear', 2], ['fox', 1]], interval: 1.0, delay: 3 },
+            // Wave 8: More foxes
+            { enemies: [['deer', 5], ['squirrel', 5], ['bear', 3], ['fox', 2]], interval: 0.9, delay: 3 },
+            // Wave 9: MOOSE — slow immune
+            { enemies: [['deer', 4], ['squirrel', 4], ['bear', 2], ['fox', 1], ['moose', 3]], interval: 0.8, delay: 3 },
+            // Wave 10: RACCOONS — cluster swarm
+            { enemies: [['deer', 3], ['squirrel', 3], ['bear', 2], ['fox', 1], ['moose', 2], ['raccoon_group', 1]], interval: 0.8, delay: 3 },
+        ],
+
+        FOREST_WAVE_EVENTS: {
+            15: {
+                name: 'BERRY SEASON',
+                announcement: "IT'S BERRY SEASON!",
+                enemyMult: 2.5,
+                spawnMult: 0.5,
+                weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.10, moose: 0.10, raccoon_group: 0.05 },
+            },
+            20: {
+                name: 'MIGRATION',
+                announcement: 'THE GREAT MIGRATION!',
+                enemyMult: 3.0,
+                spawnMult: 0.4,
+                weights: { deer: 0.35, moose: 0.25, squirrel: 0.20, fox: 0.10, bear: 0.05, raccoon_group: 0.05 },
+            },
+            25: {
+                name: 'FULL MOON',
+                announcement: 'FULL MOON FRENZY!',
+                enemyMult: 2.5,
+                spawnMult: 0.35,
+                speedMult: 1.4,
+                desperateChance: 0.6,
+            },
+            30: {
+                name: 'FOREST FIRE',
+                announcement: 'FOREST FIRE — EVERYONE FLEE!',
+                enemyMult: 3.5,
+                spawnMult: 0.3,
+                weights: { bear: 0.30, fox: 0.25, squirrel: 0.20, deer: 0.15, raccoon_group: 0.10 },
+            },
+            35: {
+                name: 'HIBERNATION PANIC',
+                announcement: 'LAST CHANCE BEFORE HIBERNATION!',
+                enemyMult: 3.0,
+                spawnMult: 0.3,
+                speedMult: 1.3,
+                weights: { bear: 0.40, deer: 0.20, moose: 0.15, squirrel: 0.15, fox: 0.10 },
+            },
+            40: {
+                name: 'STAMPEDE',
+                announcement: 'STAMPEDE!',
+                enemyMult: 4.0,
+                spawnMult: 0.2,
+                speedMult: 1.5,
+                desperateChance: 0.8,
+            },
+        },
+
         // Coin drop table — physical coins scattered on enemy death
         // Values are ~30% higher than old instant rewards (skill bonus for collection)
         COIN_DROPS: {
@@ -667,6 +800,13 @@
             panicker:    { value: 13, count: 3 },
             powerwalker: { value: 9,  count: 2 },
             girls:       { value: 3,  count: 1 },
+            // Forest
+            deer:        { value: 6,  count: 2 },
+            squirrel:    { value: 4,  count: 1 },
+            bear:        { value: 18, count: 4 },
+            fox:         { value: 13, count: 3 },
+            moose:       { value: 10, count: 2 },
+            raccoon:     { value: 3,  count: 1 },
         },
 
         coinPool: null,
@@ -713,11 +853,11 @@
             // Post-processing (screen-space edges + vignette)
             this.postFX = setupPostProcessing(this.renderer, this.scene, this.camera);
 
-            // Build the scene
-            this._createLighting();
-            this._createGround();
-            this._createToilet();
-            this._createEnvironment();
+            // Build the scene — default to office scenario
+            this._environmentGroup = new THREE.Group();
+            this._environmentGroup.name = 'environment';
+            this.scene.add(this._environmentGroup);
+            this._setupScenario('office');
             this._createGrid();
 
             // Input
@@ -815,10 +955,12 @@
         _createLighting() {
             // Ambient — slightly warm, enough to see bathroom walls
             const ambient = new THREE.AmbientLight(PALETTE.ambient, 0.7);
+            ambient.name = 'sceneLight';
             this.scene.add(ambient);
 
             // Main directional light — offset from camera angle so shadows read clearly
             const dirLight = new THREE.DirectionalLight(PALETTE.fillWarm, 0.8);
+            dirLight.name = 'sceneLight';
             dirLight.position.set(6, 42, 18);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
@@ -833,6 +975,7 @@
 
             // Subtle cool fill from opposite side
             const fillLight = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
+            fillLight.name = 'sceneLight';
             fillLight.position.set(-10, 20, 10);
             this.scene.add(fillLight);
         },
@@ -941,6 +1084,183 @@
             const bathroomLight = new THREE.PointLight(PALETTE.fillWarm, 0.4, 20, 2);
             bathroomLight.position.set(0, 4.0, 4);
             this.scene.add(bathroomLight);
+        },
+
+        // ============================
+        // SCENARIO SYSTEM
+        // ============================
+
+        _setupScenario(scenario) {
+            // Tear down previous environment
+            this._teardownEnvironment();
+            this._currentScenario = scenario;
+            this._forestAnimData = null;
+
+            if (scenario === 'forest') {
+                this._setupForestScenario();
+            } else {
+                this._setupOfficeScenario();
+            }
+        },
+
+        _teardownEnvironment() {
+            // Remove all children from environment group
+            if (this._environmentGroup) {
+                while (this._environmentGroup.children.length > 0) {
+                    const child = this._environmentGroup.children[0];
+                    this._environmentGroup.remove(child);
+                    child.traverse(obj => {
+                        if (obj.isMesh) {
+                            if (obj.geometry) obj.geometry.dispose();
+                            if (obj.material) {
+                                if (Array.isArray(obj.material)) {
+                                    obj.material.forEach(m => m.dispose());
+                                } else {
+                                    obj.material.dispose();
+                                }
+                            }
+                        }
+                        if (obj.isLight) {
+                            // Lights don't need disposal but remove them
+                        }
+                    });
+                }
+            }
+            // Remove scene-level lighting (we'll rebuild per scenario)
+            const toRemove = [];
+            this.scene.traverse(obj => {
+                if (obj.isLight || obj.name === 'sceneLight') toRemove.push(obj);
+            });
+            toRemove.forEach(obj => {
+                if (obj.parent) obj.parent.remove(obj);
+            });
+            // Null out references
+            this.toilet = null;
+            this.doorGroup = null;
+            this.officeGroup = null;
+            if (this.playerCharacter) {
+                if (this.playerCharacter.group && this.playerCharacter.group.parent) {
+                    this.playerCharacter.group.parent.remove(this.playerCharacter.group);
+                }
+                this.playerCharacter = null;
+            }
+        },
+
+        _setupOfficeScenario() {
+            // Lighting
+            this._createLighting();
+            // Fog
+            this.scene.fog = new THREE.Fog(PALETTE.ink, 85, 130);
+            // Environment
+            this._createGround();
+            this._createToilet();
+            this._createEnvironment();
+        },
+
+        _setupForestScenario() {
+            // Forest lighting — warmer, more green ambient, strong directional sun
+            const ambient = new THREE.AmbientLight(PALETTE.forestAmbient, 0.8);
+            ambient.name = 'sceneLight';
+            this.scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(PALETTE.forestSun, 0.9);
+            sunLight.name = 'sceneLight';
+            sunLight.position.set(8, 40, 20);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 100;
+            sunLight.shadow.camera.left = -35;
+            sunLight.shadow.camera.right = 35;
+            sunLight.shadow.camera.top = 70;
+            sunLight.shadow.camera.bottom = -5;
+            this.scene.add(sunLight);
+
+            const rimLight = new THREE.DirectionalLight(PALETTE.forestRim, 0.35);
+            rimLight.name = 'sceneLight';
+            rimLight.position.set(-10, 18, 12);
+            this.scene.add(rimLight);
+
+            // Forest fog — misty green, shorter range for atmosphere
+            this.scene.fog = new THREE.Fog(PALETTE.forestFog, 60, 110);
+
+            // Forest ground
+            const ground = createForestGround();
+            this._environmentGroup.add(ground);
+
+            // Outhouse (replaces toilet room)
+            const outhouse = createOuthouse();
+            this._environmentGroup.add(outhouse);
+
+            // The toilet seat inside the outhouse
+            this.toilet = createToilet();
+            this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
+            this.toilet.rotation.y = 0;
+            this.toilet.scale.set(0.7, 0.7, 0.7); // Smaller in the outhouse
+            this._environmentGroup.add(this.toilet);
+
+            // Player character on the seat
+            this._createPlayerCharacter();
+
+            // Outhouse door
+            this.doorGroup = createOuthouseDoor();
+            this._environmentGroup.add(this.doorGroup);
+
+            // Trees, bushes, rocks, props
+            this._environmentGroup.add(createForestTrees());
+            this._environmentGroup.add(createForestBushes());
+            this._environmentGroup.add(createForestRocks());
+            this._environmentGroup.add(createForestProps());
+
+            // Atmospheric effects
+            const sunbeams = createSunbeams();
+            this._environmentGroup.add(sunbeams);
+
+            const butterflies = createButterflies();
+            this._environmentGroup.add(butterflies);
+
+            // Store references for per-frame animation
+            this._forestAnimData = {
+                sunbeams: sunbeams.userData.beams || [],
+                butterflies: butterflies.userData.butterflies || [],
+            };
+        },
+
+        _updateForestEffects(time, dt) {
+            if (!this._forestAnimData) return;
+
+            // Animate sunbeams — subtle opacity pulse
+            const beams = this._forestAnimData.sunbeams;
+            for (let i = 0; i < beams.length; i++) {
+                const b = beams[i];
+                if (b && b.material) {
+                    b.material.opacity = 0.08 + 0.04 * Math.sin(time * 0.5 + i * 1.7);
+                }
+            }
+
+            // Animate butterflies — lazy orbiting + wing flap
+            const bflies = this._forestAnimData.butterflies;
+            for (let i = 0; i < bflies.length; i++) {
+                const bf = bflies[i];
+                if (!bf || !bf.mesh) continue;
+                const angle = time * bf.speed + bf.phase;
+                bf.mesh.position.x = bf.center.x + Math.cos(angle) * bf.radius;
+                bf.mesh.position.z = bf.center.z + Math.sin(angle) * bf.radius;
+                bf.mesh.position.y = bf.center.y + Math.sin(time * 1.2 + bf.phase) * 0.3;
+                // Wing flap
+                const flapAngle = Math.sin(time * 8 + bf.phase * 3) * 0.5;
+                if (bf.leftWing) bf.leftWing.rotation.y = flapAngle;
+                if (bf.rightWing) bf.rightWing.rotation.y = -flapAngle;
+            }
+        },
+
+        // Returns current scenario's wave compositions and events
+        _getWaveCompositions() {
+            return this._currentScenario === 'forest' ? this.FOREST_WAVE_COMPOSITIONS : this.WAVE_COMPOSITIONS;
+        },
+        _getWaveEvents() {
+            return this._currentScenario === 'forest' ? this.FOREST_WAVE_EVENTS : this.WAVE_EVENTS;
         },
 
         _createGrid() {
@@ -1164,13 +1484,11 @@
                 showScreen('title-screen');
             });
 
-            // Scenario cards — only office is playable
-            document.getElementById('card-office').addEventListener('click', (e) => {
-                // Don't start new game if continue button was clicked
-                if (e.target.closest('.scenario-continue-btn')) return;
-
+            // Scenario cards — office + forest playable
+            const startScenario = (scenario) => {
                 this._gameMode = this._menuMode;
-                if (this._hasSave('office', this._menuMode)) {
+                this._setupScenario(scenario);
+                if (this._hasSave(scenario, this._menuMode)) {
                     this._showConfirm(
                         'A saved game exists. Start a new game? (Save will be deleted)',
                         () => {
@@ -1188,19 +1506,41 @@
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
                 this.start();
+            };
+
+            document.getElementById('card-office').addEventListener('click', (e) => {
+                if (e.target.closest('.scenario-continue-btn')) return;
+                startScenario('office');
             });
 
-            // Continue saved game
+            document.getElementById('card-forest').addEventListener('click', (e) => {
+                if (e.target.closest('.scenario-continue-btn')) return;
+                startScenario('forest');
+            });
+
+            // Continue saved game — office
             document.getElementById('continue-office').addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
+                this._setupScenario('office');
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
                 const loaded = this._loadGame();
-                if (!loaded) {
-                    this.start();
-                }
+                if (!loaded) this.start();
+                this._updateContinueButtons();
+            });
+
+            // Continue saved game — forest
+            document.getElementById('continue-forest').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SFX) SFX.play('ui_game_start');
+                this._gameMode = this._menuMode;
+                this._setupScenario('forest');
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                setGameUIVisible(true);
+                const loaded = this._loadGame();
+                if (!loaded) this.start();
                 this._updateContinueButtons();
             });
 
@@ -1765,7 +2105,9 @@
         },
 
         _saveBestStats() {
-            const s = this._bestStats.office;
+            const scenario = this._currentScenario || 'office';
+            if (!this._bestStats[scenario]) this._bestStats[scenario] = { wave: 0, score: 0 };
+            const s = this._bestStats[scenario];
             if (this.wave > s.wave) s.wave = this.wave;
             if (this.score > s.score) s.score = this.score;
             try {
@@ -1775,12 +2117,14 @@
         },
 
         _updateBestStats() {
-            const s = this._bestStats.office;
-            const el = document.getElementById('stats-office');
-            if (el) {
-                const w = s.wave > 0 ? s.wave : '--';
-                const sc = s.score > 0 ? s.score : '--';
-                el.innerHTML = `<span class="stat-item">Best Wave: ${w}</span><span class="stat-item">High Score: ${sc}</span>`;
+            for (const scenario of ['office', 'forest']) {
+                const s = this._bestStats[scenario] || { wave: 0, score: 0 };
+                const el = document.getElementById(`stats-${scenario}`);
+                if (el) {
+                    const w = s.wave > 0 ? s.wave : '--';
+                    const sc = s.score > 0 ? s.score : '--';
+                    el.innerHTML = `<span class="stat-item">Best Wave: ${w}</span><span class="stat-item">High Score: ${sc}</span>`;
+                }
             }
         },
 
@@ -1788,7 +2132,7 @@
         // SAVE / LOAD SYSTEM
         // ============================
         _getSaveKey() {
-            return `holditin_save_office_${this._gameMode}`;
+            return `holditin_save_${this._currentScenario}_${this._gameMode}`;
         },
 
         _hasSave(scenario, mode) {
@@ -1815,7 +2159,7 @@
             const saveData = {
                 version: 1,
                 timestamp: Date.now(),
-                scenario: 'office',
+                scenario: this._currentScenario,
                 gameMode: this._gameMode,
 
                 // Core
@@ -2142,10 +2486,12 @@
         },
 
         _updateContinueButtons() {
-            const btn = document.getElementById('continue-office');
-            if (btn) {
-                const hasSave = this._hasSave('office', this._menuMode);
-                btn.style.display = hasSave ? '' : 'none';
+            for (const scenario of ['office', 'forest']) {
+                const btn = document.getElementById(`continue-${scenario}`);
+                if (btn) {
+                    const hasSave = this._hasSave(scenario, this._menuMode);
+                    btn.style.display = hasSave ? '' : 'none';
+                }
             }
         },
 
@@ -3127,7 +3473,8 @@
 
         /** Calculate and set the inter-wave timer for the next wave */
         _setInterWaveTimer() {
-            const nextComp = this.WAVE_COMPOSITIONS[this.wave + 1];
+            const compositions = this._getWaveCompositions();
+            const nextComp = compositions[this.wave + 1];
             let delay = nextComp ? nextComp.delay : Math.max(1.5, 4 - this.wave * 0.12);
             if (this.wave >= 20) delay = Math.min(delay, 2.0);
             if (this.wave >= 30) delay = Math.min(delay, 1.5);
@@ -3163,7 +3510,7 @@
             this._cleanupUpgradeDrones();
 
             // Check if next wave introduces a new enemy type
-            const introType = this.enemyIntroUI && EnemyIntroUI.getIntroEnemyType(this.wave + 1);
+            const introType = this.enemyIntroUI && EnemyIntroUI.getIntroEnemyType(this.wave + 1, this._currentScenario);
             if (introType) {
                 this._startEnemyIntro(introType);
             } else {
@@ -3858,15 +4205,17 @@
             this.waveActive = true;
             this.enemiesSpawned = 0;
 
-            // Build spawn queue from composition or procedural generation
-            const comp = this.WAVE_COMPOSITIONS[this.wave];
+            // Build spawn queue from scenario-specific composition or procedural generation
+            const compositions = this._getWaveCompositions();
+            const events = this._getWaveEvents();
+            const comp = compositions[this.wave];
             this._spawnQueue = [];
 
             // Check for event wave (defined or recurring after wave 50)
-            let event = this.WAVE_EVENTS[this.wave] || null;
+            let event = events[this.wave] || null;
             if (!event && this.wave > 50 && this.wave % 5 === 0) {
-                const keys = Object.keys(this.WAVE_EVENTS);
-                const base = this.WAVE_EVENTS[keys[Math.floor(Math.random() * keys.length)]];
+                const keys = Object.keys(events);
+                const base = events[keys[Math.floor(Math.random() * keys.length)]];
                 const scale = 1 + (this.wave - 50) * 0.05;
                 event = { ...base, enemyMult: (base.enemyMult || 1) * scale };
             }
@@ -3918,11 +4267,19 @@
             if (event) {
                 msg += ` — ${event.announcement}`;
                 if (window.SFX) SFX.play('wave_event');
-            } else if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
-            else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
-            else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
-            else if (this.wave === 9) msg += ' — POWER WALKERS!';
-            else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
+            } else if (this._currentScenario === 'forest') {
+                if (this.wave === 3) msg += ' — SQUIRRELS!';
+                else if (this.wave === 5) msg += ' — SOMETHING BIG IN THE WOODS...';
+                else if (this.wave === 7) msg += ' — A FOX ON THE PROWL!';
+                else if (this.wave === 9) msg += ' — MOOSE INCOMING!';
+                else if (this.wave === 10) msg += ' — RACCOON RAID!';
+            } else {
+                if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
+                else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
+                else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
+                else if (this.wave === 9) msg += ' — POWER WALKERS!';
+                else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
+            }
             if (window.SFX && !event) SFX.play('wave_start');
             this.announceWave(msg);
             this.updateHUD();
@@ -3935,8 +4292,16 @@
             let total = 10 + Math.floor(wave * 2.5 + Math.pow(wave, 1.5) * 0.3);
             if (event && event.enemyMult) total = Math.floor(total * event.enemyMult);
 
-            // Enemy type weights — event-specific or escalating defaults
-            const defaultWeights = [
+            // Enemy type weights — scenario-specific
+            const isForest = this._currentScenario === 'forest';
+            const defaultWeights = isForest ? [
+                ['raccoon_group', 0.06],
+                ['fox', Math.min(0.14, 0.08 + wave * 0.002)],
+                ['bear', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['moose', Math.min(0.18, 0.14 + wave * 0.001)],
+                ['squirrel', 0.25],
+                // remainder = deer (fallback)
+            ] : [
                 ['girls_group', 0.06],
                 ['panicker', Math.min(0.14, 0.08 + wave * 0.002)],
                 ['waddle', Math.min(0.18, 0.12 + wave * 0.002)],
@@ -3944,10 +4309,11 @@
                 ['dancer', 0.25],
                 // remainder = polite (fallback)
             ];
+            const fallbackType = isForest ? 'deer' : 'polite';
 
             for (let i = 0; i < total; i++) {
                 const roll = Math.random();
-                let type = 'polite';
+                let type = fallbackType;
 
                 if (event && event.weights) {
                     let cumulative = 0;
@@ -3973,15 +4339,16 @@
 
             const enemyType = this._spawnQueue.shift();
 
-            // The Girls — spawn as a tight cluster picking a lane
-            if (enemyType === 'girls_group') {
-                const def = this.ENEMY_TYPES.girls;
+            // The Girls / Raccoons — spawn as a tight cluster picking a lane
+            if (enemyType === 'girls_group' || enemyType === 'raccoon_group') {
+                const actualType = enemyType === 'girls_group' ? 'girls' : 'raccoon';
+                const def = this.ENEMY_TYPES[actualType];
                 if (!def) return;
                 const laneOptions = [-4, 0, 4];
                 const targetLane = laneOptions[Math.floor(Math.random() * 3)];
                 const groupSize = 5 + Math.floor(Math.random() * 3); // 5-7
                 for (let g = 0; g < groupSize; g++) {
-                    this._createEnemy('girls', def, {
+                    this._createEnemy(actualType, def, {
                         xOverride: targetLane + (Math.random() - 0.5) * 1.5,
                         zOffset: Math.random() * 2,
                         targetLane: targetLane,
@@ -4126,12 +4493,19 @@
                 panicker: 'panic_run',
                 powerwalker: 'power_walk',
                 girls: 'walk_chat',
+                // Forest
+                deer: 'walk',
+                squirrel: 'hop',
+                bear: 'waddle',
+                fox: 'dart',
+                moose: 'charge',
+                raccoon: 'waddle',
             };
             enemy.walkState = initialStates[enemyType] || 'walk';
             ac.setState(enemy.walkState);
 
-            // Girls: random phase offset for visual variety in clusters
-            if (enemyType === 'girls') {
+            // Girls/Raccoons: random phase offset for visual variety in clusters
+            if (enemyType === 'girls' || enemyType === 'raccoon') {
                 ac.mixer.time = Math.random() * 2.0;
             }
 
@@ -4148,7 +4522,7 @@
             }
 
             // L11: False Alarm — mark one panicker per wave for inverted aura
-            if (enemyType === 'panicker' && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
+            if ((enemyType === 'panicker' || enemyType === 'fox') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
                 if (!this._falseAlarmUsed) {
                     enemy._falseAlarmInverted = true;
                     this._falseAlarmUsed = true;
@@ -4330,12 +4704,13 @@
                     }
                 }
 
-                // Panicker speed aura — panic is contagious, nearby enemies 50% faster
+                // Speed aura — panicker/fox make nearby enemies 50% faster
                 // L11: False Alarm — inverted panickers slow nearby enemies instead
                 let auraMult = 1.0;
-                if (e.type !== 'panicker') {
+                const isAuraType = e.type === 'panicker' || e.type === 'fox';
+                if (!isAuraType) {
                     for (const other of this.enemies) {
-                        if (other.type !== 'panicker' || other.bashing) continue;
+                        if ((other.type !== 'panicker' && other.type !== 'fox') || other.bashing) continue;
                         const adx = e.x - other.x;
                         const adz = e.z - other.z;
                         if (adx * adx + adz * adz < 64) { // range 8
@@ -4462,7 +4837,7 @@
                         e.bashingBarrier = null;
                         // Reset animation from bash_door back to walk state
                         if (e.animController) {
-                            const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear') && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                         }
                     }
@@ -4489,7 +4864,7 @@
                         }
                         // Resume walk animation
                         if (e.animController) {
-                            const walkState = (e.type === 'waddle' && e.panicked) ? 'panic_sprint' : e.walkState;
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear') && e.panicked) ? 'panic_sprint' : e.walkState;
                             e.animController.setState(walkState);
                             e.animController.setTimeScale(1.0);
                         }
@@ -4562,8 +4937,8 @@
 
                 // Move toward toilet (skip if bashing the door or stunned)
                 if (!e.bashing && e.stunTimer <= 0) {
-                    // Waddle Tank panic — speeds up when badly hurt (5F)
-                    if (e.type === 'waddle' && !e.panicked && e.hp < e.maxHp * 0.5) {
+                    // Tank panic — speeds up when badly hurt (waddle tank + bear)
+                    if ((e.type === 'waddle' || e.type === 'bear') && !e.panicked && e.hp < e.maxHp * 0.5) {
                         e.panicked = true;
                         e.speed *= 2.0;
                         e.animController.setState('panic_sprint');
@@ -4594,8 +4969,8 @@
                         e.x += dxToTarget * dt * 2.5;
                     }
 
-                    // Panicker zig-zag — slight lateral wobble
-                    if (e.type === 'panicker') {
+                    // Panicker/Fox zig-zag — slight lateral wobble
+                    if (e.type === 'panicker' || e.type === 'fox') {
                         e.x += Math.sin(e.walkPhase * 0.5) * dt * 0.5;
                     }
 
@@ -4695,8 +5070,8 @@
                         e.animController.setTimeScale(animSpeed);
                     }
 
-                    // 6D: Panicker pulsing aura glow
-                    if (e.type === 'panicker') {
+                    // 6D: Panicker/Fox pulsing aura glow
+                    if (e.type === 'panicker' || e.type === 'fox') {
                         const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -4909,8 +5284,8 @@
                     // Bash animation
                     e.bashTimer -= dt;
                     const camDist = e.mesh.position.distanceTo(this.camera.position);
-                    // 6D: panicker aura glow while bashing
-                    if (e.type === 'panicker') {
+                    // 6D: panicker/fox aura glow while bashing
+                    if (e.type === 'panicker' || e.type === 'fox') {
                         const glow = 0.3 + Math.sin(this.time * 4) * 0.3;
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -5085,7 +5460,7 @@
                             this._dyingAnimControllers.add(e.animController);
                         }
 
-                        const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5 };
+                        const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5, deer: 0.6, squirrel: 0.5, bear: 0.8, fox: 0.6, moose: 0.6, raccoon: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
                         const enemyRef = e;
                         const deathPos = new THREE.Vector3(e.x, 0, e.z);
@@ -6789,8 +7164,13 @@
                 this.camera.position.y = CONFIG.cameraPos.y;
             }
 
-            // Always update toilet glow
-            updateToilet(this.toilet, this.clock.elapsedTime);
+            // Always update toilet glow (if it exists)
+            if (this.toilet) updateToilet(this.toilet, this.clock.elapsedTime);
+
+            // Forest-specific ambient effects
+            if (this._currentScenario === 'forest') {
+                this._updateForestEffects(this.clock.elapsedTime, rawDt);
+            }
 
             // Update player character animation
             if (this.playerCharacter) {

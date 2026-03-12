@@ -187,10 +187,12 @@ export class EnemyIntroUI {
     /**
      * Check if the given wave number has an enemy intro.
      * @param {number} waveNumber
+     * @param {string} [scenario='office'] - Current scenario key
      * @returns {string|null} Enemy type key or null
      */
-    static getIntroEnemyType(waveNumber) {
-        return INTRO_WAVE_MAP[waveNumber] || null;
+    static getIntroEnemyType(waveNumber, scenario = 'office') {
+        const map = INTRO_WAVE_MAP[scenario] || INTRO_WAVE_MAP.office;
+        return map[waveNumber] || null;
     }
 
     /**
