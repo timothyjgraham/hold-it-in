@@ -664,9 +664,6 @@ export class MedicDroneSystem {
         const model = target.model;
         const group = model.group;
 
-        // Remove from scene
-        if (group.parent) group.parent.remove(group);
-
         // Remove birdies
         if (target.birdies) {
             if (target.birdies.parent) target.birdies.parent.remove(target.birdies);
@@ -678,23 +675,32 @@ export class MedicDroneSystem {
             model.animController.currentAction.paused = true;
         }
 
-        // Keep exactly as-is — no scale change, no rotation change
-        group.position.set(0, 0, 0); // Center on the stretcher
-        group.visible = true;
+        // Capture world orientation BEFORE reparenting so we can preserve it
+        const savedWorldQuat = new THREE.Quaternion();
+        group.getWorldQuaternion(savedWorldQuat);
 
+        // Reparent to stretcher — use attach() to preserve world transform,
+        // then override position to center on the bed while keeping rotation
         const anchor = drone.mesh.userData.stackAnchor;
 
         if (drone.stackCount === 0) {
-            // First corpse: lay on the existing stretcher bed
-            anchor.add(group);
+            anchor.attach(group);
         } else {
-            // Subsequent corpses: create a new stretcher layer below the chain
             const layer = _createStretcherLayer();
-            // Position relative to the anchor — each layer hangs below the previous
             layer.root.position.y = -(drone.stackCount * LAYER_HEIGHT);
-            layer.corpseAnchor.add(group);
             anchor.add(layer.root);
+            layer.corpseAnchor.attach(group);
         }
+
+        // Center position on the stretcher but preserve world orientation
+        group.position.set(0, 0, 0);
+        // Reapply the saved world rotation in the new parent's local space
+        const parentWorldQuat = new THREE.Quaternion();
+        group.parent.getWorldQuaternion(parentWorldQuat);
+        parentWorldQuat.invert();
+        group.quaternion.multiplyQuaternions(parentWorldQuat, savedWorldQuat);
+
+        group.visible = true;
 
         drone.stack.push(model);
         drone.stackCount++;
