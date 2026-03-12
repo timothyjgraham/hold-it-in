@@ -111,7 +111,15 @@
 
     <!-- Pause Overlay -->
     <div id="pause-overlay">
-        <div id="pause-text">PAUSED</div>
+        <div id="pause-content">
+            <div id="pause-text">PAUSED</div>
+            <div id="pause-buttons">
+                <button class="menu-btn" id="btn-resume">RESUME</button>
+                <button class="menu-btn menu-btn-small" id="btn-save-quit">SAVE &amp; QUIT</button>
+                <button class="menu-btn menu-btn-small" id="btn-save-menu">SAVE &amp; MAIN MENU</button>
+                <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save">QUIT WITHOUT SAVING</button>
+            </div>
+        </div>
     </div>
 
     <!-- Tower Build Panel -->
@@ -251,6 +259,7 @@
                         <span class="stat-item">Best Wave: --</span>
                         <span class="stat-item">High Score: --</span>
                     </div>
+                    <button class="scenario-continue-btn" id="continue-office" style="display:none;">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Forest -->
@@ -352,6 +361,17 @@
             <div class="credit-section tagline-credit">Your toilet. Your rules.</div>
         </div>
         <button class="menu-btn menu-btn-small" id="btn-credits-back">BACK</button>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-dialog" class="menu-screen" style="display:none;">
+        <div class="confirm-box">
+            <div class="confirm-text" id="confirm-text">Are you sure?</div>
+            <div class="confirm-buttons">
+                <button class="menu-btn" id="confirm-yes">YES</button>
+                <button class="menu-btn menu-btn-small" id="confirm-no">CANCEL</button>
+            </div>
+        </div>
     </div>
 
     <!-- Fade Overlay (cinematic fade to black) -->
@@ -1033,9 +1053,12 @@
 
                 if (this.state === 'title') return;
 
-                // Pause toggle (disabled during upgrade selection / intro)
+                // Pause toggle (disabled during upgrade selection / intro / confirm dialog)
                 if (e.code === 'Space' || e.code === 'Escape') {
                     if (this._upgradePhase || this._introPhase) return;
+                    // Don't toggle while confirm dialog is visible
+                    const confirmDialog = document.getElementById('confirm-dialog');
+                    if (confirmDialog && confirmDialog.style.display === 'flex') return;
                     if (this.state === 'playing') this.pause();
                     else if (this.state === 'paused') this.unpause();
                     return;
@@ -1109,12 +1132,14 @@
                 this._menuMode = 'campaign';
                 document.getElementById('scenario-screen-title').textContent = 'CAMPAIGN';
                 showScreen('scenario-screen');
+                this._updateContinueButtons();
             });
             document.getElementById('btn-endless').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 this._menuMode = 'endless';
                 document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
                 showScreen('scenario-screen');
+                this._updateContinueButtons();
             });
             document.getElementById('btn-settings').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
@@ -1140,12 +1165,43 @@
             });
 
             // Scenario cards — only office is playable
-            document.getElementById('card-office').addEventListener('click', () => {
+            document.getElementById('card-office').addEventListener('click', (e) => {
+                // Don't start new game if continue button was clicked
+                if (e.target.closest('.scenario-continue-btn')) return;
+
+                this._gameMode = this._menuMode;
+                if (this._hasSave('office', this._menuMode)) {
+                    this._showConfirm(
+                        'A saved game exists. Start a new game? (Save will be deleted)',
+                        () => {
+                            this._deleteSave();
+                            if (window.SFX) SFX.play('ui_game_start');
+                            document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                            setGameUIVisible(true);
+                            this.start();
+                            this._updateContinueButtons();
+                        }
+                    );
+                    return;
+                }
                 if (window.SFX) SFX.play('ui_game_start');
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
-                this._gameMode = this._menuMode; // 'campaign' or 'endless'
                 this.start();
+            });
+
+            // Continue saved game
+            document.getElementById('continue-office').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SFX) SFX.play('ui_game_start');
+                this._gameMode = this._menuMode;
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                setGameUIVisible(true);
+                const loaded = this._loadGame();
+                if (!loaded) {
+                    this.start();
+                }
+                this._updateContinueButtons();
             });
 
             // Settings sliders — wire to SoundManager
@@ -1194,8 +1250,56 @@
                 this._updateBestStats();
             });
 
+            // === PAUSE MENU BUTTONS ===
+            document.getElementById('btn-resume').addEventListener('click', () => {
+                this.unpause();
+            });
+
+            document.getElementById('btn-save-quit').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                const success = this._saveGame();
+                if (success) {
+                    this._saveBestStats();
+                    this.announceWave('GAME SAVED');
+                    // Close the tab/window
+                    setTimeout(() => window.close(), 300);
+                } else {
+                    this.announceWave('SAVE FAILED — STORAGE FULL?');
+                }
+            });
+
+            document.getElementById('btn-save-menu').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                const success = this._saveGame();
+                if (success) {
+                    this._saveBestStats();
+                    document.getElementById('pause-overlay').classList.remove('active');
+                    this.state = 'title';
+                    setGameUIVisible(false);
+                    showScreen('title-screen');
+                    this._updateContinueButtons();
+                    this.announceWave('');
+                } else {
+                    this.announceWave('SAVE FAILED — STORAGE FULL?');
+                }
+            });
+
+            document.getElementById('btn-quit-no-save').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                this._showConfirm(
+                    'Quit without saving? All progress will be lost.',
+                    () => {
+                        document.getElementById('pause-overlay').classList.remove('active');
+                        this.state = 'title';
+                        setGameUIVisible(false);
+                        showScreen('title-screen');
+                        this._updateBestStats();
+                    }
+                );
+            });
+
             // Menu hover sounds
-            document.querySelectorAll('.menu-btn, .scenario-card.playable').forEach(btn => {
+            document.querySelectorAll('.menu-btn, .scenario-card.playable, .scenario-continue-btn').forEach(btn => {
                 btn.addEventListener('mouseenter', () => {
                     if (window.SFX) SFX.play('ui_hover');
                 });
@@ -1626,6 +1730,10 @@
             this.state = 'paused';
             if (window.SFX) SFX.play('ui_pause');
             document.getElementById('pause-overlay').classList.add('active');
+            // Disable save buttons during upgrade/intro selection
+            const saveDisabled = this._upgradePhase || this._introPhase;
+            document.getElementById('btn-save-quit').disabled = saveDisabled;
+            document.getElementById('btn-save-menu').disabled = saveDisabled;
         },
 
         unpause() {
@@ -1638,6 +1746,8 @@
         gameOver() {
             this.state = 'gameover';
             if (window.SFX) SFX.play('game_over');
+            // Delete save — can't continue a lost game
+            this._deleteSave();
             // Save best stats
             this._saveBestStats();
             const modeLabel = this._gameMode === 'endless' ? ' (ENDLESS)' : '';
@@ -1672,6 +1782,397 @@
                 const sc = s.score > 0 ? s.score : '--';
                 el.innerHTML = `<span class="stat-item">Best Wave: ${w}</span><span class="stat-item">High Score: ${sc}</span>`;
             }
+        },
+
+        // ============================
+        // SAVE / LOAD SYSTEM
+        // ============================
+        _getSaveKey() {
+            return `holditin_save_office_${this._gameMode}`;
+        },
+
+        _hasSave(scenario, mode) {
+            try {
+                const key = `holditin_save_${scenario}_${mode}`;
+                const data = localStorage.getItem(key);
+                if (!data) return false;
+                const parsed = JSON.parse(data);
+                return parsed && parsed.version === 1;
+            } catch(e) { return false; }
+        },
+
+        _deleteSave() {
+            try {
+                localStorage.removeItem(this._getSaveKey());
+            } catch(e) { /* ignore */ }
+        },
+
+        _saveGame() {
+            // Filter out dying entities
+            const liveEnemies = this.enemies.filter(e => !e.dying);
+            const liveTowers = this.towers.filter(t => !t.dying);
+
+            const saveData = {
+                version: 1,
+                timestamp: Date.now(),
+                scenario: 'office',
+                gameMode: this._gameMode,
+
+                // Core
+                wave: this.wave,
+                coins: this.coins,
+                score: this.score,
+                time: this.time,
+                totalRepelled: this._totalRepelled || 0,
+
+                // Door
+                doorHP: this.doorGroup ? this.doorGroup.userData.doorHP : 100,
+                maxDoorHP: this.doorGroup ? this.doorGroup.userData.maxDoorHP : 100,
+
+                // Wave management
+                waveActive: this.waveActive,
+                waveTimer: this.waveTimer,
+                spawnTimer: this.spawnTimer,
+                enemiesSpawned: this.enemiesSpawned,
+                enemiesPerWave: this.enemiesPerWave,
+                spawnInterval: this.spawnInterval,
+                spawnQueue: [...this._spawnQueue],
+                burstSize: this._burstSize || 1,
+                eventSpeedMult: this._eventSpeedMult || 1.0,
+                eventDesperateChance: this._eventDesperateChance || 0,
+
+                // Legendary timers
+                overtimeTimer: this._overtimeTimer || 0,
+                falseAlarmUsed: this._falseAlarmUsed || false,
+                desperateMeasures: this._desperateMeasures || false,
+
+                // Enemies — exact positions to prevent save scumming
+                enemies: liveEnemies.map(e => ({
+                    type: e.type,
+                    x: e.x, z: e.z,
+                    speed: e.speed,
+                    hp: e.hp, maxHp: e.maxHp,
+                    size: e.size,
+                    coins: e.coins,
+                    doorDmg: e.doorDmg,
+                    slowed: e.slowed || 0,
+                    walkPhase: e.walkPhase,
+                    bodyColor: e.bodyColor,
+                    slowImmune: e.slowImmune || false,
+                    panicked: e.panicked || false,
+                    desperate: e.desperate || false,
+                    knockbackVX: e.knockbackVX || 0,
+                    knockbackVZ: e.knockbackVZ || 0,
+                    stunTimer: e.stunTimer || 0,
+                    tripFallDuration: e.tripFallDuration || 0,
+                    targetLane: e.targetLane,
+                    bashing: e.bashing || false,
+                    bashingBarrierIdx: e.bashingBarrier
+                        ? liveTowers.indexOf(e.bashingBarrier) : -1,
+                    _bathroomPanicBoost: e._bathroomPanicBoost || false,
+                    _falseAlarmInverted: e._falseAlarmInverted || false,
+                    _pileupCooldown: e._pileupCooldown || 0,
+                    _sentryMarked: e._sentryMarked || 0,
+                    _showHPBar: e._showHPBar || 0,
+                    _impactSquash: e._impactSquash || 0,
+                    walkState: e.walkState || 'walk',
+                })),
+
+                // Towers
+                towers: liveTowers.map(t => ({
+                    type: t.type,
+                    gridX: t.gridX, gridZ: t.gridZ,
+                    tileWidth: t.tileWidth || 1,
+                    hp: t.hp, maxHp: t.maxHp,
+                    attackTimer: t.attackTimer || 0,
+                    mopAngle: t.mopAngle,
+                    magnetTimer: t.magnetTimer || 0,
+                })),
+
+                // Effect zones
+                mopPuddles: this._mopPuddles.map(p => ({
+                    x: p.x, z: p.z, life: p.life, radius: p.radius
+                })),
+                spillZones: (this._spillZones || []).map(sz => ({
+                    x: sz.x, z: sz.z, life: sz.life, radius: sz.radius
+                })),
+                ubikFloodZones: (this._ubikFloodZones || []).map(fz => ({
+                    x: fz.x, z: fz.z, life: fz.life, radius: fz.radius,
+                    towerKey: fz.towerKey
+                })),
+
+                // Upgrades
+                upgradeStacks: this.upgradeManager
+                    ? { ...this.upgradeManager._stacks } : {},
+                upgradeAcquired: this.upgradeManager
+                    ? [...this.upgradeManager._acquired] : [],
+            };
+
+            try {
+                localStorage.setItem(this._getSaveKey(), JSON.stringify(saveData));
+                return true;
+            } catch(e) {
+                console.error('Save failed:', e);
+                return false;
+            }
+        },
+
+        _loadGame() {
+            try {
+                const raw = localStorage.getItem(this._getSaveKey());
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (!data || data.version !== 1) return false;
+
+                // 1. Clean start — resets scene, entities, door, upgrades
+                this.start();
+
+                // 2. Restore core state
+                this.wave = data.wave;
+                this.coins = data.coins;
+                this.score = data.score;
+                this.time = data.time || 0;
+                this._totalRepelled = data.totalRepelled || 0;
+
+                // 3. Restore upgrades FIRST (HP bonuses affect towers)
+                if (this.upgradeManager && data.upgradeStacks) {
+                    this.upgradeManager._stacks = { ...data.upgradeStacks };
+                    this.upgradeManager._acquired = [...(data.upgradeAcquired || [])];
+                }
+                // Rebuild upgrade HUD cards
+                if (this.upgradeManager && window.UPGRADE_MAP) {
+                    for (const id of this.upgradeManager._acquired) {
+                        const upgrade = UPGRADE_MAP[id];
+                        if (upgrade) this._addUpgradeCard(upgrade);
+                    }
+                }
+
+                // 4. Restore door (after upgrades so L1 maxHP is considered)
+                if (this.doorGroup) {
+                    const ud = this.doorGroup.userData;
+                    ud.maxDoorHP = data.maxDoorHP;
+                    ud.doorHP = data.doorHP;
+                    // Update door crack visuals
+                    if (ud.cracks) {
+                        const pct = ud.doorHP / ud.maxDoorHP;
+                        ud.cracks[0].visible = pct <= 0.80;
+                        ud.cracks[1].visible = pct <= 0.60;
+                        ud.cracks[2].visible = pct <= 0.40;
+                        ud.cracks[3].visible = pct <= 0.20;
+                        ud.cracks[4].visible = pct <= 0.10;
+                    }
+                    // Update door color tint
+                    if (ud.door) {
+                        const pct = ud.doorHP / ud.maxDoorHP;
+                        if (pct < 1.0) {
+                            const r = Math.min(1.0, 0.55 + (1 - pct) * 0.45);
+                            const g = 0.41 * pct;
+                            const b = 0.08 * pct;
+                            ud.door.material.color.setRGB(r, g, b);
+                            ud.door.material.emissive.setHex(0xff0000);
+                            ud.door.material.emissiveIntensity = (1 - pct) * 0.3;
+                        }
+                    }
+                }
+
+                // 5. Restore wave management
+                this.waveActive = data.waveActive;
+                this.waveTimer = data.waveTimer;
+                this.spawnTimer = data.spawnTimer;
+                this.enemiesSpawned = data.enemiesSpawned;
+                this.enemiesPerWave = data.enemiesPerWave;
+                this.spawnInterval = data.spawnInterval;
+                this._spawnQueue = data.spawnQueue || [];
+                this._burstSize = data.burstSize || 1;
+                this._eventSpeedMult = data.eventSpeedMult || 1.0;
+                this._eventDesperateChance = data.eventDesperateChance || 0;
+
+                // 6. Restore legendary timers
+                this._overtimeTimer = data.overtimeTimer || 0;
+                this._falseAlarmUsed = data.falseAlarmUsed || false;
+                this._desperateMeasures = data.desperateMeasures || false;
+
+                // 7. Recreate towers
+                for (const td of data.towers) {
+                    const def = this.TOWERS[td.type];
+                    if (!def) continue;
+                    const tower = this._createTowerMesh(td.type, def);
+                    tower.gridX = td.gridX;
+                    tower.gridZ = td.gridZ;
+                    tower.tileWidth = td.tileWidth || 1;
+                    tower.hp = td.hp;
+                    tower.maxHp = td.maxHp;
+                    tower.attackTimer = td.attackTimer || 0;
+                    tower.delivering = false;
+                    tower.dying = false;
+                    if (td.mopAngle !== undefined) tower.mopAngle = td.mopAngle;
+                    if (td.magnetTimer !== undefined) tower.magnetTimer = td.magnetTimer;
+                    tower.mesh.position.set(td.gridX, 0, td.gridZ);
+                    tower.mesh.castShadow = true;
+                    this.scene.add(tower.mesh);
+                    this.towers.push(tower);
+                }
+
+                // 8. Recreate enemies
+                for (const ed of data.enemies) {
+                    const def = this.ENEMY_TYPES[ed.type];
+                    if (!def) continue;
+
+                    let model;
+                    if (this.enemyPool) {
+                        model = this.enemyPool.acquire(ed.type, ed.bodyColor, ed.desperate, ed.size);
+                    } else {
+                        model = createEnemyModel(ed.type, ed.bodyColor, ed.desperate, ed.size);
+                    }
+
+                    model.group.position.set(ed.x, 0, ed.z);
+                    this.scene.add(model.group);
+
+                    const enemy = {
+                        type: ed.type,
+                        mesh: model.group,
+                        skinnedMesh: model.skinnedMesh || null,
+                        skeleton: model.skeleton || null,
+                        boneMap: model.boneMap || null,
+                        outlineMesh: model.outlineMesh || null,
+                        materials: model.materials || null,
+                        animController: null,
+                        x: ed.x, z: ed.z,
+                        speed: ed.speed,
+                        hp: ed.hp, maxHp: ed.maxHp,
+                        size: ed.size,
+                        coins: ed.coins,
+                        doorDmg: ed.doorDmg,
+                        slowed: ed.slowed || 0,
+                        walkPhase: ed.walkPhase,
+                        hitFlash: 0,
+                        bodyColor: ed.bodyColor,
+                        slowImmune: ed.slowImmune || false,
+                        panicked: ed.panicked || false,
+                        knockbackVX: ed.knockbackVX || 0,
+                        knockbackVZ: ed.knockbackVZ || 0,
+                        stunTimer: ed.stunTimer || 0,
+                        tripFallDuration: ed.tripFallDuration || 0,
+                        desperate: ed.desperate || false,
+                        targetLane: ed.targetLane,
+                        bashing: ed.bashing || false,
+                        bashingBarrier: null,
+                        _bathroomPanicBoost: ed._bathroomPanicBoost || false,
+                        _falseAlarmInverted: ed._falseAlarmInverted || false,
+                        _pileupCooldown: ed._pileupCooldown || 0,
+                        _sentryMarked: ed._sentryMarked || 0,
+                        _showHPBar: ed._showHPBar || 0,
+                        _impactSquash: ed._impactSquash || 0,
+                        walkState: ed.walkState || 'walk',
+                    };
+
+                    // Animation controller
+                    const ac = model.animController || new AnimationController(model.skinnedMesh, ed.type);
+                    enemy.animController = ac;
+                    ac.setState(ed.walkState || 'walk');
+                    if (ed.desperate) ac.setTimeScale(1.5);
+                    if (ed.stunTimer > 0) ac.setTimeScale(0);
+
+                    // Resolve bashing barrier reference
+                    if (ed.bashing && ed.bashingBarrierIdx >= 0 && ed.bashingBarrierIdx < this.towers.length) {
+                        enemy.bashingBarrier = this.towers[ed.bashingBarrierIdx];
+                    }
+
+                    this.enemies.push(enemy);
+                }
+
+                // 9. Recreate effect zones (without SFX — silent creation)
+                for (const p of (data.mopPuddles || [])) {
+                    const puddleMat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.mop, transparent: true,
+                        opacity: Math.max(0, 0.35 * (p.life / 3.0)), depthWrite: false,
+                    });
+                    const puddleMesh = new THREE.Mesh(
+                        new THREE.CircleGeometry(p.radius, 12), puddleMat
+                    );
+                    puddleMesh.rotation.x = -Math.PI / 2;
+                    puddleMesh.position.set(p.x, 0.02, p.z);
+                    this.scene.add(puddleMesh);
+                    this._mopPuddles.push({
+                        x: p.x, z: p.z, mesh: puddleMesh,
+                        life: p.life, radius: p.radius
+                    });
+                }
+                for (const sz of (data.spillZones || [])) {
+                    const mat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.danger, transparent: true,
+                        opacity: Math.max(0, 0.3 * (sz.life / 5.0)), depthWrite: false,
+                    });
+                    const mesh = new THREE.Mesh(new THREE.CircleGeometry(sz.radius, 16), mat);
+                    mesh.rotation.x = -Math.PI / 2;
+                    mesh.position.set(sz.x, 0.02, sz.z);
+                    this.scene.add(mesh);
+                    this._spillZones.push({
+                        x: sz.x, z: sz.z, mesh, life: sz.life, radius: sz.radius
+                    });
+                }
+                for (const fz of (data.ubikFloodZones || [])) {
+                    const mat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.ubik, transparent: true,
+                        opacity: Math.max(0, 0.25 * (fz.life / 8.0)), depthWrite: false,
+                    });
+                    const mesh = new THREE.Mesh(new THREE.CircleGeometry(fz.radius, 16), mat);
+                    mesh.rotation.x = -Math.PI / 2;
+                    mesh.position.set(fz.x, 0.02, fz.z);
+                    this.scene.add(mesh);
+                    this._ubikFloodZones.push({
+                        x: fz.x, z: fz.z, mesh, life: fz.life,
+                        radius: fz.radius, towerKey: fz.towerKey
+                    });
+                }
+
+                // 10. Update HUD
+                this.updateHUD();
+                this.announceWave(`WAVE ${this.wave} — GAME LOADED`);
+
+                // 11. Delete save (consumed — prevents save scumming)
+                localStorage.removeItem(this._getSaveKey());
+
+                console.log(`Game loaded — Wave ${this.wave}, ${this.enemies.length} enemies, ${this.towers.length} towers`);
+                return true;
+            } catch(e) {
+                console.error('Load failed:', e);
+                return false;
+            }
+        },
+
+        _updateContinueButtons() {
+            const btn = document.getElementById('continue-office');
+            if (btn) {
+                const hasSave = this._hasSave('office', this._menuMode);
+                btn.style.display = hasSave ? '' : 'none';
+            }
+        },
+
+        _showConfirm(message, onConfirm) {
+            const dialog = document.getElementById('confirm-dialog');
+            document.getElementById('confirm-text').textContent = message;
+            dialog.style.display = 'flex';
+
+            const yesBtn = document.getElementById('confirm-yes');
+            const noBtn = document.getElementById('confirm-no');
+
+            // Clone to remove old listeners
+            const newYes = yesBtn.cloneNode(true);
+            const newNo = noBtn.cloneNode(true);
+            yesBtn.parentNode.replaceChild(newYes, yesBtn);
+            noBtn.parentNode.replaceChild(newNo, noBtn);
+
+            newYes.addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                dialog.style.display = 'none';
+                onConfirm();
+            }, { once: true });
+
+            newNo.addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                dialog.style.display = 'none';
+            }, { once: true });
         },
 
         // ============================

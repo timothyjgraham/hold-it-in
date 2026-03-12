@@ -449,6 +449,14 @@ canvas {
 
 #pause-overlay.active {
     display: flex;
+    pointer-events: auto;
+}
+
+#pause-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
 }
 
 #pause-text {
@@ -464,6 +472,94 @@ canvas {
     padding: 12px 40px;
     transform: rotate(-2deg);
     animation: jitter 0.15s ease-in-out infinite;
+}
+
+#pause-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.menu-btn-danger {
+    background: var(--pal-danger, #ff6b7a) !important;
+    font-size: 16px !important;
+    padding: 8px 24px !important;
+    opacity: 0.8;
+}
+
+.menu-btn-danger:hover {
+    background: #ff8a96 !important;
+    opacity: 1;
+}
+
+.menu-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.menu-btn:disabled:hover {
+    transform: none !important;
+    box-shadow: 2px 3px 0px var(--pal-ink, #1a1a1a) !important;
+}
+
+/* ===== CONTINUE BUTTON (scenario card) ===== */
+.scenario-continue-btn {
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    padding: 8px 24px;
+    margin-top: 8px;
+    background: var(--pal-success, #50c878);
+    color: var(--pal-ink, #1a1a1a);
+    border: 3px solid var(--pal-ink, #1a1a1a);
+    border-radius: 10px;
+    box-shadow: 2px 3px 0px var(--pal-ink, #1a1a1a);
+    cursor: pointer;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.scenario-continue-btn:hover {
+    background: #6ad98e;
+    transform: scale(1.06);
+    box-shadow: 3px 4px 0px var(--pal-ink, #1a1a1a);
+}
+
+/* ===== CONFIRMATION DIALOG ===== */
+#confirm-dialog {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+}
+
+.confirm-box {
+    background: var(--pal-cream, #fff4d9);
+    border: 5px solid var(--pal-ink, #1a1a1a);
+    border-radius: 18px;
+    box-shadow: 5px 6px 0px var(--pal-ink, #1a1a1a);
+    padding: 30px 40px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.confirm-text {
+    font-family: 'Bangers', sans-serif;
+    font-size: 22px;
+    color: var(--pal-ink, #1a1a1a);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    line-height: 1.4;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
 }
 
 /* ===== TOWER PANEL (right side, sticker style) ===== */
