@@ -311,9 +311,9 @@ function _createMedicDroneModel() {
         stretcherGroup.add(rail);
     }
 
-    // 4 cables connecting stretcher to body
+    // 4 cables connecting stretcher to body (long so stretcher hangs well below drone)
     const cableMat = toonMat(PALETTE.fixture);
-    const cableLength = 0.6;
+    const cableLength = 1.5;
     const cablePositions = [
         { x: bedW * 0.35, z: bedD * 0.35 },
         { x: -bedW * 0.35, z: bedD * 0.35 },
@@ -673,15 +673,15 @@ export class MedicDroneSystem {
             target.birdies = null;
         }
 
-        // Reset skeleton to rest pose so corpse lies naturally on the stretcher
-        if (model.animController) {
-            model.animController.reset();
+        // Freeze death pose (don't reset — keep the face-forward collapse)
+        if (model.animController && model.animController.currentAction) {
+            model.animController.currentAction.paused = true;
         }
 
-        // Scale corpse and rotate to lie flat on back
+        // Scale down to fit stretcher, keep orientation straight (no rotation)
         group.scale.set(CORPSE_SCALE, CORPSE_SCALE, CORPSE_SCALE);
-        group.rotation.set(-Math.PI / 2, 0, Math.random() * 0.3 - 0.15); // Lie flat, slight yaw
-        group.position.set(0, 0.05, 0); // Just above bed surface
+        group.rotation.set(0, 0, 0);
+        group.position.set(0, 0.02, 0); // Directly on top of bed surface
         group.visible = true;
 
         const anchor = drone.mesh.userData.stackAnchor;
