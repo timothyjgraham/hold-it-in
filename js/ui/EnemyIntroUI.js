@@ -239,7 +239,7 @@ export class EnemyIntroUI {
         const mat = new THREE.MeshBasicMaterial({
             color: 0x1a1a2e,
             transparent: true,
-            opacity: 0.55,
+            opacity: 0.35,
             depthTest: false,   // Always render on top of game world
             depthWrite: true,   // Write depth so intro elements can test against it
             fog: false,
@@ -573,12 +573,15 @@ export class EnemyIntroUI {
         updateUpgradeDrone(this._drone, dt);
 
         // Billboard the sign to face the camera flat-on (override pendulum tilt).
-        // This keeps the info card readable regardless of camera angle.
+        // For non-camera objects, lookAt() makes +Z face the target.
+        // The textured face is on -Z, so we look at a point AWAY from camera
+        // to make -Z (textured side) point toward the camera.
         const signGroup = this._drone.userData.signGroup;
         if (signGroup && this._camera) {
-            // Object3D.lookAt handles parent transforms, so this works even
-            // though signGroup is a child of the drone root.
-            signGroup.lookAt(this._camera.position);
+            const wPos = new THREE.Vector3();
+            signGroup.getWorldPosition(wPos);
+            const awayFromCamera = wPos.clone().multiplyScalar(2).sub(this._camera.position);
+            signGroup.lookAt(awayFromCamera);
         }
     }
 
@@ -693,7 +696,7 @@ export class EnemyIntroUI {
         // Dim plane fade out
         if (this._dimPlane) {
             const t = Math.min(1, exitT / EXIT_DURATION);
-            this._dimPlane.material.opacity = 0.55 * (1 - t);
+            this._dimPlane.material.opacity = 0.35 * (1 - t);
         }
 
         // Complete
