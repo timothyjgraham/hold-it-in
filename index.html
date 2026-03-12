@@ -303,7 +303,7 @@
                 </div>
             </div>
             <!-- The Airplane -->
-            <div class="scenario-card locked" id="card-airplane" data-scenario="airplane">
+            <div class="scenario-card playable" id="card-airplane" data-scenario="airplane">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
                         <svg viewBox="0 0 64 64" width="56" height="56">
@@ -319,7 +319,11 @@
                     </div>
                     <div class="scenario-name">THE AIRPLANE</div>
                     <div class="scenario-desc">Mile-high bathroom. Impatient passengers.</div>
-                    <div class="scenario-coming-soon">COMING SOON</div>
+                    <div class="scenario-stats" id="stats-airplane">
+                        <span class="stat-item">Best Wave: --</span>
+                        <span class="stat-item">High Score: --</span>
+                    </div>
+                    <button class="scenario-continue-btn" id="continue-airplane" style="display:none;">CONTINUE SAVED GAME</button>
                 </div>
             </div>
         </div>
@@ -421,7 +425,7 @@
         doorGroup: null,
 
         // Best stats per scenario (persisted to localStorage)
-        _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 }, ocean: { wave: 0, score: 0 } },
+        _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 }, ocean: { wave: 0, score: 0 }, airplane: { wave: 0, score: 0 } },
 
         // Entity arrays
         enemies: [],
@@ -1799,13 +1803,9 @@
             // Props
             this._environmentGroup.add(createAirplaneProps());
 
-            // Atmospheric LED strips
-            const lights = createCabinLightStrips();
-            this._environmentGroup.add(lights);
-
             this._airplaneAnimData = {
-                lightStrips: lights.userData.strips || [],
-                lightSpots: lights.userData.spots || [],
+                lightStrips: [],
+                lightSpots: [],
             };
         },
 
@@ -2134,6 +2134,11 @@
                 startScenario('ocean');
             });
 
+            document.getElementById('card-airplane').addEventListener('click', (e) => {
+                if (e.target.closest('.scenario-continue-btn')) return;
+                startScenario('airplane');
+            });
+
             // Continue saved game — office
             document.getElementById('continue-office').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -2166,6 +2171,19 @@
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('ocean');
+                document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
+                setGameUIVisible(true);
+                const loaded = this._loadGame();
+                if (!loaded) this.start();
+                this._updateContinueButtons();
+            });
+
+            // Continue saved game — airplane
+            document.getElementById('continue-airplane').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SFX) SFX.play('ui_game_start');
+                this._gameMode = this._menuMode;
+                this._setupScenario('airplane');
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
                 const loaded = this._loadGame();
@@ -2750,7 +2768,7 @@
         },
 
         _updateBestStats() {
-            for (const scenario of ['office', 'forest', 'ocean']) {
+            for (const scenario of ['office', 'forest', 'ocean', 'airplane']) {
                 const s = this._bestStats[scenario] || { wave: 0, score: 0 };
                 const el = document.getElementById(`stats-${scenario}`);
                 if (el) {
@@ -3127,7 +3145,7 @@
         },
 
         _updateContinueButtons() {
-            for (const scenario of ['office', 'forest', 'ocean']) {
+            for (const scenario of ['office', 'forest', 'ocean', 'airplane']) {
                 const btn = document.getElementById(`continue-${scenario}`);
                 if (btn) {
                     const hasSave = this._hasSave(scenario, this._menuMode);

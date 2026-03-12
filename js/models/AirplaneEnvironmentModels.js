@@ -50,31 +50,6 @@ export function createAirplaneCabin() {
         group.add(wall);
     }
 
-    // --- Curved ceiling panels ---
-    const ceilingMat = toonMat(PALETTE.airplaneCeiling);
-    // Center ceiling panel
-    const ceilGeo = new THREE.BoxGeometry(36, 0.3, 72);
-    const ceiling = new THREE.Mesh(ceilGeo, ceilingMat);
-    ceiling.position.set(0, 7, 38);
-    group.add(ceiling);
-
-    // --- Overhead bin panels (two long strips above each seat column) ---
-    const overheadMat = toonMat(PALETTE.airplaneOverhead);
-    for (const binX of [-12, -1.5, 1.5, 12]) {
-        const binGeo = new THREE.BoxGeometry(4, 2.5, 56);
-        const bin = new THREE.Mesh(binGeo, overheadMat);
-        bin.position.set(binX, 5.5, 38);
-        bin.castShadow = true;
-        group.add(bin);
-
-        // Bottom lip of overhead bin
-        const lipGeo = new THREE.BoxGeometry(4.2, 0.15, 56);
-        const lipMat = toonMat(PALETTE.airplaneSeatBack);
-        const lip = new THREE.Mesh(lipGeo, lipMat);
-        lip.position.set(binX, 4.2, 38);
-        group.add(lip);
-    }
-
     // --- Windows on both sides (small bright ovals) ---
     const windowMat = toonMat(PALETTE.airplaneWindow, {
         emissive: PALETTE.airplaneWindow,
@@ -96,19 +71,6 @@ export function createAirplaneCabin() {
             frame.rotation.y = side * Math.PI / 2;
             group.add(frame);
         }
-    }
-
-    // --- LED light strips along the ceiling edges ---
-    const stripMat = new THREE.MeshBasicMaterial({
-        color: PALETTE.airplaneStrip,
-        transparent: true,
-        opacity: 0.5,
-    });
-    for (const stripX of [-8, 8]) {
-        const stripGeo = new THREE.BoxGeometry(0.3, 0.1, 56);
-        const strip = new THREE.Mesh(stripGeo, stripMat);
-        strip.position.set(stripX, 6.8, 38);
-        group.add(strip);
     }
 
     return group;
@@ -237,12 +199,6 @@ export function createAirplaneCubicle() {
         sign.position.set(doorX, cubH + 0.3, 8.2);
         group.add(sign);
     }
-
-    // --- Roof of cubicle ---
-    const roofGeo = new THREE.BoxGeometry(cubW, wallThickness, cubD);
-    const roof = new THREE.Mesh(roofGeo, cubMat);
-    roof.position.set(0, cubH, cubZ);
-    group.add(roof);
 
     // --- Floor inside cubicle (slightly different color) ---
     const floorGeo = new THREE.PlaneGeometry(cubW - 0.6, cubD - 0.6);
@@ -437,27 +393,27 @@ export function createAirplaneProps() {
     group.add(createTrolley(-6, 67));
     group.add(createTrolley(6, 68));
 
-    // --- Row number signs along the overhead bins ---
+    // --- Row number signs on the walls ---
     const signMat = toonMat(PALETTE.cream);
     for (let z = 12; z <= 66; z += 6) {
-        for (const signX of [-8.5, 8.5]) {
-            const signGeo = new THREE.BoxGeometry(0.8, 0.5, 0.1);
+        for (const signX of [-17.2, 17.2]) {
+            const signGeo = new THREE.BoxGeometry(0.1, 0.5, 0.8);
             const rowSign = new THREE.Mesh(signGeo, signMat);
             rowSign.position.set(signX, 4.5, z);
             group.add(rowSign);
         }
     }
 
-    // --- Emergency exit signs (glowing green) ---
+    // --- Emergency exit signs on the walls (glowing green) ---
     const exitMat = toonMat(PALETTE.success, {
         emissive: PALETTE.success,
         emissiveIntensity: 0.6,
     });
     for (const exitZ of [30, 50]) {
         for (const side of [-1, 1]) {
-            const exitGeo = new THREE.BoxGeometry(1.5, 0.6, 0.1);
+            const exitGeo = new THREE.BoxGeometry(0.1, 0.6, 1.5);
             const exitSign = new THREE.Mesh(exitGeo, exitMat);
-            exitSign.position.set(side * 16, 5.5, exitZ);
+            exitSign.position.set(side * 17.2, 4.0, exitZ);
             group.add(exitSign);
         }
     }
