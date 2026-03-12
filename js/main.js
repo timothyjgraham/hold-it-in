@@ -15,6 +15,7 @@ import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
 import { createIconDataURL } from './data/upgradeIcons.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
+import { SFX } from './systems/SoundManager.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
@@ -91,6 +92,7 @@ window.EnemyIntroUI = EnemyIntroUI;
 window.MedicDroneSystem = MedicDroneSystem;
 window.createIconDataURL = createIconDataURL;
 window.outlineMatStatic = outlineMatStatic;
+window.SFX = SFX;
 
 // Initialize game
 window.Game = Game;

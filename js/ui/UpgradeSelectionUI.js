@@ -428,11 +428,13 @@ export class UpgradeSelectionUI {
         drone.getWorldPosition(droneWorldPos);
 
         if (rarity === 'common') {
+            if (window.SFX) SFX.play('upgrade_common');
             // White sparkle burst
             this._particles.push(..._spawnParticleBurst(
                 this._scene, droneWorldPos, PALETTE.white, 12, 3, 0.5
             ));
         } else if (rarity === 'rare') {
+            if (window.SFX) SFX.play('upgrade_rare');
             // Colored particle burst
             const upgrade = this.options[index];
             const burstColor = upgrade.towerRequirement && upgrade.towerRequirement[0]
@@ -442,6 +444,7 @@ export class UpgradeSelectionUI {
                 this._scene, droneWorldPos, burstColor, 20, 4, 0.7
             ));
         } else if (rarity === 'legendary') {
+            if (window.SFX) SFX.play('upgrade_legendary');
             // Gold screen flash
             _screenFlash(0.15);
 
@@ -454,6 +457,7 @@ export class UpgradeSelectionUI {
             this._slowmoTimer = LEGENDARY_SLOWMO_DUR;
 
             // Zoom-punch
+            if (window.SFX) SFX.play('zoom_punch');
             this._zoomPunch = 0;
             this._zoomPunchVel = 15;
 
@@ -706,6 +710,7 @@ export class UpgradeSelectionUI {
 
     _beginCardDrop() {
         this.phase = 'cardDrop';
+        if (window.SFX) SFX.play('card_fly');
 
         const selDrone = this.drones[this.selectedIndex];
         const upgrade = this.options[this.selectedIndex];

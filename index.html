@@ -765,6 +765,24 @@
                 console.log('Enemy intro UI initialized');
             }
 
+            // Sound system — unlock on first user gesture
+            const unlockAudio = () => {
+                if (window.SFX) {
+                    SFX.unlock();
+                    // Start ambient bathroom sounds
+                    setTimeout(() => {
+                        SFX.startAmbient('ambient_drip');
+                        SFX.startAmbient('ambient_vent');
+                    }, 1000);
+                }
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('keydown', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+            };
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('keydown', unlockAudio);
+            window.addEventListener('touchstart', unlockAudio);
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -1053,6 +1071,7 @@
             // Right click to deselect
             window.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                if (this.selectedTower && window.SFX) SFX.play('ui_tower_deselect');
                 this.selectedTower = null;
                 this._updateTowerButtons();
             });
@@ -1086,51 +1105,81 @@
 
             // Main menu buttons
             document.getElementById('btn-campaign').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 this._menuMode = 'campaign';
                 document.getElementById('scenario-screen-title').textContent = 'CAMPAIGN';
                 showScreen('scenario-screen');
             });
             document.getElementById('btn-endless').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 this._menuMode = 'endless';
                 document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
                 showScreen('scenario-screen');
             });
             document.getElementById('btn-settings').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 showScreen('settings-screen');
             });
             document.getElementById('btn-credits').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 showScreen('credits-screen');
             });
 
             // Back buttons
             document.getElementById('btn-scenario-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 showScreen('title-screen');
             });
             document.getElementById('btn-settings-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 showScreen('title-screen');
             });
             document.getElementById('btn-credits-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 showScreen('title-screen');
             });
 
             // Scenario cards — only office is playable
             document.getElementById('card-office').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_game_start');
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 setGameUIVisible(true);
                 this._gameMode = this._menuMode; // 'campaign' or 'endless'
                 this.start();
             });
 
-            // Settings sliders
-            document.getElementById('slider-music').addEventListener('input', (e) => {
-                document.getElementById('val-music').textContent = e.target.value + '%';
+            // Settings sliders — wire to SoundManager
+            const musicSlider = document.getElementById('slider-music');
+            const sfxSlider = document.getElementById('slider-sfx');
+
+            // Initialize slider positions from saved SoundManager state
+            if (window.SFX) {
+                const savedSfx = Math.round(SFX.getCategoryVolume('sfx') * 100);
+                const savedAmbient = Math.round(SFX.getCategoryVolume('ambient') * 100);
+                sfxSlider.value = savedSfx;
+                document.getElementById('val-sfx').textContent = savedSfx + '%';
+                musicSlider.value = savedAmbient;
+                document.getElementById('val-music').textContent = savedAmbient + '%';
+            }
+
+            musicSlider.addEventListener('input', (e) => {
+                const v = parseInt(e.target.value);
+                document.getElementById('val-music').textContent = v + '%';
+                if (window.SFX) SFX.setAmbientVolume(v / 100);
             });
-            document.getElementById('slider-sfx').addEventListener('input', (e) => {
-                document.getElementById('val-sfx').textContent = e.target.value + '%';
+            sfxSlider.addEventListener('input', (e) => {
+                const v = parseInt(e.target.value);
+                document.getElementById('val-sfx').textContent = v + '%';
+                if (window.SFX) {
+                    SFX.setSFXVolume(v / 100);
+                    SFX.setUIVolume(v / 100);
+                    SFX.play('slider_tick');
+                }
             });
 
             // Restart button (game over)
             document.getElementById('restart-btn').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 document.getElementById('game-over-screen').classList.remove('active');
                 setGameUIVisible(true);
                 this.start();
@@ -1138,10 +1187,18 @@
 
             // Main menu button (game over)
             document.getElementById('menu-btn-gameover').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
                 document.getElementById('game-over-screen').classList.remove('active');
                 this.state = 'title';
                 showScreen('title-screen');
                 this._updateBestStats();
+            });
+
+            // Menu hover sounds
+            document.querySelectorAll('.menu-btn, .scenario-card.playable').forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    if (window.SFX) SFX.play('ui_hover');
+                });
             });
 
             // Tower panel buttons
@@ -1154,11 +1211,13 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const towerType = btn.dataset.tower;
+                    if (window.SFX) SFX.play('ui_tower_select');
                     this.selectTower(towerType);
                 });
 
                 // Tooltip show on hover
                 btn.addEventListener('mouseenter', () => {
+                    if (window.SFX) SFX.play('ui_hover');
                     tipName.textContent = btn.dataset.tipName;
                     tipCost.textContent = btn.dataset.tipCost;
                     tipDesc.textContent = btn.dataset.tipDesc;
@@ -1565,17 +1624,20 @@
         pause() {
             if (this.state !== 'playing') return;
             this.state = 'paused';
+            if (window.SFX) SFX.play('ui_pause');
             document.getElementById('pause-overlay').classList.add('active');
         },
 
         unpause() {
             if (this.state !== 'paused') return;
             this.state = 'playing';
+            if (window.SFX) SFX.play('ui_unpause');
             document.getElementById('pause-overlay').classList.remove('active');
         },
 
         gameOver() {
             this.state = 'gameover';
+            if (window.SFX) SFX.play('game_over');
             // Save best stats
             this._saveBestStats();
             const modeLabel = this._gameMode === 'endless' ? ' (ENDLESS)' : '';
@@ -1670,6 +1732,12 @@
             }
 
             this.coins -= towerCost;
+            // SFX: coin spend + tower type-specific placement
+            if (window.SFX) {
+                SFX.play('coin_spend');
+                const placeSfx = { potplant: 'pot_place', wetfloor: 'sign_place' };
+                SFX.play(placeSfx[this.selectedTower] || 'tower_place');
+            }
 
             // Create tower mesh
             const tower = this._createTowerMesh(this.selectedTower, def);
@@ -1697,6 +1765,11 @@
         _destroyTower(index) {
             const t = this.towers[index];
             t.dying = true;
+            // SFX: tower-specific destruction sound
+            if (window.SFX) {
+                if (t.type === 'potplant') SFX.play('pot_shatter');
+                else SFX.play('tower_destroy');
+            }
 
             // R15: Insurance Policy — refund 50% of tower cost on destruction
             if (this.upgradeManager && this.upgradeManager.hasUpgrade('R15')) {
@@ -1819,6 +1892,7 @@
             this._slidingPots.push(slidingPot);
 
             // Trip the kicker — face-plant stun
+            if (window.SFX) { SFX.play('pot_trip'); SFX.play('stun_impact'); }
             kicker.hp -= def.tripDamage;
             kicker.hitFlash = 0.15;
             kicker.stunTimer = def.stunDuration;
@@ -2181,6 +2255,7 @@
             };
 
             this.activeDrones.push(droneData);
+            if (window.SFX) SFX.play('drone_fly');
         },
 
         _updateDrones(dt) {
@@ -2225,6 +2300,7 @@
                         if (hook) hook.visible = false;
 
                         // Place tower mesh in scene
+                        if (window.SFX) SFX.play('package_open');
                         d.tower.mesh.position.set(d.targetX, 0, d.targetZ);
                         this.scene.add(d.tower.mesh);
                         d.tower.delivering = false;
@@ -2339,6 +2415,7 @@
 
             this._upgradePhase = true;
             this._upgradeOptions = options;
+            if (window.SFX) SFX.play('drone_arrive');
 
             // Target hover positions: 3 drones in a row, centered, CLOSE to camera
             const spacing = 5.0;
@@ -2561,6 +2638,7 @@
             if (!upgrade || !this.upgradeManager) return;
 
             // Apply upgrade
+            if (window.SFX) SFX.play('upgrade_acquire');
             this.upgradeManager.applyUpgrade(upgrade.id);
 
             // L1: Double Flush — immediate +4 max HP and heal
@@ -3338,11 +3416,13 @@
             let msg = `WAVE ${this.wave}`;
             if (event) {
                 msg += ` — ${event.announcement}`;
+                if (window.SFX) SFX.play('wave_event');
             } else if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
             else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
             else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
             else if (this.wave === 9) msg += ' — POWER WALKERS!';
             else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
+            if (window.SFX && !event) SFX.play('wave_start');
             this.announceWave(msg);
             this.updateHUD();
         },
@@ -3414,6 +3494,7 @@
             if (!def) return;
             this._createEnemy(enemyType, def, {});
             this.enemiesSpawned++;
+            if (window.SFX) SFX.play('enemy_spawn');
         },
 
         _pickLane(enemyType, def, opts) {
@@ -3657,6 +3738,7 @@
                     this.coins += waveBonus;
                     this._animateCoinGain(waveBonus);
                     this.updateHUD();
+                    if (window.SFX) { SFX.play('wave_clear'); SFX.play('coin_bonus'); }
                     this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
                     this._spawnCoinText(0, 30, waveBonus);
 
@@ -3781,6 +3863,7 @@
                             const pdz = e.z - other.z;
                             const collisionR = (e.size + other.size) * 0.4;
                             if (pdx * pdx + pdz * pdz < collisionR * collisionR) {
+                                if (window.SFX) SFX.play('knockback_collision');
                                 e.stunTimer = 1.5;
                                 other.stunTimer = 1.5;
                                 e.tripFallDuration = 1.5;
@@ -4078,9 +4161,11 @@
                             if (t.type === 'potplant') {
                                 t.hp -= 1;
                                 t.hitShake = 0.2;
+                                if (window.SFX) SFX.play('pot_kick');
                                 if (t.hp <= 0) {
                                     // Final kick — shatter immediately
                                     this._spawnPotShatter(t.gridX, t.gridZ);
+                                    if (window.SFX) SFX.play('pot_shatter');
                                 }
                                 this._kickPotPlant(ti, e);
                                 continue;
@@ -4088,6 +4173,7 @@
 
                             t.hp -= 1;
                             t.hitShake = 0.2;
+                            if (window.SFX) SFX.play('barrier_hit');
                             // Enemy flails arms trying to get past
                             if (e.animController) {
                                 e.animController.playOneShot('bash_door');
@@ -4344,6 +4430,12 @@
                         const dmg = e.doorDmg || 3;
                         ud.doorHP = Math.max(0, ud.doorHP - dmg);
                         this._animateDoorHit(dmg);
+                        // SFX: door bash — heavier crack sounds at low HP
+                        if (window.SFX) {
+                            const pctHP = ud.doorHP / ud.maxDoorHP;
+                            if (pctHP < 0.3) SFX.play('door_crack');
+                            else SFX.play('door_bash');
+                        }
 
                         // L3: Plunger Protocol — door hit triggers tower speed buff
                         if (this.upgradeManager && this.upgradeManager.hasUpgrade('L3')) {
@@ -4399,6 +4491,7 @@
 
                         // Door broken — cinematic shatter sequence!
                         if (ud.doorHP <= 0) {
+                            if (window.SFX) SFX.play('door_shatter');
                             this._startDoorShatter(doorZ);
                             return;
                         }
@@ -4425,6 +4518,7 @@
                         e.hp = 1;
                         e.speed *= 3.0;
                         e.lastStrawTimer = 1.0;
+                        if (window.SFX) SFX.play('last_straw');
                         // Desperate tint via uniform
                         const mats = e.skinnedMesh.material;
                         if (Array.isArray(mats)) {
@@ -4439,6 +4533,8 @@
 
                     this.score += 10;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
+                    // SFX: enemy death + oof
+                    if (window.SFX) { SFX.play('enemy_death'); SFX.play('enemy_oof'); }
 
                     // L6: Spill Zone — dead enemies leave toxic puddle
                     if (this.upgradeManager && this.upgradeManager.hasUpgrade('L6')) {
@@ -4449,6 +4545,7 @@
                     if (this.coinPool) {
                         const drop = this.COIN_DROPS[e.type] || { value: e.coins, count: 1 };
                         this.coinPool.spawnCoins(e.x, e.z, drop.value, drop.count, this.scene);
+                        if (window.SFX) SFX.play('coin_drop');
 
                         // R13: The Tip Jar — 20% chance to drop golden coin worth 5x
                         if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.2) {
@@ -4627,6 +4724,7 @@
                                 t.gridX, t.gridZ, magnetRange, this.scene
                             );
                             if (rawCollected > 0) {
+                                if (window.SFX) { SFX.play('coin_collect'); SFX.play('magnet_pull'); }
                                 // C2: Double Dip — coin value multiplier
                                 const coinMult = this.upgradeManager ? this.upgradeManager.getModifier('coinValueMult') : 1.0;
                                 const collected = Math.round(rawCollected * coinMult);
@@ -4897,6 +4995,8 @@
                                     }
 
                                     // ─── IMPACT JUICE ───
+                                    // SFX: mop hit + big impact for juicy feedback
+                                    if (window.SFX) { SFX.play('mop_hit'); SFX.play('impact_big'); }
                                     // Global hitstop — brief game-wide freeze
                                     this._globalHitstop = Math.max(this._globalHitstop, 0.06);
                                     // Camera micro-shake — proportional to lever (tip hits = bigger shake)
@@ -4959,6 +5059,7 @@
                                 t.sweepProgress = 0;
                                 t.sweeping = true;
                                 t.sweepHitEnemies = new Set();
+                                if (window.SFX) SFX.play('mop_sweep');
                             }
                         }
 
@@ -5036,6 +5137,7 @@
                         // Check if enemy is within the doorway width
                         if (Math.abs(e.x) < halfWidth) {
                             e.pushedExitDoor = true;
+                            if (window.SFX) SFX.play('exit_door');
                             // Push based on enemy speed — faster = harder slam
                             const force = pushImpulse * (e.speed / 3);
                             // Push the door on the enemy's side (or both if near center)
@@ -5088,6 +5190,7 @@
 
         // ─── UBIK SPRAY SYSTEM ───
         _fireSpray(tower, target) {
+            if (window.SFX) SFX.play('spray_fire');
             const def = tower.def;
             // C11/C12: Ubik shape upgrades, C13: damage
             const ubikWidthMult = this.upgradeManager ? this.upgradeManager.getModifier('ubikWidthMult') : 1.0;
@@ -5183,6 +5286,7 @@
                 // Damage enemies in the spray cone — continuous tick damage
                 if (s.damageTimer <= 0) {
                     s.damageTimer = 0.2; // Tick every 0.2s
+                    if (window.SFX) SFX.play('spray_hit');
                     const sprayFrontDist = progress * s.range;
                     const sprayBackDist = Math.max(0, progress - 0.3) * s.range;
                     const halfWidth = (s.width * 0.5) * progress + 0.5; // Widens with distance
@@ -5252,6 +5356,7 @@
         // R9: STICKY MOP PUDDLES
         // ============================
         _createMopPuddle(x, z) {
+            if (window.SFX) SFX.play('splash');
             // Max 12 puddles globally (≈3 per mop)
             while (this._mopPuddles.length >= 12) {
                 const old = this._mopPuddles.shift();
@@ -5293,6 +5398,7 @@
         // L6: SPILL ZONE PUDDLES
         // ============================
         _createSpillZone(x, z) {
+            if (window.SFX) SFX.play('splash');
             // Cap at 20 total spill zones
             while (this._spillZones.length >= 20) {
                 const old = this._spillZones.shift();
@@ -5653,6 +5759,8 @@
         _startDoorShatter(doorZ) {
             this.state = 'cinematic';
             this._cinematicTimer = 0;
+            // SFX: toilet flush + door shatter for epic cinematic
+            if (window.SFX) { SFX.play('toilet_flush'); SFX.play('door_shatter'); }
 
             // Hide the intact door panel and cracks
             const ud = this.doorGroup.userData;
@@ -5728,6 +5836,7 @@
 
         _cinematicDetachPhone() {
             if (!this.playerCharacter) return;
+            if (window.SFX) SFX.play('phone_bounce');
             const phoneMesh = this.playerCharacter.detachPhone(this.scene);
             if (!phoneMesh) return;
             this._flyingPhone = {
@@ -5859,6 +5968,7 @@
 
             // === TOILET RATTLE — shakes as enemies pile on ===
             if (pilingCount > 0 && this.toilet) {
+                if (window.SFX) SFX.play('toilet_rattle');
                 const rattleAmp = Math.min(pilingCount * 0.025, 0.12);
                 this.toilet.rotation.y = Math.sin(ct * 14) * rattleAmp;
                 this.toilet.rotation.z = Math.cos(ct * 11) * rattleAmp * 0.6;
@@ -5968,6 +6078,7 @@
          * Spawn a comic-book style text pop (!!!, ?!, AAGH!, etc.)
          */
         _spawnComicPop(x, y, z, text, color, scale) {
+            if (window.SFX) SFX.play('comic_pop');
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 128;
@@ -6314,6 +6425,7 @@
                         if (dx * dx + dz * dz < hitRadius * hitRadius) {
                             // Trip the enemy — pot keeps going
                             sp.hitEnemies.add(e);
+                            if (window.SFX) { SFX.play('pot_kick'); SFX.play('stun_impact'); }
                             // L2: Desperate Measures — 2x damage when door HP < 50%
                             e.hp -= sp.tripDamage * (this._desperateMeasures ? 2 : 1);
                             e.hitFlash = 0.15;
@@ -6378,6 +6490,7 @@
                         this._slidingPots.splice(i, 1);
                     } else {
                         // Out of HP or out of bounds — shatter
+                        if (window.SFX) SFX.play('pot_shatter');
                         this._spawnPotShatter(sp.x, sp.z);
                         this._disposeSlidingPot(i);
                     }

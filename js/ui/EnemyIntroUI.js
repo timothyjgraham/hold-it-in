@@ -207,6 +207,7 @@ export class EnemyIntroUI {
         this.active = true;
         this._phase = 'entering';
         this._timer = 0;
+        if (window.SFX) SFX.play('intro_reveal');
         this._inputEnabled = false;
         this._scene = scene;
         this._camera = camera;

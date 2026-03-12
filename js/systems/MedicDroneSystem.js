@@ -557,6 +557,7 @@ export class MedicDroneSystem {
                 drone.state = 'collecting';
                 drone.time = 0;
                 drone.targetIndex = 0;
+                if (window.SFX) SFX.play('medic_pickup');
                 this._startSwoop(drone);
             }
         } else if (drone.state === 'collecting') {
