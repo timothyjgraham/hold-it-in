@@ -740,6 +740,7 @@
             if (window.MedicDroneSystem) {
                 this.medicDroneSystem = new MedicDroneSystem();
                 this.medicDroneSystem.preAllocate();
+                this._dyingAnimControllers = new Set();
                 console.log('Medic drone system initialized');
             }
 
@@ -1357,6 +1358,11 @@
                     e.mesh.rotation.set(0, 0, 0);
                     e.mesh.position.y = 0;
                 }
+            }
+
+            // Clear dying animation trackers
+            if (this._dyingAnimControllers) {
+                this._dyingAnimControllers.clear();
             }
 
             // Clear medic drone system (release queued/in-flight corpses back to pool)
@@ -4458,12 +4464,38 @@
                     // Death animation then queue for medic drone pickup
                     if (!e.dying) {
                         e.dying = true;
+
+                        // Reset visual effect uniforms so corpse doesn't stay white
+                        const deathMats = e.skinnedMesh.material;
+                        if (Array.isArray(deathMats)) {
+                            for (const m of deathMats) {
+                                if (m.uniforms) {
+                                    if (m.uniforms.uHitFlash) m.uniforms.uHitFlash.value = 0;
+                                    if (m.uniforms.uDesperateTint) m.uniforms.uDesperateTint.value = 0;
+                                    if (m.uniforms.uAuraGlow) m.uniforms.uAuraGlow.value = 0;
+                                }
+                            }
+                        } else if (deathMats.uniforms) {
+                            if (deathMats.uniforms.uHitFlash) deathMats.uniforms.uHitFlash.value = 0;
+                            if (deathMats.uniforms.uDesperateTint) deathMats.uniforms.uDesperateTint.value = 0;
+                            if (deathMats.uniforms.uAuraGlow) deathMats.uniforms.uAuraGlow.value = 0;
+                        }
+
                         e.animController.playDeath('death');
+                        // Track dying animController so it keeps updating after splice
+                        if (this._dyingAnimControllers) {
+                            this._dyingAnimControllers.add(e.animController);
+                        }
+
                         const deathDurations = { polite: 0.6, dancer: 0.5, waddle: 0.8, panicker: 0.6, powerwalker: 0.6, girls: 0.5 };
                         const delay = (deathDurations[e.type] || 0.6) * 1000;
                         const enemyRef = e;
                         const deathPos = new THREE.Vector3(e.x, 0, e.z);
                         setTimeout(() => {
+                            // Stop updating this corpse's animation (death anim complete)
+                            if (this._dyingAnimControllers) {
+                                this._dyingAnimControllers.delete(enemyRef.animController);
+                            }
                             const model = {
                                 group: enemyRef.mesh,
                                 skinnedMesh: enemyRef.skinnedMesh,
@@ -4475,8 +4507,8 @@
                                 enemyType: enemyRef.type,
                             };
                             if (this.medicDroneSystem) {
-                                // Queue corpse for medic drone collection
-                                this.medicDroneSystem.queueCorpse(model, deathPos);
+                                // Queue corpse for medic drone collection (with birdies)
+                                this.medicDroneSystem.queueCorpse(model, deathPos, this.scene);
                             } else if (this.enemyPool) {
                                 // Fallback: direct pool release
                                 this.enemyPool.release(model);
@@ -6364,6 +6396,13 @@
 
             // Update active drones
             this._updateDrones(dt);
+
+            // Update dying corpse animations (so death anims play after splice)
+            if (this._dyingAnimControllers) {
+                for (const ac of this._dyingAnimControllers) {
+                    ac.update(dt, 0);
+                }
+            }
 
             // Update medic drones (corpse collection)
             if (this.medicDroneSystem) {

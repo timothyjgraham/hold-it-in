@@ -276,7 +276,6 @@ function _politeDeath() {
         buildRotationTrack('upperLeg_R', t, [0, 0.2, 0.5, 0.8, 0.95, 1.0], AXIS_X),
         buildRotationTrack('lowerLeg_L', t, [0, -0.3, -0.8, -1.2, -1.5, -1.6], AXIS_X),
         buildRotationTrack('lowerLeg_R', t, [0, -0.2, -0.7, -1.1, -1.4, -1.5], AXIS_X),
-        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
@@ -405,11 +404,6 @@ function _dancerDeath() {
         posTrack('root', t, [
             [0, ry, 0], [0, ry * 0.75, 0], [0.04, ry * 0.3, 0.03],
             [0.06, ry * 0.1, 0.04], [0.05, ry * 0.02, 0.04], [0.05, 0, 0.04]
-        ]),
-        // Extreme squash → deflate → splat
-        scaleTrack('root', t, [
-            [1, 1, 1], [1.25, 0.65, 1.25], [1.38, 0.42, 1.38],
-            [1.42, 0.22, 1.42], [1.45, 0.10, 1.45], [0.01, 0.01, 0.01]
         ]),
         // Spine crumples
         eulerTrack('spine', t, [
@@ -662,7 +656,6 @@ function _waddleDeath() {
             [0, 0, 0.25], [0.3, 0, 0.42], [0.6, 0, 0.58],
             [0.5, 0, 0.68], [0.3, 0, 0.56], [0.1, 0, 0.42], [0, 0, 0.30]
         ]),
-        scaleTrack('root', [0, 0.60, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
@@ -850,7 +843,6 @@ function _panickerDeath() {
         buildRotationTrack('upperLeg_R', t, [0, 0.4, 0.7, 0.9, 1.0, 1.0, 1.0], AXIS_X),
         buildRotationTrack('lowerLeg_L', t, [0, -0.4, -0.9, -1.2, -1.4, -1.5, -1.5], AXIS_X),
         buildRotationTrack('lowerLeg_R', t, [0, -0.3, -0.8, -1.1, -1.3, -1.4, -1.4], AXIS_X),
-        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
@@ -1002,7 +994,6 @@ function _powerwalkerDeath() {
         eulerTrack('head', t, [
             [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
         ]),
-        scaleTrack('root', [0, 0.45, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 
@@ -1143,7 +1134,6 @@ function _girlsDeath() {
         buildRotationTrack('upperLeg_R', t, [0, 0.15, 0.4, 0.65, 0.75, 0.80], AXIS_X),
         buildRotationTrack('lowerLeg_L', t, [0, -0.15, -0.40, -0.65, -0.80, -0.85], AXIS_X),
         buildRotationTrack('lowerLeg_R', t, [0, -0.10, -0.35, -0.55, -0.70, -0.75], AXIS_X),
-        scaleTrack('root', [0, 0.35, dur], [[1, 1, 1], [1, 1, 1], [0.01, 0.01, 0.01]]),
     ]);
 }
 

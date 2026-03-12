@@ -1,7 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — Medic Drone System                                          ║
-// ║  Defeated enemies crumple, then ambulance drones swoop in with a          ║
-// ║  stretcher, collect multiple corpses (pancake-stacked), and fly off.      ║
+// ║  Defeated enemies collapse with birdies circling their heads, then        ║
+// ║  ambulance drones swoop in and skewer-stack corpses below, flying off.    ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE, OUTLINE_WIDTH } from '../data/palette.js';
@@ -10,18 +10,73 @@ import { toonMat, outlineMatStatic } from '../shaders/toonMaterials.js';
 // ─── TUNING ────────────────────────────────────────────────────────────────
 
 const MAX_ACTIVE_DRONES = 3;          // Max medic drones in the scene at once
-const MAX_STACK = 5;                  // Max corpses per stretcher run
+const MAX_STACK = 5;                  // Max corpses per skewer run
 const COLLECT_RADIUS = 6.0;           // How far a drone will detour to grab nearby corpses
 const QUEUE_DELAY = 0.6;              // Seconds after death anim before corpse is "ready"
 const DISPATCH_INTERVAL = 0.8;        // Min seconds between drone dispatches
 const FLY_HEIGHT = 10.0;              // Cruise altitude
-const APPROACH_HEIGHT = 3.5;          // Height when collecting corpses
+const APPROACH_HEIGHT = 2.5;          // Base height when collecting (rises with stack)
 const SWOOP_SPEED = 8.0;              // Units/sec for collection swoops
 const EXIT_SPEED = 14.0;              // Units/sec for fly-off
-const SQUASH_Y = 0.15;               // Y-scale of pancaked corpse on stretcher
-const STACK_HEIGHT = 0.3;             // World-space height per pancaked corpse in the stack
+const SKEWER_SCALE = 0.5;             // Scale of corpses on the skewer
+const STACK_HEIGHT = 0.8;             // World-space height per corpse in the skewer stack
 const ROTOR_SPEED = 40;              // Rotor spin rad/sec
 const WOBBLE_PER_CORPSE = 0.012;     // Extra drone wobble per stacked corpse
+
+// ─── BIRDIES ─────────────────────────────────────────────────────────────
+
+const BIRDIE_COUNT = 3;
+const BIRDIE_RADIUS = 0.4;
+const BIRDIE_ORBIT_SPEED = 3.0;      // rad/sec
+const BIRDIE_BOB_SPEED = 2.5;        // Vertical bob frequency
+const BIRDIE_BOB_AMP = 0.08;         // Vertical bob amplitude
+const BIRDIE_HEIGHT = 1.2;           // Height above ground for birdie orbit
+
+function _createBirdies() {
+    const root = new THREE.Group();
+    root.name = 'birdies';
+
+    const birdMat = toonMat(PALETTE.gold);
+
+    for (let i = 0; i < BIRDIE_COUNT; i++) {
+        const bird = new THREE.Group();
+
+        // Body: small stretched diamond shape
+        const body = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.06, 0),
+            birdMat
+        );
+        body.scale.set(1.0, 0.6, 1.6); // Flattened, elongated like a bird
+        bird.add(body);
+
+        // Wing stubs (tiny flat triangles on each side)
+        const wingGeo = new THREE.BufferGeometry();
+        const wingVerts = new Float32Array([
+            0, 0, 0,   0.10, 0.02, 0,   0.05, 0, 0.03
+        ]);
+        wingGeo.setAttribute('position', new THREE.BufferAttribute(wingVerts, 3));
+        wingGeo.computeVertexNormals();
+        const wingL = new THREE.Mesh(wingGeo, birdMat);
+        wingL.position.x = 0.04;
+        bird.add(wingL);
+        const wingR = new THREE.Mesh(wingGeo, birdMat);
+        wingR.scale.x = -1;
+        wingR.position.x = -0.04;
+        bird.add(wingR);
+
+        // Position evenly around orbit circle
+        const angle = (i / BIRDIE_COUNT) * Math.PI * 2;
+        bird.position.set(
+            Math.cos(angle) * BIRDIE_RADIUS,
+            Math.sin(i * 1.3) * 0.05, // Slight Y variation
+            Math.sin(angle) * BIRDIE_RADIUS
+        );
+
+        root.add(bird);
+    }
+
+    return root;
+}
 
 // ─── MEDIC DRONE MODEL ─────────────────────────────────────────────────────
 
@@ -176,10 +231,10 @@ function _createMedicDroneModel() {
     stretcherGroup.position.y = -(bodyH / 2) - cableLength - bedH / 2;
     root.add(stretcherGroup);
 
-    // ── CORPSE STACK ANCHOR (empty group on top of the bed surface) ──
+    // ── CORPSE STACK ANCHOR (below the stretcher bed — skewer hangs down) ──
     const stackAnchor = new THREE.Group();
     stackAnchor.name = 'stackAnchor';
-    stackAnchor.position.y = bedH / 2 + 0.02;
+    stackAnchor.position.y = -(bedH / 2 + 0.1);
     stretcherGroup.add(stackAnchor);
 
     // Store references for animation
@@ -202,15 +257,15 @@ function _createMedicDroneModel() {
  * MedicDroneSystem — manages corpse collection by ambulance drones.
  *
  * Flow:
- *  1. Enemy dies → death anim plays → corpse queued (with mesh ref + position)
+ *  1. Enemy dies → death anim plays → corpse queued with birdies circling head
  *  2. System dispatches a medic drone toward nearest cluster of queued corpses
- *  3. Drone swoops to each corpse, squashes it onto the stretcher stack
+ *  3. Drone swoops to each corpse, skewers it onto a hanging stack below
  *  4. After collecting up to MAX_STACK (or no more nearby), drone flies off
  *  5. On exit, corpse meshes are released back to EnemyPool
  */
 export class MedicDroneSystem {
     constructor() {
-        this._corpseQueue = [];      // { model, position, readyTimer, type }
+        this._corpseQueue = [];      // { model, position, readyTimer, collected, birdies }
         this._activeDrones = [];     // { mesh, state, targets, stack, ... }
         this._dronePool = [];        // Reusable drone meshes
         this._dispatchTimer = 0;
@@ -230,18 +285,24 @@ export class MedicDroneSystem {
 
     /**
      * Queue a defeated enemy for medic pickup.
-     * Called after death animation starts. The model reference is kept so
-     * the medic drone can reparent the mesh onto the stretcher.
+     * Called after death animation completes. Spawns birdies circling above.
      *
      * @param {Object} model - { group, skinnedMesh, skeleton, boneMap, outlineMesh, materials, animController, enemyType }
      * @param {THREE.Vector3} position - World position where enemy died
+     * @param {THREE.Scene} scene - Scene to add birdies to
      */
-    queueCorpse(model, position) {
+    queueCorpse(model, position, scene) {
+        // Create circling birdies above the corpse
+        const birdies = _createBirdies();
+        birdies.position.set(position.x, BIRDIE_HEIGHT, position.z);
+        if (scene) scene.add(birdies);
+
         this._corpseQueue.push({
             model,
             position: position.clone(),
             readyTimer: QUEUE_DELAY,
             collected: false,
+            birdies,
         });
     }
 
@@ -252,9 +313,19 @@ export class MedicDroneSystem {
      * @param {EnemyPool} enemyPool - For releasing models after fly-off
      */
     update(dt, scene, enemyPool) {
-        // Tick down readyTimers
+        // Tick down readyTimers + animate birdies for queued corpses
         for (const c of this._corpseQueue) {
             if (c.readyTimer > 0) c.readyTimer -= dt;
+            // Orbit birdies
+            if (c.birdies) {
+                c.birdies.rotation.y += dt * BIRDIE_ORBIT_SPEED;
+                // Bob each bird up and down
+                const t = c.birdies.rotation.y; // Use orbit angle as time source
+                for (let i = 0; i < c.birdies.children.length; i++) {
+                    const bird = c.birdies.children[i];
+                    bird.position.y = Math.sin(t * BIRDIE_BOB_SPEED + i * 2.1) * BIRDIE_BOB_AMP;
+                }
+            }
         }
 
         // Dispatch new drones
@@ -283,6 +354,10 @@ export class MedicDroneSystem {
     cleanup(scene, enemyPool) {
         // Release any queued corpses back to pool immediately
         for (const c of this._corpseQueue) {
+            // Remove birdies
+            if (c.birdies && c.birdies.parent) {
+                c.birdies.parent.remove(c.birdies);
+            }
             if (c.model && enemyPool) {
                 if (c.model.group.parent) c.model.group.parent.remove(c.model.group);
                 enemyPool.release(c.model);
@@ -375,7 +450,7 @@ export class MedicDroneSystem {
 
         this._activeDrones.push({
             mesh: droneMesh,
-            state: 'entering',   // entering → collecting → exiting → done
+            state: 'entering',   // entering → collecting → ascending → exiting → done
             targets,
             targetIndex: 0,
             stack: [],           // Collected model refs (for pool release on exit)
@@ -550,7 +625,9 @@ export class MedicDroneSystem {
             return;
         }
         drone.swoopFrom = drone.mesh.position.clone();
-        drone.swoopTo = new THREE.Vector3(target.position.x, APPROACH_HEIGHT, target.position.z);
+        // Approach height rises with stack count so skewer bottom stays reachable
+        const approachY = APPROACH_HEIGHT + drone.stackCount * STACK_HEIGHT * SKEWER_SCALE;
+        drone.swoopTo = new THREE.Vector3(target.position.x, approachY, target.position.z);
         const dist = drone.swoopFrom.distanceTo(drone.swoopTo);
         drone.swoopDuration = Math.max(0.3, dist / SWOOP_SPEED);
     }
@@ -565,28 +642,34 @@ export class MedicDroneSystem {
         // Remove from scene
         if (group.parent) group.parent.remove(group);
 
-        // Stop animation so the corpse freezes in death pose
-        if (model.animController && model.animController._currentAction) {
-            model.animController._currentAction.paused = true;
+        // Remove birdies
+        if (target.birdies) {
+            if (target.birdies.parent) target.birdies.parent.remove(target.birdies);
+            target.birdies = null;
         }
 
-        // Squash the corpse into a pancake
-        group.scale.set(1, SQUASH_Y, 1);
+        // Stop animation so the corpse freezes in death pose
+        if (model.animController && model.animController.currentAction) {
+            model.animController.currentAction.paused = true;
+        }
 
-        // Reset rotation so it lies flat on the stretcher
-        group.rotation.set(0, Math.random() * Math.PI * 2, 0); // Random yaw for variety
+        // Scale down for compact skewer stacking
+        group.scale.set(SKEWER_SCALE, SKEWER_SCALE, SKEWER_SCALE);
 
-        // Position on the stack
-        const stackY = drone.stackCount * STACK_HEIGHT;
+        // Random yaw for visual variety
+        group.rotation.set(0, Math.random() * Math.PI * 2, 0);
+
+        // Position at the bottom of the skewer stack (hanging below)
+        const stackY = -(drone.stackCount * STACK_HEIGHT);
         group.position.set(
-            (Math.random() - 0.5) * 0.3, // Slight random X offset for messiness
+            (Math.random() - 0.5) * 0.1,  // Tiny random offset
             stackY,
-            (Math.random() - 0.5) * 0.15  // Slight random Z offset
+            (Math.random() - 0.5) * 0.1
         );
 
         group.visible = true;
 
-        // Add to stretcher's stack anchor
+        // Add to stretcher's stack anchor (hangs below)
         const anchor = drone.mesh.userData.stackAnchor;
         anchor.add(group);
 
@@ -609,8 +692,8 @@ export class MedicDroneSystem {
             model.group.scale.set(1, 1, 1);
             model.group.rotation.set(0, 0, 0);
             model.group.position.set(0, 0, 0);
-            if (model.animController && model.animController._currentAction) {
-                model.animController._currentAction.paused = false;
+            if (model.animController && model.animController.currentAction) {
+                model.animController.currentAction.paused = false;
             }
             if (enemyPool) {
                 enemyPool.release(model);
