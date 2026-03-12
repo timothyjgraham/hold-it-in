@@ -858,7 +858,6 @@
             this._environmentGroup.name = 'environment';
             this.scene.add(this._environmentGroup);
             this._setupScenario('office');
-            this._createGrid();
 
             // Input
             this._setupInput();
@@ -988,7 +987,7 @@
             ground.rotation.x = -Math.PI / 2;
             ground.position.y = -0.05;
             ground.receiveShadow = true;
-            this.scene.add(ground);
+            this._environmentGroup.add(ground);
 
             // Bathroom tiled floor (checkerboard pattern via canvas texture)
             const tileCanvas = document.createElement('canvas');
@@ -1019,7 +1018,7 @@
             tile.rotation.x = -Math.PI / 2;
             tile.position.set(0, -0.01, CONFIG.corridorStart / 2 - 2);
             tile.receiveShadow = true;
-            this.scene.add(tile);
+            this._environmentGroup.add(tile);
 
             // Lane floor (buildable area — slightly lighter)
             const laneGeo = new THREE.PlaneGeometry(CONFIG.laneWidth, CONFIG.laneLength - CONFIG.corridorStart);
@@ -1028,7 +1027,7 @@
             lane.rotation.x = -Math.PI / 2;
             lane.position.set(0, -0.03, CONFIG.corridorStart + (CONFIG.laneLength - CONFIG.corridorStart) / 2);
             lane.receiveShadow = true;
-            this.scene.add(lane);
+            this._environmentGroup.add(lane);
             this._laneFloor = lane;
         },
 
@@ -1037,7 +1036,7 @@
             this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
             // Face the door — bowl points toward +Z (enemies approach from that direction)
             this.toilet.rotation.y = 0;
-            this.scene.add(this.toilet);
+            this._environmentGroup.add(this.toilet);
 
             // Create player character sitting on the toilet
             this._createPlayerCharacter();
@@ -1053,37 +1052,37 @@
 
         _createEnvironment() {
             // Bathroom walls (back, sides, door frame)
-            this.scene.add(createBathroomWalls());
+            this._environmentGroup.add(createBathroomWalls());
 
             // Single-toilet room — no stall dividers needed
 
             // Sinks on left wall
-            this.scene.add(createSinks());
+            this._environmentGroup.add(createSinks());
 
             // Mirror above sinks
-            this.scene.add(createMirror());
+            this._environmentGroup.add(createMirror());
 
             // Hand dryer on right wall
-            this.scene.add(createHandDryer());
+            this._environmentGroup.add(createHandDryer());
 
             // Paper towel dispenser on right wall
-            this.scene.add(createPaperTowelDispenser());
+            this._environmentGroup.add(createPaperTowelDispenser());
 
             // Trash can near the door
-            this.scene.add(createTrashCan());
+            this._environmentGroup.add(createTrashCan());
 
             // Office elements visible through the doorway
             this.officeGroup = createOfficePeek();
-            this.scene.add(this.officeGroup);
+            this._environmentGroup.add(this.officeGroup);
 
             // Bathroom door — enemies must beat it down
             this.doorGroup = createBathroomDoor();
-            this.scene.add(this.doorGroup);
+            this._environmentGroup.add(this.doorGroup);
 
             // Bathroom overhead light (actual illumination for the room)
             const bathroomLight = new THREE.PointLight(PALETTE.fillWarm, 0.4, 20, 2);
             bathroomLight.position.set(0, 4.0, 4);
-            this.scene.add(bathroomLight);
+            this._environmentGroup.add(bathroomLight);
         },
 
         // ============================
@@ -1101,6 +1100,9 @@
             } else {
                 this._setupOfficeScenario();
             }
+
+            // Rebuild the grid to match the new scenario's lane width
+            this._createGrid();
         },
 
         _teardownEnvironment() {
@@ -1147,6 +1149,14 @@
         },
 
         _setupOfficeScenario() {
+            // Scenario layout — office uses default CONFIG values
+            this._layout = {
+                laneWidth: CONFIG.laneWidth,         // 30
+                corridorWidth: CONFIG.corridorWidth,  // 12
+                corridorStart: CONFIG.corridorStart,  // 12
+                spawnWidth: CONFIG.spawnWidth,         // 10
+                doorZ: 9,                             // bathroom door flush with walls
+            };
             // Lighting
             this._createLighting();
             // Fog
@@ -1158,6 +1168,14 @@
         },
 
         _setupForestScenario() {
+            // Scenario layout — forest has doubled lane width
+            this._layout = {
+                laneWidth: CONFIG.laneWidth * 2,      // 60
+                corridorWidth: CONFIG.corridorWidth * 2, // 24
+                corridorStart: CONFIG.corridorStart,   // 12
+                spawnWidth: CONFIG.spawnWidth * 2,     // 20
+                doorZ: 7,                              // outhouse door position
+            };
             // Forest lighting — warmer, more green ambient, strong directional sun
             const ambient = new THREE.AmbientLight(PALETTE.forestAmbient, 0.8);
             ambient.name = 'sceneLight';
@@ -1264,13 +1282,23 @@
         },
 
         _createGrid() {
+            // Remove old grid if rebuilding (scenario switch)
+            if (this._buildGrid) {
+                this.scene.remove(this._buildGrid);
+                this._buildGrid.traverse(obj => {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) obj.material.dispose();
+                });
+            }
+
             // Visual grid overlay for tower placement
             const gridGroup = new THREE.Group();
             gridGroup.name = 'buildGrid';
 
+            const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
             const gridSize = CONFIG.grid;
-            const halfW = Math.floor(CONFIG.laneWidth / gridSize / 2);
-            const startZ = CONFIG.corridorStart + 2; // Don't build in bathroom
+            const halfW = Math.floor(laneW / gridSize / 2);
+            const startZ = CONFIG.corridorStart + 2; // Don't build in toilet room
             const endZ = CONFIG.laneLength - 2;
 
             const lineMat = new THREE.LineBasicMaterial({
@@ -1301,58 +1329,62 @@
             this._buildGrid = gridGroup;
             this._buildGrid.visible = false; // Only show when tower selected
 
-            // Grid hover highlight (cell square)
-            const highlightGeo = new THREE.PlaneGeometry(gridSize, gridSize);
-            const highlightMat = new THREE.MeshBasicMaterial({
-                color: PALETTE.gold,
-                transparent: true,
-                opacity: 0.4,
-                depthWrite: false,
-                depthTest: false,
-            });
-            this.gridHighlight = new THREE.Mesh(highlightGeo, highlightMat);
-            this.gridHighlight.rotation.x = -Math.PI / 2;
-            this.gridHighlight.position.y = 0.05;
-            this.gridHighlight.visible = false;
-            this.gridHighlight.renderOrder = 1;
-            this.scene.add(this.gridHighlight);
+            // Grid hover highlight — only create once (survives scenario switch)
+            if (!this.gridHighlight) {
+                const highlightGeo = new THREE.PlaneGeometry(gridSize, gridSize);
+                const highlightMat = new THREE.MeshBasicMaterial({
+                    color: PALETTE.gold,
+                    transparent: true,
+                    opacity: 0.4,
+                    depthWrite: false,
+                    depthTest: false,
+                });
+                this.gridHighlight = new THREE.Mesh(highlightGeo, highlightMat);
+                this.gridHighlight.rotation.x = -Math.PI / 2;
+                this.gridHighlight.position.y = 0.05;
+                this.gridHighlight.visible = false;
+                this.gridHighlight.renderOrder = 1;
+                this.scene.add(this.gridHighlight);
+            }
 
-            // Range circle — filled semi-transparent disc
-            const rangeGeo = new THREE.CircleGeometry(1.0, 64);
-            const rangeMat = new THREE.MeshBasicMaterial({
-                color: PALETTE.success,
-                transparent: true,
-                opacity: 0.12,
-                side: THREE.DoubleSide,
-                depthWrite: false,
-                depthTest: false,
-            });
-            this.rangeCircle = new THREE.Mesh(rangeGeo, rangeMat);
-            this.rangeCircle.rotation.x = -Math.PI / 2;
-            this.rangeCircle.position.y = 0.04;
-            this.rangeCircle.visible = false;
-            this.rangeCircle.renderOrder = 1;
-            this.scene.add(this.rangeCircle);
+            // Range circle — only create once
+            if (!this.rangeCircle) {
+                const rangeGeo = new THREE.CircleGeometry(1.0, 64);
+                const rangeMat = new THREE.MeshBasicMaterial({
+                    color: PALETTE.success,
+                    transparent: true,
+                    opacity: 0.12,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    depthTest: false,
+                });
+                this.rangeCircle = new THREE.Mesh(rangeGeo, rangeMat);
+                this.rangeCircle.rotation.x = -Math.PI / 2;
+                this.rangeCircle.position.y = 0.04;
+                this.rangeCircle.visible = false;
+                this.rangeCircle.renderOrder = 1;
+                this.scene.add(this.rangeCircle);
 
-            // Range circle edge ring (crisp border)
-            const rangeEdgeGeo = new THREE.RingGeometry(0.97, 1.0, 64);
-            const rangeEdgeMat = new THREE.MeshBasicMaterial({
-                color: PALETTE.success,
-                transparent: true,
-                opacity: 0.5,
-                side: THREE.DoubleSide,
-                depthWrite: false,
-                depthTest: false,
-            });
-            this.rangeEdge = new THREE.Mesh(rangeEdgeGeo, rangeEdgeMat);
-            this.rangeEdge.rotation.x = -Math.PI / 2;
-            this.rangeEdge.position.y = 0.045;
-            this.rangeEdge.visible = false;
-            this.rangeEdge.renderOrder = 2;
-            this.scene.add(this.rangeEdge);
+                // Range circle edge ring (crisp border)
+                const rangeEdgeGeo = new THREE.RingGeometry(0.97, 1.0, 64);
+                const rangeEdgeMat = new THREE.MeshBasicMaterial({
+                    color: PALETTE.success,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    depthTest: false,
+                });
+                this.rangeEdge = new THREE.Mesh(rangeEdgeGeo, rangeEdgeMat);
+                this.rangeEdge.rotation.x = -Math.PI / 2;
+                this.rangeEdge.position.y = 0.045;
+                this.rangeEdge.visible = false;
+                this.rangeEdge.renderOrder = 2;
+                this.scene.add(this.rangeEdge);
 
-            // Ghost tower preview (transparent preview of what will be placed)
-            this.ghostPreview = null;
+                // Ghost tower preview (transparent preview of what will be placed)
+                this.ghostPreview = null;
+            }
         },
 
         // ============================
@@ -2534,8 +2566,9 @@
             const gx = Math.round(intersect.x / gs) * gs;
             const gz = Math.round(intersect.z / gs) * gs;
 
-            // Bounds check — must be in buildable area
-            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+            // Bounds check — must be in buildable area (scenario-aware lane width)
+            const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
+            const halfW = Math.floor(laneW / gs / 2) * gs;
             const minZ = CONFIG.corridorStart + 2;
             const maxZ = CONFIG.laneLength - 4; // leave clearance before exit doors
 
@@ -2569,7 +2602,8 @@
 
             const gs = CONFIG.grid;
             const tw = def.tileWidth || 1;
-            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+            const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
+            const halfW = Math.floor(laneW / gs / 2) * gs;
 
             // Validate all cells for multi-tile towers
             for (let dx = 0; dx < tw; dx++) {
@@ -4369,6 +4403,9 @@
             // Girls use their pre-assigned shared lane
             if (opts.targetLane !== undefined) return opts.targetLane;
 
+            // Scale lane positions based on scenario lane width
+            const scale = this._layout ? this._layout.laneWidth / 30 : 1;
+
             const flankChance = def.flankChance || 0.15;
             const roll = Math.random();
             const farFlankChance = flankChance * 0.4; // 40% of flankers go FAR out
@@ -4376,24 +4413,24 @@
             let lane;
             if (roll < farFlankChance) {
                 // Far flank — way out to the sides, forces wide tower placement
-                const farLanes = [-10, -8.5, 8.5, 10];
+                const farLanes = [-10 * scale, -8.5 * scale, 8.5 * scale, 10 * scale];
                 lane = farLanes[Math.floor(Math.random() * farLanes.length)];
             } else if (roll < flankChance) {
                 // Regular flank — outside the corridor but not extreme
-                const outerLanes = [-6, -5, 5, 6];
+                const outerLanes = [-6 * scale, -5 * scale, 5 * scale, 6 * scale];
                 lane = outerLanes[Math.floor(Math.random() * outerLanes.length)];
             } else {
                 // Center area — standard approach
-                const innerLanes = [-3, -1.5, 0, 1.5, 3];
+                const innerLanes = [-3 * scale, -1.5 * scale, 0, 1.5 * scale, 3 * scale];
                 lane = innerLanes[Math.floor(Math.random() * innerLanes.length)];
             }
             // Jitter so enemies in the same lane aren't single-file
-            lane += (Math.random() - 0.5) * 1.5;
+            lane += (Math.random() - 0.5) * 1.5 * scale;
             return lane;
         },
 
         _createEnemy(enemyType, def, opts) {
-            const spread = CONFIG.spawnWidth;
+            const spread = this._layout ? this._layout.spawnWidth : CONFIG.spawnWidth;
             const x = opts.xOverride !== undefined ? opts.xOverride : (Math.random() - 0.5) * spread;
             const z = CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
 
@@ -5260,7 +5297,7 @@
                 }
 
                 // Reached the door? Start bashing it
-                const doorZ = 9; // door position (flush with walls)
+                const doorZ = this._layout ? this._layout.doorZ : 9;
                 const bashRange = doorZ + 1.5;
                 if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0) {
                     // Stop at the door
@@ -6388,7 +6425,8 @@
 
             // Color: green if can place, red if occupied or can't afford
             const gs = CONFIG.grid;
-            const halfW = Math.floor(CONFIG.laneWidth / gs / 2) * gs;
+            const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
+            const halfW = Math.floor(laneW / gs / 2) * gs;
             const hoverCostMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
             let canPlace = this.coins >= Math.max(5, Math.floor(def.cost * hoverCostMult));
             for (let dx = 0; dx < tw && canPlace; dx++) {

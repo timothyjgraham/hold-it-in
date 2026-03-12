@@ -22,8 +22,8 @@ export function createForestGround() {
     const group = new THREE.Group();
     group.name = 'forestGround';
 
-    // --- Large grass ground plane extending to fog ---
-    const grassGeo = new THREE.PlaneGeometry(80, 100);
+    // --- Large grass ground plane extending well past viewport edges ---
+    const grassGeo = new THREE.PlaneGeometry(160, 160);
     const grassMat = toonMat(PALETTE.forestGrass);
     const grassPlane = new THREE.Mesh(grassGeo, grassMat);
     grassPlane.rotation.x = -Math.PI / 2;
@@ -65,7 +65,7 @@ export function createForestGround() {
     const pathTexture = new THREE.CanvasTexture(pathCanvas);
     pathTexture.wrapS = THREE.RepeatWrapping;
     pathTexture.wrapT = THREE.RepeatWrapping;
-    pathTexture.repeat.set(1, 4);
+    pathTexture.repeat.set(2, 4);
 
     const pathMat = new THREE.MeshToonMaterial({
         map: pathTexture,
@@ -79,7 +79,7 @@ export function createForestGround() {
     gradTex.needsUpdate = true;
     pathMat.gradientMap = gradTex;
 
-    const pathGeo = new THREE.PlaneGeometry(10, 70);
+    const pathGeo = new THREE.PlaneGeometry(20, 70);
     const pathMesh = new THREE.Mesh(pathGeo, pathMat);
     pathMesh.rotation.x = -Math.PI / 2;
     pathMesh.position.set(0, -0.03, 35);
@@ -87,7 +87,7 @@ export function createForestGround() {
     group.add(pathMesh);
 
     // --- Small clearing around outhouse (z = 0 to 12) ---
-    const clearingGeo = new THREE.PlaneGeometry(16, 14);
+    const clearingGeo = new THREE.PlaneGeometry(24, 14);
     const clearingMat = toonMat(PALETTE.forestDirt);
     const clearingMesh = new THREE.Mesh(clearingGeo, clearingMat);
     clearingMesh.rotation.x = -Math.PI / 2;
@@ -179,25 +179,70 @@ export function createForestTrees() {
         return tree;
     }
 
-    // --- Place pine trees on both sides ---
+    // --- Place trees on both sides — dense wall of forest, no gaps ---
+    // Path is 20 wide (x ±10), so trees start at x=12 inward edge
     for (let side = -1; side <= 1; side += 2) {
-        // 15-20 pines per side
-        const pineCount = 15 + Math.floor(Math.random() * 6);
-        for (let i = 0; i < pineCount; i++) {
-            const x = side * rand(8, 25);
-            const z = rand(5, 70);
-            const scale = rand(0.7, 1.3);
-            group.add(createPine(x, z, scale));
+        // Inner band — tree line just beyond the path
+        for (let i = 0; i < 20; i++) {
+            const x = side * rand(12, 22);
+            const z = rand(-5, 75);
+            group.add(createPine(x, z, rand(0.7, 1.3)));
+        }
+        for (let i = 0; i < 10; i++) {
+            const x = side * rand(12, 22);
+            const z = rand(-5, 75);
+            group.add(createDeciduous(x, z, rand(0.7, 1.2)));
         }
 
-        // 8-10 deciduous per side
-        const decCount = 8 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < decCount; i++) {
-            const x = side * rand(7, 22);
-            const z = rand(3, 68);
-            const scale = rand(0.7, 1.2);
-            group.add(createDeciduous(x, z, scale));
+        // Middle band — dense fill
+        for (let i = 0; i < 18; i++) {
+            const x = side * rand(20, 35);
+            const z = rand(-5, 78);
+            group.add(createPine(x, z, rand(0.8, 1.4)));
         }
+        for (let i = 0; i < 10; i++) {
+            const x = side * rand(20, 35);
+            const z = rand(-5, 78);
+            group.add(createDeciduous(x, z, rand(0.8, 1.3)));
+        }
+
+        // Outer band — fills to camera edges
+        for (let i = 0; i < 15; i++) {
+            const x = side * rand(32, 50);
+            const z = rand(-8, 80);
+            group.add(createPine(x, z, rand(0.9, 1.5)));
+        }
+        for (let i = 0; i < 8; i++) {
+            const x = side * rand(32, 50);
+            const z = rand(-8, 80);
+            group.add(createDeciduous(x, z, rand(0.9, 1.4)));
+        }
+
+        // Far outer band — for wide screens
+        for (let i = 0; i < 10; i++) {
+            const x = side * rand(45, 65);
+            const z = rand(-10, 82);
+            group.add(createPine(x, z, rand(1.0, 1.6)));
+        }
+
+        // Bottom edge fill — behind/beside the outhouse (low Z)
+        for (let i = 0; i < 6; i++) {
+            const x = side * rand(5, 20);
+            const z = rand(-8, 2);
+            group.add(createPine(x, z, rand(0.8, 1.2)));
+        }
+        for (let i = 0; i < 4; i++) {
+            const x = side * rand(5, 20);
+            const z = rand(-8, 2);
+            group.add(createDeciduous(x, z, rand(0.7, 1.1)));
+        }
+    }
+
+    // Back tree line — behind outhouse, spanning full width
+    for (let i = 0; i < 12; i++) {
+        const x = rand(-40, 40);
+        const z = rand(-10, -3);
+        group.add(createPine(x, z, rand(0.8, 1.3)));
     }
 
     return group;
@@ -279,21 +324,21 @@ export function createForestBushes() {
         return shroom;
     }
 
-    // Place 20-30 bushes along path edges and near trees
-    const bushCount = 20 + Math.floor(Math.random() * 11);
+    // Place bushes along path edges and scattered in the forest
+    const bushCount = 30 + Math.floor(Math.random() * 11);
     for (let i = 0; i < bushCount; i++) {
         const side = Math.random() > 0.5 ? 1 : -1;
-        const x = side * rand(5, 12);
-        const z = rand(3, 68);
+        const x = side * rand(10, 25);
+        const z = rand(-3, 72);
         group.add(createBush(x, z));
     }
 
-    // Place 8-12 mushrooms
-    const shroomCount = 8 + Math.floor(Math.random() * 5);
+    // Place mushrooms scattered wider
+    const shroomCount = 12 + Math.floor(Math.random() * 6);
     for (let i = 0; i < shroomCount; i++) {
         const side = Math.random() > 0.5 ? 1 : -1;
-        const x = side * rand(3, 15);
-        const z = rand(5, 65);
+        const x = side * rand(6, 25);
+        const z = rand(3, 68);
         group.add(createMushroom(x, z));
     }
 
@@ -342,9 +387,9 @@ export function createForestRocks() {
 
         const side = Math.random() > 0.5 ? 1 : -1;
         rock.position.set(
-            side * rand(4, 18),
+            side * rand(8, 30),
             0,
-            rand(3, 68)
+            rand(-3, 72)
         );
 
         group.add(rock);
@@ -361,7 +406,6 @@ export function createOuthouse() {
 
     const plankMat = toonMat(PALETTE.forestPlanks);
     const plankDarkMat = toonMat(PALETTE.forestBark); // darker shade for bench
-    const roofMat = toonMat(PALETTE.forestRoof);
     const inkMat = matInk();
 
     // --- Floor platform ---
@@ -442,31 +486,7 @@ export function createOuthouse() {
         group.add(gap);
     }
 
-    // --- Roof (two angled box panels forming a peaked roof) ---
-    const roofWidth = 3.6; // slight overhang
-    const roofDepth = 3.6;
-
-    const roofPanelGeo = new THREE.BoxGeometry(roofWidth / 2 + 0.2, 0.08, roofDepth);
-
-    const roofPanelLeft = new THREE.Mesh(roofPanelGeo, roofMat);
-    roofPanelLeft.position.set(-0.85, 4.55, 0);
-    roofPanelLeft.rotation.z = 0.35; // angle left side up
-    roofPanelLeft.castShadow = true;
-    roofPanelLeft.receiveShadow = true;
-    group.add(roofPanelLeft);
-
-    const roofPanelRight = new THREE.Mesh(roofPanelGeo, roofMat);
-    roofPanelRight.position.set(0.85, 4.55, 0);
-    roofPanelRight.rotation.z = -0.35; // angle right side up
-    roofPanelRight.castShadow = true;
-    roofPanelRight.receiveShadow = true;
-    group.add(roofPanelRight);
-
-    // Roof ridge cap
-    const ridgeGeo = new THREE.BoxGeometry(0.2, 0.1, roofDepth + 0.1);
-    const ridge = new THREE.Mesh(ridgeGeo, roofMat);
-    ridge.position.set(0, 4.85, 0);
-    group.add(ridge);
+    // --- Roof removed — invisible so player can see inside the outhouse ---
 
     // --- Interior: bench/seat ---
     const benchGeo = new THREE.BoxGeometry(2.4, 0.15, 1.0);
@@ -644,6 +664,17 @@ export function createOuthouseDoor() {
     group.add(crack3);
     cracks.push(crack3);
 
+    // Crack 4 — center, critical damage
+    const crack4 = buildCrack([
+        { x: 0.0, y: 1.4, w: 0.5, h: 0.03, rot: 0.2 },
+        { x: -0.1, y: 1.2, w: 0.35, h: 0.03, rot: -0.4 },
+        { x: 0.2, y: 1.5, w: 0.3, h: 0.03, rot: 0.6 },
+        { x: -0.15, y: 1.55, w: 0.25, h: 0.03, rot: -0.15 },
+    ]);
+    crack4.name = 'crack_4';
+    group.add(crack4);
+    cracks.push(crack4);
+
     // --- Store metadata on group.userData (matches bathroom door interface) ---
     group.userData.door = doorPanel;
     group.userData.cracks = cracks;
@@ -686,9 +717,9 @@ export function createSunbeams() {
         beam.rotation.x = rand(-0.2, 0.2);
 
         beam.position.set(
-            rand(-12, 12),
+            rand(-25, 25),
             rand(6, 14),
-            rand(10, 60)
+            rand(5, 65)
         );
 
         beam.castShadow = false;
@@ -750,10 +781,10 @@ export function createButterflies() {
         body.rotation.z = Math.PI / 2;
         butterfly.add(body);
 
-        // Random starting position
-        const cx = rand(-15, 15);
+        // Random starting position — spread across wider forest
+        const cx = rand(-25, 25);
         const cy = rand(1, 4);
-        const cz = rand(8, 65);
+        const cz = rand(5, 68);
         butterfly.position.set(cx, cy, cz);
 
         group.add(butterfly);
@@ -795,7 +826,7 @@ export function createForestProps() {
         log.rotation.z = Math.PI / 2;
         log.rotation.y = rand(-0.5, 0.5);
         log.position.set(
-            (i === 0 ? -1 : 1) * rand(6, 14),
+            (i === 0 ? -1 : 1) * rand(12, 25),
             logRadius * 0.8,
             rand(15, 55)
         );
@@ -864,7 +895,7 @@ export function createForestProps() {
         const stumpGeo = new THREE.CylinderGeometry(stumpR, stumpR * 1.1, stumpH, 7);
         const stump = new THREE.Mesh(stumpGeo, stumpMat);
         stump.position.set(
-            (Math.random() > 0.5 ? 1 : -1) * rand(5, 12),
+            (Math.random() > 0.5 ? 1 : -1) * rand(12, 25),
             stumpH / 2,
             rand(10, 60)
         );
