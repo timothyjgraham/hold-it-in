@@ -90,14 +90,18 @@ function _politeWalk() {
             [lean, twist, sway], [lean, 0, 0], [lean, -twist, -sway],
             [lean, 0, 0], [lean, twist, sway]
         ]),
-        // Head: counter-twist stabilization + subtle downward gaze
+        // Head: counter-twist stabilization + downward gaze (uncomfortable)
         eulerTrack('head', t, [
-            [-0.04, -twist * 0.6, 0], [0, 0, 0], [-0.04, twist * 0.6, 0],
-            [0, 0, 0], [-0.04, -twist * 0.6, 0]
+            [-0.08, -twist * 0.6, 0], [-0.05, 0, 0], [-0.08, twist * 0.6, 0],
+            [-0.05, 0, 0], [-0.08, -twist * 0.6, 0]
         ]),
-        // Arms: natural opposition to legs, civilized swing
-        buildRotationTrack('upperArm_L', t, [-asw, 0, asw, 0, -asw], AXIS_X),
-        buildRotationTrack('upperArm_R', t, [asw, 0, -asw, 0, asw], AXIS_X),
+        // Arms: held across groin (busting to pee!), slight squeeze with each step
+        eulerTrack('upperArm_L', t, [
+            [0.5, 0, 0.35], [0.52, 0, 0.37], [0.5, 0, 0.35], [0.52, 0, 0.37], [0.5, 0, 0.35]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.5, 0, -0.35], [0.52, 0, -0.37], [0.5, 0, -0.35], [0.52, 0, -0.37], [0.5, 0, -0.35]
+        ]),
         // Upper legs: measured stride
         buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
         buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
@@ -107,51 +111,123 @@ function _politeWalk() {
     ]);
 }
 
-function _politeBash() {
+function _politeBashR() {
     const c = ENEMY_VISUAL_CONFIG.polite;
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const lean = -c.animationParams.spineForwardLean;
-    const dur = 0.8;
+    const dur = 1.0;
 
-    // Three polite knocks: wind → knock × 3, with pauses to listen
-    const t = [0, 0.10, 0.18, 0.30, 0.38, 0.50, 0.58, 0.68, dur];
+    // Right arm lifts from groin hold → knock × 3 → returns to groin
+    // Polite knock-knock-knock with pauses to listen
+    const t = [0, 0.15, 0.22, 0.35, 0.42, 0.55, 0.62, 0.78, dur];
 
-    return new THREE.AnimationClip('polite_bash_door', dur, [
-        // Root: subtle forward weight shift on each knock
+    return new THREE.AnimationClip('polite_bash_door_R', dur, [
+        // Root: subtle forward lean into each knock
         posTrack('root', t, [
-            [0, ry, 0], [0, ry, -0.05 * s], [0, ry, 0.08 * s], [0, ry, 0.04 * s],
-            [0, ry, -0.05 * s], [0, ry, 0.08 * s], [0, ry, 0.04 * s],
-            [0, ry, 0.08 * s], [0, ry, 0]
+            [0, ry, 0], [0, ry, 0], [0, ry, 0.06 * s], [0, ry, 0.02 * s],
+            [0, ry, 0.06 * s], [0, ry, 0.02 * s], [0, ry, 0.06 * s],
+            [0, ry, 0.01 * s], [0, ry, 0]
         ]),
-        // Spine: flexes forward on each knock impact
+        // Spine: leans into each knock, slight tilt toward knocking arm
         eulerTrack('spine', t, [
-            [lean, 0, 0], [lean + 0.15, 0, 0], [lean - 0.20, 0, 0], [lean - 0.05, 0, 0],
-            [lean + 0.12, 0, 0], [lean - 0.20, 0, 0], [lean - 0.05, 0, 0],
-            [lean - 0.20, 0, 0], [lean, 0, 0]
+            [lean, 0, 0], [lean - 0.03, 0, 0], [lean - 0.12, 0, -0.04], [lean - 0.04, 0, 0],
+            [lean - 0.12, 0, -0.04], [lean - 0.04, 0, 0.03], [lean - 0.12, 0, -0.04],
+            [lean - 0.03, 0, 0], [lean, 0, 0]
         ]),
-        // Right arm: polite knocking (raise fist → tap the door)
-        buildRotationTrack('upperArm_R', t,
-            [0.3, 1.3, 0.4, 0.5, 1.2, 0.4, 0.5, 0.4, 0.2], AXIS_X),
-        // Left arm: at side, slight sympathetic shift
-        buildRotationTrack('upperArm_L', t,
-            [0, 0.05, 0.12, 0.06, 0.05, 0.12, 0.06, 0.12, 0], AXIS_X),
+        // Right arm (knocking): groin hold → raise → knock × 3 → return
+        eulerTrack('upperArm_R', t, [
+            [0.5, 0, -0.35],    // groin hold
+            [1.3, 0, -0.05],    // arm raised, fist at door height
+            [0.55, 0, 0],       // first knock — fist contacts door
+            [0.9, 0, -0.08],    // recoil
+            [0.55, 0, 0],       // second knock
+            [0.85, 0, -0.06],   // recoil
+            [0.55, 0, 0],       // third knock
+            [0.75, 0, -0.20],   // arm lowering
+            [0.5, 0, -0.35],    // return to groin hold
+        ]),
+        // Left arm (stays holding groin, squeezes harder on impacts)
+        eulerTrack('upperArm_L', t, [
+            [0.5, 0, 0.35], [0.52, 0, 0.37], [0.56, 0, 0.40], [0.53, 0, 0.38],
+            [0.56, 0, 0.40], [0.53, 0, 0.38], [0.56, 0, 0.40],
+            [0.52, 0, 0.37], [0.5, 0, 0.35]
+        ]),
         // Head: tilts to listen between knocks
         eulerTrack('head', t, [
-            [0, 0, 0], [0, 0, 0], [-0.05, 0, 0.10], [-0.03, 0.14, 0.06],
-            [0, 0, 0], [-0.05, 0, -0.10], [-0.03, -0.12, -0.06],
-            [-0.05, 0, 0.08], [0, 0, 0]
+            [-0.06, 0, 0], [-0.02, 0, 0], [-0.08, 0, 0.05], [-0.04, 0.14, 0.08],
+            [-0.08, 0, -0.05], [-0.04, -0.12, -0.06], [-0.08, 0, 0.04],
+            [-0.04, 0.05, 0.03], [-0.06, 0, 0]
         ]),
-        // Legs: shift weight forward on each knock
+        // Legs: shift weight forward on knocks
         buildRotationTrack('upperLeg_L', t,
-            [0, -0.06, 0.10, 0.05, -0.06, 0.10, 0.05, 0.10, 0], AXIS_X),
+            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
         buildRotationTrack('upperLeg_R', t,
-            [0, -0.06, 0.10, 0.05, -0.06, 0.10, 0.05, 0.10, 0], AXIS_X),
+            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
         // Knees absorb lean
         buildRotationTrack('lowerLeg_L', t,
-            [0, 0.04, -0.15, -0.08, 0.04, -0.15, -0.08, -0.15, 0], AXIS_X),
+            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
         buildRotationTrack('lowerLeg_R', t,
-            [0, 0.04, -0.15, -0.08, 0.04, -0.15, -0.08, -0.15, 0], AXIS_X),
+            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
+    ]);
+}
+
+function _politeBashL() {
+    // Mirror of _politeBashR — left arm knocks, right holds groin
+    const c = ENEMY_VISUAL_CONFIG.polite;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const lean = -c.animationParams.spineForwardLean;
+    const dur = 1.0;
+
+    const t = [0, 0.15, 0.22, 0.35, 0.42, 0.55, 0.62, 0.78, dur];
+
+    return new THREE.AnimationClip('polite_bash_door_L', dur, [
+        // Root: same forward lean
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry, 0], [0, ry, 0.06 * s], [0, ry, 0.02 * s],
+            [0, ry, 0.06 * s], [0, ry, 0.02 * s], [0, ry, 0.06 * s],
+            [0, ry, 0.01 * s], [0, ry, 0]
+        ]),
+        // Spine: leans into each knock, slight tilt toward left arm
+        eulerTrack('spine', t, [
+            [lean, 0, 0], [lean - 0.03, 0, 0], [lean - 0.12, 0, 0.04], [lean - 0.04, 0, 0],
+            [lean - 0.12, 0, 0.04], [lean - 0.04, 0, -0.03], [lean - 0.12, 0, 0.04],
+            [lean - 0.03, 0, 0], [lean, 0, 0]
+        ]),
+        // Left arm (knocking): groin hold → raise → knock × 3 → return
+        eulerTrack('upperArm_L', t, [
+            [0.5, 0, 0.35],     // groin hold
+            [1.3, 0, 0.05],     // arm raised, fist at door height
+            [0.55, 0, 0],       // first knock
+            [0.9, 0, 0.08],     // recoil
+            [0.55, 0, 0],       // second knock
+            [0.85, 0, 0.06],    // recoil
+            [0.55, 0, 0],       // third knock
+            [0.75, 0, 0.20],    // arm lowering
+            [0.5, 0, 0.35],     // return to groin hold
+        ]),
+        // Right arm (stays holding groin, squeezes harder on impacts)
+        eulerTrack('upperArm_R', t, [
+            [0.5, 0, -0.35], [0.52, 0, -0.37], [0.56, 0, -0.40], [0.53, 0, -0.38],
+            [0.56, 0, -0.40], [0.53, 0, -0.38], [0.56, 0, -0.40],
+            [0.52, 0, -0.37], [0.5, 0, -0.35]
+        ]),
+        // Head: tilts to listen (mirrored from R version)
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.02, 0, 0], [-0.08, 0, -0.05], [-0.04, -0.14, -0.08],
+            [-0.08, 0, 0.05], [-0.04, 0.12, 0.06], [-0.08, 0, -0.04],
+            [-0.04, -0.05, -0.03], [-0.06, 0, 0]
+        ]),
+        // Legs: same as R version
+        buildRotationTrack('upperLeg_L', t,
+            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t,
+            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t,
+            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t,
+            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
     ]);
 }
 
@@ -1078,7 +1154,9 @@ function _girlsDeath() {
 
 const _clipBuilders = {
     polite_walk:        _politeWalk,
-    polite_bash_door:   _politeBash,
+    polite_bash_door:    _politeBashR,    // default (backward compat for barriers)
+    polite_bash_door_L:  _politeBashL,
+    polite_bash_door_R:  _politeBashR,
     polite_hit_react:   _politeHitReact,
     polite_death:       _politeDeath,
 

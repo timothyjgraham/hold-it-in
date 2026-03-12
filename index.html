@@ -4050,7 +4050,13 @@
                         e.bashing = true;
                         e.bashTimer = 0.3 + Math.random() * 0.3; // first hit comes fast
                         e.bashCooldown = e.type === 'boss' ? 1.5 : 1.0;
-                        e.animController.setState('bash_door');
+                        // Polite knocker: randomly choose which arm knocks
+                        if (e.type === 'polite') {
+                            e.knockSide = Math.random() < 0.5 ? 'L' : 'R';
+                            e.animController.setState('bash_door_' + e.knockSide);
+                        } else {
+                            e.animController.setState('bash_door');
+                        }
                     }
 
                     // Bash animation
@@ -4092,8 +4098,13 @@
                             }
                         }
 
-                        // Spawn wood chip particles at impact point
-                        this._spawnDoorChips(e.x, doorZ);
+                        // Spawn wood chip particles at knock impact point
+                        if (e.type === 'polite' && e.knockSide) {
+                            const armOffset = e.knockSide === 'L' ? -0.3 : 0.3;
+                            this._spawnDoorChips(e.x + armOffset, doorZ, 1.8);
+                        } else {
+                            this._spawnDoorChips(e.x, doorZ);
+                        }
 
                         // Screen shake (subtle)
                         this.camera.position.x += (Math.random() - 0.5) * 0.15;
@@ -5274,7 +5285,7 @@
         // ============================
         // DOOR BASH PARTICLES
         // ============================
-        _spawnDoorChips(x, z) {
+        _spawnDoorChips(x, z, impactY) {
             const chipCount = 8 + Math.floor(Math.random() * 6);
 
             for (let i = 0; i < chipCount; i++) {
@@ -5284,9 +5295,14 @@
                     : new THREE.TetrahedronGeometry(size * 0.6, 0);
                 const mat2 = toonMat(PALETTE.wood);
                 const chip = new THREE.Mesh(geo, mat2);
+                // When impactY given, tight spread around knock point; otherwise wide spread
+                const spreadX = impactY !== undefined ? 0.8 : 2;
+                const spawnY = impactY !== undefined
+                    ? (impactY + (Math.random() - 0.5) * 1.0)
+                    : (1.5 + Math.random() * 3);
                 chip.position.set(
-                    x + (Math.random() - 0.5) * 2,
-                    1.5 + Math.random() * 3,
+                    x + (Math.random() - 0.5) * spreadX,
+                    spawnY,
                     z
                 );
                 chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
