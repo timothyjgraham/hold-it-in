@@ -20,6 +20,11 @@ export function createSkeleton(enemyType, size) {
         throw new Error(`SkeletonFactory: unknown entity type "${enemyType}"`);
     }
 
+    // Quadruped skeleton branch (forest animals)
+    if (config.skeletonType === 'quadruped') {
+        return _createQuadrupedSkeleton(enemyType, size, config);
+    }
+
     const bones = [];
     const boneMap = {};
     const bp = config.bonePositions;
@@ -114,5 +119,103 @@ export function createSkeleton(enemyType, size) {
     // Compute world matrices so SkeletonHelper can read them
     root.updateMatrixWorld(true);
 
+    return { bones, rootBone: root, boneMap };
+}
+
+
+// ═══════════════════════════════════════
+// QUADRUPED SKELETON — horizontal spine, 4 legs, tail chain
+// ═══════════════════════════════════════
+
+function _createQuadrupedSkeleton(enemyType, size, config) {
+    const bones = [];
+    const boneMap = {};
+    const bp = config.bonePositions;
+    const flags = config.bones;
+
+    function makeBone(name, parent) {
+        const bone = new THREE.Bone();
+        bone.name = name;
+        const pos = bp[name];
+        if (pos) {
+            bone.position.set(
+                (pos.x || 0) * size,
+                (pos.y || 0) * size,
+                (pos.z || 0) * size
+            );
+        }
+        if (parent) parent.add(bone);
+        bones.push(bone);
+        boneMap[name] = bone;
+        return bone;
+    }
+
+    // ── Core spine: root → pelvis → spine_mid → chest ──
+    const root   = makeBone('root', null);
+    const pelvis = makeBone('pelvis', root);
+    const spineMid = makeBone('spine_mid', pelvis);
+    const chest  = makeBone('chest', spineMid);
+
+    // ── Neck chain: chest → neck_01 → [neck_02] → head ──
+    const neck01 = makeBone('neck_01', chest);
+    let headParent = neck01;
+    if (flags.neck_02) {
+        headParent = makeBone('neck_02', neck01);
+    }
+    makeBone('head', headParent);
+
+    // ── Front legs: chest → [scapula] → frontUpperLeg → frontLowerLeg → [frontFoot] ──
+    let frontLegParentL = chest;
+    let frontLegParentR = chest;
+    if (flags.scapulae) {
+        frontLegParentL = makeBone('scapula_L', chest);
+        frontLegParentR = makeBone('scapula_R', chest);
+    }
+    const frontUpperL = makeBone('frontUpperLeg_L', frontLegParentL);
+    const frontLowerL = makeBone('frontLowerLeg_L', frontUpperL);
+    const frontUpperR = makeBone('frontUpperLeg_R', frontLegParentR);
+    const frontLowerR = makeBone('frontLowerLeg_R', frontUpperR);
+    if (flags.frontFeet) {
+        makeBone('frontFoot_L', frontLowerL);
+        makeBone('frontFoot_R', frontLowerR);
+    }
+
+    // ── Tail: pelvis → tail_01 → tail_02 → ... ──
+    const tailCount = flags.tailCount || 0;
+    let tailParent = pelvis;
+    for (let i = 1; i <= tailCount; i++) {
+        tailParent = makeBone(`tail_0${i}`, tailParent);
+    }
+
+    // ── Hind legs: pelvis → hindUpperLeg → hindLowerLeg → [hindFoot] ──
+    const hindUpperL = makeBone('hindUpperLeg_L', pelvis);
+    const hindLowerL = makeBone('hindLowerLeg_L', hindUpperL);
+    const hindUpperR = makeBone('hindUpperLeg_R', pelvis);
+    const hindLowerR = makeBone('hindLowerLeg_R', hindUpperR);
+    if (flags.hindFeet) {
+        makeBone('hindFoot_L', hindLowerL);
+        makeBone('hindFoot_R', hindLowerR);
+    }
+
+    // ── Belly jiggle bone (bear only) ──
+    if (flags.belly) {
+        makeBone('belly', root);
+    }
+
+    // ── Apply rest pose rotations ──
+    if (config.restPose) {
+        for (const [boneName, rotation] of Object.entries(config.restPose)) {
+            const bone = boneMap[boneName];
+            if (bone) {
+                bone.rotation.set(
+                    rotation.x || 0,
+                    rotation.y || 0,
+                    rotation.z || 0
+                );
+            }
+        }
+    }
+
+    root.updateMatrixWorld(true);
     return { bones, rootBone: root, boneMap };
 }
