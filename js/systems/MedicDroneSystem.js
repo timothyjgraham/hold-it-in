@@ -678,8 +678,8 @@ export class MedicDroneSystem {
             model.animController.currentAction.paused = true;
         }
 
-        // Scale down to fit stretcher, keep orientation straight (no rotation)
-        group.scale.set(CORPSE_SCALE, CORPSE_SCALE, CORPSE_SCALE);
+        // Keep full size, no rotation — just place straight on the stretcher
+        group.scale.set(1, 1, 1);
         group.rotation.set(0, 0, 0);
         group.position.set(0, 0.02, 0); // Directly on top of bed surface
         group.visible = true;
