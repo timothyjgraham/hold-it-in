@@ -53,8 +53,8 @@ export const ENEMY_VISUAL_CONFIG = {
         },
         restPose: {
             spine: { x: -0.087 }, // slight forward lean
-            upperArm_L: { x: 0.5, z: 0.35 },  // arms crossed covering groin — busting to pee!
-            upperArm_R: { x: 0.5, z: -0.35 },
+            upperArm_L: { x: 1.2, z: 1.0 },   // arms crossed covering groin — busting to pee!
+            upperArm_R: { x: 1.2, z: -1.0 },
         },
     },
 

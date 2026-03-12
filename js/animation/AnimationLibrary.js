@@ -97,10 +97,10 @@ function _politeWalk() {
         ]),
         // Arms: held across groin (busting to pee!), slight squeeze with each step
         eulerTrack('upperArm_L', t, [
-            [0.5, 0, 0.35], [0.52, 0, 0.37], [0.5, 0, 0.35], [0.52, 0, 0.37], [0.5, 0, 0.35]
+            [1.2, 0, 1.0], [1.25, 0, 1.05], [1.2, 0, 1.0], [1.25, 0, 1.05], [1.2, 0, 1.0]
         ]),
         eulerTrack('upperArm_R', t, [
-            [0.5, 0, -0.35], [0.52, 0, -0.37], [0.5, 0, -0.35], [0.52, 0, -0.37], [0.5, 0, -0.35]
+            [1.2, 0, -1.0], [1.25, 0, -1.05], [1.2, 0, -1.0], [1.25, 0, -1.05], [1.2, 0, -1.0]
         ]),
         // Upper legs: measured stride
         buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
@@ -137,21 +137,21 @@ function _politeBashR() {
         ]),
         // Right arm (knocking): groin hold → raise → knock × 3 → return
         eulerTrack('upperArm_R', t, [
-            [0.5, 0, -0.35],    // groin hold
-            [1.3, 0, -0.05],    // arm raised, fist at door height
-            [0.55, 0, 0],       // first knock — fist contacts door
-            [0.9, 0, -0.08],    // recoil
-            [0.55, 0, 0],       // second knock
-            [0.85, 0, -0.06],   // recoil
-            [0.55, 0, 0],       // third knock
-            [0.75, 0, -0.20],   // arm lowering
-            [0.5, 0, -0.35],    // return to groin hold
+            [1.2, 0, -1.0],     // groin hold
+            [2.2, 0, -0.1],     // arm raised high, fist ready to knock
+            [1.0, 0, 0.1],      // first knock — fist contacts door
+            [1.6, 0, 0],        // recoil
+            [1.0, 0, 0.1],      // second knock
+            [1.5, 0, 0],        // recoil
+            [1.0, 0, 0.1],      // third knock
+            [1.3, 0, -0.5],     // arm lowering back
+            [1.2, 0, -1.0],     // return to groin hold
         ]),
         // Left arm (stays holding groin, squeezes harder on impacts)
         eulerTrack('upperArm_L', t, [
-            [0.5, 0, 0.35], [0.52, 0, 0.37], [0.56, 0, 0.40], [0.53, 0, 0.38],
-            [0.56, 0, 0.40], [0.53, 0, 0.38], [0.56, 0, 0.40],
-            [0.52, 0, 0.37], [0.5, 0, 0.35]
+            [1.2, 0, 1.0], [1.25, 0, 1.05], [1.3, 0, 1.1], [1.25, 0, 1.05],
+            [1.3, 0, 1.1], [1.25, 0, 1.05], [1.3, 0, 1.1],
+            [1.25, 0, 1.05], [1.2, 0, 1.0]
         ]),
         // Head: tilts to listen between knocks
         eulerTrack('head', t, [
@@ -197,21 +197,21 @@ function _politeBashL() {
         ]),
         // Left arm (knocking): groin hold → raise → knock × 3 → return
         eulerTrack('upperArm_L', t, [
-            [0.5, 0, 0.35],     // groin hold
-            [1.3, 0, 0.05],     // arm raised, fist at door height
-            [0.55, 0, 0],       // first knock
-            [0.9, 0, 0.08],     // recoil
-            [0.55, 0, 0],       // second knock
-            [0.85, 0, 0.06],    // recoil
-            [0.55, 0, 0],       // third knock
-            [0.75, 0, 0.20],    // arm lowering
-            [0.5, 0, 0.35],     // return to groin hold
+            [1.2, 0, 1.0],      // groin hold
+            [2.2, 0, 0.1],      // arm raised high, fist ready to knock
+            [1.0, 0, -0.1],     // first knock
+            [1.6, 0, 0],        // recoil
+            [1.0, 0, -0.1],     // second knock
+            [1.5, 0, 0],        // recoil
+            [1.0, 0, -0.1],     // third knock
+            [1.3, 0, 0.5],      // arm lowering back
+            [1.2, 0, 1.0],      // return to groin hold
         ]),
         // Right arm (stays holding groin, squeezes harder on impacts)
         eulerTrack('upperArm_R', t, [
-            [0.5, 0, -0.35], [0.52, 0, -0.37], [0.56, 0, -0.40], [0.53, 0, -0.38],
-            [0.56, 0, -0.40], [0.53, 0, -0.38], [0.56, 0, -0.40],
-            [0.52, 0, -0.37], [0.5, 0, -0.35]
+            [1.2, 0, -1.0], [1.25, 0, -1.05], [1.3, 0, -1.1], [1.25, 0, -1.05],
+            [1.3, 0, -1.1], [1.25, 0, -1.05], [1.3, 0, -1.1],
+            [1.25, 0, -1.05], [1.2, 0, -1.0]
         ]),
         // Head: tilts to listen (mirrored from R version)
         eulerTrack('head', t, [
