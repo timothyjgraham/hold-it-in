@@ -167,6 +167,7 @@ export class EnemyIntroUI {
         this._pedestal = null;
         this._pedestalOutline = null;
         this._particles = [];
+        this._introLights = [];
 
         // Scene refs
         this._scene = null;
@@ -219,6 +220,9 @@ export class EnemyIntroUI {
         // ── Create enemy model on pedestal ──
         this._createEnemyDisplay(enemyType);
 
+        // ── Dedicated intro lighting (scene lights don't reach y=17-22) ──
+        this._createIntroLights();
+
         // ── Tap text (hidden initially) ──
         const tapEl = _ensureTapTextElement();
         tapEl.style.opacity = '0';
@@ -258,6 +262,31 @@ export class EnemyIntroUI {
         this._dimPlane.lookAt(cam.position);
 
         this._scene.add(this._dimPlane);
+    }
+
+    /**
+     * Add dedicated lights so the intro elements are well-lit.
+     * Scene lights are designed for y=0-5 (game floor) and don't reach y=17-22.
+     * Uses PointLights with limited range to avoid changing the game world look.
+     */
+    _createIntroLights() {
+        // Key light: bright warm white from above/behind (camera direction)
+        const keyLight = new THREE.PointLight(0xffffff, 2.0, 25, 1);
+        keyLight.position.set(0, 26, -8);
+        this._scene.add(keyLight);
+        this._introLights.push(keyLight);
+
+        // Fill light: softer warm from the right side (illuminates enemy model)
+        const fillLight = new THREE.PointLight(0xfff0d0, 1.0, 20, 1);
+        fillLight.position.set(5, 20, -4);
+        this._scene.add(fillLight);
+        this._introLights.push(fillLight);
+
+        // Rim light: cool accent from the left (sign readability)
+        const rimLight = new THREE.PointLight(0xaaccee, 0.6, 20, 1);
+        rimLight.position.set(-6, 22, -5);
+        this._scene.add(rimLight);
+        this._introLights.push(rimLight);
     }
 
     /**
@@ -777,6 +806,14 @@ export class EnemyIntroUI {
             this._dimPlane.material.dispose();
             this._dimPlane = null;
         }
+
+        // Clean up intro lights
+        if (this._scene) {
+            for (const light of this._introLights) {
+                this._scene.remove(light);
+            }
+        }
+        this._introLights = [];
 
         // Clean up particles
         if (this._scene) {
