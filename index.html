@@ -1156,6 +1156,7 @@
                 corridorStart: CONFIG.corridorStart,  // 12
                 spawnWidth: CONFIG.spawnWidth,         // 10
                 doorZ: 9,                             // bathroom door flush with walls
+                minBuildZ: CONFIG.corridorStart + 2,  // 14 — don't build in bathroom
             };
             // Lighting
             this._createLighting();
@@ -1175,6 +1176,7 @@
                 corridorStart: CONFIG.corridorStart,   // 12
                 spawnWidth: CONFIG.spawnWidth * 2,     // 20
                 doorZ: 4.5,                            // outhouse door flush with front wall
+                minBuildZ: 8,                          // right up to the outhouse clearing
             };
             // Forest lighting — warmer, more green ambient, strong directional sun
             const ambient = new THREE.AmbientLight(PALETTE.forestAmbient, 0.8);
@@ -1298,7 +1300,7 @@
             const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
             const gridSize = CONFIG.grid;
             const halfW = Math.floor(laneW / gridSize / 2);
-            const startZ = CONFIG.corridorStart + 2; // Don't build in toilet room
+            const startZ = this._layout ? this._layout.minBuildZ : CONFIG.corridorStart + 2;
             const endZ = CONFIG.laneLength - 2;
 
             const lineMat = new THREE.LineBasicMaterial({
@@ -2566,10 +2568,10 @@
             const gx = Math.round(intersect.x / gs) * gs;
             const gz = Math.round(intersect.z / gs) * gs;
 
-            // Bounds check — must be in buildable area (scenario-aware lane width)
+            // Bounds check — must be in buildable area (scenario-aware)
             const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
             const halfW = Math.floor(laneW / gs / 2) * gs;
-            const minZ = CONFIG.corridorStart + 2;
+            const minZ = this._layout ? this._layout.minBuildZ : CONFIG.corridorStart + 2;
             const maxZ = CONFIG.laneLength - 4; // leave clearance before exit doors
 
             if (gx < -halfW || gx > halfW || gz < minZ || gz > maxZ) return null;
