@@ -294,7 +294,7 @@
                         </svg>
                     </div>
                     <div class="scenario-name">THE OCEAN</div>
-                    <div class="scenario-desc">Dinghy on open water. Sea creatures.</div>
+                    <div class="scenario-desc">Outhouse on a raft. Sea creatures.</div>
                     <div class="scenario-stats" id="stats-ocean">
                         <span class="stat-item">Best Wave: --</span>
                         <span class="stat-item">High Score: --</span>
@@ -1281,7 +1281,7 @@
             this.toilet = null;
             this.doorGroup = null;
             this.officeGroup = null;
-            this._oceanDinghy = null;
+            this._oceanRaft = null;
             if (this.playerCharacter) {
                 if (this.playerCharacter.group && this.playerCharacter.group.parent) {
                     this.playerCharacter.group.parent.remove(this.playerCharacter.group);
@@ -1463,10 +1463,10 @@
             const water = createOceanWater();
             this._environmentGroup.add(water);
 
-            // The dinghy (boat)
-            const dinghy = createDinghy();
-            this._environmentGroup.add(dinghy);
-            this._oceanDinghy = dinghy;
+            // The ocean raft with outhouse
+            const raft = createOceanRaft();
+            this._environmentGroup.add(raft);
+            this._oceanRaft = raft;
 
             // Toilet on the boat — slightly smaller
             this.toilet = createToilet();
@@ -1479,7 +1479,7 @@
             this._createPlayerCharacter();
 
             // Boat door (bow that enemies attack)
-            this.doorGroup = createBoatDoor();
+            this.doorGroup = createOceanOuthouseDoor();
             this._environmentGroup.add(this.doorGroup);
 
             // Ocean props — floating barrels, crates, debris
@@ -1497,7 +1497,8 @@
                 waterMesh: water.userData.waterMesh || null,
                 seagulls: seagulls.userData.seagulls || [],
                 sparkles: sparkles.userData.sparkles || [],
-                dinghy: dinghy,
+                raft: raft,
+                _prevBobY: 0,
             };
         },
 
@@ -1537,12 +1538,24 @@
                 sp.mesh.rotation.y = time * 2 + sp.phase;
             }
 
-            // Animate dinghy — gentle rocking on waves
-            const dinghy = this._oceanAnimData.dinghy;
-            if (dinghy) {
-                dinghy.rotation.x = Math.sin(time * 0.7) * 0.015;
-                dinghy.rotation.z = Math.sin(time * 0.5 + 0.5) * 0.02;
-                dinghy.position.y = 0.3 + Math.sin(time * 0.6) * 0.08;
+            // Animate raft + everything on it — gentle rocking on waves
+            const raft = this._oceanAnimData.raft;
+            if (raft) {
+                const bobY = Math.sin(time * 0.6) * 0.12;
+                const prevBobY = this._oceanAnimData._prevBobY || 0;
+                const deltaY = bobY - prevBobY;
+                this._oceanAnimData._prevBobY = bobY;
+
+                raft.rotation.x = Math.sin(time * 0.7) * 0.025;
+                raft.rotation.z = Math.sin(time * 0.5 + 0.5) * 0.03;
+                raft.position.y = 0.3 + bobY;
+
+                // Bob toilet, door, and player with the raft
+                if (this.toilet) this.toilet.position.y += deltaY;
+                if (this.doorGroup) this.doorGroup.position.y += deltaY;
+                if (this.playerCharacter && this.playerCharacter.group) {
+                    this.playerCharacter.group.position.y += deltaY;
+                }
             }
         },
 

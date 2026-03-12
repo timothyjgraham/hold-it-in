@@ -48,8 +48,8 @@ import {
 } from './models/ForestEnvironmentModels.js';
 import {
     createOceanWater,
-    createDinghy,
-    createBoatDoor,
+    createOceanRaft,
+    createOceanOuthouseDoor,
     createBuoyPlatform,
     createSeagulls,
     createSunSparkles,
@@ -111,8 +111,8 @@ window.createForestProps = createForestProps;
 
 // Ocean environment
 window.createOceanWater = createOceanWater;
-window.createDinghy = createDinghy;
-window.createBoatDoor = createBoatDoor;
+window.createOceanRaft = createOceanRaft;
+window.createOceanOuthouseDoor = createOceanOuthouseDoor;
 window.createBuoyPlatform = createBuoyPlatform;
 window.createSeagulls = createSeagulls;
 window.createSunSparkles = createSunSparkles;

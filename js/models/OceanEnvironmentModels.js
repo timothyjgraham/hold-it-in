@@ -1,5 +1,5 @@
 // OceanEnvironmentModels.js — Low-poly 3D ocean environment for "Hold It In"
-// Ocean scenario: small dinghy on open water, toilet on the boat.
+// Ocean scenario: outhouse on a log raft, floating on open water.
 // All functions return THREE.Group objects with toon materials.
 
 import { PALETTE } from '../data/palette.js';
@@ -226,169 +226,174 @@ export function createOceanWater() {
     return group;
 }
 
-// ─── 2. Dinghy ──────────────────────────────────────────────────────────────
+// ─── 2. Ocean Raft + Outhouse ───────────────────────────────────────────────
+// A makeshift log raft with a rustic outhouse structure built on top.
+// Logs lashed to planks form the base; the outhouse surrounds the toilet.
 
-export function createDinghy() {
+export function createOceanRaft() {
     const group = new THREE.Group();
-    group.name = 'dinghy';
+    group.name = 'oceanRaft';
 
-    const plankMat = toonMat(PALETTE.oceanBoatWood);
-    const keelMat = toonMat(PALETTE.oceanBoatDark);
+    const logMat = toonMat(PALETTE.oceanBoatWood);
+    const plankMat = toonMat(PALETTE.oceanBoatDark);
     const ropeMat = toonMat(PALETTE.oceanRope);
-    const inkMat = matInk();
+    const gapMat = matDark();
 
-    // --- Hull: wide center, tapered ends ---
-    // Build hull from several boxes layered to approximate a boat shape
+    // ─── Raft base: logs lashed to planks ───────────────────────────────
 
-    // Bottom keel — flat plank running bow to stern
-    const keelGeo = new THREE.BoxGeometry(1.6, 0.15, 5.5);
-    const keel = new THREE.Mesh(keelGeo, keelMat);
-    keel.position.set(0, -0.3, 0);
-    keel.castShadow = true;
-    keel.receiveShadow = true;
-    group.add(keel);
+    // 5 logs running lengthwise (Z axis), slightly varied radii for organic feel
+    const logLength = 6.5;
+    const logData = [
+        { x: -1.8, r: 0.24 },
+        { x: -0.9, r: 0.20 },
+        { x:  0.0, r: 0.22 },
+        { x:  0.9, r: 0.21 },
+        { x:  1.8, r: 0.23 },
+    ];
 
-    // Hull mid-section — widest part
-    const hullMidGeo = new THREE.BoxGeometry(3.0, 0.5, 3.0);
-    const hullMid = new THREE.Mesh(hullMidGeo, plankMat);
-    hullMid.position.set(0, -0.05, 0);
-    hullMid.castShadow = true;
-    hullMid.receiveShadow = true;
-    group.add(hullMid);
-
-    // Hull bow taper — narrower box at front
-    const hullBowGeo = new THREE.BoxGeometry(2.0, 0.5, 1.2);
-    const hullBow = new THREE.Mesh(hullBowGeo, plankMat);
-    hullBow.position.set(0, -0.05, 2.0);
-    hullBow.castShadow = true;
-    hullBow.receiveShadow = true;
-    group.add(hullBow);
-
-    // Hull bow tip — pointed
-    const hullTipGeo = new THREE.BoxGeometry(1.0, 0.4, 0.8);
-    const hullTip = new THREE.Mesh(hullTipGeo, plankMat);
-    hullTip.position.set(0, -0.05, 2.8);
-    hullTip.castShadow = true;
-    hullTip.receiveShadow = true;
-    group.add(hullTip);
-
-    // Hull stern taper
-    const hullSternGeo = new THREE.BoxGeometry(2.2, 0.5, 1.2);
-    const hullStern = new THREE.Mesh(hullSternGeo, plankMat);
-    hullStern.position.set(0, -0.05, -1.8);
-    hullStern.castShadow = true;
-    hullStern.receiveShadow = true;
-    group.add(hullStern);
-
-    // --- Left hull side (gunwale) ---
-    const gunwaleLeftGeo = new THREE.BoxGeometry(0.12, 0.35, 5.0);
-    const gunwaleLeft = new THREE.Mesh(gunwaleLeftGeo, keelMat);
-    gunwaleLeft.position.set(-1.45, 0.35, 0);
-    gunwaleLeft.castShadow = true;
-    group.add(gunwaleLeft);
-
-    // --- Right hull side (gunwale) ---
-    const gunwaleRight = new THREE.Mesh(gunwaleLeftGeo, keelMat);
-    gunwaleRight.position.set(1.45, 0.35, 0);
-    gunwaleRight.castShadow = true;
-    group.add(gunwaleRight);
-
-    // --- Bow gunwale taper (left) ---
-    const bowGunwaleLGeo = new THREE.BoxGeometry(0.1, 0.3, 1.8);
-    const bowGunwaleL = new THREE.Mesh(bowGunwaleLGeo, keelMat);
-    bowGunwaleL.position.set(-0.9, 0.35, 2.2);
-    bowGunwaleL.rotation.y = 0.25;
-    bowGunwaleL.castShadow = true;
-    group.add(bowGunwaleL);
-
-    // --- Bow gunwale taper (right) ---
-    const bowGunwaleR = new THREE.Mesh(bowGunwaleLGeo, keelMat);
-    bowGunwaleR.position.set(0.9, 0.35, 2.2);
-    bowGunwaleR.rotation.y = -0.25;
-    bowGunwaleR.castShadow = true;
-    group.add(bowGunwaleR);
-
-    // --- Stern transom (flat back panel) ---
-    const transomGeo = new THREE.BoxGeometry(2.4, 0.55, 0.12);
-    const transom = new THREE.Mesh(transomGeo, keelMat);
-    transom.position.set(0, 0.2, -2.4);
-    transom.castShadow = true;
-    group.add(transom);
-
-    // --- Bench seats (two cross-beams) ---
-    const benchGeo = new THREE.BoxGeometry(2.6, 0.1, 0.4);
-    const bench1 = new THREE.Mesh(benchGeo, keelMat);
-    bench1.position.set(0, 0.25, -0.8);
-    bench1.castShadow = true;
-    bench1.receiveShadow = true;
-    group.add(bench1);
-
-    const bench2 = new THREE.Mesh(benchGeo, keelMat);
-    bench2.position.set(0, 0.25, 0.8);
-    bench2.castShadow = true;
-    bench2.receiveShadow = true;
-    group.add(bench2);
-
-    // --- Oars (two, resting in oarlocks) ---
-    for (let side = -1; side <= 1; side += 2) {
-        const oarGroup = new THREE.Group();
-        oarGroup.name = 'oar';
-
-        // Shaft
-        const shaftGeo = new THREE.CylinderGeometry(0.04, 0.04, 3.5, 6);
-        const shaft = new THREE.Mesh(shaftGeo, plankMat);
-        shaft.rotation.z = Math.PI / 2;
-        shaft.position.set(side * 0.5, 0, 0);
-        shaft.castShadow = true;
-        oarGroup.add(shaft);
-
-        // Paddle end (flat box)
-        const paddleGeo = new THREE.BoxGeometry(0.8, 0.03, 0.3);
-        const paddle = new THREE.Mesh(paddleGeo, keelMat);
-        paddle.position.set(side * 2.0, 0, 0);
-        paddle.castShadow = true;
-        oarGroup.add(paddle);
-
-        // Oarlock (small ring)
-        const oarlockGeo = new THREE.TorusGeometry(0.06, 0.02, 6, 6);
-        const oarlock = new THREE.Mesh(oarlockGeo, inkMat);
-        oarlock.position.set(side * 1.4, 0.35, 0);
-        oarlock.rotation.x = Math.PI / 2;
-        oarGroup.add(oarlock);
-
-        oarGroup.position.set(0, 0.4, 0);
-        oarGroup.rotation.y = side * 0.15;
-        group.add(oarGroup);
+    for (const ld of logData) {
+        const logGeo = new THREE.CylinderGeometry(ld.r, ld.r * 0.92, logLength, 8);
+        const log = new THREE.Mesh(logGeo, logMat);
+        log.rotation.x = Math.PI / 2; // lay flat along Z
+        log.position.set(ld.x, -0.12, 0);
+        log.castShadow = true;
+        log.receiveShadow = true;
+        group.add(log);
     }
 
-    // --- Rope coil on rear bench ---
-    const ropeGeo = new THREE.TorusGeometry(0.2, 0.04, 6, 12);
-    const ropeCoil = new THREE.Mesh(ropeGeo, ropeMat);
-    ropeCoil.rotation.x = -Math.PI / 2;
-    ropeCoil.position.set(-0.7, 0.35, -0.8);
-    ropeCoil.castShadow = true;
-    group.add(ropeCoil);
-
-    // --- Plank lines on hull for detail ---
-    const plankLineMat = matDark();
-    for (let i = -2; i <= 2; i++) {
-        const lineGeo = new THREE.BoxGeometry(0.01, 0.02, 5.0);
-        const line = new THREE.Mesh(lineGeo, plankLineMat);
-        line.position.set(i * 0.55, 0.21, 0);
-        group.add(line);
+    // Log end-grain visible at front and back (dark circles)
+    for (const ld of logData) {
+        for (const zSign of [-1, 1]) {
+            const capGeo = new THREE.CircleGeometry(ld.r * 0.85, 8);
+            const cap = new THREE.Mesh(capGeo, plankMat);
+            cap.position.set(ld.x, -0.12, zSign * logLength / 2);
+            if (zSign < 0) cap.rotation.y = Math.PI;
+            group.add(cap);
+        }
     }
 
-    // Position the dinghy at the toilet location
+    // Cross planks across the top (perpendicular to logs)
+    const plankZPositions = [-2.8, -2.0, -1.2, -0.4, 0.4, 1.2, 2.0, 2.8];
+    for (const pz of plankZPositions) {
+        const pw = 4.2 + (Math.sin(pz * 3.7) * 0.15); // slight width variation
+        const plankGeo = new THREE.BoxGeometry(pw, 0.06, 0.32);
+        const plank = new THREE.Mesh(plankGeo, plankMat);
+        plank.position.set(0, 0.1, pz);
+        plank.castShadow = true;
+        plank.receiveShadow = true;
+        group.add(plank);
+
+        // Plank gap line
+        const gapLineGeo = new THREE.BoxGeometry(pw - 0.1, 0.01, 0.01);
+        const gapLine = new THREE.Mesh(gapLineGeo, gapMat);
+        gapLine.position.set(0, 0.14, pz + 0.14);
+        group.add(gapLine);
+    }
+
+    // Rope lashings where planks cross outer logs
+    const ropeGeo = new THREE.TorusGeometry(0.10, 0.022, 4, 8);
+    const lashXPositions = [-1.8, 0, 1.8];
+    const lashZPositions = [-2.8, -1.2, 1.2, 2.8];
+    for (const lx of lashXPositions) {
+        for (const lz of lashZPositions) {
+            const rope = new THREE.Mesh(ropeGeo, ropeMat);
+            rope.rotation.x = -Math.PI / 2;
+            rope.position.set(lx, 0.08, lz);
+            group.add(rope);
+        }
+    }
+
+    // ─── Outhouse structure on the raft ─────────────────────────────────
+    // 3x3 outhouse centered at z=0 local, front (door) faces +Z (north)
+
+    const wallThickness = 0.12;
+    const wallHeight = 3.6;
+    const yBase = 0.15; // base of walls on deck
+
+    // Back wall (south side)
+    const backWallGeo = new THREE.BoxGeometry(3.0, wallHeight, wallThickness);
+    const backWall = new THREE.Mesh(backWallGeo, logMat);
+    backWall.position.set(0, yBase + wallHeight / 2, -1.44);
+    backWall.castShadow = true;
+    backWall.receiveShadow = true;
+    group.add(backWall);
+
+    // Left wall (west side)
+    const sideWallGeo = new THREE.BoxGeometry(wallThickness, wallHeight, 3.0);
+    const leftWall = new THREE.Mesh(sideWallGeo, logMat);
+    leftWall.position.set(-1.44, yBase + wallHeight / 2, 0);
+    leftWall.castShadow = true;
+    leftWall.receiveShadow = true;
+    group.add(leftWall);
+
+    // Right wall (east side)
+    const rightWall = new THREE.Mesh(sideWallGeo, logMat);
+    rightWall.position.set(1.44, yBase + wallHeight / 2, 0);
+    rightWall.castShadow = true;
+    rightWall.receiveShadow = true;
+    group.add(rightWall);
+
+    // Front wall — narrow panels flanking the 2-unit door opening
+    const frontPanelGeo = new THREE.BoxGeometry(0.5, wallHeight, wallThickness);
+    const frontLeft = new THREE.Mesh(frontPanelGeo, logMat);
+    frontLeft.position.set(-1.25, yBase + wallHeight / 2, 1.44);
+    frontLeft.castShadow = true;
+    group.add(frontLeft);
+
+    const frontRight = new THREE.Mesh(frontPanelGeo, logMat);
+    frontRight.position.set(1.25, yBase + wallHeight / 2, 1.44);
+    frontRight.castShadow = true;
+    group.add(frontRight);
+
+    // Transom above door
+    const transomGeo = new THREE.BoxGeometry(2.0, 0.4, wallThickness);
+    const transomMesh = new THREE.Mesh(transomGeo, logMat);
+    transomMesh.position.set(0, yBase + wallHeight - 0.2, 1.44);
+    transomMesh.castShadow = true;
+    group.add(transomMesh);
+
+    // Horizontal plank gap lines on back wall
+    for (let i = 1; i <= 3; i++) {
+        const bgGeo = new THREE.BoxGeometry(2.9, 0.02, 0.01);
+        const bg = new THREE.Mesh(bgGeo, gapMat);
+        bg.position.set(0, yBase + i * 0.95, -1.44 + wallThickness / 2 + 0.01);
+        group.add(bg);
+    }
+
+    // Moon cutout on back wall (classic outhouse detail)
+    const moonGeo = new THREE.CircleGeometry(0.18, 8);
+    const moonMat2 = toonMat(PALETTE.oceanSun, {
+        emissive: PALETTE.oceanSun,
+        emissiveIntensity: 0.4,
+    });
+    const moon = new THREE.Mesh(moonGeo, moonMat2);
+    moon.position.set(0, yBase + wallHeight - 0.7, -1.44 + wallThickness / 2 + 0.02);
+    group.add(moon);
+
+    // Warm lantern light inside the outhouse
+    const lanternLight = new THREE.PointLight(PALETTE.oceanSun, 0.35, 6);
+    lanternLight.position.set(-0.7, 1.5, -0.8);
+    group.add(lanternLight);
+
+    // Small lantern body on back wall
+    const fixtureMat2 = toonMat(PALETTE.fixture);
+    const lanternBodyGeo = new THREE.BoxGeometry(0.12, 0.18, 0.12);
+    const lanternBody = new THREE.Mesh(lanternBodyGeo, fixtureMat2);
+    lanternBody.position.set(-0.7, 1.4, -1.3);
+    group.add(lanternBody);
+
+    // Position the raft at the toilet location
     group.position.set(0, 0.3, 3);
 
     return group;
 }
 
-// ─── 3. Boat Door (Bow Panel) ───────────────────────────────────────────────
+// ─── 3. Outhouse Door (North Edge of Raft) ──────────────────────────────────
+// Rustic wooden door that enemies attack. Moon cutout, hinges, damage cracks.
 
-export function createBoatDoor() {
+export function createOceanOuthouseDoor() {
     const group = new THREE.Group();
-    group.name = 'boatDoor';
+    group.name = 'oceanOuthouseDoor';
 
     const doorColor = PALETTE.oceanBoatWood;
 
@@ -399,40 +404,72 @@ export function createBoatDoor() {
     });
     doorMat.depthWrite = false;
 
-    // --- Curved bow panel (the "door" enemies attack) ---
-    const doorGeo = new THREE.BoxGeometry(2.4, 2.5, 0.12);
+    // --- Door panel ---
+    const doorGeo = new THREE.BoxGeometry(2.0, 3.2, 0.1);
     const doorPanel = new THREE.Mesh(doorGeo, doorMat);
-    doorPanel.position.set(0, 1.35, 0);
+    doorPanel.position.set(0, 1.75, 0);
     doorPanel.castShadow = false;
     doorPanel.receiveShadow = false;
     group.add(doorPanel);
 
-    // --- Plank lines on door ---
+    // --- Horizontal plank lines on door ---
     const plankLineMat = matDark();
-    for (let i = 1; i <= 4; i++) {
-        const lineGeo = new THREE.BoxGeometry(2.2, 0.02, 0.01);
+    for (let i = 1; i <= 3; i++) {
+        const lineGeo = new THREE.BoxGeometry(1.9, 0.02, 0.01);
         const line = new THREE.Mesh(lineGeo, plankLineMat);
-        line.position.set(0, 0.3 + i * 0.5, 0.07);
+        line.position.set(0, 0.3 + i * 0.8, 0.06);
         group.add(line);
     }
 
-    // --- Metal reinforcement strips (horizontal) ---
+    // --- Moon cutout circle (upper door) ---
+    const moonGeo = new THREE.CircleGeometry(0.18, 8);
+    const moonDoorMat = toonMat(PALETTE.oceanSun, {
+        emissive: PALETTE.oceanSun,
+        emissiveIntensity: 0.5,
+    });
+    const moonCutout = new THREE.Mesh(moonGeo, moonDoorMat);
+    moonCutout.position.set(0, 2.8, 0.06);
+    group.add(moonCutout);
+
+    // --- Rustic handle (wooden peg) ---
+    const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 6);
+    const handleMat2 = toonMat(PALETTE.oceanBoatDark);
+    const handle = new THREE.Mesh(handleGeo, handleMat2);
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(0.7, 1.6, 0.12);
+    group.add(handle);
+
+    // --- Hinges (two dark cylinders on left side) ---
+    const hingeMat = matInk();
+    for (let i = 0; i < 2; i++) {
+        const hingeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6);
+        const hinge = new THREE.Mesh(hingeGeo, hingeMat);
+        hinge.position.set(-0.95, 0.8 + i * 1.8, 0.06);
+        group.add(hinge);
+
+        const plateGeo = new THREE.BoxGeometry(0.2, 0.1, 0.02);
+        const plate = new THREE.Mesh(plateGeo, hingeMat);
+        plate.position.set(-0.85, 0.8 + i * 1.8, 0.055);
+        group.add(plate);
+    }
+
+    // --- Metal reinforcement strips ---
     const metalMat = toonMat(PALETTE.fixture);
     for (let i = 0; i < 2; i++) {
-        const stripGeo = new THREE.BoxGeometry(2.3, 0.08, 0.03);
+        const stripGeo = new THREE.BoxGeometry(1.9, 0.06, 0.03);
         const strip = new THREE.Mesh(stripGeo, metalMat);
-        strip.position.set(0, 0.6 + i * 1.5, 0.07);
+        strip.position.set(0, 0.5 + i * 2.0, 0.07);
         group.add(strip);
     }
 
     // --- Bolt heads on strips ---
     const boltMat = matInk();
     for (let i = 0; i < 2; i++) {
-        for (let bx = -0.8; bx <= 0.8; bx += 0.4) {
-            const boltGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 6);
+        for (let bx = -0.7; bx <= 0.7; bx += 0.35) {
+            const boltGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.04, 6);
             const bolt = new THREE.Mesh(boltGeo, boltMat);
             bolt.rotation.x = Math.PI / 2;
-            bolt.position.set(bx, 0.6 + i * 1.5, 0.09);
+            bolt.position.set(bx, 0.5 + i * 2.0, 0.09);
             group.add(bolt);
         }
     }
@@ -517,7 +554,7 @@ export function createBoatDoor() {
     group.userData.maxDoorHP = 100;
     group.userData.originalColor = doorColor;
 
-    // Position at front of the boat
+    // Position at front of the outhouse (north edge of raft)
     group.position.set(0, 0, 4.5);
 
     return group;
@@ -926,7 +963,7 @@ export function createOceanProps() {
     pennant.position.set(0.02, 2.4, 0);
     flagGroup.add(pennant);
 
-    flagGroup.position.set(0, 0.3, -0.5);
+    flagGroup.position.set(1.8, 0.3, 0.5);
     group.add(flagGroup);
 
     // --- Compass / lantern on forward bench ---
@@ -964,7 +1001,7 @@ export function createOceanProps() {
     lanternLight.position.y = 0.2;
     lanternGroup.add(lanternLight);
 
-    lanternGroup.position.set(0.6, 0.55, 3.8);
+    lanternGroup.position.set(2.2, 0.45, 2.0);
     group.add(lanternGroup);
 
     // --- Floating seaweed patches ---
