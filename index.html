@@ -1176,6 +1176,7 @@
                 corridorStart: CONFIG.corridorStart,   // 12
                 spawnWidth: CONFIG.spawnWidth * 2,     // 20
                 doorZ: 4.5,                            // outhouse door flush with front wall
+                doorHalfWidth: 1.0,                    // outhouse door opening is 2 units wide
                 minBuildZ: 8,                          // right up to the outhouse clearing
             };
             // Forest lighting — warmer, more green ambient, strong directional sun
@@ -5003,7 +5004,12 @@
                     } else {
                         // Phase 3: Converge toward toilet — funnel into corridor
                         const t = Math.max(0, (e.z - CONFIG.toiletPos.z) / (convergeZ - CONFIG.toiletPos.z));
-                        const targetX = e.targetLane * t; // lerp from lane position to center (x=0)
+                        const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
+                            ? this._layout.doorHalfWidth : 6;
+                        // Clamp target to door width as enemies approach
+                        const rawTarget = e.targetLane * t;
+                        const maxSpread = doorHW + (Math.abs(e.targetLane) - doorHW) * Math.pow(t, 0.5);
+                        const targetX = Math.max(-maxSpread, Math.min(maxSpread, rawTarget));
                         const dxToTarget = targetX - e.x;
                         e.x += dxToTarget * dt * 2.5;
                     }
@@ -5305,6 +5311,15 @@
                     // Stop at the door
                     e.z = Math.max(e.z, bashRange);
                     e.mesh.position.z = e.z;
+
+                    // Clamp X to door opening width (enemies must bash the actual door)
+                    const doorHW = this._layout && this._layout.doorHalfWidth !== undefined
+                        ? this._layout.doorHalfWidth : 5;
+                    if (Math.abs(e.x) > doorHW) {
+                        const pullTarget = Math.sign(e.x) * doorHW;
+                        e.x += (pullTarget - e.x) * Math.min(1, dt * 6);
+                        e.mesh.position.x = e.x;
+                    }
 
                     // Initialize bashing state (5G)
                     if (!e.bashing) {

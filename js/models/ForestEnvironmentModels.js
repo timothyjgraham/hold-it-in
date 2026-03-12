@@ -86,15 +86,6 @@ export function createForestGround() {
     pathMesh.receiveShadow = true;
     group.add(pathMesh);
 
-    // --- Small clearing around outhouse (z = 0 to 12) ---
-    const clearingGeo = new THREE.PlaneGeometry(24, 14);
-    const clearingMat = toonMat(PALETTE.forestDirt);
-    const clearingMesh = new THREE.Mesh(clearingGeo, clearingMat);
-    clearingMesh.rotation.x = -Math.PI / 2;
-    clearingMesh.position.set(0, -0.02, 6);
-    clearingMesh.receiveShadow = true;
-    group.add(clearingMesh);
-
     return group;
 }
 
