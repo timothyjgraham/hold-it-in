@@ -26,53 +26,67 @@ function hexToVec3(hex) {
 }
 
 // ─── 1. Ocean Water ─────────────────────────────────────────────────────────
+// Toon-shaded Gerstner wave ocean with procedural foam, Fresnel depth,
+// anime highlight lines, and ink outlines on wave crests.
 
 export function createOceanWater() {
     const group = new THREE.Group();
     group.name = 'oceanWater';
 
-    // Custom cel-shaded water shader — the visual centerpiece
     const waterVertexShader = /* glsl */ `
         #include <fog_pars_vertex>
 
         uniform float uTime;
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
         varying float vWaveHeight;
         varying vec2 vUv;
-        varying vec3 vWorldPos;
 
-        // Multiple layered sine waves for organic ocean motion
-        float waveLayer(vec2 pos, float freq, float speed, float amp, vec2 dir) {
-            float d = dot(pos, normalize(dir));
-            return amp * sin(d * freq + uTime * speed);
+        // Gerstner wave: computes displacement AND accumulates normal
+        // dir = wave direction, Q = steepness (0-1), wl = wavelength, spd = speed multiplier
+        void addWave(vec2 sp, vec2 dir, float Q, float wl, float spd,
+                     inout vec3 disp, inout vec3 norm) {
+            float k  = 6.28318 / wl;
+            float w  = sqrt(9.8 * k);
+            vec2  d  = normalize(dir);
+            float f  = k * dot(d, sp) - w * spd * uTime;
+            float A  = Q / k;
+            float cf = cos(f);
+            float sf = sin(f);
+
+            // Horizontal + vertical displacement (peaked crests, flat troughs)
+            disp.x += d.x * A * cf;
+            disp.y += A * sf;
+            disp.z += d.y * A * cf;
+
+            // Analytical normal contribution
+            norm.x += -d.x * Q * cf;
+            norm.y -= Q * sf;
+            norm.z += -d.y * Q * cf;
         }
 
         void main() {
             vUv = uv;
-            vec3 pos = position;
 
-            // --- Vertex displacement: 5 overlapping wave layers ---
-            float wave = 0.0;
+            // Transform to world space for consistent wave sampling
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vec2 sp = worldPos.xz;
 
-            // Primary swell — large slow rolling waves
-            wave += waveLayer(pos.xz, 0.25, 0.6, 1.2, vec2(1.0, 0.3));
+            vec3 disp = vec3(0.0);
+            vec3 norm = vec3(0.0, 1.0, 0.0);
 
-            // Secondary cross-swell
-            wave += waveLayer(pos.xz, 0.35, 0.8, 0.7, vec2(-0.5, 1.0));
+            // 4 Gerstner waves — layered for natural ocean motion
+            addWave(sp, vec2(1.0, 0.5),  0.12, 30.0, 0.8, disp, norm); // Long swell
+            addWave(sp, vec2(-0.4, 1.0), 0.10, 20.0, 0.6, disp, norm); // Cross swell
+            addWave(sp, vec2(0.6, 0.7),  0.18, 12.0, 1.0, disp, norm); // Medium chop
+            addWave(sp, vec2(-0.2, 0.9), 0.10,  6.0, 1.3, disp, norm); // Small ripples
 
-            // Medium chop
-            wave += waveLayer(pos.xz, 0.8, 1.2, 0.35, vec2(0.7, 0.7));
+            worldPos.xyz += disp;
+            vWaveHeight = disp.y;
+            vWorldPos = worldPos.xyz;
+            vNormal = normalize(norm);
 
-            // Small ripples (higher freq)
-            wave += waveLayer(pos.xz, 1.6, 1.8, 0.15, vec2(-0.3, 1.0));
-
-            // Micro detail
-            wave += waveLayer(pos.xz, 3.0, 2.5, 0.06, vec2(1.0, -0.4));
-
-            pos.y += wave;
-            vWaveHeight = wave;
-            vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
-
-            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            vec4 mvPosition = viewMatrix * worldPos;
             gl_Position = projectionMatrix * mvPosition;
             #include <fog_vertex>
         }
@@ -83,111 +97,108 @@ export function createOceanWater() {
         #include <fog_pars_fragment>
 
         uniform float uTime;
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
         varying float vWaveHeight;
         varying vec2 vUv;
-        varying vec3 vWorldPos;
 
-        // Palette colors injected as constants
+        // Palette colors
         const vec3 COL_DEEP = ${hexToVec3(PALETTE.oceanDeep)};
         const vec3 COL_MID  = ${hexToVec3(PALETTE.oceanMid)};
         const vec3 COL_SURF = ${hexToVec3(PALETTE.oceanSurf)};
         const vec3 COL_FOAM = ${hexToVec3(PALETTE.oceanFoam)};
         const vec3 COL_INK  = ${hexToVec3(PALETTE.ink)};
 
-        // Wave function matching vertex shader (for derivative computation)
-        float waveLayer(vec2 pos, float freq, float speed, float amp, vec2 dir) {
-            float d = dot(pos, normalize(dir));
-            return amp * sin(d * freq + uTime * speed);
+        // ── Procedural noise (texture-free) ──
+        float hash21(vec2 p) {
+            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
         }
 
-        float waveLayerDeriv(vec2 pos, float freq, float speed, float amp, vec2 dir) {
-            float d = dot(pos, normalize(dir));
-            return amp * freq * cos(d * freq + uTime * speed);
+        float noise(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            float a = hash21(i);
+            float b = hash21(i + vec2(1.0, 0.0));
+            float c = hash21(i + vec2(0.0, 1.0));
+            float d = hash21(i + vec2(1.0, 1.0));
+            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
         }
 
-        float totalWave(vec2 p) {
-            float w = 0.0;
-            w += waveLayer(p, 0.25, 0.6, 1.2, vec2(1.0, 0.3));
-            w += waveLayer(p, 0.35, 0.8, 0.7, vec2(-0.5, 1.0));
-            w += waveLayer(p, 0.8, 1.2, 0.35, vec2(0.7, 0.7));
-            w += waveLayer(p, 1.6, 1.8, 0.15, vec2(-0.3, 1.0));
-            w += waveLayer(p, 3.0, 2.5, 0.06, vec2(1.0, -0.4));
-            return w;
-        }
-
-        // Compute combined wave derivative magnitude for edge detection
-        float totalWaveDeriv(vec2 p) {
-            float d = 0.0;
-            d += abs(waveLayerDeriv(p, 0.25, 0.6, 1.2, vec2(1.0, 0.3)));
-            d += abs(waveLayerDeriv(p, 0.35, 0.8, 0.7, vec2(-0.5, 1.0)));
-            d += abs(waveLayerDeriv(p, 0.8, 1.2, 0.35, vec2(0.7, 0.7)));
-            d += abs(waveLayerDeriv(p, 1.6, 1.8, 0.15, vec2(-0.3, 1.0)));
-            d += abs(waveLayerDeriv(p, 3.0, 2.5, 0.06, vec2(1.0, -0.4)));
-            return d;
+        float fbm(vec2 p) {
+            float v = 0.0;
+            float a = 0.5;
+            for (int i = 0; i < 3; i++) {
+                v += a * noise(p);
+                p *= 2.0;
+                a *= 0.5;
+            }
+            return v;
         }
 
         void main() {
-            // --- 3-tone cel shading based on wave height ---
-            float h = vWaveHeight;
+            vec3 N = normalize(vNormal);
+            vec3 viewDir = normalize(cameraPosition - vWorldPos);
+            vec2 sp = vWorldPos.xz;
 
-            // Normalize height to 0-1 range (waves go roughly -2.5 to +2.5)
-            float hNorm = clamp((h + 2.5) / 5.0, 0.0, 1.0);
+            // ── 1. Base color: 3-tone cel bands from wave height ──
+            float hNorm = smoothstep(-1.5, 1.5, vWaveHeight);
+            vec3 color = COL_DEEP;
+            color = mix(color, COL_MID,  smoothstep(0.30, 0.38, hNorm));
+            color = mix(color, COL_SURF, smoothstep(0.58, 0.66, hNorm));
 
-            // Hard cel-shade steps: deep / mid / surface
-            vec3 color;
-            if (hNorm < 0.35) {
-                color = COL_DEEP;
-            } else if (hNorm < 0.65) {
-                color = COL_MID;
-            } else {
-                color = COL_SURF;
-            }
+            // ── 2. Fresnel: darken at grazing angles for depth ──
+            float fresnel = 1.0 - max(dot(N, viewDir), 0.0);
+            fresnel = pow(fresnel, 2.5);
+            color = mix(color, COL_DEEP, smoothstep(0.3, 0.6, fresnel) * 0.35);
 
-            // --- Foam / whitecap lines along wave crests ---
-            // Use derivative magnitude — foam appears where waves are steepest (crests)
-            float deriv = totalWaveDeriv(vWorldPos.xz);
+            // ── 3. Surface detail: dual-layer scrolling noise (painted look) ──
+            float d1 = noise(sp * 1.8 + vec2(uTime * 0.4, -uTime * 0.25));
+            float d2 = noise(sp * 3.5 + vec2(-uTime * 0.3, uTime * 0.35));
+            float detail = d1 * 0.6 + d2 * 0.4;
+            color *= 0.90 + detail * 0.20;
 
-            // Animated foam threshold — shifts over time for dynamic foam
-            float foamWave = sin(vWorldPos.x * 0.4 + uTime * 0.3) * 0.15
-                           + sin(vWorldPos.z * 0.3 + uTime * 0.5) * 0.1;
+            // ── 4. Foam: organic noise whitecaps on crests ──
+            float fn1 = fbm(sp * 0.6 + vec2(uTime * 0.25, uTime * 0.15));
+            float fn2 = noise(sp * 1.2 + vec2(-uTime * 0.15, uTime * 0.3));
+            float foamNoise = fn1 * 0.65 + fn2 * 0.35;
 
-            float foamThreshold = 1.8 + foamWave;
-            float foam = smoothstep(foamThreshold, foamThreshold + 0.3, deriv);
+            float crestMask = smoothstep(0.45, 0.75, hNorm);
+            float foam = smoothstep(0.30, 0.42, crestMask * foamNoise);
 
-            // Extra foam on top of wave crests
-            float crestFoam = smoothstep(0.75, 0.9, hNorm) * 0.5;
-            foam = max(foam, crestFoam);
-
-            // Foam is streaky — modulated by position
-            float foamStreak = sin(vWorldPos.x * 2.5 + vWorldPos.z * 1.5 + uTime * 0.7);
-            foam *= smoothstep(-0.3, 0.3, foamStreak);
+            // Scattered foam blobs across surface
+            foam = max(foam, smoothstep(0.72, 0.78, foamNoise) * 0.35);
 
             color = mix(color, COL_FOAM, foam);
 
-            // --- Bold dark outlines between tone regions (rotoscope look) ---
-            // Detect boundaries between tone steps using wave height
-            float edgeWidth = 0.03;
-            float edge1 = smoothstep(0.35 - edgeWidth, 0.35, hNorm) - smoothstep(0.35, 0.35 + edgeWidth, hNorm);
-            float edge2 = smoothstep(0.65 - edgeWidth, 0.65, hNorm) - smoothstep(0.65, 0.65 + edgeWidth, hNorm);
-            float edge = max(edge1, edge2);
+            // ── 5. Anime highlight lines (scrolling interference pattern) ──
+            float r1 = sin(sp.x * 1.8 + sp.y * 0.5 + uTime * 1.0);
+            float r2 = sin(sp.x * 0.4 + sp.y * 2.2 - uTime * 0.7);
+            float highlight = smoothstep(0.88, 0.95, r1 * r2);
+            vec3 hlColor = mix(COL_FOAM, COL_SURF, 0.3);
+            color = mix(color, hlColor, highlight * 0.30);
 
-            // Additional ink lines from wave derivative peaks (steep faces)
-            float inkLine = smoothstep(2.0, 2.5, deriv) * 0.6;
-            edge = max(edge, inkLine);
+            // ── 6. Toon specular (sun glint) ──
+            vec3 lightDir = normalize(vec3(0.2, 0.9, 0.4));
+            vec3 halfVec = normalize(lightDir + viewDir);
+            float spec = max(dot(N, halfVec), 0.0);
+            color = mix(color, COL_FOAM, smoothstep(0.90, 0.95, spec) * 0.75);
 
-            // Thick hatching lines that follow wave contours
-            float hatch = sin(h * 12.0 + vWorldPos.x * 0.5) * sin(h * 8.0 + vWorldPos.z * 0.3);
-            float hatchLine = smoothstep(0.85, 0.95, hatch) * 0.25;
-            edge = max(edge, hatchLine);
+            // ── 7. Ink outlines on steep wave faces ──
+            float steepness = 1.0 - N.y;
+            color = mix(color, COL_INK, smoothstep(0.28, 0.36, steepness) * 0.5);
 
-            color = mix(color, COL_INK, edge);
+            // ── 8. Subtle contour lines at tone boundaries ──
+            float ew = 0.022;
+            float e1 = smoothstep(0.34 - ew, 0.34, hNorm) - smoothstep(0.34, 0.34 + ew, hNorm);
+            float e2 = smoothstep(0.62 - ew, 0.62, hNorm) - smoothstep(0.62, 0.62 + ew, hNorm);
+            color = mix(color, COL_INK, max(e1, e2) * 0.25);
 
             gl_FragColor = vec4(color, 1.0);
             #include <fog_fragment>
         }
     `;
 
-    // Merge fog uniforms
     const uniforms = {
         uTime: { value: 0.0 },
     };
