@@ -699,9 +699,9 @@
 
             // Scene
             this.scene = new THREE.Scene();
-            this.scene.fog = new THREE.Fog(PALETTE.ink, 60, 110);
+            this.scene.fog = new THREE.Fog(PALETTE.ink, 85, 130);
 
-            // Camera — steep TD angle for clear playing field visibility
+            // Camera — ~47° isometric angle, mid-field centered for full field readability
             const aspect = window.innerWidth / window.innerHeight;
             this.camera = new THREE.PerspectiveCamera(CONFIG.cameraFOV, aspect, 0.1, 250);
             this.camera.position.set(CONFIG.cameraPos.x, CONFIG.cameraPos.y, CONFIG.cameraPos.z);
@@ -817,9 +817,9 @@
             const ambient = new THREE.AmbientLight(PALETTE.ambient, 0.7);
             this.scene.add(ambient);
 
-            // Main directional light (slightly warm, more overhead to avoid side wash)
+            // Main directional light — offset from camera angle so shadows read clearly
             const dirLight = new THREE.DirectionalLight(PALETTE.fillWarm, 0.8);
-            dirLight.position.set(3, 35, 18);
+            dirLight.position.set(6, 42, 18);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
@@ -2918,10 +2918,10 @@
             this._upgradeOptions = options;
             if (window.SFX) SFX.play('drone_arrive');
 
-            // Target hover positions: 3 drones in a row, centered, CLOSE to camera
+            // Target hover positions: 3 drones in a row, centered on camera view axis
             const spacing = 5.0;
-            const hoverY = 23;    // Close to camera Y=26, centered with larger placards
-            const hoverZ = -6;    // Very close to camera (cam at Z=-15)
+            const hoverY = 30;    // Along camera-to-lookAt line (~screen center)
+            const hoverZ = 2;     // Between camera Z=-7 and play field
             const startX = -(options.length - 1) * spacing / 2;
 
             for (let i = 0; i < options.length; i++) {
@@ -4963,8 +4963,8 @@
                         this.camera.position.x += (Math.random() - 0.5) * 0.15;
                         this.camera.position.y += (Math.random() - 0.5) * 0.1;
                         setTimeout(() => {
-                            this.camera.position.x = 0;
-                            this.camera.position.y = 26;
+                            this.camera.position.x = CONFIG.cameraPos.x;
+                            this.camera.position.y = CONFIG.cameraPos.y;
                         }, 80);
 
                         // Update crack visibility at thresholds
@@ -5498,8 +5498,6 @@
                                     // ─── IMPACT JUICE ───
                                     // SFX: mop hit + big impact for juicy feedback
                                     if (window.SFX) { SFX.play('mop_hit'); SFX.play('impact_big'); }
-                                    // Global hitstop — brief game-wide freeze
-                                    this._globalHitstop = Math.max(this._globalHitstop, 0.06);
                                     // Camera micro-shake — proportional to lever (tip hits = bigger shake)
                                     this._cameraShake = 0.12;
                                     this._cameraShakeIntensity = 0.15 + 0.15 * leverScale;

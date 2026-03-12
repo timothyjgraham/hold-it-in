@@ -226,7 +226,7 @@ export class EnemyIntroUI {
         // ── Create enemy model on pedestal ──
         this._createEnemyDisplay(enemyType);
 
-        // ── Dedicated intro lighting (scene lights don't reach y=17-22) ──
+        // ── Dedicated intro lighting (scene lights don't reach y=23-28) ──
         this._createIntroLights();
 
         // ── Tap text (hidden initially) ──
@@ -251,8 +251,8 @@ export class EnemyIntroUI {
             transparent: true,
             opacity: 0.35,
             depthTest: true,    // Test against depth buffer: fails where intro elements
-                                // already drew (14-17 units) → leaves them bright.
-                                // Passes over game world (27+ units) → dims it.
+                                // already drew (13-18 units) → leaves them bright.
+                                // Passes over game world (37+ units) → dims it.
             depthWrite: false,  // Don't modify depth buffer
             fog: false,
             side: THREE.DoubleSide,
@@ -261,7 +261,7 @@ export class EnemyIntroUI {
         this._dimPlane.renderOrder = DIM_RENDER_ORDER;
 
         // Position 25 units along camera view direction — behind intro elements
-        // (14-17 units from camera) but in front of game world (27+ units).
+        // (13-18 units from camera) but in front of game world (37+ units).
         const cam = this._camera;
         const dir = new THREE.Vector3();
         cam.getWorldDirection(dir);
@@ -280,13 +280,13 @@ export class EnemyIntroUI {
         // Gentle key light from above/behind — ambient is already 0.7,
         // so these just add enough to make the elements look properly lit.
         const keyLight = new THREE.PointLight(0xfff0d0, 0.6, 25, 1);
-        keyLight.position.set(0, 26, -8);
+        keyLight.position.set(0, 34, -2);
         this._scene.add(keyLight);
         this._introLights.push(keyLight);
 
         // Fill from the right side (illuminates enemy model)
         const fillLight = new THREE.PointLight(0xfff0d0, 0.3, 20, 1);
-        fillLight.position.set(5, 20, -4);
+        fillLight.position.set(5, 28, 2);
         this._scene.add(fillLight);
         this._introLights.push(fillLight);
     }
@@ -327,7 +327,7 @@ export class EnemyIntroUI {
         _setRenderOrder(this._drone, INTRO_RENDER_ORDER);
 
         // Flight path: pick random window → hover position (left side, enemy visible on right)
-        const hoverPos = new THREE.Vector3(-3.5, 22, -2);
+        const hoverPos = new THREE.Vector3(-3.5, 28, 3);
         let startPos;
 
         if (windowPositions && windowPositions.length > 0) {
@@ -343,10 +343,10 @@ export class EnemyIntroUI {
             ], false, 'catmullrom', 0.3);
         } else {
             // Fallback: fly in from above
-            startPos = new THREE.Vector3(0, 35, -4);
+            startPos = new THREE.Vector3(0, 45, -2);
             this._drone.userData.flightCurve = new THREE.CatmullRomCurve3([
                 startPos.clone(),
-                new THREE.Vector3(0, 30, -4),
+                new THREE.Vector3(0, 40, -2),
                 hoverPos.clone(),
             ], false, 'catmullrom', 0.3);
         }
@@ -372,10 +372,10 @@ export class EnemyIntroUI {
         const displayScale = config.size * 2.0;
         const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
         this._enemyGroup = result.group;
-        this._enemyGroup.position.set(3.5, 17, -1);
+        this._enemyGroup.position.set(3.5, 23, 4);
         this._enemyGroup.scale.setScalar(0); // Start at 0, will pop in
 
-        // Rotate to face camera (face -Z direction is toward camera at Z=-15)
+        // Rotate to face camera (face -Z direction is toward camera at Z=-7)
         this._enemyGroup.rotation.y = Math.PI;
 
         // Mark all enemy meshes to render on top of dim plane
@@ -393,7 +393,7 @@ export class EnemyIntroUI {
         const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
         const pedMat = toonMat(PALETTE.cream);
         this._pedestal = new THREE.Mesh(pedGeo, pedMat);
-        this._pedestal.position.set(3.5, 17 - pedH / 2, -1);
+        this._pedestal.position.set(3.5, 23 - pedH / 2, 4);
         this._pedestal.scale.setScalar(0);
         this._pedestal.renderOrder = INTRO_RENDER_ORDER;
         this._scene.add(this._pedestal);
@@ -413,7 +413,7 @@ export class EnemyIntroUI {
     _spawnEnemyParticles() {
         const config = ENEMY_VISUAL_CONFIG[this._enemyType];
         const color = config.materialColors.body;
-        const center = new THREE.Vector3(3.5, 18.5, -1);
+        const center = new THREE.Vector3(3.5, 24.5, 4);
 
         for (let i = 0; i < 20; i++) {
             const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);
@@ -679,7 +679,7 @@ export class EnemyIntroUI {
             // Fly out to a random direction
             const startPos = this._drone.position.clone();
             const exitX = (Math.random() - 0.5) * 20;
-            const exitTarget = new THREE.Vector3(exitX, 35, startPos.z - 10);
+            const exitTarget = new THREE.Vector3(exitX, 45, startPos.z - 10);
 
             ud._exitCurve = new THREE.CatmullRomCurve3([
                 startPos,

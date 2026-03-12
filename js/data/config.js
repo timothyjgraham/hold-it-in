@@ -15,10 +15,10 @@ export const CONFIG = {
     // Toilet
     toiletPos: { x: 0, y: 0, z: 3 },
 
-    // Camera — steep TD angle for clear field visibility
-    cameraPos: { x: 0, y: 26, z: -15 },
-    cameraLookAt: { x: 0, y: 0, z: 22 },
-    cameraFOV: 50,
+    // Camera — ~47° angle (steeper isometric), centered on mid-field
+    cameraPos: { x: 0, y: 36, z: -7 },
+    cameraLookAt: { x: 0, y: 0, z: 27 },
+    cameraFOV: 58,
 
     // Gameplay
     startingHygiene: 5,         // Lives
