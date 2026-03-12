@@ -318,7 +318,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── DEER ─── baseline, gentle 4-beat walk (→ Polite Knocker), ~23 bones
     deer: {
-        size: 1.5,
+        size: 3.0,
         skeletonType: 'quadruped',
         bones: {
             neck_02: true,
@@ -384,7 +384,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── SQUIRREL ─── fast swarm, bounding gait (→ Pee Dancer), ~18 bones
     squirrel: {
-        size: 1.0,
+        size: 2.0,
         skeletonType: 'quadruped',
         bones: {
             neck_02: false,
@@ -444,7 +444,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── BEAR ─── big tank, lumbering 4-beat walk (→ Waddle Tank), ~18 bones
     bear: {
-        size: 2.2,
+        size: 4.4,
         skeletonType: 'quadruped',
         bones: {
             neck_02: false,
@@ -508,7 +508,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── FOX ─── priority target, trotting gait (→ Panicker), ~20 bones
     fox: {
-        size: 1.4,
+        size: 2.8,
         skeletonType: 'quadruped',
         bones: {
             neck_02: false,
@@ -577,7 +577,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── MOOSE ─── slow-immune powerhouse (→ Power Walker), ~22 bones
     moose: {
-        size: 1.8,
+        size: 3.6,
         skeletonType: 'quadruped',
         bones: {
             neck_02: true,
@@ -643,7 +643,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── RACCOON ─── sneaky cluster swarm, shuffling waddle (→ The Girls), ~18 bones
     raccoon: {
-        size: 0.85,
+        size: 1.7,
         skeletonType: 'quadruped',
         bones: {
             neck_02: false,
