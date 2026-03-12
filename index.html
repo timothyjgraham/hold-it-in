@@ -1532,7 +1532,7 @@
             for (let i = 0; i < sparkles.length; i++) {
                 const sp = sparkles[i];
                 if (!sp || !sp.mesh) continue;
-                sp.mesh.material.opacity = 0.3 + 0.5 * Math.abs(Math.sin(time * 3 + sp.phase));
+                if (sp.material) sp.material.opacity = 0.3 + 0.5 * Math.abs(Math.sin(time * 3 + sp.phase));
                 sp.mesh.position.y = sp.baseY + Math.sin(time * 0.5 + sp.phase) * 0.1;
                 sp.mesh.rotation.y = time * 2 + sp.phase;
             }

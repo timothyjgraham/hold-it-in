@@ -721,16 +721,20 @@ export function createSunSparkles() {
         const sparkle = new THREE.Group();
         sparkle.name = 'sparkle';
 
+        // Clone material per sparkle so each can twinkle independently
+        const mat = sparkleMat.clone();
+        mat.depthWrite = false;
+
         // Primary diamond (rotated plane)
         const diamondGeo = new THREE.PlaneGeometry(0.2, 0.2);
-        const diamond = new THREE.Mesh(diamondGeo, sparkleMat);
+        const diamond = new THREE.Mesh(diamondGeo, mat);
         diamond.rotation.z = Math.PI / 4;
         diamond.rotation.x = -Math.PI / 2;
         sparkle.add(diamond);
 
         // Cross-plane for 3D look
         const crossGeo = new THREE.PlaneGeometry(0.15, 0.15);
-        const cross = new THREE.Mesh(crossGeo, sparkleMat);
+        const cross = new THREE.Mesh(crossGeo, mat);
         cross.rotation.z = Math.PI / 4;
         cross.rotation.y = Math.PI / 2;
         sparkle.add(cross);
@@ -748,6 +752,7 @@ export function createSunSparkles() {
 
         sparkles.push({
             mesh: sparkle,
+            material: mat,
             phase: Math.random() * Math.PI * 2,
             baseY: 0.5,
             x: sx,
