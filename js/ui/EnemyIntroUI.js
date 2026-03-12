@@ -32,8 +32,9 @@ const INTRO_RENDER_ORDER = 1000;
 
 // ─── SIGN CANVAS DIMENSIONS ─────────────────────────────────────────────────
 // Match the placard geometry aspect ratio (4.5 / 2.8125 ≈ 1.6:1)
-const SIGN_CANVAS_W = 1200;
-const SIGN_CANVAS_H = 750;
+// High-res for crisp text at close viewing distance
+const SIGN_CANVAS_W = 1600;
+const SIGN_CANVAS_H = 1000;
 
 // ─── HELPER: hex to CSS ──────────────────────────────────────────────────────
 
@@ -58,49 +59,53 @@ function _createIntroSignTexture(enemyType) {
     ctx.fillStyle = hexCSS(PALETTE.cream);
     ctx.fillRect(0, 0, cW, cH);
 
-    // Enemy color border (8px)
+    // Enemy color border (10px)
     ctx.strokeStyle = enemyColor;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(4, 4, cW - 8, cH - 8);
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, cW - 10, cH - 10);
 
     // Top colored bar with tagline
-    const barH = 80;
+    const barH = 105;
     ctx.fillStyle = enemyColor;
     ctx.fillRect(0, 0, cW, barH);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = hexCSS(PALETTE.cream);
-    ctx.font = "40px 'Bangers', sans-serif";
+    ctx.fillStyle = hexCSS(PALETTE.ink);
+    ctx.font = "52px 'Bangers', sans-serif";
     ctx.fillText(data.tagline, cW / 2, barH / 2);
 
     // Enemy name (large)
     ctx.fillStyle = hexCSS(PALETTE.ink);
     const nameLen = data.name.length;
-    const nameFontSize = nameLen > 18 ? 72 : nameLen > 14 ? 84 : 100;
+    const nameFontSize = nameLen > 18 ? 96 : nameLen > 14 ? 112 : 130;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
-    ctx.fillText(data.name, cW / 2, barH + 100);
+    ctx.fillText(data.name, cW / 2, barH + 130);
 
     // Divider line
-    const dividerY = barH + 170;
+    const dividerY = barH + 225;
     ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(80, dividerY);
-    ctx.lineTo(cW - 80, dividerY);
+    ctx.moveTo(100, dividerY);
+    ctx.lineTo(cW - 100, dividerY);
     ctx.stroke();
 
     // Trait bullets
     ctx.fillStyle = hexCSS(PALETTE.ink);
-    ctx.font = "48px 'Bangers', sans-serif";
+    ctx.font = "62px 'Bangers', sans-serif";
     ctx.textAlign = 'center';
-    const traitStartY = dividerY + 60;
-    const traitLineH = 62;
+    const traitStartY = dividerY + 80;
+    const traitLineH = 82;
     for (let i = 0; i < data.traits.length; i++) {
         ctx.fillText('• ' + data.traits[i], cW / 2, traitStartY + i * traitLineH);
     }
 
     const texture = new THREE.CanvasTexture(canvas);
+    // Crisp text: disable mipmaps and use linear filtering
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
     texture.needsUpdate = true;
     return texture;
 }
@@ -244,17 +249,18 @@ export class EnemyIntroUI {
             color: 0x1a1a2e,
             transparent: true,
             opacity: 0.35,
-            depthTest: false,   // Always render on top of game world
-            depthWrite: true,   // Write depth so intro elements can test against it
+            depthTest: true,    // Test against depth buffer: fails where intro elements
+                                // already drew (14-17 units) → leaves them bright.
+                                // Passes over game world (27+ units) → dims it.
+            depthWrite: false,  // Don't modify depth buffer
             fog: false,
             side: THREE.DoubleSide,
         });
         this._dimPlane = new THREE.Mesh(geo, mat);
         this._dimPlane.renderOrder = DIM_RENDER_ORDER;
 
-        // Position the plane facing the camera, 25 units along the view direction.
-        // This is behind all intro elements (14-17 units from camera) but covers
-        // the entire game world when rendered with depthTest:false.
+        // Position 25 units along camera view direction — behind intro elements
+        // (14-17 units from camera) but in front of game world (27+ units).
         const cam = this._camera;
         const dir = new THREE.Vector3();
         cam.getWorldDirection(dir);
@@ -270,23 +276,18 @@ export class EnemyIntroUI {
      * Uses PointLights with limited range to avoid changing the game world look.
      */
     _createIntroLights() {
-        // Key light: bright warm white from above/behind (camera direction)
-        const keyLight = new THREE.PointLight(0xffffff, 2.0, 25, 1);
+        // Gentle key light from above/behind — ambient is already 0.7,
+        // so these just add enough to make the elements look properly lit.
+        const keyLight = new THREE.PointLight(0xfff0d0, 0.6, 25, 1);
         keyLight.position.set(0, 26, -8);
         this._scene.add(keyLight);
         this._introLights.push(keyLight);
 
-        // Fill light: softer warm from the right side (illuminates enemy model)
-        const fillLight = new THREE.PointLight(0xfff0d0, 1.0, 20, 1);
+        // Fill from the right side (illuminates enemy model)
+        const fillLight = new THREE.PointLight(0xfff0d0, 0.3, 20, 1);
         fillLight.position.set(5, 20, -4);
         this._scene.add(fillLight);
         this._introLights.push(fillLight);
-
-        // Rim light: cool accent from the left (sign readability)
-        const rimLight = new THREE.PointLight(0xaaccee, 0.6, 20, 1);
-        rimLight.position.set(-6, 22, -5);
-        this._scene.add(rimLight);
-        this._introLights.push(rimLight);
     }
 
     /**
