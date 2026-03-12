@@ -33,6 +33,8 @@ export function createOceanWater() {
 
     // Custom cel-shaded water shader — the visual centerpiece
     const waterVertexShader = /* glsl */ `
+        #include <fog_pars_vertex>
+
         uniform float uTime;
         varying float vWaveHeight;
         varying vec2 vUv;
@@ -70,7 +72,9 @@ export function createOceanWater() {
             vWaveHeight = wave;
             vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
 
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+            #include <fog_vertex>
         }
     `;
 

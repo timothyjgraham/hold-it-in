@@ -113,6 +113,20 @@ function _outlineWidthForType(enemyType) {
         panicker: 0.03,
         powerwalker: 0.03,
         girls: 0.02,
+        // Forest
+        deer: 0.03,
+        squirrel: 0.02,
+        bear: 0.04,
+        fox: 0.03,
+        moose: 0.03,
+        raccoon: 0.02,
+        // Ocean
+        dolphin: 0.03,
+        flyfish: 0.02,
+        shark: 0.04,
+        pirate: 0.03,
+        seaturtle: 0.03,
+        jellyfish: 0.02,
     };
     return sizeMap[enemyType] || 0.03;
 }

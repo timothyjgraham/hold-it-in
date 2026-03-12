@@ -421,7 +421,7 @@
         doorGroup: null,
 
         // Best stats per scenario (persisted to localStorage)
-        _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 } },
+        _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 }, ocean: { wave: 0, score: 0 } },
 
         // Entity arrays
         enemies: [],
@@ -4611,6 +4611,12 @@
                 else if (this.wave === 7) msg += ' — A FOX ON THE PROWL!';
                 else if (this.wave === 9) msg += ' — MOOSE INCOMING!';
                 else if (this.wave === 10) msg += ' — RACCOON RAID!';
+            } else if (this._currentScenario === 'ocean') {
+                if (this.wave === 3) msg += ' — FLYING FISH ATTACK!';
+                else if (this.wave === 5) msg += ' — A SHARK IS CIRCLING...';
+                else if (this.wave === 7) msg += ' — PIRATES ON THE HORIZON!';
+                else if (this.wave === 9) msg += ' — AN ANCIENT SHELL APPROACHES...';
+                else if (this.wave === 10) msg += ' — THE WATER GLOWS!';
             } else {
                 if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
                 else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
