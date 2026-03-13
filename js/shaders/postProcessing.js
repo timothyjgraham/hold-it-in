@@ -290,26 +290,26 @@ export function setupPostProcessing(renderer, scene, camera) {
         uEdgeStrength:       { value: 1.0 },
         uEdgeColor:          { value: new THREE.Vector3(inkColor.r, inkColor.g, inkColor.b) },
         uEdgeThreshold:      { value: 0.15 },
-        uPosterizeLevels:    { value: 10.0 },
+        uPosterizeLevels:    { value: 0.0 },      // 0 = off; 10+ for subtle effect
         uVignetteStrength:   { value: 0.3 },
         uCameraNear:         { value: camera.near },
         uCameraFar:          { value: camera.far },
 
-        // New uniforms
+        // New uniforms (all default to safe/off values — tune per scenario)
         uTime:               { value: 0.0 },
-        uEdgeWidthNear:      { value: 2.0 },
+        uEdgeWidthNear:      { value: 1.5 },      // was 2.0, reverted to original
         uEdgeWidthFar:       { value: 0.8 },
         uEdgeNearDist:       { value: 5.0 },
         uEdgeFarDist:        { value: 80.0 },
-        uNormalEdgeStrength: { value: 0.7 },
-        uColorEdgeStrength:  { value: 0.4 },
-        uJitterAmount:       { value: 0.8 },
-        uHatchStrength:      { value: 0.25 },
+        uNormalEdgeStrength: { value: 0.0 },       // off — was causing smudged outlines
+        uColorEdgeStrength:  { value: 0.0 },       // off — was adding false edges
+        uJitterAmount:       { value: 0.0 },       // off — was causing heat-haze distortion
+        uHatchStrength:      { value: 0.0 },       // off — was causing swirly floor patterns
         uHatchDensity:       { value: 50.0 },
         uHatchColor:         { value: new THREE.Vector3(hatchColor.r, hatchColor.g, hatchColor.b) },
-        uPaperStrength:      { value: 0.035 },
+        uPaperStrength:      { value: 0.0 },       // off — was adding grain noise
         uPaperScale:         { value: 400.0 },
-        uSaturationBoost:    { value: 0.12 },
+        uSaturationBoost:    { value: 0.0 },       // off — was shifting colors
     };
 
     const material = new THREE.ShaderMaterial({
