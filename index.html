@@ -479,6 +479,7 @@
         _tutorialStep: -1,
         _tutorialHighlight: null,
         _tutorialAutoTimeout: null,
+        _tutorialWaitForMedic: false,
 
         // Hitstop & impact juice
         _globalHitstop: 0,          // Timer: when > 0, dt scales to near-zero
@@ -2803,6 +2804,7 @@
         _endTutorial() {
             this._tutorialActive = false;
             this._tutorialStep = -1;
+            this._tutorialWaitForMedic = false;
             this._hideTutorialBubble();
             clearTimeout(this._tutorialAutoTimeout);
             localStorage.setItem('holditin_tutorial_enabled', '0');
@@ -2822,6 +2824,7 @@
             if (this._tutorialActive) {
                 this._tutorialActive = false;
                 this._tutorialStep = -1;
+                this._tutorialWaitForMedic = false;
                 this._hideTutorialBubble();
                 clearTimeout(this._tutorialAutoTimeout);
             }
@@ -4351,9 +4354,9 @@
         _spawnUpgradeDrones() {
             if (!this.upgradeManager || !window.createUpgradeDrone) return;
 
-            // Tutorial: show "pick an upgrade" bubble first, defer drones until click
+            // Tutorial: wait for medic drone to carry away the corpse before showing bubble
             if (this._tutorialActive && this._tutorialStep === 7) {
-                this._advanceTutorial(); // → step 8: "Nice work!" bubble
+                this._tutorialWaitForMedic = true;
                 return; // Drones spawn later via _doSpawnUpgradeDrones after click
             }
 
@@ -8967,6 +8970,18 @@
             // Update medic drones (corpse collection)
             if (this.medicDroneSystem) {
                 this.medicDroneSystem.update(dt, this.scene, this.enemyPool);
+
+                // Tutorial: wait for medic drone to finish carrying corpse away
+                if (this._tutorialWaitForMedic &&
+                    this.medicDroneSystem._corpseQueue.length === 0 &&
+                    this.medicDroneSystem._activeDrones.length === 0) {
+                    this._tutorialWaitForMedic = false;
+                    this._advanceTutorial(); // → step 8: "Nice work!" bubble
+                }
+            } else if (this._tutorialWaitForMedic) {
+                // No medic drone system — advance immediately
+                this._tutorialWaitForMedic = false;
+                this._advanceTutorial();
             }
 
             // Update upgrade drones
