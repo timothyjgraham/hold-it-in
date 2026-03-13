@@ -258,6 +258,30 @@ canvas {
     color: var(--pal-danger, #ff6b7a);
 }
 
+/* Door heal juice (L1 Double Flush) */
+#door-hp-stat.heal {
+    animation: badge-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#door-hp-stat.heal .badge-fill {
+    fill: #b0ffc0;
+}
+
+#door-hp-stat.heal .hp-bar-layer-fill path {
+    fill: #50c878 !important;
+    animation: bar-flash-green 0.2s ease-out 3;
+}
+
+#door-hp-stat .value.bump-heal {
+    animation: value-bump 0.5s ease-out;
+    color: #50c878;
+}
+
+@keyframes bar-flash-green {
+    0% { fill: #ffffff; }
+    100% { fill: #50c878; }
+}
+
 /* HP Bar — dual-layer SVG blob with independent jitter */
 .hp-bar-wrap {
     position: relative;

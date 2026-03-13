@@ -4543,11 +4543,101 @@
             if (window.SFX) SFX.play('upgrade_acquire');
             this.upgradeManager.applyUpgrade(upgrade.id);
 
-            // L1: Double Flush — immediate +4 max HP and heal
+            // L1: Double Flush — +4 max HP and full heal with juicy effect
             if (upgrade.id === 'L1' && this.doorGroup) {
                 const ud = this.doorGroup.userData;
                 ud.maxDoorHP += 4;
-                ud.doorHP = Math.min(ud.doorHP + 4, ud.maxDoorHP);
+                ud.doorHP = ud.maxDoorHP; // Full heal!
+
+                // Reset door color to healthy state
+                const panels = ud.doorPanels || (ud.door ? [ud.door] : []);
+                for (const panel of panels) {
+                    panel.material.color.setHex(ud.originalColor);
+                    panel.material.emissive.setHex(0x00ff88);
+                    panel.material.emissiveIntensity = 0.6;
+                }
+                // Fade emissive glow out over 1.2s
+                const healStart = performance.now();
+                const fadeGlow = () => {
+                    const t = Math.min(1, (performance.now() - healStart) / 1200);
+                    const intensity = 0.6 * (1 - t);
+                    for (const panel of panels) {
+                        panel.material.emissiveIntensity = intensity;
+                        if (t >= 1) panel.material.emissive.setHex(0x000000);
+                    }
+                    if (t < 1) requestAnimationFrame(fadeGlow);
+                };
+                requestAnimationFrame(fadeGlow);
+
+                // Hide all cracks (door is fully healed)
+                if (ud.cracks) ud.cracks.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
+                if (ud.cracksRight) ud.cracksRight.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
+
+                // Juicy HUD feedback — green flash + floating delta
+                const stat = document.getElementById('door-hp-stat');
+                const val = document.getElementById('door-hp-display');
+                const delta = document.getElementById('door-delta');
+                stat.classList.remove('heal');
+                void stat.offsetWidth;
+                stat.classList.add('heal');
+                val.classList.remove('bump-heal');
+                void val.offsetWidth;
+                val.classList.add('bump-heal');
+                if (delta) {
+                    delta.textContent = 'FULL HEAL!';
+                    delta.className = 'hud-delta';
+                    void delta.offsetWidth;
+                    delta.className = 'hud-delta show-positive';
+                }
+                setTimeout(() => {
+                    stat.classList.remove('heal');
+                    val.classList.remove('bump-heal');
+                    if (delta) delta.className = 'hud-delta';
+                }, 800);
+
+                // 3D particle burst — green sparkles around the door
+                if (this.doorGroup) {
+                    const doorPos = this.doorGroup.position;
+                    for (let i = 0; i < 20; i++) {
+                        const geo = new THREE.SphereGeometry(0.15 + Math.random() * 0.15, 4, 4);
+                        const mat = new THREE.MeshBasicMaterial({
+                            color: Math.random() > 0.4 ? 0x50c878 : 0xffd93d,
+                            transparent: true, opacity: 1
+                        });
+                        const p = new THREE.Mesh(geo, mat);
+                        p.position.set(
+                            doorPos.x + (Math.random() - 0.5) * 6,
+                            doorPos.y + Math.random() * 5,
+                            doorPos.z + (Math.random() - 0.5) * 2
+                        );
+                        this.scene.add(p);
+                        const vx = (Math.random() - 0.5) * 8;
+                        const vy = 3 + Math.random() * 6;
+                        const vz = (Math.random() - 0.5) * 4;
+                        const startTime = performance.now();
+                        const animParticle = () => {
+                            const elapsed = (performance.now() - startTime) / 1000;
+                            if (elapsed > 1.2) {
+                                this.scene.remove(p);
+                                geo.dispose(); mat.dispose();
+                                return;
+                            }
+                            p.position.x += vx * 0.016;
+                            p.position.y += (vy - elapsed * 12) * 0.016;
+                            p.position.z += vz * 0.016;
+                            mat.opacity = Math.max(0, 1 - elapsed / 1.2);
+                            p.scale.setScalar(1 + elapsed * 0.5);
+                            requestAnimationFrame(animParticle);
+                        };
+                        setTimeout(() => requestAnimationFrame(animParticle), i * 30);
+                    }
+                }
+
+                // Camera shake + hitstop for impact
+                this._cameraShake = 0.15;
+                this._cameraShakeIntensity = 0.2;
+                if (window.SFX) SFX.play('wave_clear');
+
                 this.updateHUD();
             }
 
