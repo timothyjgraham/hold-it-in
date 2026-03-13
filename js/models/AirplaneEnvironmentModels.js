@@ -4,7 +4,7 @@
 // All functions return THREE.Group objects with toon materials.
 
 import { PALETTE } from '../data/palette.js';
-import { toonMat, matDark, matInk, matPorcelain, matGold } from '../shaders/toonMaterials.js';
+import { toonMat, matDark, matInk, matPorcelain, matGold, matFixture } from '../shaders/toonMaterials.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -116,23 +116,6 @@ export function createAirplaneCabin() {
         }
     }
 
-    // --- Overhead storage bins ---
-    const overheadMat = toonMat(PALETTE.airplaneOverhead);
-    const binLipMat = toonMat(PALETTE.airplaneSeatBack);
-    for (const side of [-1, 1]) {
-        const binGeo = new THREE.BoxGeometry(3.5, 1.5, 56);
-        const bin = new THREE.Mesh(binGeo, overheadMat);
-        bin.position.set(side * 14, 5.5, 38);
-        bin.castShadow = true;
-        group.add(bin);
-
-        // Bottom lip / edge
-        const lipGeo = new THREE.BoxGeometry(3.7, 0.12, 56);
-        const lip = new THREE.Mesh(lipGeo, binLipMat);
-        lip.position.set(side * 14, 4.76, 38);
-        group.add(lip);
-    }
-
     return group;
 }
 
@@ -163,10 +146,11 @@ export function createAirplaneSeats() {
     const tvScreenGeo = new THREE.BoxGeometry(1.1, 0.7, 0.02);
 
     // Seat column definitions: [centerX, seatCount, seatSpacing]
+    // Wider spacing to accommodate larger seats proportional to enemy characters
     const columns = [
-        { cx: -12, count: 2, spacing: 2.2 },   // left window seats
-        { cx: 0,   count: 3, spacing: 2.0 },    // middle seats
-        { cx: 12,  count: 2, spacing: 2.2 },    // right window seats
+        { cx: -12, count: 2, spacing: 2.8 },   // left window seats
+        { cx: 0,   count: 3, spacing: 2.5 },    // middle seats
+        { cx: 12,  count: 2, spacing: 2.8 },    // right window seats
     ];
 
     for (let z = 12; z <= 66; z += 3) {
@@ -175,39 +159,39 @@ export function createAirplaneSeats() {
                 const seatX = col.cx + (s - (col.count - 1) / 2) * col.spacing;
                 const seatGroup = new THREE.Group();
 
-                // Seat cushion
-                const cushGeo = new THREE.BoxGeometry(1.6, 0.5, 1.4);
+                // Seat cushion (wider to fit proportional passengers)
+                const cushGeo = new THREE.BoxGeometry(2.0, 0.55, 1.6);
                 const cush = new THREE.Mesh(cushGeo, seatMat);
                 cush.position.set(0, 0.8, 0);
                 seatGroup.add(cush);
 
-                // Seat back
-                const backGeo = new THREE.BoxGeometry(1.6, 2.2, 0.3);
+                // Seat back (taller)
+                const backGeo = new THREE.BoxGeometry(2.0, 2.5, 0.3);
                 const back = new THREE.Mesh(backGeo, backMat);
-                back.position.set(0, 1.9, -0.65);
+                back.position.set(0, 2.05, -0.7);
                 seatGroup.add(back);
 
-                // Headrest
-                const headGeo = new THREE.BoxGeometry(1.0, 0.7, 0.25);
+                // Headrest (wider)
+                const headGeo = new THREE.BoxGeometry(1.3, 0.85, 0.25);
                 const head = new THREE.Mesh(headGeo, backMat);
-                head.position.set(0, 3.2, -0.6);
+                head.position.set(0, 3.55, -0.65);
                 seatGroup.add(head);
 
-                // Armrests (thin rails on sides)
-                for (const armSide of [-0.75, 0.75]) {
-                    const armGeo = new THREE.BoxGeometry(0.1, 0.15, 1.2);
+                // Armrests (wider spacing)
+                for (const armSide of [-0.95, 0.95]) {
+                    const armGeo = new THREE.BoxGeometry(0.1, 0.15, 1.4);
                     const arm = new THREE.Mesh(armGeo, armMat);
-                    arm.position.set(armSide, 1.1, -0.05);
+                    arm.position.set(armSide, 1.15, -0.05);
                     seatGroup.add(arm);
                 }
 
                 // Seatback TV screen (in-flight entertainment)
                 const tvBezel = new THREE.Mesh(tvBezelGeo, tvBezelMat);
-                tvBezel.position.set(0, 2.0, -0.83);
+                tvBezel.position.set(0, 2.0, -0.88);
                 seatGroup.add(tvBezel);
 
                 const tvScreen = new THREE.Mesh(tvScreenGeo, tvMaterials[Math.floor(Math.random() * TV_MAT_COUNT)]);
-                tvScreen.position.set(0, 2.0, -0.86);
+                tvScreen.position.set(0, 2.0, -0.91);
                 seatGroup.add(tvScreen);
 
                 seatGroup.position.set(seatX, 0, z);
@@ -291,6 +275,254 @@ export function createAirplaneCubicle() {
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, 0.01, cubZ);
     group.add(floor);
+
+    // ─── LAVATORY FURNISHINGS ──────────────────────────────────────────────
+    const chromeMat = matFixture();
+    const porcelainMat = matPorcelain();
+    const panelMat = toonMat(PALETTE.airplaneOverhead);
+
+    // --- Sink (left wall, facing center) ---
+    const sinkGroup = new THREE.Group();
+    sinkGroup.name = 'airplaneSink';
+
+    // Counter shelf (wall-mounted)
+    const counterGeo = new THREE.BoxGeometry(1.2, 0.08, 0.8);
+    const counter = new THREE.Mesh(counterGeo, toonMat(PALETTE.airplaneCubicle));
+    counter.position.set(0, 1.5, 0);
+    sinkGroup.add(counter);
+
+    // Basin (half-sphere)
+    const basinGeo = new THREE.SphereGeometry(0.3, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    const basin = new THREE.Mesh(basinGeo, porcelainMat);
+    basin.rotation.x = Math.PI;
+    basin.position.set(0, 1.5, 0.05);
+    sinkGroup.add(basin);
+
+    // Basin rim
+    const basinRimGeo = new THREE.TorusGeometry(0.3, 0.02, 6, 10);
+    const basinRim = new THREE.Mesh(basinRimGeo, porcelainMat);
+    basinRim.rotation.x = -Math.PI / 2;
+    basinRim.position.set(0, 1.55, 0.05);
+    sinkGroup.add(basinRim);
+
+    // Faucet
+    const faucetBaseGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.1, 6);
+    const faucetBase = new THREE.Mesh(faucetBaseGeo, chromeMat);
+    faucetBase.position.set(0, 1.6, -0.2);
+    sinkGroup.add(faucetBase);
+
+    const faucetNeckGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.35, 6);
+    const faucetNeck = new THREE.Mesh(faucetNeckGeo, chromeMat);
+    faucetNeck.position.set(0, 1.82, -0.2);
+    sinkGroup.add(faucetNeck);
+
+    const faucetSpoutGeo = new THREE.CylinderGeometry(0.02, 0.018, 0.3, 6);
+    const faucetSpout = new THREE.Mesh(faucetSpoutGeo, chromeMat);
+    faucetSpout.rotation.x = Math.PI / 3;
+    faucetSpout.position.set(0, 1.95, -0.05);
+    sinkGroup.add(faucetSpout);
+
+    // Handle knobs
+    for (const side of [-1, 1]) {
+        const knobGeo = new THREE.SphereGeometry(0.03, 5, 5);
+        const knob = new THREE.Mesh(knobGeo, chromeMat);
+        knob.position.set(side * 0.15, 1.65, -0.2);
+        sinkGroup.add(knob);
+    }
+
+    // Wall brackets
+    for (const bx of [-0.45, 0.45]) {
+        const bracketGeo = new THREE.BoxGeometry(0.05, 0.35, 0.5);
+        const bracket = new THREE.Mesh(bracketGeo, chromeMat);
+        bracket.position.set(bx, 1.28, -0.1);
+        sinkGroup.add(bracket);
+    }
+
+    sinkGroup.position.set(-6.2, 0, 4.5);
+    sinkGroup.rotation.y = Math.PI / 2;
+    group.add(sinkGroup);
+
+    // --- Mirror (above sink on left wall) ---
+    const mirrorGroup = new THREE.Group();
+    mirrorGroup.name = 'airplaneMirror';
+
+    // Mirror surface (cool-tinted reflective)
+    const mirrorSurfGeo = new THREE.PlaneGeometry(1.6, 1.2);
+    const mirrorSurfMat = toonMat(PALETTE.rimCool, {
+        emissive: PALETTE.rimCool,
+        emissiveIntensity: 0.15,
+    });
+    const mirrorSurf = new THREE.Mesh(mirrorSurfGeo, mirrorSurfMat);
+    mirrorSurf.position.z = 0.02;
+    mirrorGroup.add(mirrorSurf);
+
+    // Chrome frame
+    const mfT = 0.05;
+    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, mfT, 0.04), chromeMat);
+    topFrame.position.y = 0.625;
+    mirrorGroup.add(topFrame);
+
+    const botFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, mfT, 0.04), chromeMat);
+    botFrame.position.y = -0.625;
+    mirrorGroup.add(botFrame);
+
+    const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(mfT, 1.3, 0.04), chromeMat);
+    leftFrame.position.x = -0.825;
+    mirrorGroup.add(leftFrame);
+
+    const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(mfT, 1.3, 0.04), chromeMat);
+    rightFrame.position.x = 0.825;
+    mirrorGroup.add(rightFrame);
+
+    // Backing plate
+    const mirrorBackGeo = new THREE.BoxGeometry(1.65, 1.25, 0.02);
+    const mirrorBack = new THREE.Mesh(mirrorBackGeo, matInk());
+    mirrorGroup.add(mirrorBack);
+
+    mirrorGroup.position.set(-6.7, 2.7, 4.5);
+    mirrorGroup.rotation.y = Math.PI / 2;
+    group.add(mirrorGroup);
+
+    // --- Soap dispenser (left wall, near front) ---
+    const soapGroup = new THREE.Group();
+    soapGroup.name = 'soapDispenser';
+
+    const soapBodyGeo = new THREE.BoxGeometry(0.22, 0.3, 0.12);
+    soapGroup.add(new THREE.Mesh(soapBodyGeo, panelMat));
+
+    const soapCapGeo = new THREE.BoxGeometry(0.24, 0.04, 0.14);
+    const soapCap = new THREE.Mesh(soapCapGeo, chromeMat);
+    soapCap.position.y = 0.17;
+    soapGroup.add(soapCap);
+
+    const soapLeverGeo = new THREE.BoxGeometry(0.08, 0.03, 0.14);
+    const soapLever = new THREE.Mesh(soapLeverGeo, chromeMat);
+    soapLever.position.set(0, -0.08, 0.06);
+    soapGroup.add(soapLever);
+
+    const soapNozzGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.03, 5);
+    const soapNozz = new THREE.Mesh(soapNozzGeo, chromeMat);
+    soapNozz.position.set(0, -0.17, 0.03);
+    soapGroup.add(soapNozz);
+
+    soapGroup.position.set(-6.7, 2.3, 6);
+    soapGroup.rotation.y = Math.PI / 2;
+    group.add(soapGroup);
+
+    // --- Paper towel dispenser (right wall) ---
+    const ptGroup = new THREE.Group();
+    ptGroup.name = 'paperTowelDispenser';
+
+    const ptBodyGeo = new THREE.BoxGeometry(0.7, 0.5, 0.3);
+    ptGroup.add(new THREE.Mesh(ptBodyGeo, panelMat));
+
+    const ptSlotGeo = new THREE.BoxGeometry(0.5, 0.05, 0.1);
+    const ptSlot = new THREE.Mesh(ptSlotGeo, matInk());
+    ptSlot.position.set(0, -0.23, 0.12);
+    ptGroup.add(ptSlot);
+
+    const ptTrimGeo = new THREE.BoxGeometry(0.54, 0.025, 0.11);
+    const ptTrim = new THREE.Mesh(ptTrimGeo, chromeMat);
+    ptTrim.position.set(0, -0.2, 0.12);
+    ptGroup.add(ptTrim);
+
+    const ptPaperGeo = new THREE.BoxGeometry(0.35, 0.25, 0.01);
+    const ptPaper = new THREE.Mesh(ptPaperGeo, toonMat(PALETTE.cream, { side: THREE.DoubleSide }));
+    ptPaper.position.set(0, -0.38, 0.12);
+    ptPaper.rotation.x = 0.08;
+    ptGroup.add(ptPaper);
+
+    ptGroup.position.set(6.7, 2.2, 4.5);
+    ptGroup.rotation.y = -Math.PI / 2;
+    group.add(ptGroup);
+
+    // --- Trash bin (right side, floor) ---
+    const binGroup = new THREE.Group();
+    binGroup.name = 'trashBin';
+
+    const binBodyGeo = new THREE.CylinderGeometry(0.3, 0.25, 1.0, 8);
+    const binBody = new THREE.Mesh(binBodyGeo, matInk());
+    binBody.position.y = 0.5;
+    binGroup.add(binBody);
+
+    const binRimGeo = new THREE.TorusGeometry(0.32, 0.025, 5, 8);
+    const binRim = new THREE.Mesh(binRimGeo, matDark());
+    binRim.rotation.x = -Math.PI / 2;
+    binRim.position.y = 1.02;
+    binGroup.add(binRim);
+
+    const binLidGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.04, 8, 1, false, 0, Math.PI);
+    const binLid = new THREE.Mesh(binLidGeo, matDark());
+    binLid.rotation.x = -Math.PI / 2;
+    binLid.position.y = 1.05;
+    binGroup.add(binLid);
+
+    binGroup.position.set(5, 0, 3.5);
+    group.add(binGroup);
+
+    // --- No Smoking sign (back wall) ---
+    const nsGroup = new THREE.Group();
+    nsGroup.name = 'noSmokingSign';
+
+    const nsBackGeo = new THREE.CircleGeometry(0.35, 12);
+    nsGroup.add(new THREE.Mesh(nsBackGeo, toonMat(PALETTE.charcoal)));
+
+    const dangerMat = toonMat(PALETTE.danger, {
+        emissive: PALETTE.danger,
+        emissiveIntensity: 0.3,
+    });
+    const nsRingGeo = new THREE.TorusGeometry(0.3, 0.05, 6, 12);
+    const nsRing = new THREE.Mesh(nsRingGeo, dangerMat);
+    nsRing.position.z = 0.01;
+    nsGroup.add(nsRing);
+
+    const nsSlashGeo = new THREE.BoxGeometry(0.55, 0.06, 0.02);
+    const nsSlash = new THREE.Mesh(nsSlashGeo, dangerMat);
+    nsSlash.rotation.z = Math.PI / 4;
+    nsSlash.position.z = 0.02;
+    nsGroup.add(nsSlash);
+
+    nsGroup.position.set(-2.5, 3.0, 2.2);
+    group.add(nsGroup);
+
+    // --- "Return to Seat" illuminated sign (back wall) ---
+    const rsGroup = new THREE.Group();
+    rsGroup.name = 'returnToSeatSign';
+
+    const rsPlateGeo = new THREE.BoxGeometry(2.0, 0.5, 0.08);
+    rsGroup.add(new THREE.Mesh(rsPlateGeo, toonMat(PALETTE.charcoal)));
+
+    const rsTextGeo = new THREE.BoxGeometry(1.7, 0.3, 0.02);
+    const rsText = new THREE.Mesh(rsTextGeo, toonMat(PALETTE.airplaneStrip, {
+        emissive: PALETTE.airplaneStrip,
+        emissiveIntensity: 0.4,
+    }));
+    rsText.position.z = 0.05;
+    rsGroup.add(rsText);
+
+    rsGroup.position.set(2, 3.0, 2.2);
+    group.add(rsGroup);
+
+    // --- Flush button panel (back wall, near toilet) ---
+    const flushPlateGeo = new THREE.BoxGeometry(0.2, 0.3, 0.06);
+    const flushPlate = new THREE.Mesh(flushPlateGeo, chromeMat);
+    flushPlate.position.set(1.5, 1.8, 2.2);
+    group.add(flushPlate);
+
+    const flushBtnGeo = new THREE.CircleGeometry(0.05, 8);
+    const flushBtn = new THREE.Mesh(flushBtnGeo, toonMat(PALETTE.success, {
+        emissive: PALETTE.success,
+        emissiveIntensity: 0.5,
+    }));
+    flushBtn.position.set(1.5, 1.8, 2.24);
+    group.add(flushBtn);
+
+    // --- Small shelf (right wall, above paper towels) ---
+    const shelfGeo = new THREE.BoxGeometry(1.0, 0.06, 0.4);
+    const shelf = new THREE.Mesh(shelfGeo, toonMat(PALETTE.airplaneCubicle));
+    shelf.position.set(6.5, 2.8, 6);
+    shelf.rotation.y = -Math.PI / 2;
+    group.add(shelf);
 
     return group;
 }
@@ -580,15 +812,16 @@ export function createAirplanePassengers() {
         PALETTE.charcoal,
     ].map(c => toonMat(c));
 
-    // Shared geometries
-    const headGeo = new THREE.SphereGeometry(0.25, 8, 6);
-    const torsoGeo = new THREE.BoxGeometry(0.8, 0.6, 0.35);
+    // Shared geometries — scaled to match enemy character proportions
+    // (enemies at size ~1.5 have head radius ~0.52, torso ~1.2 wide)
+    const headGeo = new THREE.SphereGeometry(0.42, 8, 6);
+    const torsoGeo = new THREE.BoxGeometry(1.1, 0.85, 0.45);
 
     // Seat columns (must match createAirplaneSeats layout)
     const columns = [
-        { cx: -12, count: 2, spacing: 2.2 },
-        { cx: 0,   count: 3, spacing: 2.0 },
-        { cx: 12,  count: 2, spacing: 2.2 },
+        { cx: -12, count: 2, spacing: 2.8 },
+        { cx: 0,   count: 3, spacing: 2.5 },
+        { cx: 12,  count: 2, spacing: 2.8 },
     ];
 
     for (let z = 18; z <= 66; z += 3) {
@@ -601,12 +834,12 @@ export function createAirplanePassengers() {
 
                 // Upper torso / shoulders (visible between seat back and headrest)
                 const torso = new THREE.Mesh(torsoGeo, clothMat);
-                torso.position.set(seatX, 2.8, z - 0.15);
+                torso.position.set(seatX, 2.9, z - 0.15);
                 group.add(torso);
 
-                // Head
+                // Head (proportional to enemy characters)
                 const head = new THREE.Mesh(headGeo, skinMat);
-                head.position.set(seatX, 3.5, z - 0.1);
+                head.position.set(seatX, 3.75, z - 0.1);
                 group.add(head);
 
                 // Slight random head tilt for variety
