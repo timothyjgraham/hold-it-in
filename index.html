@@ -351,6 +351,13 @@
                     <span class="toggle-track"></span>
                 </label>
             </div>
+            <div class="setting-row">
+                <span class="setting-label">TUTORIAL</span>
+                <label class="setting-toggle">
+                    <input type="checkbox" id="toggle-tutorial" checked>
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
         </div>
         <button class="menu-btn menu-btn-small" id="btn-settings-back">BACK</button>
     </div>
@@ -389,6 +396,14 @@
 
     <!-- Fade Overlay (cinematic fade to black) -->
     <div id="fade-overlay"></div>
+
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay" style="display:none;">
+        <div id="tutorial-bubble">
+            <div id="tutorial-text"></div>
+            <div id="tutorial-prompt">CLICK TO CONTINUE</div>
+        </div>
+    </div>
 
     <!-- Game Over Screen -->
     <div id="game-over-screen">
@@ -451,6 +466,12 @@
         _cinematicEffects: [],
         _flyingPhone: null,
         _cinematicSchedule: [],
+
+        // Tutorial
+        _tutorialActive: false,
+        _tutorialStep: -1,
+        _tutorialHighlight: null,
+        _tutorialAutoTimeout: null,
 
         // Hitstop & impact juice
         _globalHitstop: 0,          // Timer: when > 0, dt scales to near-zero
@@ -2081,6 +2102,13 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'flex';
                 setGameUIVisible(false);
+                // Clean up tutorial overlay when navigating menus
+                if (this._tutorialActive) {
+                    this._tutorialActive = false;
+                    this._tutorialStep = -1;
+                    clearTimeout(this._tutorialAutoTimeout);
+                }
+                this._hideTutorialBubble();
                 if (window.SFX) SFX.play('menu_transition');
             };
 
@@ -2255,6 +2283,21 @@
                 }
             });
 
+            // Tutorial settings toggle
+            const tutorialToggle = document.getElementById('toggle-tutorial');
+            tutorialToggle.checked = localStorage.getItem('holditin_tutorial_enabled') !== '0';
+            tutorialToggle.addEventListener('change', () => {
+                localStorage.setItem('holditin_tutorial_enabled', tutorialToggle.checked ? '1' : '0');
+            });
+
+            // Tutorial overlay — click to advance
+            document.getElementById('tutorial-overlay').addEventListener('click', () => {
+                if (this._tutorialActive && this._tutorialStep === 0) {
+                    if (window.SFX) SFX.play('ui_click');
+                    this._advanceTutorial();
+                }
+            });
+
             // Restart button (game over)
             document.getElementById('restart-btn').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
@@ -2377,6 +2420,10 @@
                 this.selectedTower = type;
             }
             this._updateTowerButtons();
+            // Tutorial: advance when player selects a tower
+            if (this._tutorialActive && this._tutorialStep === 1 && this.selectedTower) {
+                this._advanceTutorial();
+            }
         },
 
         _updateTowerButtons() {
@@ -2516,12 +2563,149 @@
         },
 
         // ============================
+        // TUTORIAL
+        // ============================
+        _shouldShowTutorial() {
+            return localStorage.getItem('holditin_tutorial_enabled') !== '0';
+        },
+
+        _startTutorial() {
+            this._tutorialActive = true;
+            this._tutorialStep = -1;
+            this.waveTimer = 99999; // Freeze wave timer during tutorial
+            this._advanceTutorial();
+        },
+
+        _showTutorialBubble(text, opts = {}) {
+            const overlay = document.getElementById('tutorial-overlay');
+            const bubble = document.getElementById('tutorial-bubble');
+            const textEl = document.getElementById('tutorial-text');
+            const promptEl = document.getElementById('tutorial-prompt');
+
+            textEl.innerHTML = text;
+            promptEl.style.display = opts.autoAdvance ? 'none' : '';
+
+            // Position via CSS class
+            bubble.classList.remove('pos-top', 'pos-left');
+            if (opts.position === 'top') bubble.classList.add('pos-top');
+            if (opts.position === 'left') bubble.classList.add('pos-left');
+
+            // Passthrough: let clicks reach the game canvas
+            if (opts.passthrough) {
+                overlay.classList.add('passthrough');
+            } else {
+                overlay.classList.remove('passthrough');
+            }
+
+            // Re-trigger pop animation
+            bubble.style.animation = 'none';
+            void bubble.offsetWidth;
+            bubble.style.animation = '';
+
+            overlay.style.display = '';
+
+            // Highlight target element
+            if (this._tutorialHighlight) {
+                this._tutorialHighlight.classList.remove('tutorial-highlight');
+                this._tutorialHighlight = null;
+            }
+            if (opts.highlight) {
+                const el = document.getElementById(opts.highlight);
+                if (el) {
+                    el.classList.add('tutorial-highlight');
+                    this._tutorialHighlight = el;
+                }
+            }
+
+            // Auto-dismiss timer
+            if (opts.autoAdvance) {
+                clearTimeout(this._tutorialAutoTimeout);
+                this._tutorialAutoTimeout = setTimeout(() => {
+                    this._advanceTutorial();
+                }, opts.delay || 3500);
+            }
+        },
+
+        _hideTutorialBubble() {
+            document.getElementById('tutorial-overlay').style.display = 'none';
+            document.getElementById('tutorial-overlay').classList.remove('passthrough');
+            if (this._tutorialHighlight) {
+                this._tutorialHighlight.classList.remove('tutorial-highlight');
+                this._tutorialHighlight = null;
+            }
+        },
+
+        _advanceTutorial() {
+            this._tutorialStep++;
+            const step = this._tutorialStep;
+
+            if (step === 0) {
+                // Intro
+                this._showTutorialBubble(
+                    "They want YOUR toilet!<br>Don't let them in!",
+                    { position: 'center' }
+                );
+            } else if (step === 1) {
+                // Tower selection — highlight panel, block grid clicks
+                this._showTutorialBubble(
+                    "Pick a tower from the panel!<br>Try the Coin Magnet!",
+                    { position: 'left', highlight: 'tower-panel' }
+                );
+            } else if (step === 2) {
+                // Tower placement — let clicks through to the grid
+                this._showTutorialBubble(
+                    "Click the grid to place it!",
+                    { position: 'center', passthrough: true }
+                );
+            } else if (step === 3) {
+                // Build phase over — unfreeze wave timer, wait for enemies
+                this._hideTutorialBubble();
+                this.waveTimer = 5.0;
+            } else if (step === 4) {
+                // First enemy spawned
+                this._showTutorialBubble(
+                    "Here they come!<br>Towers fight for you!",
+                    { position: 'top', autoAdvance: true, delay: 3500, passthrough: true }
+                );
+            } else if (step === 5) {
+                // Wait state — waiting for upgrade drones
+                this._hideTutorialBubble();
+            } else if (step === 6) {
+                // Upgrade selection
+                this._showTutorialBubble(
+                    "Nice work! Pick an upgrade<br>to power up!",
+                    { position: 'center', autoAdvance: true, delay: 3500, passthrough: true }
+                );
+            } else {
+                this._endTutorial();
+            }
+        },
+
+        _endTutorial() {
+            this._tutorialActive = false;
+            this._tutorialStep = -1;
+            this._hideTutorialBubble();
+            clearTimeout(this._tutorialAutoTimeout);
+            localStorage.setItem('holditin_tutorial_enabled', '0');
+            const toggle = document.getElementById('toggle-tutorial');
+            if (toggle) toggle.checked = false;
+        },
+
+        // ============================
         // GAME FLOW
         // ============================
         start() {
             this.state = 'playing';
             this.wave = 0;
             this.coins = CONFIG.startingCoins;
+
+            // Clean up any active tutorial
+            if (this._tutorialActive) {
+                this._tutorialActive = false;
+                this._tutorialStep = -1;
+                this._hideTutorialBubble();
+                clearTimeout(this._tutorialAutoTimeout);
+            }
 
             // Reset door HP and visuals
             if (this.doorGroup) {
@@ -2754,6 +2938,11 @@
             // 8 second build phase before wave 1
             this.waveTimer = 8.0;
             this.announceWave('PLACE COIN MAGNETS [1] TO COLLECT!');
+
+            // Tutorial — first-time players
+            if (this._shouldShowTutorial()) {
+                this._startTutorial();
+            }
 
             // Airplane flavor text — dual-access toilet tooltip
             if (this._currentScenario === 'airplane') {
@@ -3385,6 +3574,11 @@
 
             // Clear ghost so it doesn't linger on the just-placed cell
             this._clearGhost();
+
+            // Tutorial: advance when player places first tower
+            if (this._tutorialActive && this._tutorialStep === 2) {
+                this._advanceTutorial();
+            }
 
             this.updateHUD();
         },
@@ -4036,6 +4230,11 @@
 
         _spawnUpgradeDrones() {
             if (!this.upgradeManager || !window.createUpgradeDrone) return;
+
+            // Tutorial: show "pick an upgrade" on first upgrade selection
+            if (this._tutorialActive && this._tutorialStep === 5) {
+                this._advanceTutorial();
+            }
 
             // Clean up any existing upgrade drones
             this._cleanupUpgradeDrones();
@@ -5143,6 +5342,11 @@
 
         _spawnEnemy() {
             if (this._spawnQueue.length === 0) return;
+
+            // Tutorial: show "here they come" on first enemy spawn
+            if (this._tutorialActive && this._tutorialStep === 3) {
+                this._advanceTutorial();
+            }
 
             const enemyType = this._spawnQueue.shift();
 
