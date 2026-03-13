@@ -2299,7 +2299,7 @@
 
             // Tutorial overlay — click to advance
             document.getElementById('tutorial-overlay').addEventListener('click', () => {
-                if (this._tutorialActive && this._tutorialStep === 0) {
+                if (this._tutorialActive && (this._tutorialStep === 0 || this._tutorialStep === 8)) {
                     if (window.SFX) SFX.play('ui_click');
                     this._advanceTutorial();
                 }
@@ -2786,11 +2786,15 @@
                 // Wait state — waiting for upgrade drones
                 this._hideTutorialBubble();
             } else if (step === 8) {
-                // Upgrade selection — center screen
+                // Upgrade selection — click to continue, then drones spawn
                 this._showTutorialBubble(
-                    "Nice work! Pick an upgrade<br>to power up!",
-                    { autoAdvance: true, delay: 3500, passthrough: true }
+                    "Nice work! Pick an upgrade<br>to power up!"
                 );
+            } else if (step === 9) {
+                // Player clicked continue — now spawn upgrade drones
+                this._hideTutorialBubble();
+                this._endTutorial();
+                this._doSpawnUpgradeDrones();
             } else {
                 this._endTutorial();
             }
@@ -4347,10 +4351,17 @@
         _spawnUpgradeDrones() {
             if (!this.upgradeManager || !window.createUpgradeDrone) return;
 
-            // Tutorial: show "pick an upgrade" on first upgrade selection
+            // Tutorial: show "pick an upgrade" bubble first, defer drones until click
             if (this._tutorialActive && this._tutorialStep === 7) {
-                this._advanceTutorial();
+                this._advanceTutorial(); // → step 8: "Nice work!" bubble
+                return; // Drones spawn later via _doSpawnUpgradeDrones after click
             }
+
+            this._doSpawnUpgradeDrones();
+        },
+
+        _doSpawnUpgradeDrones() {
+            if (!this.upgradeManager || !window.createUpgradeDrone) return;
 
             // Clean up any existing upgrade drones
             this._cleanupUpgradeDrones();
@@ -5878,7 +5889,9 @@
                     this._animateCoinGain(waveBonus);
                     this.updateHUD();
                     if (window.SFX) { SFX.play('wave_clear'); SFX.play('coin_bonus'); }
-                    this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
+                    if (!this._tutorialActive) {
+                        this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
+                    }
                     this._spawnCoinText(0, 30, waveBonus);
 
                     // Enter upgrade selection phase (after wave 1+), or go straight to next wave timer
