@@ -2638,18 +2638,16 @@
 
             // Clear mop puddles (R9)
             this._mopPuddles.forEach(p => {
-                this.scene.remove(p.mesh);
-                p.mesh.geometry.dispose();
-                p.mesh.material.dispose();
+                this.scene.remove(p.group);
+                p.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
             });
             this._mopPuddles = [];
 
             // Clear spill zones (L6)
             if (this._spillZones) {
                 this._spillZones.forEach(sz => {
-                    this.scene.remove(sz.mesh);
-                    sz.mesh.geometry.dispose();
-                    sz.mesh.material.dispose();
+                    this.scene.remove(sz.group);
+                    sz.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                 });
             }
             this._spillZones = [];
@@ -2657,9 +2655,8 @@
             // Clear ubik flood zones (L9)
             if (this._ubikFloodZones) {
                 this._ubikFloodZones.forEach(fz => {
-                    this.scene.remove(fz.mesh);
-                    fz.mesh.geometry.dispose();
-                    fz.mesh.material.dispose();
+                    this.scene.remove(fz.group);
+                    fz.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                 });
             }
             this._ubikFloodZones = [];
@@ -2938,11 +2935,8 @@
                     bashing: e.bashing || false,
                     bashingBarrierIdx: e.bashingBarrier
                         ? liveTowers.indexOf(e.bashingBarrier) : -1,
-                    _bathroomPanicBoost: e._bathroomPanicBoost || false,
                     _falseAlarmInverted: e._falseAlarmInverted || false,
                     _pileupCooldown: e._pileupCooldown || 0,
-                    _sentryMarked: e._sentryMarked || 0,
-                    _showHPBar: e._showHPBar || 0,
                     _impactSquash: e._impactSquash || 0,
                     walkState: e.walkState || 'walk',
                 })),
@@ -3134,11 +3128,9 @@
                         targetLane: ed.targetLane,
                         bashing: ed.bashing || false,
                         bashingBarrier: null,
-                        _bathroomPanicBoost: ed._bathroomPanicBoost || false,
                         _falseAlarmInverted: ed._falseAlarmInverted || false,
                         _pileupCooldown: ed._pileupCooldown || 0,
-                        _sentryMarked: ed._sentryMarked || 0,
-                        _showHPBar: ed._showHPBar || 0,
+                        _crossfireTypes: {},
                         _impactSquash: ed._impactSquash || 0,
                         walkState: ed.walkState || 'walk',
                     };
@@ -3160,46 +3152,76 @@
 
                 // 9. Recreate effect zones (without SFX — silent creation)
                 for (const p of (data.mopPuddles || [])) {
-                    const puddleMat = new THREE.MeshBasicMaterial({
+                    // Mop puddle — recreate with group structure
+                    const mopGroup = new THREE.Group();
+                    mopGroup.position.set(p.x, 0.02, p.z);
+                    const mopDiscMat = new THREE.MeshBasicMaterial({
                         color: PALETTE.mop, transparent: true,
                         opacity: Math.max(0, 0.35 * (p.life / 3.0)), depthWrite: false,
                     });
-                    const puddleMesh = new THREE.Mesh(
-                        new THREE.CircleGeometry(p.radius, 12), puddleMat
-                    );
-                    puddleMesh.rotation.x = -Math.PI / 2;
-                    puddleMesh.position.set(p.x, 0.02, p.z);
-                    this.scene.add(puddleMesh);
+                    const mopDisc = new THREE.Mesh(new THREE.CircleGeometry(p.radius, 16), mopDiscMat);
+                    mopDisc.rotation.x = -Math.PI / 2;
+                    mopGroup.add(mopDisc);
+                    const mopRingMat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.mop, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide,
+                    });
+                    const mopRing = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.55, 16), mopRingMat);
+                    mopRing.rotation.x = -Math.PI / 2;
+                    mopRing.position.y = 0.01;
+                    mopGroup.add(mopRing);
+                    this.scene.add(mopGroup);
                     this._mopPuddles.push({
-                        x: p.x, z: p.z, mesh: puddleMesh,
-                        life: p.life, radius: p.radius
+                        x: p.x, z: p.z, group: mopGroup, disc: mopDisc, ring: mopRing,
+                        discMat: mopDiscMat, ringMat: mopRingMat,
+                        life: p.life, radius: p.radius, age: 5.0 - p.life
                     });
                 }
                 for (const sz of (data.spillZones || [])) {
-                    const mat = new THREE.MeshBasicMaterial({
+                    const szGroup = new THREE.Group();
+                    szGroup.position.set(sz.x, 0.02, sz.z);
+                    const szDiscMat = new THREE.MeshBasicMaterial({
                         color: PALETTE.danger, transparent: true,
-                        opacity: Math.max(0, 0.3 * (sz.life / 5.0)), depthWrite: false,
+                        opacity: Math.max(0, 0.35 * (sz.life / 5.0)), depthWrite: false,
                     });
-                    const mesh = new THREE.Mesh(new THREE.CircleGeometry(sz.radius, 16), mat);
-                    mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.set(sz.x, 0.02, sz.z);
-                    this.scene.add(mesh);
+                    const szDisc = new THREE.Mesh(new THREE.CircleGeometry(sz.radius, 20), szDiscMat);
+                    szDisc.rotation.x = -Math.PI / 2;
+                    szGroup.add(szDisc);
+                    const szRingMat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.danger, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide,
+                    });
+                    const szRing = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.3, 20), szRingMat);
+                    szRing.rotation.x = -Math.PI / 2;
+                    szRing.position.y = 0.01;
+                    szGroup.add(szRing);
+                    this.scene.add(szGroup);
                     this._spillZones.push({
-                        x: sz.x, z: sz.z, mesh, life: sz.life, radius: sz.radius
+                        x: sz.x, z: sz.z, group: szGroup, disc: szDisc, ring: szRing,
+                        discMat: szDiscMat, ringMat: szRingMat,
+                        life: sz.life, radius: sz.radius, age: 5.0 - sz.life
                     });
                 }
                 for (const fz of (data.ubikFloodZones || [])) {
-                    const mat = new THREE.MeshBasicMaterial({
+                    const fzGroup = new THREE.Group();
+                    fzGroup.position.set(fz.x, 0.02, fz.z);
+                    const fzDiscMat = new THREE.MeshBasicMaterial({
                         color: PALETTE.ubik, transparent: true,
-                        opacity: Math.max(0, 0.25 * (fz.life / 8.0)), depthWrite: false,
+                        opacity: Math.max(0, 0.3 * (fz.life / 8.0)), depthWrite: false,
                     });
-                    const mesh = new THREE.Mesh(new THREE.CircleGeometry(fz.radius, 16), mat);
-                    mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.set(fz.x, 0.02, fz.z);
-                    this.scene.add(mesh);
+                    const fzDisc = new THREE.Mesh(new THREE.CircleGeometry(fz.radius, 20), fzDiscMat);
+                    fzDisc.rotation.x = -Math.PI / 2;
+                    fzGroup.add(fzDisc);
+                    const fzRingMat = new THREE.MeshBasicMaterial({
+                        color: PALETTE.ubik, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide,
+                    });
+                    const fzRing = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.6, 20), fzRingMat);
+                    fzRing.rotation.x = -Math.PI / 2;
+                    fzRing.position.y = 0.01;
+                    fzGroup.add(fzRing);
+                    this.scene.add(fzGroup);
                     this._ubikFloodZones.push({
-                        x: fz.x, z: fz.z, mesh, life: fz.life,
-                        radius: fz.radius, towerKey: fz.towerKey
+                        x: fz.x, z: fz.z, group: fzGroup, disc: fzDisc, ring: fzRing,
+                        discMat: fzDiscMat, ringMat: fzRingMat,
+                        life: fz.life, radius: fz.radius, towerKey: fz.towerKey, age: 8.0 - fz.life
                     });
                 }
 
@@ -5334,11 +5356,9 @@
                 ac.setTimeScale(1.5);
             }
 
-            // R16: Bathroom Panic — 12% of enemies freeze 2s on entering, then 2x speed
-            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R16') && Math.random() < 0.12) {
-                enemy.stunTimer = 2.0;
-                enemy._bathroomPanicBoost = true;
-                ac.setTimeScale(0);
+            // R16: Crossfire — initialize tower-type hit tracker
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R16')) {
+                enemy._crossfireTypes = {};
             }
 
             // L11: False Alarm — mark one panicker per wave for inverted aura
@@ -5462,9 +5482,23 @@
                 // L4: Rush Hour Pileup — decrement collision cooldown
                 if (e._pileupCooldown > 0) e._pileupCooldown -= dt;
 
-                // R12: Sentry Magnet — decrement mark/HP bar timers
-                if (e._sentryMarked > 0) { e._sentryMarked -= dt; if (e._sentryMarked <= 0) e._sentryMarked = 0; }
-                if (e._showHPBar > 0) { e._showHPBar -= dt; if (e._showHPBar <= 0) e._showHPBar = 0; }
+                // R16: Crossfire — decrement tower-type hit timers
+                if (e._crossfireTypes) {
+                    for (const type in e._crossfireTypes) {
+                        e._crossfireTypes[type] -= dt;
+                        if (e._crossfireTypes[type] <= 0) delete e._crossfireTypes[type];
+                    }
+                }
+
+                // DoT damage number batching — show accumulated damage every 0.5s
+                e._dotTimer = (e._dotTimer || 0.5) - dt;
+                if (e._dotTimer <= 0) {
+                    if (e._dotAccum > 0.5) {
+                        this._spawnDamageNumber(e.x, e.z, e._dotAccum, '#ff6b7a');
+                        e._dotAccum = 0;
+                    }
+                    e._dotTimer = 0.5;
+                }
 
                 // Wet Floor Sign slow zone — enemies near barriers move slower
                 if (!e.slowImmune) {
@@ -5506,6 +5540,7 @@
                                 slowMult = Math.min(slowMult, 0.6); // 40% slow
                                 e._inSlowZone = true;
                                 e.hp -= 3 * dt; // 3 dps
+                                e._dotAccum = (e._dotAccum || 0) + 3 * dt;
                                 break;
                             }
                         }
@@ -5519,7 +5554,9 @@
                             const fdx = e.x - fz.x;
                             const fdz = e.z - fz.z;
                             if (fdx * fdx + fdz * fdz < fz.radius * fz.radius) {
-                                e.hp -= 2 * floodSprayMult * dt; // 2 dps (reduced by sprayResist)
+                                const floodDmg = 2 * floodSprayMult * dt;
+                                e.hp -= floodDmg; // 2 dps (reduced by sprayResist)
+                                e._dotAccum = (e._dotAccum || 0) + floodDmg;
                                 break;
                             }
                         }
@@ -5573,6 +5610,8 @@
                                 other.hp -= 10;
                                 e.hitFlash = 0.15;
                                 other.hitFlash = 0.15;
+                                this._spawnDamageNumber(e.x, e.z, 10, '#faf5ef');
+                                this._spawnDamageNumber(other.x, other.z, 10, '#faf5ef');
                                 e._pileupCooldown = 1.5;
                                 other._pileupCooldown = 1.5;
                                 e._nuclearMop = false; // L8: wall check no longer needed
@@ -5597,6 +5636,7 @@
                             if (tdx * tdx + tdz * tdz < 2.25) { // 1.5 unit radius
                                 e.hp -= 15;
                                 e.hitFlash = 0.15;
+                                this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
                                 e._nuclearMop = false;
                                 this._spawnMopImpact(e.x, e.z);
                                 break;
@@ -5626,6 +5666,7 @@
                     if (e._nuclearMop && (e.x !== preClampX || e.z !== preClampZ)) {
                         e.hp -= 15;
                         e.hitFlash = 0.15;
+                        this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
                         e._nuclearMop = false;
                         this._spawnMopImpact(e.x, e.z);
                     }
@@ -5682,11 +5723,6 @@
                         e.mesh.rotation.x = 0;
                         e.mesh.rotation.z = 0;
                         e.tripFallDuration = 0;
-                        // R16: Bathroom Panic — after freeze, 2x speed
-                        if (e._bathroomPanicBoost) {
-                            e._bathroomPanicBoost = false;
-                            e.speed *= 2.0;
-                        }
                         // Resume walk animation
                         if (e.animController) {
                             const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
@@ -6032,8 +6068,10 @@
                                 const bashDmg = this.upgradeManager.getModifier('signBashDamage');
                                 if (bashDmg > 0) {
                                     // L2: Desperate Measures — 2x damage
-                                    e.hp -= bashDmg * (this._desperateMeasures ? 2 : 1);
+                                    const signDmg = bashDmg * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'wetfloor');
+                                    e.hp -= signDmg;
                                     e.hitFlash = 0.15;
+                                    this._spawnDamageNumber(e.x, e.z, signDmg, '#e8d44a');
                                 }
                             }
 
@@ -6313,7 +6351,24 @@
                     // Spawn physical coins instead of instant reward
                     if (this.coinPool) {
                         const drop = this.COIN_DROPS[e.type] || { value: e.coins, count: 1 };
-                        this.coinPool.spawnCoins(e.x, e.z, drop.value, drop.count, this.scene);
+
+                        // R12: Payday — enemies killed within Coin Magnet range drop 2× coins
+                        let coinMult = 1;
+                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R12')) {
+                            const magnetRangeBonus = this.upgradeManager.getModifier('magnetRange');
+                            for (const t of this.towers) {
+                                if (t.type !== 'coinmagnet' || t.dying || t.delivering) continue;
+                                const mRange = t.def.range + magnetRangeBonus;
+                                const mdx = e.x - t.gridX;
+                                const mdz = e.z - t.gridZ;
+                                if (mdx * mdx + mdz * mdz < mRange * mRange) {
+                                    coinMult = 2;
+                                    break;
+                                }
+                            }
+                        }
+
+                        this.coinPool.spawnCoins(e.x, e.z, drop.value * coinMult, drop.count, this.scene);
                         if (window.SFX) SFX.play('coin_drop');
 
                         // R13: The Tip Jar — 20% chance to drop golden coin worth 5x
@@ -6528,35 +6583,15 @@
                                                 if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
                                             }
                                             if (nearest) {
-                                                nearest.hp -= 5;
+                                                const shrapDmg = 5 * this._crossfireMult(nearest, 'coinmagnet');
+                                                nearest.hp -= shrapDmg;
                                                 nearest.hitFlash = 0.15;
+                                                this._spawnDamageNumber(nearest.x, nearest.z, shrapDmg, '#f0a030');
                                                 if (nearest.animController && !nearest.dying) nearest.animController.playOneShot('hit_react');
                                             }
                                         }
                                     }
                                 }
-                            }
-                        }
-                    }
-
-                    // R12: Sentry Magnet — pulse every 4s, reveal HP bars, mark highest-HP enemy
-                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('R12')) {
-                        const magnetRange = t.def.range + (this.upgradeManager.getModifier('magnetRange') || 0);
-                        t._sentryTimer = (t._sentryTimer || 0) - dt;
-                        if (t._sentryTimer <= 0) {
-                            t._sentryTimer = 4.0;
-                            let highestHPEnemy = null;
-                            let maxHP = 0;
-                            for (const e of this.enemies) {
-                                if (e.dying) continue;
-                                const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
-                                if (dx2 < magnetRange * magnetRange) {
-                                    e._showHPBar = 2.0;
-                                    if (e.hp > maxHP) { maxHP = e.hp; highestHPEnemy = e; }
-                                }
-                            }
-                            if (highestHPEnemy) {
-                                highestHPEnemy._sentryMarked = 3.0;
                             }
                         }
                     }
@@ -6592,7 +6627,9 @@
                                 const pdz = e.z - t.gridZ;
                                 if (pdx * pdx + pdz * pdz < auraR2) {
                                     // L2: Desperate Measures — 2x damage
-                                    e.hp -= contactDPS * dt * (this._desperateMeasures ? 2 : 1);
+                                    const cactusDmg = contactDPS * dt * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant');
+                                    e.hp -= cactusDmg;
+                                    e._dotAccum = (e._dotAccum || 0) + cactusDmg;
                                     if (Math.random() < dt * 2) e.hitFlash = 0.08;
                                 }
                             }
@@ -6605,20 +6642,14 @@
                 if (t.type === 'ubik') {
                     let ubikTarget = null;
                     let ubikTargetDist = Infinity;
-                    let ubikTargetMarked = false;
                     for (const e of this.enemies) {
                         if (e.dying) continue;
                         const dx = e.x - t.gridX;
                         const dz = e.z - t.gridZ;
                         const dist = Math.sqrt(dx * dx + dz * dz);
-                        if (dist < t.def.range) {
-                            // R12: Sentry Magnet — prioritize marked targets
-                            const isMarked = e._sentryMarked > 0;
-                            if ((isMarked && !ubikTargetMarked) || (isMarked === ubikTargetMarked && dist < ubikTargetDist)) {
-                                ubikTarget = e;
-                                ubikTargetDist = dist;
-                                ubikTargetMarked = isMarked;
-                            }
+                        if (dist < t.def.range && dist < ubikTargetDist) {
+                            ubikTarget = e;
+                            ubikTargetDist = dist;
                         }
                     }
                     if (ubikTarget) {
@@ -6730,8 +6761,10 @@
 
                                     // Low damage — crowd control focus
                                     // L2: Desperate Measures — 2x damage when door HP < 50%
-                                    e.hp -= (t.def.damage + mopBonusDmg) * (this._desperateMeasures ? 2 : 1);
+                                    const mopDmg = (t.def.damage + mopBonusDmg) * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'mop');
+                                    e.hp -= mopDmg;
                                     e.hitFlash = 0.15;
+                                    this._spawnDamageNumber(e.x, e.z, mopDmg, '#9b59b6');
 
                                     // Directional knockback — tangential to sweep arc
                                     const angleToEnemy = Math.atan2(e.x - t.gridX, e.z - t.gridZ);
@@ -6802,22 +6835,17 @@
                         t.attackTimer -= dt;
 
                         if (t.attackTimer <= 0) {
-                            // Find nearest enemy in range (R12: prefer sentry-marked)
+                            // Find nearest enemy in range
                             let mopTarget = null;
                             let mopTargetDist = Infinity;
-                            let mopTargetMarked = false;
                             for (const e of this.enemies) {
                                 if (e.dying) continue;
                                 const dx = e.x - t.gridX;
                                 const dz = e.z - t.gridZ;
                                 const dist = Math.sqrt(dx * dx + dz * dz);
-                                if (dist < t.def.range) {
-                                    const isMarked = e._sentryMarked > 0;
-                                    if ((isMarked && !mopTargetMarked) || (isMarked === mopTargetMarked && dist < mopTargetDist)) {
-                                        mopTarget = e;
-                                        mopTargetDist = dist;
-                                        mopTargetMarked = isMarked;
-                                    }
+                                if (dist < t.def.range && dist < mopTargetDist) {
+                                    mopTarget = e;
+                                    mopTargetDist = dist;
                                 }
                             }
 
@@ -7150,8 +7178,10 @@
                             const eDef = this.ENEMY_TYPES[e.type] || {};
                             const sprayMult = 1.0 - (eDef.sprayResist || 0);
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            e.hp -= s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1);
+                            const ubikDmg = s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'ubik');
+                            e.hp -= ubikDmg;
                             e.hitFlash = 0.15;
+                            this._spawnDamageNumber(e.x, e.z, ubikDmg, '#6bcb77');
                             if (e.animController && !e.dying) {
                                 e.animController.playOneShot('hit_react');
                             }
@@ -7194,38 +7224,55 @@
         // ============================
         _createMopPuddle(x, z) {
             if (window.SFX) SFX.play('splash');
-            // Max 12 puddles globally (≈3 per mop)
+            // Max 12 puddles globally (~3 per mop)
             while (this._mopPuddles.length >= 12) {
                 const old = this._mopPuddles.shift();
-                this.scene.remove(old.mesh);
-                old.mesh.geometry.dispose();
-                old.mesh.material.dispose();
+                this.scene.remove(old.group);
+                old.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
             }
+            const group = new THREE.Group();
+            group.position.set(x, 0.02, z);
             const puddleMat = new THREE.MeshBasicMaterial({
                 color: PALETTE.mop,
                 transparent: true,
                 opacity: 0.35,
                 depthWrite: false,
             });
-            const puddleMesh = new THREE.Mesh(
-                new THREE.CircleGeometry(1.5, 12),
-                puddleMat
-            );
-            puddleMesh.rotation.x = -Math.PI / 2;
-            puddleMesh.position.set(x, 0.02, z);
-            this.scene.add(puddleMesh);
-            this._mopPuddles.push({ x, z, mesh: puddleMesh, life: 3.0, radius: 1.5 });
+            const disc = new THREE.Mesh(new THREE.CircleGeometry(1.5, 16), puddleMat);
+            disc.rotation.x = -Math.PI / 2;
+            group.add(disc);
+            // Inner ripple ring
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.mop,
+                transparent: true,
+                opacity: 0.45,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            });
+            const ring = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.55, 16), ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.01;
+            group.add(ring);
+            this.scene.add(group);
+            this._mopPuddles.push({ x, z, group, disc, ring, discMat: puddleMat, ringMat, life: 3.0, radius: 1.5, age: 0 });
         },
 
         _updateMopPuddles(dt) {
             for (let i = this._mopPuddles.length - 1; i >= 0; i--) {
                 const p = this._mopPuddles[i];
                 p.life -= dt;
-                p.mesh.material.opacity = Math.max(0, 0.35 * (p.life / 3.0));
+                p.age += dt;
+                const fade = Math.max(0, p.life / 3.0);
+                const pulse = 1 + 0.15 * Math.sin(p.age * 5);
+                p.discMat.opacity = Math.max(0, 0.35 * fade * pulse);
+                // Ripple ring
+                const ripple = (p.age * 1.0) % 1.0;
+                const ringScale = 0.5 + ripple * 1.5;
+                p.ring.scale.set(ringScale, ringScale, 1);
+                p.ringMat.opacity = Math.max(0, 0.45 * (1 - ripple) * fade);
                 if (p.life <= 0) {
-                    this.scene.remove(p.mesh);
-                    p.mesh.geometry.dispose();
-                    p.mesh.material.dispose();
+                    this.scene.remove(p.group);
+                    p.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                     this._mopPuddles.splice(i, 1);
                 }
             }
@@ -7234,37 +7281,66 @@
         // ============================
         // L6: SPILL ZONE PUDDLES
         // ============================
+        // R16: Crossfire — record tower type hit and return damage multiplier
+        _crossfireMult(enemy, towerType) {
+            if (!enemy._crossfireTypes) return 1;
+            enemy._crossfireTypes[towerType] = 1.0; // 1s window
+            return Object.keys(enemy._crossfireTypes).length >= 2 ? 1.4 : 1;
+        },
+
         _createSpillZone(x, z) {
             if (window.SFX) SFX.play('splash');
             // Cap at 20 total spill zones
             while (this._spillZones.length >= 20) {
                 const old = this._spillZones.shift();
-                this.scene.remove(old.mesh);
-                old.mesh.geometry.dispose();
-                old.mesh.material.dispose();
+                this.scene.remove(old.group);
+                old.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
             }
+            const group = new THREE.Group();
+            group.position.set(x, 0.02, z);
+            // Main puddle disc
             const mat = new THREE.MeshBasicMaterial({
                 color: PALETTE.danger,
                 transparent: true,
-                opacity: 0.3,
+                opacity: 0.35,
                 depthWrite: false,
             });
-            const mesh = new THREE.Mesh(new THREE.CircleGeometry(3, 16), mat);
-            mesh.rotation.x = -Math.PI / 2;
-            mesh.position.set(x, 0.02, z);
-            this.scene.add(mesh);
-            this._spillZones.push({ x, z, mesh, life: 5.0, radius: 3.0 });
+            const disc = new THREE.Mesh(new THREE.CircleGeometry(3, 20), mat);
+            disc.rotation.x = -Math.PI / 2;
+            group.add(disc);
+            // Inner ripple ring
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.danger,
+                transparent: true,
+                opacity: 0.5,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            });
+            const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.3, 20), ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.01;
+            group.add(ring);
+            this.scene.add(group);
+            this._spillZones.push({ x, z, group, disc, ring, discMat: mat, ringMat, life: 5.0, radius: 3.0, age: 0 });
         },
 
         _updateSpillZones(dt) {
             for (let i = this._spillZones.length - 1; i >= 0; i--) {
                 const sz = this._spillZones[i];
                 sz.life -= dt;
-                sz.mesh.material.opacity = Math.max(0, 0.3 * (sz.life / 5.0));
+                sz.age += dt;
+                const fade = Math.max(0, sz.life / 5.0);
+                // Pulsing opacity
+                const pulse = 1 + 0.2 * Math.sin(sz.age * 4);
+                sz.discMat.opacity = Math.max(0, 0.35 * fade * pulse);
+                // Ripple ring expands and fades cyclically
+                const ripple = (sz.age * 0.8) % 1.0; // cycle every ~1.25s
+                const ringScale = 0.5 + ripple * 1.5;
+                sz.ring.scale.set(ringScale, ringScale, 1);
+                sz.ringMat.opacity = Math.max(0, 0.5 * (1 - ripple) * fade);
                 if (sz.life <= 0) {
-                    this.scene.remove(sz.mesh);
-                    sz.mesh.geometry.dispose();
-                    sz.mesh.material.dispose();
+                    this.scene.remove(sz.group);
+                    sz.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                     this._spillZones.splice(i, 1);
                 }
             }
@@ -7277,38 +7353,59 @@
             // Max 5 zones per ubik tower
             const towerZones = this._ubikFloodZones.filter(fz => fz.towerKey === towerKey);
             if (towerZones.length >= 5) {
-                // Remove oldest zone for this tower
                 const oldest = towerZones[0];
                 const idx = this._ubikFloodZones.indexOf(oldest);
                 if (idx !== -1) {
-                    this.scene.remove(oldest.mesh);
-                    oldest.mesh.geometry.dispose();
-                    oldest.mesh.material.dispose();
+                    this.scene.remove(oldest.group);
+                    oldest.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                     this._ubikFloodZones.splice(idx, 1);
                 }
             }
+            const group = new THREE.Group();
+            group.position.set(x, 0.02, z);
+            // Main puddle disc
             const mat = new THREE.MeshBasicMaterial({
                 color: PALETTE.ubik,
                 transparent: true,
-                opacity: 0.25,
+                opacity: 0.3,
                 depthWrite: false,
             });
-            const mesh = new THREE.Mesh(new THREE.CircleGeometry(4, 16), mat);
-            mesh.rotation.x = -Math.PI / 2;
-            mesh.position.set(x, 0.02, z);
-            this.scene.add(mesh);
-            this._ubikFloodZones.push({ x, z, mesh, life: 8.0, radius: 4.0, towerKey });
+            const disc = new THREE.Mesh(new THREE.CircleGeometry(4, 20), mat);
+            disc.rotation.x = -Math.PI / 2;
+            group.add(disc);
+            // Inner ripple ring
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.ubik,
+                transparent: true,
+                opacity: 0.45,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            });
+            const ring = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.6, 20), ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.01;
+            group.add(ring);
+            this.scene.add(group);
+            this._ubikFloodZones.push({ x, z, group, disc, ring, discMat: mat, ringMat, life: 8.0, radius: 4.0, towerKey, age: 0 });
         },
 
         _updateUbikFloodZones(dt) {
             for (let i = this._ubikFloodZones.length - 1; i >= 0; i--) {
                 const fz = this._ubikFloodZones[i];
                 fz.life -= dt;
-                fz.mesh.material.opacity = Math.max(0, 0.25 * (fz.life / 8.0));
+                fz.age += dt;
+                const fade = Math.max(0, fz.life / 8.0);
+                // Pulsing opacity
+                const pulse = 1 + 0.15 * Math.sin(fz.age * 3);
+                fz.discMat.opacity = Math.max(0, 0.3 * fade * pulse);
+                // Ripple ring
+                const ripple = (fz.age * 0.6) % 1.0;
+                const ringScale = 0.4 + ripple * 1.8;
+                fz.ring.scale.set(ringScale, ringScale, 1);
+                fz.ringMat.opacity = Math.max(0, 0.45 * (1 - ripple) * fade);
                 if (fz.life <= 0) {
-                    this.scene.remove(fz.mesh);
-                    fz.mesh.geometry.dispose();
-                    fz.mesh.material.dispose();
+                    this.scene.remove(fz.group);
+                    fz.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                     this._ubikFloodZones.splice(i, 1);
                 }
             }
@@ -7462,6 +7559,53 @@
             this.scene.add(sprite);
 
             this._floatingTexts.push({ sprite, life: 1.2 });
+        },
+
+        // ============================
+        // FLOATING DAMAGE NUMBERS
+        // ============================
+        _spawnDamageNumber(x, z, amount, color) {
+            // Skip tiny DoT ticks — they'll be batched
+            if (amount < 0.5) return;
+            const rounded = Math.round(amount);
+            if (rounded <= 0) return;
+
+            // Scale text size with damage (bigger hits = bigger text)
+            const sizeMult = Math.min(1.5, 0.7 + rounded * 0.03);
+            const fontSize = Math.round(36 * sizeMult);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            // Random offset so numbers don't stack
+            const offX = (Math.random() - 0.5) * 1.5;
+            const rot = (Math.random() - 0.5) * 0.15;
+            ctx.translate(64, 32);
+            ctx.rotate(rot);
+            ctx.font = `bold ${fontSize}px Bangers, Impact, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const text = `${rounded}`;
+            // Dark outline
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 4;
+            ctx.strokeText(text, 0, 0);
+            // Color fill
+            ctx.fillStyle = color || '#faf5ef';
+            ctx.fillText(text, 0, 0);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(x + offX, 3.5, z);
+            sprite.scale.set(2 * sizeMult, 1 * sizeMult, 1);
+            this.scene.add(sprite);
+            this._floatingTexts.push({ sprite, life: 0.9 });
         },
 
         // ============================
@@ -8278,8 +8422,10 @@
                             sp.hitEnemies.add(e);
                             if (window.SFX) { SFX.play('pot_kick'); SFX.play('stun_impact'); }
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            e.hp -= sp.tripDamage * (this._desperateMeasures ? 2 : 1);
+                            const tripDmg = sp.tripDamage * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant');
+                            e.hp -= tripDmg;
                             e.hitFlash = 0.15;
+                            this._spawnDamageNumber(e.x, e.z, tripDmg, '#c4663a');
                             e.stunTimer = sp.stunDuration;
                             e.tripFallDuration = sp.stunDuration;
                             if (e.animController) {

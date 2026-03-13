@@ -137,8 +137,8 @@ Tower-tower combos, cross-system interactions, and powerful single-tower overhau
 |---|---|---|
 | R9 | Sticky Mop | Mop knockback leaves a puddle at the enemy's landing point. Puddle slows enemies by 40% for 3s. Max 3 puddles per mop. |
 | R10 | Chain Trip | Pot Plant trip creates a 3-unit shockwave. Nearby enemies stumble (half-duration stun, no damage). |
-| R11 | Spray & Pray | Ubik Spray hitting 5+ enemies in a single burst refunds 5 coins. Visual: coin particles fly out of the spray cloud. |
-| R12 | Sentry Magnet | Coin Magnets pulse every 4s, briefly revealing enemy HP bars in their range and marking the highest-HP enemy (towers prioritize marked targets). |
+| R11 | Spray & Pray | Ubik Spray hitting 5+ enemies in a single burst awards a 5-coin bonus. Visual: coin particles fly out of the spray cloud. |
+| R12 | Payday | Enemies killed within Coin Magnet range drop 2× coins. Rewards strategic magnet placement near kill zones. |
 
 #### Economy & Utility
 | # | Name | Effect |
@@ -146,7 +146,7 @@ Tower-tower combos, cross-system interactions, and powerful single-tower overhau
 | R13 | The Tip Jar | Enemy kills have 20% chance to drop a golden coin worth 5x. Visual: distinct gold coin with sparkle. |
 | R14 | Clearance Sale | All tower placement costs reduced by 20% (rounded down, minimum 5). |
 | R15 | Insurance Policy | When a tower is destroyed, refund 50% of its cost in coins. |
-| R16 | Bathroom Panic | 12% of spawned enemies freeze for 2s upon entering (see the chaos), then run at 2x speed. Net neutral but creates tactical windows. |
+| R16 | Crossfire | Enemies hit by 2+ different tower types within 1s take 40% bonus damage. Rewards overlapping tower coverage. |
 
 ---
 
@@ -156,12 +156,12 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 
 | # | Name | Effect | Notes |
 |---|---|---|---|
-| L1 | Double Flush | Toilet door gains +4 max HP, healed immediately. | Direct survivability. Simple but impactful. |
+| L1 | Double Flush | Toilet door fully healed and max HP permanently increased by 4. | Direct survivability. Simple but impactful. |
 | L2 | Desperate Measures | When door HP is below 50%, ALL towers deal 2x damage and attack 30% faster. | Risk/reward — do you let the door take hits? |
 | L3 | Plunger Protocol | When the door takes a hit, ALL towers within 12 units get 3x attack speed for 3s. Rally mechanic. | Rewards clustering towers near the door. |
 | L4 | Rush Hour Pileup | Enemies knocked into other enemies stun BOTH for 1.5s and deal 10 damage to each other. | Transforms Mop Turret into a bowling ball launcher. Placement becomes critical. |
 | L5 | Domino Effect | Tripped enemies (from Pot Plants) that slide into other enemies trip THEM too, chaining indefinitely. Each chain link does -20% damage. | Pot Plant becomes the star. Placement in dense lanes = chain reactions. |
-| L6 | Spill Zone | Dead enemies leave a toxic puddle (3-unit radius) that slows by 40% and deals 3 dps for 5s. | Kills snowball. Rewards focusing fire to create kill zones. |
+| L6 | Spill Zone | KO'd enemies leave a toxic puddle (3-unit radius, 40% slow, 3 dps) that lingers for 5s. | Kills snowball. Rewards focusing fire to create kill zones. |
 | L7 | Loose Change | Uncollected coins on the ground become trip hazards. Enemies walking over them stumble (1s stun, 2 damage). Coin is consumed. | Incredible tension: collect coins for towers, or leave them as traps? Transforms coin management. |
 | L8 | Nuclear Mop | Mop knockback distance 4x. Enemies take 15 damage if they hit a wall or another tower. | Mop becomes a cannon. Enemies fly across the room. |
 | L9 | Ubik Flood | Each Ubik spray burst leaves a lingering damage zone on the floor (4-unit radius, 2 dps, lasts 8s). Max 5 zones per Ubik. | Area denial. Ubik becomes a zone painter. |
@@ -333,11 +333,11 @@ Game-warping mechanics. Every legendary should make the player reconsider their 
 - [x] R9: Sticky Mop — spawn puddle mesh at knockback landing point, add slow zone logic
 - [x] R10: Chain Trip — on pot trip, AoE query nearby enemies, apply half-stun
 - [x] R11: Spray & Pray — count enemies hit per Ubik burst, refund coins if 5+, spawn coin VFX
-- [x] R12: Sentry Magnet — add pulse timer to magnets, show HP bars in range, set target priority
+- [x] R12: Payday — enemies killed within Coin Magnet range drop 2× coins
 - [x] R13: The Tip Jar — add golden coin roll on enemy death, distinct visual
 - [x] R14: Clearance Sale — modify tower costs in build system
 - [x] R15: Insurance Policy — trigger coin refund on tower destruction
-- [x] R16: Bathroom Panic — modify enemy spawn to roll freeze chance, add 2s stun then 2x speed
+- [x] R16: Crossfire — track tower-type hits per enemy, apply 40% bonus when 2+ types hit within 1s
 - [ ] Test all rare upgrades individually
 - [ ] Test synergy combinations (especially multi-synergy stacking)
 

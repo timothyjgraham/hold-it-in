@@ -316,7 +316,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R11',
         name: 'Spray & Pray',
-        description: 'Ubik Spray hitting 5+ enemies in a burst refunds 5 coins',
+        description: 'Ubik Spray hitting 5+ enemies in a single burst awards a 5-coin bonus',
         rarity: 'rare',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -326,8 +326,8 @@ export const RARE_UPGRADES = [
     },
     {
         id: 'R12',
-        name: 'Sentry Magnet',
-        description: 'Coin Magnets pulse every 4s, revealing enemy HP bars and marking highest-HP enemy',
+        name: 'Payday',
+        description: 'Enemies killed within Coin Magnet range drop 2× coins',
         rarity: 'rare',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -372,8 +372,8 @@ export const RARE_UPGRADES = [
     },
     {
         id: 'R16',
-        name: 'Bathroom Panic',
-        description: '12% of enemies freeze for 2s on entering, then run at 2× speed',
+        name: 'Crossfire',
+        description: 'Enemies hit by 2+ different tower types within 1s take 40% bonus damage',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -389,7 +389,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L1',
         name: 'Double Flush',
-        description: 'Toilet door gains +4 max HP, healed immediately',
+        description: 'Toilet door fully healed and max HP permanently increased by 4',
         rarity: 'legendary',
         icon: 'door',
         towerRequirement: null,  // general
@@ -444,7 +444,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L6',
         name: 'Spill Zone',
-        description: 'Dead enemies leave a toxic puddle (3-unit radius) that slows 40% and deals 3 dps for 5s',
+        description: 'KO\'d enemies leave a toxic puddle (3-unit radius, 40% slow, 3 dps) that lingers for 5s',
         rarity: 'legendary',
         icon: 'star',
         towerRequirement: null,  // general
