@@ -203,6 +203,8 @@ export const PALETTE = {
     // ─── TOON SHADER PARAMS ───────────────────────────────────────────────────
     // Shared across all toon materials for consistency
 
+    hatchInk:     0x2a2840, // Slightly warmer than ink — cross-hatch lines in shadow regions
+
     outlineColor: 0x1a1a2e, // Same as ink — unified outline language
 };
 

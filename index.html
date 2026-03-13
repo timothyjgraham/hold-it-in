@@ -8278,7 +8278,8 @@
                 this._updateCinematic(dt);
             }
 
-            // Render (post-processing: edges + vignette)
+            // Render (post-processing: ink & paint pipeline)
+            this.postFX.uniforms.uTime.value = this.clock.elapsedTime;
             this.postFX.render();
 
             // 6E: Performance profiling (debug overlay, toggle with backtick key)
