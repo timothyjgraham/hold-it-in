@@ -17,6 +17,7 @@ import { createIconDataURL } from './data/upgradeIcons.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
+import { ENEMY_DEATH_VOCAL } from './data/soundConfig.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
     matWhite, matDark, matInk, matCarpet, matPorcelain, matGold,
@@ -153,6 +154,7 @@ window.MedicDroneSystem = MedicDroneSystem;
 window.createIconDataURL = createIconDataURL;
 window.outlineMatStatic = outlineMatStatic;
 window.SFX = SFX;
+window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;
 
 // Initialize game
 window.Game = Game;

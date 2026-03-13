@@ -71,11 +71,41 @@ export const SOUND_EVENTS = {
     },
 
     // ─── WAVE EVENTS ───────────────────────────────────────────────────────
+    // Scenario-specific wave start sounds (grammar: environment defines the chime)
 
     wave_start: {
+        // Legacy fallback — kept for any scenario without a specific chime
         files: ['wave_start_1.wav', 'wave_start_2.wav', 'wave_start_3.wav'],
         volume: 0.55,
         pitch: [0.9, 1.1],
+        category: 'sfx',
+    },
+    wave_start_office: {
+        // Glass ding — corporate PA chime: cold, crisp, "your number's up"
+        files: ['wave_start_office_1.wav', 'wave_start_office_2.wav', 'wave_start_office_3.wav'],
+        volume: 0.55,
+        pitch: [0.9, 1.1],
+        category: 'sfx',
+    },
+    wave_start_forest: {
+        // Wood hit — hollow log drum: primal, natural warning
+        files: ['wave_start_forest_1.wav', 'wave_start_forest_2.wav', 'wave_start_forest_3.wav'],
+        volume: 0.55,
+        pitch: [0.85, 1.05],
+        category: 'sfx',
+    },
+    wave_start_ocean: {
+        // Splash — wave crashing: something's coming from the water
+        files: ['wave_start_ocean_1.wav', 'wave_start_ocean_2.wav', 'wave_start_ocean_3.wav'],
+        volume: 0.55,
+        pitch: [0.9, 1.1],
+        category: 'sfx',
+    },
+    wave_start_airplane: {
+        // Oven ding / beep — seatbelt sign chime: instantly recognizable airline tone
+        files: ['wave_start_airplane_1.wav', 'wave_start_airplane_2.wav', 'wave_start_airplane_3.wav'],
+        volume: 0.55,
+        pitch: [0.95, 1.05],
         category: 'sfx',
     },
     wave_clear: {
@@ -110,12 +140,81 @@ export const SOUND_EVENTS = {
         maxSimultaneous: 4,
     },
     enemy_oof: {
+        // Legacy fallback — used when no role-specific death vocal exists
         files: ['enemy_oof_1.wav', 'enemy_oof_2.wav', 'enemy_oof_3.wav', 'enemy_oof_4.wav', 'enemy_oof_5.wav', 'enemy_oof_6.wav'],
         volume: 0.4,
         pitch: [0.8, 1.3],
         category: 'sfx',
         cooldown: 0.15,
         maxSimultaneous: 3,
+    },
+
+    // ─── ROLE-BASED DEATH VOCALS ─────────────────────────────────────────
+    // Grammar: pitch = size (bigger → deeper), texture = personality (unique per role)
+    // Each role has a non-overlapping sound source. No two roles share files.
+
+    death_composed: {
+        // Restrained, dignified oofs. A quiet "excuse me" and nothing more.
+        // → polite, deer, dolphin, nervous
+        files: ['death_composed_1.wav', 'death_composed_2.wav', 'death_composed_3.wav', 'death_composed_4.wav'],
+        volume: 0.4,
+        pitch: [0.9, 1.0],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 3,
+    },
+    death_frantic: {
+        // Quick, clipped oofs. Can't even go down quietly.
+        // → dancer, squirrel, flyfish, attendant
+        files: ['death_frantic_1.wav', 'death_frantic_2.wav', 'death_frantic_3.wav', 'death_frantic_4.wav'],
+        volume: 0.4,
+        pitch: [1.1, 1.3],
+        category: 'sfx',
+        cooldown: 0.1,
+        maxSimultaneous: 4,
+    },
+    death_heavy: {
+        // Deep, guttural body hits + oofs. You hear the WEIGHT.
+        // → waddle, bear, shark, stumbler
+        files: ['death_heavy_1.wav', 'death_heavy_2.wav', 'death_heavy_3.wav', 'death_heavy_4.wav',
+                'death_heavy_5.wav', 'death_heavy_6.wav', 'death_heavy_7.wav'],
+        volume: 0.45,
+        pitch: [0.7, 0.85],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 3,
+    },
+    death_scream: {
+        // Screams — EXCLUSIVE to this role. Only screamers scream.
+        // → panicker, fox, pirate, marshal
+        files: ['death_scream_1.wav', 'death_scream_2.wav', 'death_scream_3.wav',
+                'death_scream_4.wav', 'death_scream_5.wav', 'death_scream_6.wav'],
+        volume: 0.4,
+        pitch: [0.85, 0.95],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 3,
+    },
+    death_sharp: {
+        // Sharp exhales + coughs. Wind knocked out mid-stride. No drama.
+        // → powerwalker, moose, seaturtle, business
+        files: ['death_sharp_1.wav', 'death_sharp_2.wav', 'death_sharp_3.wav',
+                'death_sharp_4.wav', 'death_sharp_5.wav', 'death_sharp_6.wav'],
+        volume: 0.4,
+        pitch: [0.95, 1.05],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 3,
+    },
+    death_chorus: {
+        // Meows — comedic, distinctive. Overlapping from groups.
+        // → girls, raccoon, jellyfish, unruly
+        files: ['death_chorus_1.wav', 'death_chorus_2.wav', 'death_chorus_3.wav'],
+        volume: 0.4,
+        pitch: [1.3, 1.5],
+        category: 'sfx',
+        cooldown: 0.08,
+        maxSimultaneous: 5,
     },
     enemy_death: {
         files: ['enemy_death_1.wav', 'enemy_death_2.wav', 'enemy_death_3.wav', 'enemy_death_4.wav', 'enemy_death_5.wav'],
@@ -560,6 +659,41 @@ export const SOUND_EVENTS = {
         category: 'ambient',
         loop: true,
     },
+};
+
+// ─── ENEMY TYPE → DEATH VOCAL ROLE ─────────────────────────────────────────
+// Maps every enemy type string to its role-based death sound event.
+// Grammar: size → pitch (handled by SOUND_EVENTS pitch ranges above),
+//          personality → sound source (each role uses unique files).
+export const ENEMY_DEATH_VOCAL = {
+    // Office
+    polite:      'death_composed',
+    dancer:      'death_frantic',
+    waddle:      'death_heavy',
+    panicker:    'death_scream',
+    powerwalker: 'death_sharp',
+    girls:       'death_chorus',
+    // Forest
+    deer:        'death_composed',
+    squirrel:    'death_frantic',
+    bear:        'death_heavy',
+    fox:         'death_scream',
+    moose:       'death_sharp',
+    raccoon:     'death_chorus',
+    // Ocean
+    dolphin:     'death_composed',
+    flyfish:     'death_frantic',
+    shark:       'death_heavy',
+    pirate:      'death_scream',
+    seaturtle:   'death_sharp',
+    jellyfish:   'death_chorus',
+    // Airplane
+    nervous:     'death_composed',
+    attendant:   'death_frantic',
+    stumbler:    'death_heavy',
+    marshal:     'death_scream',
+    business:    'death_sharp',
+    unruly:      'death_chorus',
 };
 
 export { SFX_PATH };

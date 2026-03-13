@@ -5001,7 +5001,10 @@
                 else if (this.wave === 9) msg += ' — POWER WALKERS!';
                 else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
             }
-            if (window.SFX && !event) SFX.play('wave_start');
+            if (window.SFX && !event) {
+                const scenarioStart = 'wave_start_' + this._currentScenario;
+                SFX.play(SFX.isLoaded(scenarioStart) ? scenarioStart : 'wave_start');
+            }
             this.announceWave(msg);
             this.updateHUD();
         },
@@ -6245,8 +6248,12 @@
 
                     this.score += 10;
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
-                    // SFX: enemy death + oof
-                    if (window.SFX) { SFX.play('enemy_death'); SFX.play('enemy_oof'); }
+                    // SFX: enemy death impact + role-based vocal
+                    if (window.SFX) {
+                        SFX.play('enemy_death');
+                        const deathVocal = window.ENEMY_DEATH_VOCAL && window.ENEMY_DEATH_VOCAL[e.type];
+                        SFX.play(deathVocal || 'enemy_oof');
+                    }
 
                     // L6: Spill Zone — dead enemies leave toxic puddle
                     if (this.upgradeManager && this.upgradeManager.hasUpgrade('L6')) {
