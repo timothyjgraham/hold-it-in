@@ -2637,21 +2637,23 @@
             }
         },
 
-        // Position bouncy arrow above a DOM element
+        // Position bouncy arrow to the LEFT of a DOM element, pointing right
         _showTutorialPointer(selector) {
             const target = document.querySelector(selector);
             const pointer = document.getElementById('tutorial-pointer');
             if (!target || !pointer) return;
             const rect = target.getBoundingClientRect();
-            pointer.style.left = (rect.left + rect.width / 2 - 22) + 'px';
-            pointer.style.top = (rect.top - 62) + 'px';
+            pointer.classList.add('point-right');
+            pointer.style.left = (rect.left - 58) + 'px';
+            pointer.style.top = (rect.top + rect.height / 2 - 29) + 'px';
             pointer.style.display = '';
         },
 
-        // Position bouncy arrow at a projected 3D world position
+        // Position bouncy arrow above a projected 3D world position, pointing down
         _showTutorialPointerAtWorld(x, y, z) {
             const pointer = document.getElementById('tutorial-pointer');
             if (!pointer || !this.camera || !this.renderer) return;
+            pointer.classList.remove('point-right');
             const vec = new THREE.Vector3(x, y, z);
             vec.project(this.camera);
             const hw = this.renderer.domElement.clientWidth / 2;
@@ -2665,7 +2667,10 @@
 
         _hideTutorialPointer() {
             const pointer = document.getElementById('tutorial-pointer');
-            if (pointer) pointer.style.display = 'none';
+            if (pointer) {
+                pointer.style.display = 'none';
+                pointer.classList.remove('point-right');
+            }
         },
 
         _hideTutorialBubble() {
@@ -2696,10 +2701,10 @@
                       passthrough: true }
                 );
             } else if (step === 2) {
-                // Place coin magnet — arrow points at a good mid-field spot
+                // Place coin magnet — mid-field where coins will drop from kills
                 this._showTutorialBubble(
-                    "Now place it on the floor!",
-                    { pointerAtWorld: { x: 0, y: 0.1, z: 28 },
+                    "Place it on the floor!",
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 30 },
                       passthrough: true }
                 );
             } else if (step === 3) {
@@ -2711,10 +2716,10 @@
                       passthrough: true }
                 );
             } else if (step === 4) {
-                // Place ubik spray — arrow points closer to door
+                // Place ubik spray — nearby so it kills enemies and magnet collects coins
                 this._showTutorialBubble(
-                    "Place it closer to the door!",
-                    { pointerAtWorld: { x: 0, y: 0.1, z: 14 },
+                    "Place it nearby!",
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 24 },
                       passthrough: true }
                 );
             } else if (step === 5) {
@@ -5295,6 +5300,15 @@
                 // Event modifiers for enemy creation
                 this._eventSpeedMult = (event && event.speedMult) || 1.0;
                 this._eventDesperateChance = (event && event.desperateChance) || 0;
+            }
+
+            // Tutorial: single easy enemy for wave 1 so player learns the loop
+            if (this._tutorialActive && this.wave === 1) {
+                this._spawnQueue = ['polite'];
+                this.spawnInterval = 2.0;
+                this._burstSize = 1;
+                this._eventSpeedMult = 1.0;
+                this._eventDesperateChance = 0;
             }
 
             // Shuffle queue for variety within each wave
