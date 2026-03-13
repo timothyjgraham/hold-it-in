@@ -249,24 +249,8 @@ export function createAirplaneCubicle() {
     pillar.castShadow = true;
     group.add(pillar);
 
-    // --- "OCCUPIED" signs above each door ---
-    const signMat = toonMat(PALETTE.danger, {
-        emissive: PALETTE.danger,
-        emissiveIntensity: 0.4,
-    });
-    for (const doorX of [-5, 5]) {
-        // Sign backing plate
-        const signBackGeo = new THREE.BoxGeometry(2.5, 0.5, 0.15);
-        const signBack = new THREE.Mesh(signBackGeo, toonMat(PALETTE.charcoal));
-        signBack.position.set(doorX, cubH + 0.3, 8.1);
-        group.add(signBack);
-
-        // Sign glow rectangle
-        const signGeo = new THREE.BoxGeometry(2.2, 0.35, 0.05);
-        const sign = new THREE.Mesh(signGeo, signMat);
-        sign.position.set(doorX, cubH + 0.3, 8.2);
-        group.add(sign);
-    }
+    // NOTE: "OCCUPIED" signs are now part of the door group (createAirplaneDoor)
+    // so they get hidden when the door shatters.
 
     // --- Floor inside cubicle (slightly different color) ---
     const floorGeo = new THREE.PlaneGeometry(cubW - 0.6, cubD - 0.6);
@@ -667,6 +651,23 @@ export function createAirplaneDoor() {
 
         panelGroup.position.set(doorX, 0, 8);
         group.add(panelGroup);
+    }
+
+    // --- "OCCUPIED" signs above each door (part of door group so they shatter too) ---
+    const signMat = toonMat(PALETTE.danger, {
+        emissive: PALETTE.danger,
+        emissiveIntensity: 0.4,
+    });
+    for (const doorX of [-5, 5]) {
+        const signBackGeo = new THREE.BoxGeometry(2.5, 0.5, 0.15);
+        const signBack = new THREE.Mesh(signBackGeo, toonMat(PALETTE.charcoal));
+        signBack.position.set(doorX, 4.3, 8.1);
+        group.add(signBack);
+
+        const signGeo = new THREE.BoxGeometry(2.2, 0.35, 0.05);
+        const sign = new THREE.Mesh(signGeo, signMat);
+        sign.position.set(doorX, 4.3, 8.2);
+        group.add(sign);
     }
 
     // --- Store metadata (matches door interface) ---
