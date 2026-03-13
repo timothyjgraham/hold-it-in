@@ -443,6 +443,7 @@
         _spawnQueue: [],
         _floatingTexts: [],
         _doorParticles: [],
+        _crackPulses: [],
         _mopImpacts: [],
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
@@ -2524,6 +2525,7 @@
 
             // Reset door HP and visuals
             if (this.doorGroup) {
+                this.doorGroup.visible = true; // Restore after shatter
                 const ud = this.doorGroup.userData;
                 ud.maxDoorHP = 100; // Reset to base (L1 modifies on acquire)
                 ud.doorHP = ud.maxDoorHP;
@@ -2535,13 +2537,14 @@
                     panel.material.emissiveIntensity = 0;
                     panel.visible = true;
                 }
-                // Hide all cracks (both doors)
+                // Hide all cracks and reset scales (both doors)
                 if (ud.cracks) {
-                    ud.cracks.forEach(c => { c.visible = false; });
+                    ud.cracks.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
                 }
                 if (ud.cracksRight) {
-                    ud.cracksRight.forEach(c => { c.visible = false; });
+                    ud.cracksRight.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
                 }
+                this._crackPulses = [];
             }
             this.score = 0;
             this.time = 0;
@@ -6257,21 +6260,23 @@
                             this.camera.position.y = CONFIG.cameraPos.y;
                         }, 80);
 
-                        // Update crack visibility at thresholds
+                        // Update crack visibility at thresholds (with scale punch on reveal)
                         if (ud.cracks) {
                             const pct = ud.doorHP / ud.maxDoorHP;
-                            ud.cracks[0].visible = pct <= 0.80;
-                            ud.cracks[1].visible = pct <= 0.60;
-                            ud.cracks[2].visible = pct <= 0.40;
-                            ud.cracks[3].visible = pct <= 0.20;
-                            ud.cracks[4].visible = pct <= 0.10;
-                            // Dual-door: mirror cracks on right door
-                            if (ud.cracksRight) {
-                                ud.cracksRight[0].visible = pct <= 0.80;
-                                ud.cracksRight[1].visible = pct <= 0.60;
-                                ud.cracksRight[2].visible = pct <= 0.40;
-                                ud.cracksRight[3].visible = pct <= 0.20;
-                                ud.cracksRight[4].visible = pct <= 0.10;
+                            const thresholds = [0.80, 0.60, 0.40, 0.20, 0.10];
+                            for (let ci = 0; ci < 5; ci++) {
+                                const shouldShow = pct <= thresholds[ci];
+                                if (shouldShow && !ud.cracks[ci].visible) {
+                                    // New crack revealed — Fortnite-style scale punch!
+                                    ud.cracks[ci].scale.set(1.5, 1.5, 1);
+                                    this._crackPulses.push({ group: ud.cracks[ci], scale: 1.5 });
+                                    if (ud.cracksRight) {
+                                        ud.cracksRight[ci].scale.set(1.5, 1.5, 1);
+                                        this._crackPulses.push({ group: ud.cracksRight[ci], scale: 1.5 });
+                                    }
+                                }
+                                ud.cracks[ci].visible = shouldShow;
+                                if (ud.cracksRight) ud.cracksRight[ci].visible = shouldShow;
                             }
                         }
 
@@ -7671,7 +7676,8 @@
                 const geo = Math.random() > 0.5
                     ? new THREE.BoxGeometry(size, size * 0.5, size * 0.3)
                     : new THREE.TetrahedronGeometry(size * 0.6, 0);
-                const mat2 = toonMat(PALETTE.wood);
+                const chipColor = (this.doorGroup && this.doorGroup.userData.originalColor) || PALETTE.wood;
+                const mat2 = toonMat(chipColor);
                 const chip = new THREE.Mesh(geo, mat2);
                 // When impactY given, tight spread around knock point; otherwise wide spread
                 const spreadX = impactY !== undefined ? 0.8 : 2;
@@ -7746,12 +7752,9 @@
             // SFX: toilet flush + door shatter for epic cinematic
             if (window.SFX) { SFX.play('toilet_flush'); SFX.play('door_shatter'); }
 
-            // Hide the intact door panels and cracks (all panels for dual-door)
+            // Hide the ENTIRE door group (panels, cracks, handles, hinges, everything)
             const ud = this.doorGroup.userData;
-            const shatterPanels = ud.doorPanels || (ud.door ? [ud.door] : []);
-            for (const panel of shatterPanels) panel.visible = false;
-            if (ud.cracks) ud.cracks.forEach(c => c.visible = false);
-            if (ud.cracksRight) ud.cracksRight.forEach(c => c.visible = false);
+            this.doorGroup.visible = false;
 
             // === MASSIVE DOOR EXPLOSION — 50 shards blasting forward ===
             const shardCount = 50;
@@ -7762,7 +7765,8 @@
                     ? new THREE.BoxGeometry(size * 2, size * 0.5, size * 0.15)
                     : new THREE.TetrahedronGeometry(size * 0.6, 0);
                 const isChrome = i >= shardCount - 5;
-                const mat2 = toonMat(isChrome ? PALETTE.fixture : PALETTE.wood);
+                const shardColor = ud.originalColor || PALETTE.wood;
+                const mat2 = toonMat(isChrome ? PALETTE.fixture : shardColor);
                 const shard = new THREE.Mesh(geo, mat2);
                 shard.position.set(
                     (Math.random() - 0.5) * 5,
@@ -8362,6 +8366,18 @@
                     p.mesh.geometry.dispose();
                     p.mesh.material.dispose();
                     this._doorParticles.splice(i, 1);
+                }
+            }
+
+            // Animate crack reveal pulses (scale back to 1.0)
+            for (let i = this._crackPulses.length - 1; i >= 0; i--) {
+                const cp = this._crackPulses[i];
+                cp.scale -= 3.0 * dt; // ease back over ~0.15s
+                if (cp.scale <= 1.0) {
+                    cp.group.scale.set(1, 1, 1);
+                    this._crackPulses.splice(i, 1);
+                } else {
+                    cp.group.scale.set(cp.scale, cp.scale, 1);
                 }
             }
 

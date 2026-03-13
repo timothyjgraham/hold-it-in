@@ -590,21 +590,31 @@ export function createAirplaneDoor() {
             panelGroup.add(hinge);
         }
 
-        // Crack / damage overlay meshes (shared across both doors)
-        const crackMat = new THREE.MeshBasicMaterial({
-            color: PALETTE.ink,
-            transparent: true,
-            opacity: 0.6,
-        });
+        // Crack / damage overlay meshes (Fortnite-style 3-layer glow)
+        const crackDarkMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, transparent: true, opacity: 0.9 });
+        const crackGlowMat = new THREE.MeshBasicMaterial({ color: PALETTE.white, transparent: true, opacity: 0.85 });
+        const crackHaloMat = new THREE.MeshBasicMaterial({ color: PALETTE.white, transparent: true, opacity: 0.25 });
 
-        function buildCrack(segments) {
+        function buildCrack(segments, zBase) {
             const crackGroup = new THREE.Group();
             for (const seg of segments) {
-                const segGeo = new THREE.BoxGeometry(seg.w, seg.h, 0.02);
-                const segMesh = new THREE.Mesh(segGeo, crackMat);
-                segMesh.position.set(seg.x, seg.y, 0.06);
-                if (seg.rot) segMesh.rotation.z = seg.rot;
-                crackGroup.add(segMesh);
+                const haloGeo = new THREE.BoxGeometry(seg.w * 1.6, seg.h * 4, 0.01);
+                const haloMesh = new THREE.Mesh(haloGeo, crackHaloMat);
+                haloMesh.position.set(seg.x, seg.y, zBase - 0.003);
+                if (seg.rot) haloMesh.rotation.z = seg.rot;
+                crackGroup.add(haloMesh);
+
+                const darkGeo = new THREE.BoxGeometry(seg.w * 1.2, seg.h * 2.5, 0.01);
+                const darkMesh = new THREE.Mesh(darkGeo, crackDarkMat);
+                darkMesh.position.set(seg.x, seg.y, zBase);
+                if (seg.rot) darkMesh.rotation.z = seg.rot;
+                crackGroup.add(darkMesh);
+
+                const glowGeo = new THREE.BoxGeometry(seg.w, seg.h * 1.5, 0.01);
+                const glowMesh = new THREE.Mesh(glowGeo, crackGlowMat);
+                glowMesh.position.set(seg.x, seg.y, zBase + 0.003);
+                if (seg.rot) glowMesh.rotation.z = seg.rot;
+                crackGroup.add(glowMesh);
             }
             crackGroup.visible = false;
             return crackGroup;
@@ -613,34 +623,44 @@ export function createAirplaneDoor() {
         const cracks = [];
 
         const crack0 = buildCrack([
-            { x: -0.5, y: 2.5, w: 0.35, h: 0.03, rot: 0.3 },
-            { x: -0.35, y: 2.4, w: 0.25, h: 0.03, rot: -0.5 },
-        ]);
+            { x: -0.5, y: 2.5, w: 0.42, h: 0.08, rot: 0.3 },
+            { x: -0.35, y: 2.4, w: 0.32, h: 0.08, rot: -0.5 },
+            { x: -0.6, y: 2.42, w: 0.2, h: 0.07, rot: -0.2 },
+            { x: -0.25, y: 2.35, w: 0.2, h: 0.06, rot: 0.5 },
+        ], 0.06);
         panelGroup.add(crack0); cracks.push(crack0);
 
         const crack1 = buildCrack([
-            { x: 0.4, y: 1.9, w: 0.4, h: 0.03, rot: -0.2 },
-            { x: 0.6, y: 1.8, w: 0.3, h: 0.03, rot: 0.5 },
-        ]);
+            { x: 0.4, y: 1.9, w: 0.48, h: 0.08, rot: -0.2 },
+            { x: 0.6, y: 1.8, w: 0.38, h: 0.08, rot: 0.5 },
+            { x: 0.3, y: 1.98, w: 0.22, h: 0.07, rot: -0.4 },
+            { x: 0.7, y: 1.72, w: 0.2, h: 0.06, rot: 0.1 },
+        ], 0.06);
         panelGroup.add(crack1); cracks.push(crack1);
 
         const crack2 = buildCrack([
-            { x: -0.1, y: 0.9, w: 0.45, h: 0.04, rot: 0.1 },
-            { x: 0.1, y: 0.8, w: 0.35, h: 0.03, rot: -0.35 },
-        ]);
+            { x: -0.1, y: 0.9, w: 0.55, h: 0.09, rot: 0.1 },
+            { x: 0.1, y: 0.8, w: 0.42, h: 0.08, rot: -0.35 },
+            { x: -0.2, y: 0.98, w: 0.25, h: 0.07, rot: 0.5 },
+            { x: 0.25, y: 0.72, w: 0.2, h: 0.06, rot: -0.15 },
+        ], 0.06);
         panelGroup.add(crack2); cracks.push(crack2);
 
         const crack3 = buildCrack([
-            { x: 0.5, y: 2.3, w: 0.3, h: 0.03, rot: -0.6 },
-            { x: 0.4, y: 2.2, w: 0.25, h: 0.03, rot: 0.25 },
-        ]);
+            { x: 0.5, y: 2.3, w: 0.38, h: 0.09, rot: -0.6 },
+            { x: 0.4, y: 2.2, w: 0.3, h: 0.08, rot: 0.25 },
+            { x: 0.6, y: 2.35, w: 0.22, h: 0.07, rot: -0.1 },
+            { x: 0.3, y: 2.12, w: 0.2, h: 0.07, rot: 0.5 },
+        ], 0.06);
         panelGroup.add(crack3); cracks.push(crack3);
 
         const crack4 = buildCrack([
-            { x: 0.0, y: 1.4, w: 0.5, h: 0.03, rot: 0.2 },
-            { x: -0.1, y: 1.2, w: 0.35, h: 0.03, rot: -0.4 },
-            { x: 0.2, y: 1.5, w: 0.3, h: 0.03, rot: 0.6 },
-        ]);
+            { x: 0.0, y: 1.4, w: 0.6, h: 0.10, rot: 0.2 },
+            { x: -0.1, y: 1.2, w: 0.42, h: 0.09, rot: -0.4 },
+            { x: 0.2, y: 1.5, w: 0.38, h: 0.09, rot: 0.6 },
+            { x: -0.2, y: 1.55, w: 0.25, h: 0.08, rot: -0.15 },
+            { x: 0.3, y: 1.3, w: 0.22, h: 0.07, rot: -0.5 },
+        ], 0.06);
         panelGroup.add(crack4); cracks.push(crack4);
 
         allCracks.push(cracks);

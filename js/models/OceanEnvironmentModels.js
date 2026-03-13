@@ -474,75 +474,96 @@ export function createOceanOuthouseDoor() {
         }
     }
 
-    // --- Crack / damage overlay meshes (initially invisible) ---
-    const crackMat = new THREE.MeshBasicMaterial({
-        color: PALETTE.ink,
-        transparent: true,
-        opacity: 0.6,
-    });
+    // --- Crack / damage overlay meshes (Fortnite-style 3-layer glow) ---
+    // Three layers per segment: soft halo → dark outline → bright glow center
+    const crackDarkMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, transparent: true, opacity: 0.9 });
+    const crackGlowMat = new THREE.MeshBasicMaterial({ color: PALETTE.glow, transparent: true, opacity: 0.85 });
+    const crackHaloMat = new THREE.MeshBasicMaterial({ color: PALETTE.glow, transparent: true, opacity: 0.25 });
     const cracks = [];
 
-    function buildCrack(segments) {
+    function buildCrack(segments, zBase) {
         const crackGroup = new THREE.Group();
         for (const seg of segments) {
-            const segGeo = new THREE.BoxGeometry(seg.w, seg.h, 0.02);
-            const segMesh = new THREE.Mesh(segGeo, crackMat);
-            segMesh.position.set(seg.x, seg.y, 0.07);
-            if (seg.rot) segMesh.rotation.z = seg.rot;
-            crackGroup.add(segMesh);
+            const haloGeo = new THREE.BoxGeometry(seg.w * 1.6, seg.h * 4, 0.01);
+            const haloMesh = new THREE.Mesh(haloGeo, crackHaloMat);
+            haloMesh.position.set(seg.x, seg.y, zBase - 0.003);
+            if (seg.rot) haloMesh.rotation.z = seg.rot;
+            crackGroup.add(haloMesh);
+
+            const darkGeo = new THREE.BoxGeometry(seg.w * 1.2, seg.h * 2.5, 0.01);
+            const darkMesh = new THREE.Mesh(darkGeo, crackDarkMat);
+            darkMesh.position.set(seg.x, seg.y, zBase);
+            if (seg.rot) darkMesh.rotation.z = seg.rot;
+            crackGroup.add(darkMesh);
+
+            const glowGeo = new THREE.BoxGeometry(seg.w, seg.h * 1.5, 0.01);
+            const glowMesh = new THREE.Mesh(glowGeo, crackGlowMat);
+            glowMesh.position.set(seg.x, seg.y, zBase + 0.003);
+            if (seg.rot) glowMesh.rotation.z = seg.rot;
+            crackGroup.add(glowMesh);
         }
         crackGroup.visible = false;
         return crackGroup;
     }
 
-    // Crack 0 — upper left
+    // Crack 0 — upper left (HP ≤ 80%)
     const crack0 = buildCrack([
-        { x: -0.6, y: 2.2, w: 0.35, h: 0.03, rot: 0.3 },
-        { x: -0.45, y: 2.1, w: 0.25, h: 0.03, rot: -0.5 },
-        { x: -0.35, y: 2.0, w: 0.2, h: 0.03, rot: 0.15 },
-    ]);
+        { x: -0.6, y: 2.2, w: 0.42, h: 0.08, rot: 0.3 },
+        { x: -0.45, y: 2.1, w: 0.32, h: 0.08, rot: -0.5 },
+        { x: -0.35, y: 2.0, w: 0.25, h: 0.07, rot: 0.15 },
+        { x: -0.7, y: 2.12, w: 0.2, h: 0.07, rot: -0.3 },
+        { x: -0.25, y: 1.95, w: 0.2, h: 0.06, rot: 0.55 },
+    ], 0.07);
     crack0.name = 'crack_0';
     group.add(crack0);
     cracks.push(crack0);
 
-    // Crack 1 — center right
+    // Crack 1 — center right (HP ≤ 60%)
     const crack1 = buildCrack([
-        { x: 0.5, y: 1.5, w: 0.4, h: 0.03, rot: -0.2 },
-        { x: 0.7, y: 1.4, w: 0.3, h: 0.03, rot: 0.5 },
-        { x: 0.4, y: 1.6, w: 0.2, h: 0.03, rot: -0.4 },
-    ]);
+        { x: 0.5, y: 1.5, w: 0.48, h: 0.08, rot: -0.2 },
+        { x: 0.7, y: 1.4, w: 0.38, h: 0.08, rot: 0.5 },
+        { x: 0.4, y: 1.6, w: 0.25, h: 0.07, rot: -0.4 },
+        { x: 0.8, y: 1.32, w: 0.22, h: 0.07, rot: -0.1 },
+        { x: 0.35, y: 1.45, w: 0.2, h: 0.06, rot: 0.6 },
+    ], 0.07);
     crack1.name = 'crack_1';
     group.add(crack1);
     cracks.push(crack1);
 
-    // Crack 2 — lower center
+    // Crack 2 — lower center (HP ≤ 40%)
     const crack2 = buildCrack([
-        { x: -0.1, y: 0.7, w: 0.45, h: 0.04, rot: 0.1 },
-        { x: 0.1, y: 0.6, w: 0.35, h: 0.03, rot: -0.35 },
-        { x: -0.15, y: 0.8, w: 0.25, h: 0.03, rot: 0.5 },
-        { x: 0.2, y: 0.5, w: 0.2, h: 0.03, rot: -0.15 },
-    ]);
+        { x: -0.1, y: 0.7, w: 0.55, h: 0.09, rot: 0.1 },
+        { x: 0.1, y: 0.6, w: 0.42, h: 0.08, rot: -0.35 },
+        { x: -0.15, y: 0.8, w: 0.3, h: 0.08, rot: 0.5 },
+        { x: 0.2, y: 0.5, w: 0.25, h: 0.07, rot: -0.15 },
+        { x: -0.3, y: 0.65, w: 0.22, h: 0.07, rot: 0.65 },
+        { x: 0.35, y: 0.72, w: 0.18, h: 0.06, rot: -0.5 },
+    ], 0.07);
     crack2.name = 'crack_2';
     group.add(crack2);
     cracks.push(crack2);
 
-    // Crack 3 — upper right
+    // Crack 3 — upper right (HP ≤ 20%)
     const crack3 = buildCrack([
-        { x: 0.7, y: 2.0, w: 0.3, h: 0.03, rot: -0.6 },
-        { x: 0.6, y: 1.9, w: 0.25, h: 0.03, rot: 0.25 },
-        { x: 0.8, y: 1.95, w: 0.2, h: 0.03, rot: -0.1 },
-    ]);
+        { x: 0.7, y: 2.0, w: 0.38, h: 0.09, rot: -0.6 },
+        { x: 0.6, y: 1.9, w: 0.3, h: 0.08, rot: 0.25 },
+        { x: 0.8, y: 1.95, w: 0.25, h: 0.08, rot: -0.1 },
+        { x: 0.5, y: 1.82, w: 0.22, h: 0.07, rot: 0.5 },
+        { x: 0.85, y: 2.05, w: 0.18, h: 0.07, rot: -0.4 },
+    ], 0.07);
     crack3.name = 'crack_3';
     group.add(crack3);
     cracks.push(crack3);
 
-    // Crack 4 — center, critical damage
+    // Crack 4 — center critical (HP ≤ 10%)
     const crack4 = buildCrack([
-        { x: 0.0, y: 1.1, w: 0.5, h: 0.03, rot: 0.2 },
-        { x: -0.1, y: 0.9, w: 0.35, h: 0.03, rot: -0.4 },
-        { x: 0.2, y: 1.2, w: 0.3, h: 0.03, rot: 0.6 },
-        { x: -0.15, y: 1.25, w: 0.25, h: 0.03, rot: -0.15 },
-    ]);
+        { x: 0.0, y: 1.1, w: 0.6, h: 0.10, rot: 0.2 },
+        { x: -0.1, y: 0.9, w: 0.42, h: 0.09, rot: -0.4 },
+        { x: 0.2, y: 1.2, w: 0.38, h: 0.09, rot: 0.6 },
+        { x: -0.15, y: 1.25, w: 0.3, h: 0.08, rot: -0.15 },
+        { x: 0.3, y: 1.0, w: 0.25, h: 0.08, rot: -0.5 },
+        { x: -0.25, y: 1.05, w: 0.2, h: 0.07, rot: 0.45 },
+    ], 0.07);
     crack4.name = 'crack_4';
     group.add(crack4);
     cracks.push(crack4);
