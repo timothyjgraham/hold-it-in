@@ -8972,11 +8972,18 @@
                 this.medicDroneSystem.update(dt, this.scene, this.enemyPool);
 
                 // Tutorial: wait for medic drone to finish carrying corpse away
-                if (this._tutorialWaitForMedic &&
-                    this.medicDroneSystem._corpseQueue.length === 0 &&
-                    this.medicDroneSystem._activeDrones.length === 0) {
-                    this._tutorialWaitForMedic = false;
-                    this._advanceTutorial(); // → step 8: "Nice work!" bubble
+                // Phase 1: wait for corpse to actually enter the system
+                // Phase 2: wait for system to be fully clear
+                if (this._tutorialWaitForMedic) {
+                    const hasCorpses = this.medicDroneSystem._corpseQueue.length > 0 ||
+                                       this.medicDroneSystem._activeDrones.length > 0;
+                    if (hasCorpses) {
+                        this._tutorialMedicSeen = true;
+                    } else if (this._tutorialMedicSeen) {
+                        this._tutorialWaitForMedic = false;
+                        this._tutorialMedicSeen = false;
+                        this._advanceTutorial(); // → step 8: "Nice work!" bubble
+                    }
                 }
             } else if (this._tutorialWaitForMedic) {
                 // No medic drone system — advance immediately
