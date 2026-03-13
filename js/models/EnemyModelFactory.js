@@ -1687,7 +1687,20 @@ function _buildNervousGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    const boneNames = [null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
+    // Messy ruffled hair tuft — anxious disheveled look (body color, darker)
+    const hairGeo = new THREE.SphereGeometry(d.headRadius * s * 0.32, 6, 5);
+    const hairM = new THREE.Matrix4()
+        .makeScale(1.3, 0.6, 1.1)
+        .premultiply(new THREE.Matrix4().makeTranslation(0, s * (0.80 + 0.25 + 0.30 + 0.20 + 0.25 + d.headRadius * s * 0.45), -d.headRadius * s * 0.08));
+    geometries.push(hairGeo); transforms.push(hairM); materialIndices.push(0);
+
+    // Sweat bead — tiny sphere on temple (skin material, catches light)
+    const sweatGeo = new THREE.SphereGeometry(s * 0.035, 5, 4);
+    const sweatM = new THREE.Matrix4().makeTranslation(
+        d.headRadius * s * 0.65, s * (0.80 + 0.25 + 0.30 + 0.20 + 0.28), d.headRadius * s * 0.45);
+    geometries.push(sweatGeo); transforms.push(sweatM); materialIndices.push(1);
+
+    const boneNames = [null, null, 'upperArm_L', 'upperArm_R', null, null, null, null, null, null];
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1709,10 +1722,25 @@ function _buildBusinessGeometry(size, config) {
     const hM = new THREE.Matrix4().makeTranslation(0, s * (0.85 + 0.28 + 0.32 + 0.22 + 0.25), 0);
     geometries.push(head); transforms.push(hM); materialIndices.push(1);
 
-    // Briefcase-like block at one hand (body)
+    // Tie — thin strip down chest front (skin material for contrast)
+    const tieGeo = new THREE.BoxGeometry(s * 0.06, d.torsoHeight * s * 0.30, s * 0.04);
+    const tieM = new THREE.Matrix4().makeTranslation(0, s * (0.85 + 0.28 + 0.06), d.torsoDepth * s * 0.52);
+    geometries.push(tieGeo); transforms.push(tieM); materialIndices.push(1);
+
+    // Tie knot — small box at collar (skin material)
+    const knotGeo = new THREE.BoxGeometry(s * 0.08, s * 0.05, s * 0.05);
+    const knotM = new THREE.Matrix4().makeTranslation(0, s * (0.85 + 0.28 + 0.22), d.torsoDepth * s * 0.52);
+    geometries.push(knotGeo); transforms.push(knotM); materialIndices.push(1);
+
+    // Briefcase — angular block at right hand (body)
     const briefcaseGeo = new THREE.BoxGeometry(s * 0.25, s * 0.18, s * 0.08);
     const briefM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.3, s * 0.85 - s * 0.05, 0);
     geometries.push(briefcaseGeo); transforms.push(briefM); materialIndices.push(0);
+
+    // Briefcase handle — thin bar on top (skin material for metal look)
+    const handleGeo = new THREE.BoxGeometry(s * 0.12, s * 0.03, s * 0.02);
+    const handleM = new THREE.Matrix4().makeTranslation(d.torsoWidth * s * 0.5 + d.limbThickness * s * 0.3, s * 0.85 + s * 0.05, 0);
+    geometries.push(handleGeo); transforms.push(handleM); materialIndices.push(1);
 
     // Arms (body) — close to sides
     const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.38, d.limbThickness * s * 0.33, s * 0.55, 6, 2);
@@ -1735,7 +1763,7 @@ function _buildBusinessGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    const boneNames = [null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
+    const boneNames = [null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1759,8 +1787,24 @@ function _buildStumblerGeometry(size, config) {
 
     // Head (skin)
     const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
-    const hM = new THREE.Matrix4().makeTranslation(0, s * (0.85 + 0.25 + 0.28 + 0.18 + 0.22), 0);
+    const headY = s * (0.85 + 0.25 + 0.28 + 0.18 + 0.22);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
     geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Puffed cheeks — motion sick, holding it in (skin material)
+    const cheekGeo = new THREE.SphereGeometry(d.headRadius * s * 0.22, 6, 5);
+    const cheekLM = new THREE.Matrix4().makeTranslation(
+        -d.headRadius * s * 0.62, headY - d.headRadius * s * 0.10, d.headRadius * s * 0.58);
+    const cheekRM = new THREE.Matrix4().makeTranslation(
+        d.headRadius * s * 0.62, headY - d.headRadius * s * 0.10, d.headRadius * s * 0.58);
+    geometries.push(cheekGeo); transforms.push(cheekLM); materialIndices.push(1);
+    geometries.push(cheekGeo); transforms.push(cheekRM); materialIndices.push(1);
+
+    // Barf bag — crumpled rectangle in left hand (body material)
+    const bagGeo = new THREE.BoxGeometry(s * 0.14, s * 0.20, s * 0.06, 2, 2, 1);
+    const bagM = new THREE.Matrix4().makeTranslation(
+        -d.torsoWidth * s * 0.55, s * (0.85 + 0.25 - 0.08), s * 0.12);
+    geometries.push(bagGeo); transforms.push(bagM); materialIndices.push(0);
 
     // Arms out for balance (body)
     const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.36, s * 0.55, 6, 2);
@@ -1790,7 +1834,7 @@ function _buildStumblerGeometry(size, config) {
     geometries.push(footGeo); transforms.push(fLM); materialIndices.push(2);
     geometries.push(footGeo); transforms.push(fRM); materialIndices.push(2);
 
-    const boneNames = [null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null, 'foot_L', 'foot_R'];
+    const boneNames = [null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null, 'foot_L', 'foot_R'];
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1817,6 +1861,18 @@ function _buildAttendantGeometry(size, config) {
     const bunM = new THREE.Matrix4().makeTranslation(0, s * (0.75 + 0.25 + 0.30 + 0.20 + 0.28), -d.headRadius * s * 0.7);
     geometries.push(bunGeo); transforms.push(bunM); materialIndices.push(0);
 
+    // Pillbox hat — short cylinder perched on top of head (body material, uniform)
+    const hatGeo = new THREE.CylinderGeometry(d.headRadius * s * 0.45, d.headRadius * s * 0.48, s * 0.06, 8, 1);
+    const hatM = new THREE.Matrix4().makeTranslation(
+        0, s * (0.75 + 0.25 + 0.30 + 0.20 + 0.23 + d.headRadius * s * 0.85), d.headRadius * s * 0.12);
+    geometries.push(hatGeo); transforms.push(hatM); materialIndices.push(0);
+
+    // Neckerchief — small pointed triangle at collar (skin material for contrast)
+    const scarfGeo = new THREE.BoxGeometry(s * 0.12, s * 0.08, s * 0.03);
+    const scarfM = new THREE.Matrix4().makeTranslation(
+        0, s * (0.75 + 0.25 + 0.30 + 0.01), d.torsoDepth * s * 0.48);
+    geometries.push(scarfGeo); transforms.push(scarfM); materialIndices.push(1);
+
     // Arms (body) — professional, at sides
     const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.35, d.limbThickness * s * 0.30, s * 0.48, 6, 2);
     const armLM = new THREE.Matrix4().makeTranslation(-d.torsoWidth * s * 0.48, s * (0.75 + 0.25 + 0.10), 0);
@@ -1838,7 +1894,7 @@ function _buildAttendantGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    const boneNames = [null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
+    const boneNames = [null, null, null, null, null, 'upperArm_L', 'upperArm_R', null, null, null, null];
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1865,6 +1921,25 @@ function _buildMarshalGeometry(size, config) {
     const badgeM = new THREE.Matrix4()
         .makeTranslation(-d.torsoWidth * s * 0.22, s * (0.85 + 0.28 + 0.22), d.torsoDepth * s * 0.52);
     geometries.push(badgeGeo); transforms.push(badgeM); materialIndices.push(1);
+
+    // Sunglasses — dark visor strip across eyes (body material = dark charcoal)
+    const glassGeo = new THREE.BoxGeometry(d.headRadius * s * 1.30, s * 0.05, s * 0.04);
+    const headY = s * (0.85 + 0.28 + 0.32 + 0.20 + 0.25);
+    const glassM = new THREE.Matrix4().makeTranslation(
+        0, headY + d.headRadius * s * 0.08, d.headRadius * s * 0.82);
+    geometries.push(glassGeo); transforms.push(glassM); materialIndices.push(0);
+
+    // Earpiece — tiny sphere at right ear (body material, dark)
+    const earGeo = new THREE.SphereGeometry(s * 0.028, 5, 4);
+    const earM = new THREE.Matrix4().makeTranslation(
+        d.headRadius * s * 0.82, headY + d.headRadius * s * 0.12, 0);
+    geometries.push(earGeo); transforms.push(earM); materialIndices.push(0);
+
+    // Belt — thin strip around waist (skin material for buckle effect)
+    const beltGeo = new THREE.BoxGeometry(d.torsoWidth * s * 1.05, s * 0.04, d.torsoDepth * s * 1.05);
+    const beltM = new THREE.Matrix4().makeTranslation(
+        0, s * (0.85 + 0.28 - 0.02), 0);
+    geometries.push(beltGeo); transforms.push(beltM); materialIndices.push(1);
 
     // Arms (body) — strong, close to body
     const armGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.36, s * 0.58, 6, 2);
@@ -1894,7 +1969,7 @@ function _buildMarshalGeometry(size, config) {
     geometries.push(lowerLegGeo); transforms.push(llLM); materialIndices.push(2);
     geometries.push(lowerLegGeo); transforms.push(llRM); materialIndices.push(2);
 
-    const boneNames = [null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null];
+    const boneNames = [null, null, null, null, null, null, 'upperArm_L', 'upperArm_R', 'forearm_L', 'forearm_R', null, null, null, null];
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1913,8 +1988,26 @@ function _buildUnrulyGeometry(size, config) {
 
     // Head (skin)
     const head = new THREE.SphereGeometry(d.headRadius * s, 12, 10);
-    const hM = new THREE.Matrix4().makeTranslation(0, s * (0.65 + 0.20 + 0.22 + 0.15 + 0.20), 0);
+    const headY = s * (0.65 + 0.20 + 0.22 + 0.15 + 0.20);
+    const hM = new THREE.Matrix4().makeTranslation(0, headY, 0);
     geometries.push(head); transforms.push(hM); materialIndices.push(1);
+
+    // Backwards cap — flat crown + visor pointing back (body material, party orange)
+    const capGeo = new THREE.CylinderGeometry(d.headRadius * s * 0.78, d.headRadius * s * 0.82, s * 0.06, 8, 1);
+    const capM = new THREE.Matrix4().makeTranslation(0, headY + d.headRadius * s * 0.55, 0);
+    geometries.push(capGeo); transforms.push(capM); materialIndices.push(0);
+
+    // Cap visor — flat box pointing BACKWARD (backwards cap)
+    const visorGeo = new THREE.BoxGeometry(d.headRadius * s * 1.1, s * 0.02, d.headRadius * s * 0.55);
+    const visorM = new THREE.Matrix4().makeTranslation(
+        0, headY + d.headRadius * s * 0.48, -d.headRadius * s * 0.55);
+    geometries.push(visorGeo); transforms.push(visorM); materialIndices.push(0);
+
+    // Open collar — small box at neckline (skin material, exposed chest)
+    const collarGeo = new THREE.BoxGeometry(d.torsoWidth * s * 0.40, s * 0.04, s * 0.03);
+    const collarM = new THREE.Matrix4().makeTranslation(
+        0, s * (0.65 + 0.20 + 0.22 + 0.03), d.torsoDepth * s * 0.48);
+    geometries.push(collarGeo); transforms.push(collarM); materialIndices.push(1);
 
     // Close-set legs (legs)
     const upperLegGeo = new THREE.CylinderGeometry(d.limbThickness * s * 0.42, d.limbThickness * s * 0.38, d.legHeight * s * 0.5, 6, 2);
