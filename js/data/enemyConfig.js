@@ -769,7 +769,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── FLYING FISH ─── fast swarm, darting glider (→ Pee Dancer), marine skeleton
     flyfish: {
-        size: 2.5,
+        size: 4.5,
         skeletonType: 'marine',
         bones: {
             snout: false,
@@ -995,7 +995,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── JELLYFISH ─── cluster swarm, pulsing drift (→ The Girls), marine skeleton
     jellyfish: {
-        size: 2.2,
+        size: 4.0,
         skeletonType: 'marine',
         bones: {
             snout: false,

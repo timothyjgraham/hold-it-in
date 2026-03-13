@@ -122,11 +122,11 @@ function _outlineWidthForType(enemyType) {
         raccoon: 0.02,
         // Ocean
         dolphin: 0.03,
-        flyfish: 0.02,
+        flyfish: 0.03,
         shark: 0.04,
         pirate: 0.03,
         seaturtle: 0.03,
-        jellyfish: 0.02,
+        jellyfish: 0.03,
     };
     return sizeMap[enemyType] || 0.03;
 }

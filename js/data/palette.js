@@ -230,7 +230,7 @@ export const OUTLINE_WIDTH = {
     forestLarge:    0.04,   // Bear, Moose
 
     // Ocean characters
-    oceanSmall:     0.02,   // Flying Fish, Jellyfish
+    oceanSmall:     0.03,   // Flying Fish, Jellyfish
     oceanMed:       0.03,   // Dolphin, Sea Turtle, Pirate
     oceanLarge:     0.04,   // Shark
 
