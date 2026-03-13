@@ -6917,13 +6917,17 @@
                 const { springK, dampK, pushImpulse, maxAngle, minAngle, doorZ, halfWidth } = doors;
                 const panelWidth = halfWidth - 0.1; // matches door mesh BoxGeometry
 
-                // Door-enemy collision: block enemies behind door panels,
-                // let them push the door open, pass through the gap
+                // Door-enemy collision: the door panel is a line from hinge to free edge.
+                // At angle θ, the door surface Z at an enemy's X position is:
+                //   surfaceZ = doorZ - distFromHinge * tan(θ)
+                // This means near the hinge the surface is at z≈68, but near the
+                // free edge it's much lower (door has swung into the room).
                 for (const e of this.enemies) {
                     if (e.stunTimer > 0 || e.bashing) continue;
 
-                    // Only process enemies near the exit door
-                    if (e.z > doorZ + 3 || e.z < doorZ - 1) {
+                    // Only process enemies that could be near the door panel
+                    // (panel extends up to panelWidth below doorZ when fully open)
+                    if (e.z > doorZ + 3 || e.z < doorZ - panelWidth - 1) {
                         e._doorBlocked = false;
                         continue;
                     }
@@ -6935,35 +6939,52 @@
                     // Enemy body half-width (larger enemies need wider gap)
                     const bodyHW = (e.size || 1) * 0.3;
 
-                    // Check if enemy body overlaps a door panel (not fully in the gap)
+                    // Check if enemy body overlaps a door panel's X range,
+                    // then compute the actual door surface Z at that X
                     let blocked = false;
                     let touchLeft = false;
                     let touchRight = false;
+                    let blockZ = -Infinity;
 
+                    // Left door panel
                     if (e.x - bodyHW < leftEdgeX && e.x > -halfWidth - 1) {
-                        blocked = true;
                         touchLeft = true;
-                    }
-                    if (e.x + bodyHW > rightEdgeX && e.x < halfWidth + 1) {
-                        blocked = true;
-                        touchRight = true;
+                        const distFromHinge = Math.max(0, e.x + halfWidth);
+                        const surfZ = (doors.leftAngle > 0.01)
+                            ? doorZ - distFromHinge * Math.tan(doors.leftAngle)
+                            : doorZ;
+                        if (e.z <= surfZ + 0.5) {
+                            blocked = true;
+                            blockZ = Math.max(blockZ, surfZ);
+                        }
                     }
 
-                    if (blocked && e.z <= doorZ + 0.5) {
-                        // Enemy is at the door and blocked by a panel
+                    // Right door panel
+                    if (e.x + bodyHW > rightEdgeX && e.x < halfWidth + 1) {
+                        touchRight = true;
+                        const distFromHinge = Math.max(0, halfWidth - e.x);
+                        const surfZ = (doors.rightAngle > 0.01)
+                            ? doorZ - distFromHinge * Math.tan(doors.rightAngle)
+                            : doorZ;
+                        if (e.z <= surfZ + 0.5) {
+                            blocked = true;
+                            if (surfZ > blockZ) blockZ = surfZ;
+                        }
+                    }
+
+                    if (blocked) {
+                        // Enemy has reached the angled door surface — hold them there
                         const wasBlocked = e._doorBlocked;
                         e._doorBlocked = true;
 
-                        // Hold enemy at door surface
-                        e.z = doorZ + 0.3;
+                        e.z = blockZ + 0.3;
                         e.mesh.position.z = e.z;
 
                         // Door just closed on them — bump back + sound
                         if (!wasBlocked) {
-                            e.z = doorZ + 0.5;
+                            e.z = blockZ + 0.5;
                             e.mesh.position.z = e.z;
                             if (window.SFX) SFX.play('exit_door');
-                            // Allow re-pushing after being re-blocked
                             e.pushedExitDoor = false;
                         }
 
@@ -6972,8 +6993,12 @@
                         if (touchLeft) doors.leftAngVel += force;
                         if (touchRight) doors.rightAngVel += force;
 
+                    } else if (touchLeft || touchRight) {
+                        // Behind a panel's X range but haven't reached its surface yet
+                        // — keep walking, don't trigger gap code
+
                     } else if (!e.pushedExitDoor && e.z < doorZ + 1 && e.z > doorZ - 1 && Math.abs(e.x) < halfWidth) {
-                        // Passing through the gap — one-time brush push on the doors
+                        // Fully in the gap (not behind either panel) — brush push
                         e.pushedExitDoor = true;
                         e._doorBlocked = false;
                         if (window.SFX) SFX.play('exit_door');
