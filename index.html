@@ -6249,7 +6249,7 @@
                     if (e._bumpTimer <= 0) {
                         e._bumpState = 'avoid';
                         e._bumpTimer = 1.0;
-                        if (e.animController) e.animController.setState('walk');
+                        if (e.animController) e.animController.setState(e.walkState || 'walk');
                     }
                 } else if (e._bumpState === 'avoid') {
                     e._bumpTimer -= dt;
