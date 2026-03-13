@@ -1322,6 +1322,11 @@
                 this._introPhase = false;
             }
 
+            // Tower introduction intermission UI
+            if (window.TowerIntroUI) {
+                this.towerIntroUI = new TowerIntroUI();
+            }
+
             // Sound system — unlock on first user gesture
             const unlockAudio = () => {
                 if (window.SFX) {
@@ -3207,6 +3212,10 @@
                 this.enemyIntroUI.deactivate();
                 this._introPhase = false;
             }
+            // Reset tower intro
+            if (this.towerIntroUI) {
+                this.towerIntroUI.deactivate();
+            }
             // Clear upgrade HUD cards
             if (this._upgradeHUD) {
                 this._upgradeHUD.innerHTML = '';
@@ -3304,6 +3313,26 @@
                 if (saved) this._bestStats = JSON.parse(saved);
             } catch(e) { /* ignore */ }
             this._updateBestStats();
+        },
+
+        // ── Persistent tower unlock helpers ──
+        _getTowerUnlocks() {
+            try {
+                const saved = localStorage.getItem('holditin_tower_unlocks');
+                return saved ? JSON.parse(saved) : {};
+            } catch(e) { return {}; }
+        },
+
+        _saveTowerUnlock(type) {
+            try {
+                const unlocks = this._getTowerUnlocks();
+                unlocks[type] = true;
+                localStorage.setItem('holditin_tower_unlocks', JSON.stringify(unlocks));
+            } catch(e) { /* ignore */ }
+        },
+
+        _isTowerPermanentlyUnlocked(type) {
+            return !!this._getTowerUnlocks()[type];
         },
 
         _saveBestStats() {
@@ -3754,10 +3783,11 @@
         // TOWER UNLOCK SYSTEM
         // ============================
         _applyTowerLocks(currentWave) {
+            const persistentUnlocks = this._getTowerUnlocks();
             document.querySelectorAll('.tower-btn').forEach(btn => {
                 const tower = btn.dataset.tower;
                 const unlockWave = TOWER_UNLOCK_WAVES[tower] || 1;
-                if (currentWave >= unlockWave) {
+                if (currentWave >= unlockWave || persistentUnlocks[tower]) {
                     btn.classList.remove('tower-locked');
                     btn.disabled = false;
                     btn.removeAttribute('data-unlock');
@@ -3779,7 +3809,11 @@
                     btn.disabled = false;
                     btn.removeAttribute('data-unlock');
                     const name = btn.getAttribute('data-tip-name');
-                    if (name) unlocked.push(name);
+                    // Only text-announce towers that were already persistently unlocked
+                    // (i.e. re-runs). First-time unlocks get the full intro screen instead.
+                    if (name && this._isTowerPermanentlyUnlocked(tower)) {
+                        unlocked.push(name);
+                    }
                 }
             });
             if (unlocked.length > 0) {
@@ -4978,13 +5012,58 @@
             if (window.Music) Music.unduck();
             this._cleanupUpgradeDrones();
 
-            // Check if next wave introduces a new enemy type
-            const introType = this.enemyIntroUI && EnemyIntroUI.getIntroEnemyType(this.wave + 1, this._currentScenario);
+            // Chain: tower intro → enemy intro → wave timer
+            this._proceedAfterUpgrade();
+        },
+
+        /** Post-upgrade flow: check for tower intro first, then enemy intro */
+        _proceedAfterUpgrade() {
+            const nextWave = this.wave + 1;
+            // Check if next wave introduces a new tower (first-time only)
+            const towerType = this.towerIntroUI && TowerIntroUI.getIntroTowerType(nextWave);
+            if (towerType && !this._isTowerPermanentlyUnlocked(towerType)) {
+                this._startTowerIntro(towerType);
+            } else {
+                this._proceedAfterTowerIntro();
+            }
+        },
+
+        /** After tower intro (or skip): check for enemy intro */
+        _proceedAfterTowerIntro() {
+            const nextWave = this.wave + 1;
+            const introType = this.enemyIntroUI && EnemyIntroUI.getIntroEnemyType(nextWave, this._currentScenario);
             if (introType) {
                 this._startEnemyIntro(introType);
             } else {
                 this._setInterWaveTimer();
             }
+        },
+
+        /** Start tower introduction intermission before the next wave */
+        _startTowerIntro(towerType) {
+            this._introPhase = true;
+            this.waveTimer = 9999; // Block wave start
+
+            // Persist the unlock immediately (survives even if player quits mid-intro)
+            this._saveTowerUnlock(towerType);
+
+            // Create a tower mesh for display
+            const def = this.TOWERS[towerType];
+            const towerResult = this._createTowerMesh(towerType, def);
+            const towerMesh = towerResult.mesh;
+
+            this.towerIntroUI.activate(
+                towerType,
+                towerMesh,
+                this.scene,
+                this.camera,
+                this.windowPositions,
+                () => {
+                    // Tower intro complete — chain to enemy intro check
+                    this._introPhase = false;
+                    this._proceedAfterTowerIntro();
+                }
+            );
         },
 
         /** Start enemy introduction intermission before the next wave */
@@ -6089,6 +6168,12 @@
         // ============================
         update(dt) {
             if (this.state !== 'playing') return;
+
+            // --- Tower intro phase: freeze game world ---
+            if (this._introPhase && this.towerIntroUI && this.towerIntroUI.active) {
+                this.towerIntroUI.update(dt);
+                return; // Skip all game logic during intro
+            }
 
             // --- Enemy intro phase: freeze game world ---
             if (this._introPhase && this.enemyIntroUI && this.enemyIntroUI.active) {
