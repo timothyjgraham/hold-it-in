@@ -6911,26 +6911,77 @@
                 this._updateUbikFloodZones(dt);
             }
 
-            // --- Exit door spring physics ---
+            // --- Exit door spring physics + collision ---
             if (this.officeGroup && this.officeGroup.userData.exitDoors) {
                 const doors = this.officeGroup.userData.exitDoors;
                 const { springK, dampK, pushImpulse, maxAngle, minAngle, doorZ, halfWidth } = doors;
+                const panelWidth = halfWidth - 0.1; // matches door mesh BoxGeometry
 
-                // Check each enemy for door push (one impulse per enemy)
+                // Door-enemy collision: block enemies behind door panels,
+                // let them push the door open, pass through the gap
                 for (const e of this.enemies) {
-                    if (e.pushedExitDoor) continue;
-                    // Enemy crossing the door threshold (within 1 unit of doorZ)
-                    if (e.z < doorZ + 1 && e.z > doorZ - 2) {
-                        // Check if enemy is within the doorway width
-                        if (Math.abs(e.x) < halfWidth) {
-                            e.pushedExitDoor = true;
+                    if (e.stunTimer > 0 || e.bashing) continue;
+
+                    // Only process enemies near the exit door
+                    if (e.z > doorZ + 3 || e.z < doorZ - 1) {
+                        e._doorBlocked = false;
+                        continue;
+                    }
+
+                    // Free edge X of each door panel — the gap is between these
+                    const leftEdgeX = -halfWidth + panelWidth * Math.cos(doors.leftAngle);
+                    const rightEdgeX = halfWidth - panelWidth * Math.cos(doors.rightAngle);
+
+                    // Enemy body half-width (larger enemies need wider gap)
+                    const bodyHW = (e.size || 1) * 0.3;
+
+                    // Check if enemy body overlaps a door panel (not fully in the gap)
+                    let blocked = false;
+                    let touchLeft = false;
+                    let touchRight = false;
+
+                    if (e.x - bodyHW < leftEdgeX && e.x > -halfWidth - 1) {
+                        blocked = true;
+                        touchLeft = true;
+                    }
+                    if (e.x + bodyHW > rightEdgeX && e.x < halfWidth + 1) {
+                        blocked = true;
+                        touchRight = true;
+                    }
+
+                    if (blocked && e.z <= doorZ + 0.5) {
+                        // Enemy is at the door and blocked by a panel
+                        const wasBlocked = e._doorBlocked;
+                        e._doorBlocked = true;
+
+                        // Hold enemy at door surface
+                        e.z = doorZ + 0.3;
+                        e.mesh.position.z = e.z;
+
+                        // Door just closed on them — bump back + sound
+                        if (!wasBlocked) {
+                            e.z = doorZ + 0.5;
+                            e.mesh.position.z = e.z;
                             if (window.SFX) SFX.play('exit_door');
-                            // Push based on enemy speed — faster = harder slam
-                            const force = pushImpulse * (e.speed / 3);
-                            // Push the door on the enemy's side (or both if near center)
-                            if (e.x <= 1) doors.leftAngVel += force;
-                            if (e.x >= -1) doors.rightAngVel += force;
+                            // Allow re-pushing after being re-blocked
+                            e.pushedExitDoor = false;
                         }
+
+                        // Continuous push force while blocked
+                        const force = pushImpulse * (e.speed / 3) * dt * 2.0;
+                        if (touchLeft) doors.leftAngVel += force;
+                        if (touchRight) doors.rightAngVel += force;
+
+                    } else if (!e.pushedExitDoor && e.z < doorZ + 1 && e.z > doorZ - 1 && Math.abs(e.x) < halfWidth) {
+                        // Passing through the gap — one-time brush push on the doors
+                        e.pushedExitDoor = true;
+                        e._doorBlocked = false;
+                        if (window.SFX) SFX.play('exit_door');
+                        const force = pushImpulse * (e.speed / 3) * 0.5;
+                        if (e.x <= 1) doors.leftAngVel += force;
+                        if (e.x >= -1) doors.rightAngVel += force;
+                    } else {
+                        e._doorBlocked = false;
                     }
                 }
 
@@ -6939,14 +6990,12 @@
                 doors.leftAngVel += (-springK * doors.leftAngle - dampK * doors.leftAngVel) * dt;
                 doors.leftAngle += doors.leftAngVel * dt;
                 doors.leftAngle = Math.max(minAngle, Math.min(maxAngle, doors.leftAngle));
-                // Left door: positive rotation.y swings free edge toward -z (into the room)
                 doors.leftPivot.rotation.y = doors.leftAngle;
 
                 // Spring physics for right door
                 doors.rightAngVel += (-springK * doors.rightAngle - dampK * doors.rightAngVel) * dt;
                 doors.rightAngle += doors.rightAngVel * dt;
                 doors.rightAngle = Math.max(minAngle, Math.min(maxAngle, doors.rightAngle));
-                // Right door: negative rotation.y swings free edge toward -z (into the room)
                 doors.rightPivot.rotation.y = -doors.rightAngle;
             }
         },
