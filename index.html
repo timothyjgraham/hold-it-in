@@ -6993,6 +6993,13 @@
                         if (touchLeft) doors.leftAngVel += force;
                         if (touchRight) doors.rightAngVel += force;
 
+                        // Slide along the door surface toward the gap —
+                        // enemies near the hinge would get stuck forever otherwise
+                        const slideRate = e.speed * 0.6 * dt;
+                        if (touchLeft && !touchRight) e.x += slideRate;
+                        else if (touchRight && !touchLeft) e.x -= slideRate;
+                        e.mesh.position.x = e.x;
+
                     } else if (touchLeft || touchRight) {
                         // Behind a panel's X range but haven't reached its surface yet
                         // — keep walking, don't trigger gap code
