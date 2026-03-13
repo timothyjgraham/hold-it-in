@@ -175,6 +175,7 @@ export const PALETTE = {
     airplaneFog:        0x2a2a3a,  // Dark pressurized-cabin atmosphere
     airplaneStrip:      0xffeebb,  // Warm LED strip light glow
     airplaneFloor:      0x3a4a5a,  // Darker aisle carpet strip
+    airplaneTVScreen:   0x6eaacc,  // In-flight entertainment screen glow
 
     // ─── AIRPLANE ENEMIES ─────────────────────────────────────────────────
     // Air travelers — each a distinct archetype with warm/human tones

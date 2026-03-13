@@ -62,6 +62,7 @@ import {
     createAirplaneDoor,
     createAirplaneProps,
     createCabinLightStrips,
+    createAirplanePassengers,
 } from './models/AirplaneEnvironmentModels.js';
 
 // Inject CSS palette variables
@@ -133,6 +134,7 @@ window.createAirplaneCubicle = createAirplaneCubicle;
 window.createAirplaneDoor = createAirplaneDoor;
 window.createAirplaneProps = createAirplaneProps;
 window.createCabinLightStrips = createCabinLightStrips;
+window.createAirplanePassengers = createAirplanePassengers;
 
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;

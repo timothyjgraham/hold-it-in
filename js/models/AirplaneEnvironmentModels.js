@@ -12,6 +12,21 @@ function rand(min, max) {
     return min + Math.random() * (max - min);
 }
 
+// Rounded rectangle THREE.Shape for airplane windows
+function roundedRectShape(w, h, r) {
+    const s = new THREE.Shape();
+    s.moveTo(-w / 2 + r, -h / 2);
+    s.lineTo(w / 2 - r, -h / 2);
+    s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    s.lineTo(w / 2, h / 2 - r);
+    s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+    s.lineTo(-w / 2 + r, h / 2);
+    s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+    s.lineTo(-w / 2, -h / 2 + r);
+    s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    return s;
+}
+
 // ─── 1. Airplane Cabin Floor ────────────────────────────────────────────────
 // Dark navy carpet across the full cabin width, with lighter aisle strips.
 
@@ -50,27 +65,72 @@ export function createAirplaneCabin() {
         group.add(wall);
     }
 
-    // --- Windows on both sides (small bright ovals) ---
-    const windowMat = toonMat(PALETTE.airplaneWindow, {
+    // --- Airplane windows (rounded rectangles with frames, recesses, shades) ---
+    const winW = 0.9, winH = 1.2, winR = 0.25;
+    const winGlassGeo = new THREE.ShapeGeometry(roundedRectShape(winW, winH, winR));
+    const winFrameGeo = new THREE.ShapeGeometry(roundedRectShape(winW + 0.2, winH + 0.2, winR + 0.08));
+    const winRecessGeo = new THREE.BoxGeometry(winW + 0.3, winH + 0.3, 0.15);
+
+    const winGlassMat = toonMat(PALETTE.airplaneWindow, {
         emissive: PALETTE.airplaneWindow,
         emissiveIntensity: 0.4,
     });
+    const winFrameMat = toonMat(PALETTE.airplaneSeatBack);
+    const winRecessMat = toonMat(PALETTE.charcoal);
+    const winShadeMat = toonMat(PALETTE.airplaneOverhead);
+
+    // Deterministic random for shade placement
+    let _wSeed = 54321;
+    function wRng() { _wSeed = (_wSeed * 16807) % 2147483647; return (_wSeed - 1) / 2147483646; }
+
     for (const side of [-1, 1]) {
         for (let z = 12; z <= 66; z += 3) {
-            const windowGeo = new THREE.CircleGeometry(0.5, 8);
-            const win = new THREE.Mesh(windowGeo, windowMat);
-            win.position.set(side * 17.3, 3.5, z);
-            win.rotation.y = side * Math.PI / 2;
-            group.add(win);
+            const rotY = side * Math.PI / 2;
 
-            // Window frame
-            const frameGeo = new THREE.RingGeometry(0.5, 0.65, 8);
-            const frameMat = toonMat(PALETTE.airplaneSeatBack);
-            const frame = new THREE.Mesh(frameGeo, frameMat);
-            frame.position.set(side * 17.28, 3.5, z);
-            frame.rotation.y = side * Math.PI / 2;
+            // Dark recess behind window (creates depth illusion)
+            const recess = new THREE.Mesh(winRecessGeo, winRecessMat);
+            recess.position.set(side * 17.38, 3.5, z);
+            group.add(recess);
+
+            // Outer frame
+            const frame = new THREE.Mesh(winFrameGeo, winFrameMat);
+            frame.position.set(side * 17.3, 3.5, z);
+            frame.rotation.y = rotY;
             group.add(frame);
+
+            // Glass pane (sky blue glow)
+            const glass = new THREE.Mesh(winGlassGeo, winGlassMat);
+            glass.position.set(side * 17.28, 3.5, z);
+            glass.rotation.y = rotY;
+            group.add(glass);
+
+            // Window shade (pulled down on ~35% of windows)
+            if (wRng() < 0.35) {
+                const shadeH = 0.3 + wRng() * 0.5;
+                const shadeGeo = new THREE.PlaneGeometry(winW - 0.1, shadeH);
+                const shade = new THREE.Mesh(shadeGeo, winShadeMat);
+                shade.position.set(side * 17.26, 3.5 + (winH / 2 - shadeH / 2), z);
+                shade.rotation.y = rotY;
+                group.add(shade);
+            }
         }
+    }
+
+    // --- Overhead storage bins ---
+    const overheadMat = toonMat(PALETTE.airplaneOverhead);
+    const binLipMat = toonMat(PALETTE.airplaneSeatBack);
+    for (const side of [-1, 1]) {
+        const binGeo = new THREE.BoxGeometry(3.5, 1.5, 56);
+        const bin = new THREE.Mesh(binGeo, overheadMat);
+        bin.position.set(side * 14, 5.5, 38);
+        bin.castShadow = true;
+        group.add(bin);
+
+        // Bottom lip / edge
+        const lipGeo = new THREE.BoxGeometry(3.7, 0.12, 56);
+        const lip = new THREE.Mesh(lipGeo, binLipMat);
+        lip.position.set(side * 14, 4.76, 38);
+        group.add(lip);
     }
 
     return group;
@@ -87,6 +147,20 @@ export function createAirplaneSeats() {
     const seatMat = toonMat(PALETTE.airplaneSeat);
     const backMat = toonMat(PALETTE.airplaneSeatBack);
     const armMat = toonMat(PALETTE.fixture);
+
+    // TV screen material pool (shared across seats for performance)
+    const TV_MAT_COUNT = 8;
+    const tvMaterials = [];
+    for (let i = 0; i < TV_MAT_COUNT; i++) {
+        tvMaterials.push(new THREE.MeshBasicMaterial({
+            color: PALETTE.airplaneTVScreen,
+            transparent: true,
+            opacity: 0.9,
+        }));
+    }
+    const tvBezelMat = toonMat(PALETTE.charcoal);
+    const tvBezelGeo = new THREE.BoxGeometry(1.3, 0.9, 0.04);
+    const tvScreenGeo = new THREE.BoxGeometry(1.1, 0.7, 0.02);
 
     // Seat column definitions: [centerX, seatCount, seatSpacing]
     const columns = [
@@ -127,6 +201,15 @@ export function createAirplaneSeats() {
                     seatGroup.add(arm);
                 }
 
+                // Seatback TV screen (in-flight entertainment)
+                const tvBezel = new THREE.Mesh(tvBezelGeo, tvBezelMat);
+                tvBezel.position.set(0, 2.0, -0.83);
+                seatGroup.add(tvBezel);
+
+                const tvScreen = new THREE.Mesh(tvScreenGeo, tvMaterials[Math.floor(Math.random() * TV_MAT_COUNT)]);
+                tvScreen.position.set(0, 2.0, -0.86);
+                seatGroup.add(tvScreen);
+
                 seatGroup.position.set(seatX, 0, z);
                 seatGroup.castShadow = true;
                 group.add(seatGroup);
@@ -134,6 +217,7 @@ export function createAirplaneSeats() {
         }
     }
 
+    group.userData.tvMaterials = tvMaterials;
     return group;
 }
 
@@ -467,6 +551,71 @@ export function createCabinLightStrips() {
 
     group.userData.strips = strips;
     group.userData.spots = spots;
+
+    return group;
+}
+
+// ─── 7. Airplane Passengers ─────────────────────────────────────────────────
+// Simple seated figures in ~65% of seats for a lived-in cabin feel.
+
+export function createAirplanePassengers() {
+    const group = new THREE.Group();
+    group.name = 'airplanePassengers';
+
+    // Deterministic seeded random for consistent placement
+    let _pSeed = 42;
+    function pRng() { _pSeed = (_pSeed * 16807) % 2147483647; return (_pSeed - 1) / 2147483646; }
+
+    const skinMat = toonMat(PALETTE.skin);
+
+    // Clothing colors drawn from existing palette entries
+    const clothingMats = [
+        PALETTE.airplaneNervous,
+        PALETTE.airplaneBusiness,
+        PALETTE.airplaneStumbler,
+        PALETTE.airplaneAttendant,
+        PALETTE.airplaneMarshal,
+        PALETTE.airplaneUnruly,
+        PALETTE.cream,
+        PALETTE.charcoal,
+    ].map(c => toonMat(c));
+
+    // Shared geometries
+    const headGeo = new THREE.SphereGeometry(0.25, 8, 6);
+    const torsoGeo = new THREE.BoxGeometry(0.8, 0.6, 0.35);
+
+    // Seat columns (must match createAirplaneSeats layout)
+    const columns = [
+        { cx: -12, count: 2, spacing: 2.2 },
+        { cx: 0,   count: 3, spacing: 2.0 },
+        { cx: 12,  count: 2, spacing: 2.2 },
+    ];
+
+    for (let z = 18; z <= 66; z += 3) {
+        for (const col of columns) {
+            for (let s = 0; s < col.count; s++) {
+                if (pRng() > 0.65) continue; // ~65% occupancy
+
+                const seatX = col.cx + (s - (col.count - 1) / 2) * col.spacing;
+                const clothMat = clothingMats[Math.floor(pRng() * clothingMats.length)];
+
+                // Upper torso / shoulders (visible between seat back and headrest)
+                const torso = new THREE.Mesh(torsoGeo, clothMat);
+                torso.position.set(seatX, 2.8, z - 0.15);
+                group.add(torso);
+
+                // Head
+                const head = new THREE.Mesh(headGeo, skinMat);
+                head.position.set(seatX, 3.5, z - 0.1);
+                group.add(head);
+
+                // Slight random head tilt for variety
+                if (pRng() < 0.3) {
+                    head.rotation.z = (pRng() - 0.5) * 0.4;
+                }
+            }
+        }
+    }
 
     return group;
 }

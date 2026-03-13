@@ -1803,9 +1803,17 @@
             // Props
             this._environmentGroup.add(createAirplaneProps());
 
+            // Passengers in seats
+            this._environmentGroup.add(createAirplanePassengers());
+
+            // Cabin light strips (LED ceiling strips + reading lights)
+            const lightStrips = createCabinLightStrips();
+            this._environmentGroup.add(lightStrips);
+
             this._airplaneAnimData = {
-                lightStrips: [],
-                lightSpots: [],
+                lightStrips: lightStrips.userData.strips,
+                lightSpots: lightStrips.userData.spots,
+                tvMaterials: seats.userData.tvMaterials,
             };
         },
 
@@ -1825,6 +1833,18 @@
             for (let i = 0; i < spots.length; i++) {
                 if (spots[i] && spots[i].material) {
                     spots[i].material.opacity = 0.25 + 0.1 * Math.sin(time * 1.5 + i * 0.7);
+                }
+            }
+
+            // Animate TV screens — cycling colors simulate different content
+            const tvMats = this._airplaneAnimData.tvMaterials;
+            if (tvMats) {
+                for (let i = 0; i < tvMats.length; i++) {
+                    const phase = i * 1.2;
+                    const r = 0.3 + 0.25 * Math.sin(time * 0.3 + phase);
+                    const g = 0.45 + 0.25 * Math.sin(time * 0.5 + phase + 2.0);
+                    const b = 0.55 + 0.25 * Math.sin(time * 0.7 + phase + 4.0);
+                    tvMats[i].color.setRGB(r, g, b);
                 }
             }
         },
