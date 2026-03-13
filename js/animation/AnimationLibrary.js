@@ -2488,53 +2488,137 @@ function _dolphinWalk() {
     const und = a.bodyUndulate;
     const tsw = a.tailSwing;
     const fp = a.flipperPaddle;
-    const ds = a.dorsalSway || 0.04;
+    const ds = a.dorsalSway || 0.05;
 
-    // Smooth 8-keyframe cycle for fluid undulation
-    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
-    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+    // 11-keyframe BREACH cycle — dramatic dolphin leaping out of water!
+    // 0-3: LAUNCH (explosive rise), 3-5: APEX (hang time), 5-7: DIVE (graceful descent),
+    // 7-10: UNDERWATER (recovery + power stroke for next breach)
+    const t = [0, dur*0.1, dur*0.2, dur*0.3, dur*0.4, dur*0.5, dur*0.6, dur*0.7, dur*0.8, dur*0.9, dur];
 
     return new THREE.AnimationClip('dolphin_walk', dur, [
-        // Root: gentle sine-wave bob — dolphin porpoising
-        posTrack('root', t8, [
-            [0, ry, 0], [0, ry + bob * 0.7, 0], [0, ry + bob, 0], [0, ry + bob * 0.7, 0],
-            [0, ry, 0], [0, ry - bob * 0.7, 0], [0, ry - bob, 0], [0, ry - bob * 0.7, 0],
-            [0, ry, 0]
+        // Root: DRAMATIC breach arc — launches HIGH, hangs at apex, dives back
+        posTrack('root', t, [
+            [0, ry, 0],                           // at surface, about to launch
+            [0, ry + bob * 0.55, 0],               // rising fast
+            [0, ry + bob * 0.88, 0],               // near apex
+            [0, ry + bob, 0],                      // APEX!
+            [0, ry + bob * 0.90, 0],               // still hanging
+            [0, ry + bob * 0.55, 0],               // descending
+            [0, ry, 0],                            // water level
+            [0, ry - bob * 0.22, 0],               // underwater dip
+            [0, ry - bob * 0.28, 0],               // deepest
+            [0, ry - bob * 0.12, 0],               // rising
+            [0, ry, 0]                             // back to surface
         ]),
-        // Body front: gentle pitch undulation — nose dips on descent
+        // Squash/stretch: stretch on launch, spread at apex, SQUASH at splash
+        scaleTrack('root', t, [
+            [1, 1, 1],
+            [0.90, 1.14, 0.90],                    // stretched upward (launching)
+            [0.93, 1.10, 0.93],                    // still stretched
+            [1.04, 0.96, 1.04],                    // spread at apex (hang time)
+            [1.03, 0.97, 1.03],                    // still spread
+            [0.92, 1.12, 0.92],                    // stretching into dive
+            [1.16, 0.80, 1.16],                    // SQUASH on water entry!
+            [1.06, 0.92, 1.06],                    // recovering underwater
+            [1, 1, 1],
+            [0.96, 1.05, 0.96],                    // slight pre-stretch
+            [1, 1, 1]
+        ]),
+        // Body front: pitches to follow arc — nose UP on launch, DOWN on dive
         eulerTrack('body_front', t, [
-            [und, 0, 0], [0, 0, 0], [-und, 0, 0], [0, 0, 0], [und, 0, 0]
+            [und * 0.4, 0, 0],                     // slightly nose-up, about to breach
+            [und, 0, 0],                           // nose UP, breaching hard
+            [und * 0.5, 0, 0],                     // leveling near apex
+            [0, 0, 0.02],                          // level at apex, slight curious tilt
+            [-und * 0.3, 0, 0],                    // starting to tip over
+            [-und * 0.8, 0, 0],                    // nose DOWN, diving
+            [-und * 0.3, 0, 0],                    // leveling at water entry
+            [0, 0, 0],                             // level underwater
+            [0, 0, 0],                             // level, recovery
+            [und * 0.2, 0, 0],                     // starting to angle up
+            [und * 0.4, 0, 0]                      // nose up for next breach
         ]),
-        // Head: counter-pitch to stabilize gaze + slight curious tilt
+        // Head: counter-pitch stabilizes gaze, curious look at apex
         eulerTrack('head', t, [
-            [-und * 0.4, 0.03, 0], [0, -0.02, 0], [und * 0.4, 0.03, 0],
-            [0, -0.02, 0], [-und * 0.4, 0.03, 0]
+            [-und * 0.25, 0, 0],
+            [-und * 0.5, 0.04, 0],                 // stabilized during launch
+            [-und * 0.2, -0.02, 0],
+            [0.03, -0.04, 0.04],                   // curious look around at apex!
+            [und * 0.15, 0.03, -0.02],             // tracking descent
+            [und * 0.4, 0, 0],                     // counter-pitch for dive
+            [und * 0.15, 0, 0],
+            [0, 0.02, 0],                          // scanning underwater
+            [0, -0.02, 0],
+            [-und * 0.1, 0, 0],
+            [-und * 0.25, 0, 0]
         ]),
-        // Snout: stays relatively stable, tiny nod
-        buildRotationTrack('snout', t, [-0.02, 0.01, -0.02, 0.01, -0.02], AXIS_X),
-        // Dorsal: passive sway — follows body, very subtle
-        buildRotationTrack('dorsal', t, [ds, 0, -ds, 0, ds], AXIS_Z),
-        // Flippers: gentle paddling — sweep back and forward
-        buildRotationTrack('flipper_L', t8, [
-            fp, fp * 0.5, 0, -fp * 0.5, -fp, -fp * 0.5, 0, fp * 0.5, fp
+        // Snout: nods with body motion
+        buildRotationTrack('snout', t, [
+            -0.02, -0.04, -0.02, 0.02, 0.01, 0.03, 0.01, -0.01, -0.01, -0.02, -0.02
         ], AXIS_X),
-        buildRotationTrack('flipper_R', t8, [
-            -fp, -fp * 0.5, 0, fp * 0.5, fp, fp * 0.5, 0, -fp * 0.5, -fp
-        ], AXIS_X),
-        // Body rear: delayed undulation — creates wave propagation
+        // Dorsal: follows body tilt passively
+        buildRotationTrack('dorsal', t, [
+            ds, ds * 0.5, 0, -ds * 0.5, -ds, -ds * 0.5, 0, ds * 0.5, ds, ds * 0.5, ds
+        ], AXIS_Z),
+        // Flippers: swept BACK during launch, SPREAD at apex, tuck on dive, paddle underwater
+        eulerTrack('flipper_L', t, [
+            [fp * 0.5, 0, 0],                     // neutral
+            [fp, 0, 0.12],                         // swept back (launch)
+            [fp * 0.6, 0, 0.08],
+            [-fp * 0.3, 0, -0.18],                 // SPREAD wide at apex (gliding)
+            [-fp * 0.2, 0, -0.14],                 // still spread
+            [fp * 0.4, 0, 0.10],                   // tucking for dive
+            [fp * 0.8, 0, 0.15],                   // tucked on entry
+            [0, 0, 0],                             // neutral underwater
+            [-fp * 0.4, 0, -0.06],                 // paddling
+            [fp * 0.3, 0, 0.04],                   // paddle return
+            [fp * 0.5, 0, 0]
+        ]),
+        eulerTrack('flipper_R', t, [
+            [-fp * 0.5, 0, 0],                     // mirrored
+            [-fp, 0, -0.12],
+            [-fp * 0.6, 0, -0.08],
+            [fp * 0.3, 0, 0.18],                   // SPREAD at apex
+            [fp * 0.2, 0, 0.14],
+            [-fp * 0.4, 0, -0.10],
+            [-fp * 0.8, 0, -0.15],
+            [0, 0, 0],
+            [fp * 0.4, 0, 0.06],
+            [-fp * 0.3, 0, -0.04],
+            [-fp * 0.5, 0, 0]
+        ]),
+        // Body rear: RELAXED in air, POWERFUL driving underwater
         eulerTrack('body_rear', t, [
-            [-und, 0, 0], [0, 0, 0], [und, 0, 0], [0, 0, 0], [-und, 0, 0]
+            [-und * 0.3, 0, 0],                    // coiled for launch
+            [und * 0.2, 0, 0],                     // driving
+            [0, 0, 0],                             // relaxed in air
+            [0, 0, 0],                             // relaxed at apex
+            [0, 0, 0],
+            [und * 0.15, 0, 0],                    // following dive
+            [und * 0.3, 0, 0],                     // absorbing splash
+            [0, und * 0.4, 0],                     // POWER STROKE left
+            [0, -und * 0.4, 0],                    // POWER STROKE right
+            [-und * 0.2, 0, 0],                    // coiling
+            [-und * 0.3, 0, 0]
         ]),
-        // Tail chain: progressive sine wave with increasing amplitude
-        buildRotationTrack('tail_01', t8, [
-            tsw * 0.6, tsw * 0.3, 0, -tsw * 0.3, -tsw * 0.6, -tsw * 0.3, 0, tsw * 0.3, tsw * 0.6
+        // Tail chain: RELAXED trailing in air, POWERFUL driving underwater
+        buildRotationTrack('tail_01', t, [
+            0, tsw * 0.2, 0, 0, 0, -tsw * 0.15, 0,
+            tsw * 0.8, -tsw * 0.8, tsw * 0.4, 0
         ], AXIS_Y),
-        buildRotationTrack('tail_02', t8, [
-            0, tsw * 0.5, tsw, tsw * 0.5, 0, -tsw * 0.5, -tsw, -tsw * 0.5, 0
+        buildRotationTrack('tail_02', t, [
+            0, tsw * 0.1, 0, 0, 0, -tsw * 0.1, 0,
+            -tsw * 0.5, tsw, -tsw * 0.5, 0
         ], AXIS_Y),
-        // Flukes: fan out on power stroke, tuck on recovery
-        buildRotationTrack('fluke_L', t, [0.06, -0.04, 0.06, -0.04, 0.06], AXIS_Z),
-        buildRotationTrack('fluke_R', t, [-0.06, 0.04, -0.06, 0.04, -0.06], AXIS_Z),
+        // Flukes: fan during power strokes, neutral in air
+        buildRotationTrack('fluke_L', t, [
+            0, 0.02, 0, 0.04, 0.02, 0, -0.02,
+            0.10, -0.10, 0.06, 0
+        ], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [
+            0, -0.02, 0, -0.04, -0.02, 0, 0.02,
+            -0.10, 0.10, -0.06, 0
+        ], AXIS_Z),
     ]);
 }
 
@@ -2650,64 +2734,134 @@ function _flyfishWalk() {
     const und = a.bodyUndulate;
     const tsw = a.tailSwing;
     const fp = a.flipperPaddle;
-    const ds = a.dorsalSway || 0.06;
+    const ds = a.dorsalSway || 0.08;
 
-    // Very fast cycle — 8 keyframes for rapid wing beats
-    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
-    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+    // 12-keyframe cycle: FLAP-FLAP-FLAP (0-40%) → GLIIIIDE (40-90%) → SKIM (90-100%)
+    // Two distinct phases give flying fish their signature look
+    const t = [0, dur*0.08, dur*0.16, dur*0.24, dur*0.32, dur*0.40,
+               dur*0.50, dur*0.60, dur*0.70, dur*0.80, dur*0.90, dur];
 
     return new THREE.AnimationClip('flyfish_walk', dur, [
-        // Root: exaggerated bob — flying fish leaping out of water
-        posTrack('root', t8, [
-            [0, ry, 0], [0, ry + bob * 0.8, 0], [0, ry + bob, 0], [0, ry + bob * 0.6, 0],
-            [0, ry, 0], [0, ry - bob * 0.3, 0], [0, ry - bob * 0.5, 0], [0, ry - bob * 0.2, 0],
-            [0, ry, 0]
+        // Root: rapid wing-beat ascent, then long graceful glide descent
+        posTrack('root', t, [
+            [0, ry - bob * 0.2, 0],                // low (water skim)
+            [0, ry + bob * 0.2, 0],                 // FLAP 1 — pop up
+            [0, ry + bob * 0.1, 0],                 // dip between flaps
+            [0, ry + bob * 0.6, 0],                 // FLAP 2 — higher!
+            [0, ry + bob * 0.5, 0],                 // dip
+            [0, ry + bob, 0],                       // FLAP 3 — APEX! wings spread now
+            [0, ry + bob * 0.88, 0],                // glide...
+            [0, ry + bob * 0.65, 0],                // glide...
+            [0, ry + bob * 0.40, 0],                // glide descending...
+            [0, ry + bob * 0.15, 0],                // glide descending
+            [0, ry - bob * 0.10, 0],                // water skim
+            [0, ry - bob * 0.2, 0]                  // back to start
         ]),
-        // Squash/stretch on bob — exaggerated since it's so fast
-        scaleTrack('root', t8, [
-            [1.06, 0.90, 1.06], [0.94, 1.08, 0.94], [0.90, 1.14, 0.90], [0.96, 1.04, 0.96],
-            [1.06, 0.90, 1.06], [1.10, 0.86, 1.10], [1.08, 0.88, 1.08], [1.04, 0.94, 1.04],
-            [1.06, 0.90, 1.06]
+        // Squash/stretch — pumping on flaps, streamlined on glide
+        scaleTrack('root', t, [
+            [1.08, 0.88, 1.08],                     // compact at water
+            [0.88, 1.16, 0.88],                     // STRETCH on flap
+            [1.06, 0.90, 1.06],                     // squash between flaps
+            [0.86, 1.18, 0.86],                     // STRETCH on flap
+            [1.04, 0.92, 1.04],                     // squash
+            [0.90, 1.14, 0.90],                     // final stretch
+            [0.96, 1.06, 0.96],                     // elongating into glide
+            [0.94, 1.08, 0.94],                     // streamlined glide
+            [0.96, 1.06, 0.96],                     // glide
+            [1, 1, 1],                              // normalizing
+            [1.10, 0.86, 1.10],                     // SQUASH at water skim
+            [1.08, 0.88, 1.08]                      // compact
         ]),
-        // Body front: quick pitch oscillation — darting motion
-        eulerTrack('body_front', t8, [
-            [und, 0, 0], [und * 0.5, 0, 0.04], [0, 0, 0], [-und * 0.5, 0, -0.04],
-            [-und, 0, 0], [-und * 0.5, 0, 0.03], [0, 0, 0], [und * 0.5, 0, -0.03],
-            [und, 0, 0]
+        // Body front: nose up on flaps, level on glide, nose down approaching water
+        eulerTrack('body_front', t, [
+            [und, 0, 0.04],                         // nose up, slight bank
+            [und * 1.2, 0, -0.03],                  // nose UP (flapping)
+            [und * 0.4, 0, 0.05],                   // between flaps, bank
+            [und * 1.5, 0, -0.04],                  // nose UP (big flap)
+            [und * 0.5, 0, 0.03],                   // between
+            [und * 0.8, 0, 0],                      // leveling at apex
+            [0, 0, -0.02],                          // level glide
+            [-und * 0.3, 0, 0.03],                  // nose down (descending)
+            [-und * 0.5, 0, -0.04],                 // nose down + bank (evasive)
+            [-und * 0.7, 0, 0.02],                  // approaching water
+            [und * 0.3, 0, -0.06],                  // nose up at skim (evasive jink!)
+            [und, 0, 0.04]                          // nose up for next launch
         ]),
-        // Head: frenetic twitching — looking around while flying
-        eulerTrack('head', t8, [
-            [-0.05, 0.08, 0], [0.02, -0.06, 0.03], [-0.04, -0.10, 0],
-            [0.03, 0.06, -0.03], [-0.05, 0.08, 0], [0.02, -0.08, 0.02],
-            [-0.04, 0.10, 0], [0.03, -0.06, -0.02], [-0.05, 0.08, 0]
+        // Head: frantic during flaps, calm during glide — personality contrast!
+        eulerTrack('head', t, [
+            [-0.06, 0.10, 0],                       // looking left
+            [0.04, -0.08, 0.04],                    // twitch right
+            [-0.05, 0.12, -0.03],                   // snap left
+            [0.03, -0.10, 0.05],                    // twitch right
+            [-0.04, 0.08, -0.02],                   // left
+            [0, -0.04, 0],                          // settling
+            [0, 0.02, 0],                           // calm glide
+            [0, -0.02, 0],                          // tiny look
+            [0, 0.03, 0.01],                        // slight look
+            [-0.03, -0.05, -0.02],                  // looking down (water coming)
+            [0.06, 0.10, 0.04],                     // startled by water!
+            [-0.06, 0.10, 0]                        // ready for next launch
         ]),
-        // Wings (flippers): RAPID beating + lateral spread combined
-        // X = flapping arc, Z = spread at top / tuck on downstroke
-        eulerTrack('flipper_L', t8, [
-            [fp, 0, -0.15], [-fp * 0.8, 0, -0.30], [fp, 0, -0.15], [-fp * 0.6, 0, -0.28],
-            [fp, 0, -0.15], [-fp * 0.9, 0, -0.32], [fp, 0, -0.15], [-fp * 0.7, 0, -0.26],
-            [fp, 0, -0.15]
+        // Wings: RAPID FLAPPING during ascent → LOCKED SPREAD during glide
+        eulerTrack('flipper_L', t, [
+            [fp, 0, -0.10],                         // wings up (pre-flap)
+            [-fp, 0, -0.35],                        // DOWN stroke! (power)
+            [fp * 0.8, 0, -0.15],                   // UP stroke
+            [-fp * 1.1, 0, -0.40],                  // BIG DOWN stroke!
+            [fp * 0.6, 0, -0.12],                   // up
+            [-fp * 0.8, 0, -0.35],                  // last downstroke
+            [-fp * 0.2, 0, -0.42],                  // SPREAD for glide (locked)
+            [-fp * 0.15, 0, -0.44],                 // held wide open
+            [-fp * 0.15, 0, -0.42],                 // tiny flex
+            [-fp * 0.1, 0, -0.40],                  // starting to close
+            [fp * 0.4, 0, -0.20],                   // folding for water skim
+            [fp, 0, -0.10]                          // tucked for next cycle
         ]),
-        eulerTrack('flipper_R', t8, [
-            [-fp, 0, 0.15], [fp * 0.8, 0, 0.30], [-fp, 0, 0.15], [fp * 0.6, 0, 0.28],
-            [-fp, 0, 0.15], [fp * 0.9, 0, 0.32], [-fp, 0, 0.15], [fp * 0.7, 0, 0.26],
-            [-fp, 0, 0.15]
+        eulerTrack('flipper_R', t, [
+            [-fp, 0, 0.10],                         // mirrored
+            [fp, 0, 0.35],
+            [-fp * 0.8, 0, 0.15],
+            [fp * 1.1, 0, 0.40],
+            [-fp * 0.6, 0, 0.12],
+            [fp * 0.8, 0, 0.35],
+            [fp * 0.2, 0, 0.42],
+            [fp * 0.15, 0, 0.44],
+            [fp * 0.15, 0, 0.42],
+            [fp * 0.1, 0, 0.40],
+            [-fp * 0.4, 0, 0.20],
+            [-fp, 0, 0.10]
         ]),
-        // Dorsal: bounces with body
-        buildRotationTrack('dorsal', t, [ds, -ds, ds, -ds, ds], AXIS_Z),
-        // Body rear: whips side to side — energetic propulsion
-        eulerTrack('body_rear', t8, [
-            [0, und * 0.8, 0], [0, und * 0.4, 0], [0, 0, 0], [0, -und * 0.4, 0],
-            [0, -und * 0.8, 0], [0, -und * 0.4, 0], [0, 0, 0], [0, und * 0.4, 0],
-            [0, und * 0.8, 0]
+        // Dorsal: bounces during flaps, stable during glide
+        buildRotationTrack('dorsal', t, [
+            ds, -ds, ds, -ds * 1.2, ds, -ds * 0.5, 0, 0, 0, ds * 0.3, -ds, ds
+        ], AXIS_Z),
+        // Body rear: whips during flaps, trails calmly during glide
+        eulerTrack('body_rear', t, [
+            [0, und * 0.8, 0],                     // whip
+            [0, -und, 0],                          // whip
+            [0, und * 0.6, 0],                     // whip
+            [0, -und * 1.2, 0],                    // big whip
+            [0, und * 0.5, 0],                     // whip
+            [0, -und * 0.3, 0],                    // settling
+            [0, 0, 0],                             // calm glide
+            [0, und * 0.1, 0],                     // tiny wag
+            [0, -und * 0.1, 0],                    // tiny wag
+            [0, 0, 0],                             // calm
+            [0, und * 0.4, 0],                     // waking up
+            [0, und * 0.8, 0]                      // ready for flaps
         ]),
-        // Tail: rapid snap back and forth
-        buildRotationTrack('tail_01', t8, [
-            tsw, tsw * 0.5, 0, -tsw * 0.5, -tsw, -tsw * 0.5, 0, tsw * 0.5, tsw
+        // Tail: snaps during flaps, streams behind during glide
+        buildRotationTrack('tail_01', t, [
+            tsw, -tsw * 0.5, tsw * 0.8, -tsw, tsw * 0.6, -tsw * 0.3,
+            0, tsw * 0.1, -tsw * 0.1, 0, tsw * 0.3, tsw
         ], AXIS_Y),
-        // Flukes: tight whip at the tip
-        buildRotationTrack('fluke_L', t, [0.08, -0.06, 0.08, -0.06, 0.08], AXIS_Z),
-        buildRotationTrack('fluke_R', t, [-0.08, 0.06, -0.08, 0.06, -0.08], AXIS_Z),
+        // Flukes: whipping during flaps, relaxed during glide
+        buildRotationTrack('fluke_L', t, [
+            0.10, -0.08, 0.08, -0.12, 0.06, -0.04, 0, 0.02, -0.02, 0, 0.04, 0.10
+        ], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [
+            -0.10, 0.08, -0.08, 0.12, -0.06, 0.04, 0, -0.02, 0.02, 0, -0.04, -0.10
+        ], AXIS_Z),
     ]);
 }
 
@@ -2823,56 +2977,69 @@ function _sharkWalk() {
     const tsw = a.tailSwing;
     const fp = a.flipperPaddle;
     const ds = a.dorsalSway || 0.02;
+    const jaw = a.jawOpen || 0.08;
 
-    // Slow 8-keyframe cycle — measured, powerful strokes
+    // Slow 8-keyframe cycle — measured, powerful, menacing
     const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
     const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
 
     return new THREE.AnimationClip('shark_walk', dur, [
-        // Root: barely bobs — dead-level menace
+        // Root: barely bobs — dead-level, unstoppable menace
         posTrack('root', t, [
             [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
         ]),
-        // Subtle lateral rock — weight shifts side to side
+        // Slow menacing lateral roll — weight shifts like a submarine
         eulerTrack('root', t8, [
-            [0, 0, und * 0.3], [0, 0, und * 0.15], [0, 0, 0], [0, 0, -und * 0.15],
-            [0, 0, -und * 0.3], [0, 0, -und * 0.15], [0, 0, 0], [0, 0, und * 0.15],
-            [0, 0, und * 0.3]
+            [0, 0, und * 0.4], [0, 0, und * 0.2], [0, 0, 0], [0, 0, -und * 0.2],
+            [0, 0, -und * 0.4], [0, 0, -und * 0.2], [0, 0, 0], [0, 0, und * 0.2],
+            [0, 0, und * 0.4]
         ]),
-        // Body front: barely moves — stiff, predatory
-        eulerTrack('body_front', t, [
-            [und * 0.3, 0, 0], [0, 0, 0], [-und * 0.3, 0, 0], [0, 0, 0], [und * 0.3, 0, 0]
+        // Body front: beginning of sinuous S-wave — pitch + yaw
+        eulerTrack('body_front', t8, [
+            [und * 0.3, und * 0.5, 0], [und * 0.15, und * 0.25, 0], [0, 0, 0],
+            [-und * 0.15, -und * 0.25, 0], [-und * 0.3, -und * 0.5, 0],
+            [-und * 0.15, -und * 0.25, 0], [0, 0, 0], [und * 0.15, und * 0.25, 0],
+            [und * 0.3, und * 0.5, 0]
         ]),
-        // Head: locked forward — minimal movement, dead-eyed stare
-        eulerTrack('head', t, [
-            [-0.01, 0, 0], [0.01, 0, 0], [-0.01, 0, 0], [0.01, 0, 0], [-0.01, 0, 0]
+        // Head: JAW BREATHING — rhythmic open/close, dead-eyed lock forward
+        // Head tilts back = jaw drops open (menacing breathing)
+        eulerTrack('head', t8, [
+            [-0.01, 0, 0], [jaw * 0.4, 0, 0], [jaw, 0, 0], [jaw * 0.4, 0, 0],
+            [-0.01, 0, 0], [jaw * 0.4, 0, 0], [jaw, 0, 0], [jaw * 0.4, 0, 0],
+            [-0.01, 0, 0]
         ]),
-        // Snout: locked, barely perceptible
-        buildRotationTrack('snout', t, [0, 0.005, 0, -0.005, 0], AXIS_X),
-        // Dorsal: eerily stable — iconic fin slicing through water
+        // Snout: compensates jaw — keeps nose pointed forward while jaw drops
+        buildRotationTrack('snout', t8, [
+            0, -jaw * 0.3, -jaw * 0.6, -jaw * 0.3, 0, -jaw * 0.3, -jaw * 0.6, -jaw * 0.3, 0
+        ], AXIS_X),
+        // Dorsal: rock-solid — the iconic fin slicing through water
         buildRotationTrack('dorsal', t, [0, ds, 0, -ds, 0], AXIS_Z),
-        // Flippers: subtle stabilization — barely visible
-        buildRotationTrack('flipper_L', t, [fp, 0, -fp, 0, fp], AXIS_X),
-        buildRotationTrack('flipper_R', t, [-fp, 0, fp, 0, -fp], AXIS_X),
-        // Body rear: powerful lateral swing — this is where the POWER lives
+        // Flippers: banking stabilizers — counter the body roll
+        buildRotationTrack('flipper_L', t8, [
+            fp, fp * 0.5, 0, -fp * 0.5, -fp, -fp * 0.5, 0, fp * 0.5, fp
+        ], AXIS_X),
+        buildRotationTrack('flipper_R', t8, [
+            -fp, -fp * 0.5, 0, fp * 0.5, fp, fp * 0.5, 0, -fp * 0.5, -fp
+        ], AXIS_X),
+        // Body rear: POWERFUL S-curve — OPPOSITE phase to body front
         eulerTrack('body_rear', t8, [
-            [0, und, 0], [0, und * 0.5, 0], [0, 0, 0], [0, -und * 0.5, 0],
-            [0, -und, 0], [0, -und * 0.5, 0], [0, 0, 0], [0, und * 0.5, 0],
-            [0, und, 0]
+            [0, -und * 1.2, 0], [0, -und * 0.6, 0], [0, 0, 0], [0, und * 0.6, 0],
+            [0, und * 1.2, 0], [0, und * 0.6, 0], [0, 0, 0], [0, -und * 0.6, 0],
+            [0, -und * 1.2, 0]
         ]),
-        // Tail chain: SLOW powerful sweep — progressive amplitude
+        // Tail chain: progressive S-wave — each segment delayed and amplified
         buildRotationTrack('tail_01', t8, [
             tsw * 0.5, tsw * 0.25, 0, -tsw * 0.25, -tsw * 0.5, -tsw * 0.25, 0, tsw * 0.25, tsw * 0.5
         ], AXIS_Y),
         buildRotationTrack('tail_02', t8, [
-            0, tsw * 0.4, tsw * 0.7, tsw * 0.4, 0, -tsw * 0.4, -tsw * 0.7, -tsw * 0.4, 0
+            0, tsw * 0.55, tsw * 0.9, tsw * 0.55, 0, -tsw * 0.55, -tsw * 0.9, -tsw * 0.55, 0
         ], AXIS_Y),
         buildRotationTrack('tail_03', t8, [
-            -tsw * 0.3, 0, tsw * 0.5, tsw * 0.8, tsw * 0.5, 0, -tsw * 0.5, -tsw * 0.8, -tsw * 0.3
+            -tsw * 0.5, 0, tsw * 0.65, tsw * 1.1, tsw * 0.65, 0, -tsw * 0.65, -tsw * 1.1, -tsw * 0.5
         ], AXIS_Y),
-        // Flukes: massive power — the engine of the shark
-        buildRotationTrack('fluke_L', t, [0.04, -0.03, 0.04, -0.03, 0.04], AXIS_Z),
-        buildRotationTrack('fluke_R', t, [-0.04, 0.03, -0.04, 0.03, -0.04], AXIS_Z),
+        // Flukes: massive power strokes
+        buildRotationTrack('fluke_L', t, [0.06, -0.05, 0.06, -0.05, 0.06], AXIS_Z),
+        buildRotationTrack('fluke_R', t, [-0.06, 0.05, -0.06, 0.05, -0.06], AXIS_Z),
     ]);
 }
 
@@ -2989,60 +3156,79 @@ function _pirateWalk() {
     const asw = a.armSwing;
     const lean = -a.spineForwardLean;
     const twist = a.spineTwist;
+    const look = a.headLook || 0.12;
 
-    // Rowing cycle: pull — catch — pull — catch
+    // 8-keyframe rowing cycle — heave-ho, heave-ho
     const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
     const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
 
     return new THREE.AnimationClip('pirate_walk', dur, [
-        // Root: bobs with each rowing stroke — sits in boat
+        // Root: heaving with each stroke — weight behind the oars
         posTrack('root', t8, [
-            [0, ry, 0], [0, ry - bob * 0.5, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
-            [0, ry, 0], [0, ry - bob * 0.5, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
+            [0, ry, 0], [0, ry - bob * 0.3, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
+            [0, ry, 0], [0, ry - bob * 0.3, 0], [0, ry - bob, 0], [0, ry - bob * 0.5, 0],
             [0, ry, 0]
         ]),
-        // Spine: leans forward on pull, extends back on catch + twist for rowing
-        eulerTrack('spine', t, [
-            [lean - 0.14, twist, 0], [lean + 0.06, 0, 0],
-            [lean - 0.14, -twist, 0], [lean + 0.06, 0, 0],
-            [lean - 0.14, twist, 0]
+        // Spine: BIG lean forward on pull, extend back on catch + rowing twist
+        eulerTrack('spine', t8, [
+            [lean - 0.18, twist, 0.03],            // pull left — big lean + twist
+            [lean - 0.10, twist * 0.5, 0.02],      // mid-pull
+            [lean + 0.06, 0, 0],                    // catch — extended back
+            [lean, -twist * 0.3, -0.01],            // transition
+            [lean - 0.18, -twist, -0.03],           // pull right — lean + twist
+            [lean - 0.10, -twist * 0.5, -0.02],    // mid-pull
+            [lean + 0.06, 0, 0],                    // catch
+            [lean, twist * 0.3, 0.01],              // transition
+            [lean - 0.18, twist, 0.03]              // back to start
         ]),
-        // Chest: follows with twist delay — secondary motion
-        eulerTrack('chest', t, [
-            [0, twist * 0.5, 0], [0, -twist * 0.3, 0],
-            [0, -twist * 0.5, 0], [0, twist * 0.3, 0],
-            [0, twist * 0.5, 0]
+        // Chest: follows with twist delay — upper body mass
+        eulerTrack('chest', t8, [
+            [0, twist * 0.6, 0], [0, twist * 0.3, 0], [0, -twist * 0.3, 0], [0, -twist * 0.5, 0],
+            [0, -twist * 0.6, 0], [0, -twist * 0.3, 0], [0, twist * 0.3, 0], [0, twist * 0.5, 0],
+            [0, twist * 0.6, 0]
         ]),
         // Neck: counter-twist to stabilize head
         eulerTrack('neck', t, [
-            [0, -twist * 0.3, 0], [0, twist * 0.2, 0],
-            [0, twist * 0.3, 0], [0, -twist * 0.2, 0],
-            [0, -twist * 0.3, 0]
+            [0, -twist * 0.4, 0], [0, twist * 0.3, 0],
+            [0, twist * 0.4, 0], [0, -twist * 0.3, 0],
+            [0, -twist * 0.4, 0]
         ]),
-        // Head: locked forward — intense stare at the toilet, slight bob
-        eulerTrack('head', t, [
-            [-0.08, 0, 0], [-0.04, 0, 0], [-0.08, 0, 0], [-0.04, 0, 0], [-0.08, 0, 0]
+        // Head: LOOKING AROUND while rowing — scanning for the toilet!
+        eulerTrack('head', t8, [
+            [-0.10, look, 0.02],                   // looking left
+            [-0.06, look * 0.5, 0.01],             // easing
+            [-0.06, 0, 0],                         // forward
+            [-0.08, -look * 0.3, -0.01],           // glancing right
+            [-0.10, -look, -0.02],                 // looking right
+            [-0.06, -look * 0.5, -0.01],           // easing
+            [-0.06, 0, 0],                         // forward
+            [-0.08, look * 0.3, 0.01],             // glancing left
+            [-0.10, look, 0.02]                    // looking left
         ]),
-        // Left arm: rowing — pull back (high), push forward (low)
+        // Left arm: BIG rowing pull — drives with body
         eulerTrack('upperArm_L', t, [
-            [asw * 0.6, 0, 0.20], [-asw * 0.4, 0, 0.30],
-            [asw * 0.6, 0, 0.20], [-asw * 0.4, 0, 0.30],
-            [asw * 0.6, 0, 0.20]
+            [asw * 0.7, 0, 0.22],                  // pulled back (power!)
+            [-asw * 0.5, 0, 0.32],                 // pushed forward (recovery)
+            [asw * 0.7, 0, 0.22],
+            [-asw * 0.5, 0, 0.32],
+            [asw * 0.7, 0, 0.22]
         ]),
-        // Right arm: OPPOSITE phase — alternating oar strokes
+        // Right arm: OPPOSITE phase
         eulerTrack('upperArm_R', t, [
-            [-asw * 0.4, 0, -0.30], [asw * 0.6, 0, -0.20],
-            [-asw * 0.4, 0, -0.30], [asw * 0.6, 0, -0.20],
-            [-asw * 0.4, 0, -0.30]
+            [-asw * 0.5, 0, -0.32],                // pushed forward
+            [asw * 0.7, 0, -0.22],                 // pulled back
+            [-asw * 0.5, 0, -0.32],
+            [asw * 0.7, 0, -0.22],
+            [-asw * 0.5, 0, -0.32]
         ]),
-        // Forearms: flex on pull, extend on push — oar mechanics
-        buildRotationTrack('forearm_L', t, [-0.60, -0.20, -0.60, -0.20, -0.60], AXIS_X),
-        buildRotationTrack('forearm_R', t, [-0.20, -0.60, -0.20, -0.60, -0.20], AXIS_X),
-        // Legs: minimal movement — seated in boat, slight brace against strokes
-        buildRotationTrack('upperLeg_L', t, [0.03, -0.02, 0.03, -0.02, 0.03], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [-0.02, 0.03, -0.02, 0.03, -0.02], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t, [-0.06, -0.02, -0.06, -0.02, -0.06], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [-0.02, -0.06, -0.02, -0.06, -0.02], AXIS_X),
+        // Forearms: flex HARD on pull, extend on push
+        buildRotationTrack('forearm_L', t, [-0.70, -0.18, -0.70, -0.18, -0.70], AXIS_X),
+        buildRotationTrack('forearm_R', t, [-0.18, -0.70, -0.18, -0.70, -0.18], AXIS_X),
+        // Legs: bracing against strokes
+        buildRotationTrack('upperLeg_L', t, [0.04, -0.03, 0.04, -0.03, 0.04], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [-0.03, 0.04, -0.03, 0.04, -0.03], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.08, -0.02, -0.08, -0.02, -0.08], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.02, -0.08, -0.02, -0.08, -0.02], AXIS_X),
     ]);
 }
 
@@ -3174,57 +3360,116 @@ function _seaturtleWalk() {
     const a = c.animationParams;
     const dur = a.walkDuration;
     const bob = a.bobHeight;
-    const und = a.bodyUndulate || 0.02;
+    const und = a.bodyUndulate || 0.04;
     const fp = a.flipperPaddle;
     const tsw = a.tailSwing;
 
-    // 8-keyframe for smooth flipper strokes
-    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
-    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+    // 11-keyframe for majestic butterfly stroke cycle
+    // 0-3: POWER STROKE (front flippers sweep DOWN and BACK)
+    // 3-6: FOLLOW-THROUGH (gliding momentum)
+    // 6-10: RECOVERY (flippers sweep UP and FORWARD, close to body)
+    const t = [0, dur*0.1, dur*0.2, dur*0.3, dur*0.4, dur*0.5, dur*0.6, dur*0.7, dur*0.8, dur*0.9, dur];
+    const t5 = [0, dur*0.25, dur*0.5, dur*0.75, dur];
 
     return new THREE.AnimationClip('seaturtle_walk', dur, [
-        // Root: very stable — barely bobs, shell mass dampens everything
+        // Root: gentle rise with power stroke, sink with recovery
         posTrack('root', t, [
-            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
+            [0, ry, 0],
+            [0, ry + bob * 0.4, 0],                // rising (power stroke starting)
+            [0, ry + bob * 0.8, 0],
+            [0, ry + bob, 0],                      // peak (end of power stroke)
+            [0, ry + bob * 0.8, 0],                // gliding
+            [0, ry + bob * 0.4, 0],
+            [0, ry, 0],                            // recovery begins
+            [0, ry - bob * 0.3, 0],                // slight dip during recovery
+            [0, ry - bob * 0.2, 0],
+            [0, ry - bob * 0.1, 0],
+            [0, ry, 0]
         ]),
-        // Body front: head extends forward and retracts — searching motion
-        eulerTrack('body_front', t8, [
-            [und, 0, 0], [und * 0.5, 0, 0], [0, 0, 0], [-und * 0.5, 0, 0],
-            [-und, 0, 0], [-und * 0.5, 0, 0], [0, 0, 0], [und * 0.5, 0, 0],
-            [und, 0, 0]
+        // Body front: extends on power, retracts on recovery — the turtle's "reach"
+        eulerTrack('body_front', t, [
+            [-und, 0, 0],                          // reaching forward
+            [-und * 1.5, 0, 0],                    // extending (power stroke)
+            [-und * 1.2, 0, 0],
+            [-und * 0.5, 0, 0],                    // pulling back
+            [0, 0, 0],
+            [und * 0.5, 0, 0],                     // tucking
+            [und, 0, 0],                           // tucked (recovery)
+            [und * 0.5, 0, 0],
+            [0, 0, 0],
+            [-und * 0.5, 0, 0],
+            [-und, 0, 0]
         ]),
-        // Head: stretches forward then tucks back — deliberate and wise
+        // Head: gentle wise searching — serene side-to-side looking
         eulerTrack('head', t, [
-            [-0.06, 0, 0], [-0.02, 0.03, 0], [-0.06, 0, 0], [-0.02, -0.03, 0], [-0.06, 0, 0]
+            [-0.06, 0.06, 0],                      // looking slightly left
+            [-0.04, 0.04, 0],
+            [-0.03, 0, 0],                         // forward
+            [-0.04, -0.04, 0],
+            [-0.06, -0.06, 0],                     // looking right
+            [-0.04, -0.04, 0],
+            [-0.03, 0, 0],                         // forward
+            [-0.05, 0.03, 0.02],                   // looking left with wise tilt
+            [-0.04, 0.05, 0.01],
+            [-0.05, 0.04, 0],
+            [-0.06, 0.06, 0]
         ]),
-        // Shell: very slight rock — massive inertia
-        buildRotationTrack('shell', t, [0, 0.008, 0, -0.008, 0], AXIS_Z),
-        // Front flippers: BIG sweeping butterfly strokes — the main propulsion
-        // Downstroke (power): sweep backward and down
-        // Upstroke (recovery): sweep forward and up
-        eulerTrack('frontFlipper_L', t8, [
-            [-fp * 0.3, 0, -0.10], [-fp * 0.8, 0, -0.25], [-fp, 0, -0.35],
-            [-fp * 0.6, 0, -0.20], [fp * 0.2, 0, 0.10], [fp * 0.6, 0, 0.20],
-            [fp, 0, 0.30], [fp * 0.4, 0, 0.15], [-fp * 0.3, 0, -0.10]
+        // Shell: follows body's gentle motion — massive inertia
+        buildRotationTrack('shell', t, [
+            0, 0.005, 0.008, 0.005, 0, -0.005, -0.008, -0.005, 0, 0.003, 0
+        ], AXIS_Z),
+        // Front flippers: MAJESTIC butterfly stroke!
+        // Power: sweep DOWN and BACK wide (big spread)
+        // Recovery: sweep UP and FORWARD close to body (tucked)
+        eulerTrack('frontFlipper_L', t, [
+            [fp * 0.2, 0, -0.08],                  // start: slightly up
+            [-fp * 0.4, 0, -0.22],                 // sweeping DOWN (power!)
+            [-fp * 0.9, 0, -0.38],                 // full downstroke (wide spread)
+            [-fp, 0, -0.42],                       // MAXIMUM sweep (peak power)
+            [-fp * 0.7, 0, -0.30],                 // follow-through
+            [-fp * 0.3, 0, -0.16],                 // finishing
+            [fp * 0.1, 0, 0.05],                   // transition to recovery
+            [fp * 0.5, 0, 0.18],                   // sweeping UP (recovery, tucked in)
+            [fp * 0.8, 0, 0.28],                   // high recovery (close to body)
+            [fp * 0.5, 0, 0.12],                   // coming forward
+            [fp * 0.2, 0, -0.08]                   // ready for next stroke
         ]),
-        eulerTrack('frontFlipper_R', t8, [
-            [-fp * 0.3, 0, 0.10], [-fp * 0.8, 0, 0.25], [-fp, 0, 0.35],
-            [-fp * 0.6, 0, 0.20], [fp * 0.2, 0, -0.10], [fp * 0.6, 0, -0.20],
-            [fp, 0, -0.30], [fp * 0.4, 0, -0.15], [-fp * 0.3, 0, 0.10]
+        eulerTrack('frontFlipper_R', t, [
+            [fp * 0.2, 0, 0.08],                   // mirrored
+            [-fp * 0.4, 0, 0.22],
+            [-fp * 0.9, 0, 0.38],
+            [-fp, 0, 0.42],
+            [-fp * 0.7, 0, 0.30],
+            [-fp * 0.3, 0, 0.16],
+            [fp * 0.1, 0, -0.05],
+            [fp * 0.5, 0, -0.18],
+            [fp * 0.8, 0, -0.28],
+            [fp * 0.5, 0, -0.12],
+            [fp * 0.2, 0, 0.08]
         ]),
-        // Body rear: stable, slight counter-motion to front flippers
+        // Body rear: gentle counter-rhythm to front flippers
         eulerTrack('body_rear', t, [
-            [0, 0, 0], [und * 0.3, 0, 0], [0, 0, 0], [-und * 0.3, 0, 0], [0, 0, 0]
+            [0, 0, 0], [und * 0.2, 0, 0], [und * 0.4, 0, 0], [und * 0.3, 0, 0],
+            [und * 0.1, 0, 0], [0, 0, 0], [-und * 0.2, 0, 0], [-und * 0.3, 0, 0],
+            [-und * 0.2, 0, 0], [-und * 0.1, 0, 0], [0, 0, 0]
         ]),
-        // Hind flippers: smaller alternating kicks — rudder action
-        buildRotationTrack('hindFlipper_L', t, [
-            fp * 0.3, -fp * 0.2, fp * 0.3, -fp * 0.2, fp * 0.3
-        ], AXIS_X),
-        buildRotationTrack('hindFlipper_R', t, [
-            -fp * 0.2, fp * 0.3, -fp * 0.2, fp * 0.3, -fp * 0.2
-        ], AXIS_X),
-        // Tail: subtle rudder wag
-        buildRotationTrack('tail_01', t, [tsw, 0, -tsw, 0, tsw], AXIS_Y),
+        // Hind flippers: alternating gentle rudder kicks
+        eulerTrack('hindFlipper_L', t, [
+            [fp * 0.2, 0, -0.04], [-fp * 0.1, 0, -0.08], [-fp * 0.2, 0, -0.06],
+            [fp * 0.15, 0, -0.02], [fp * 0.2, 0, 0], [-fp * 0.1, 0, -0.04],
+            [-fp * 0.15, 0, -0.06], [fp * 0.1, 0, -0.02], [fp * 0.2, 0, 0],
+            [fp * 0.1, 0, -0.02], [fp * 0.2, 0, -0.04]
+        ]),
+        eulerTrack('hindFlipper_R', t, [
+            [-fp * 0.1, 0, 0.04], [fp * 0.15, 0, 0.08], [fp * 0.2, 0, 0.06],
+            [-fp * 0.1, 0, 0.02], [-fp * 0.2, 0, 0], [fp * 0.1, 0, 0.04],
+            [fp * 0.15, 0, 0.06], [-fp * 0.1, 0, 0.02], [-fp * 0.2, 0, 0],
+            [-fp * 0.1, 0, 0.02], [-fp * 0.1, 0, 0.04]
+        ]),
+        // Tail: gentle rudder wag
+        buildRotationTrack('tail_01', t, [
+            tsw, tsw * 0.5, 0, -tsw * 0.5, -tsw, -tsw * 0.5, 0, tsw * 0.5, tsw, tsw * 0.5, tsw
+        ], AXIS_Y),
     ]);
 }
 
@@ -3338,121 +3583,197 @@ function _jellyfishWalk() {
     const bob = a.bobHeight;
     const pulse = a.bellPulse;
     const tentSway = a.tentacleSway;
-    const drift = a.bodyDrift || 0.08;
+    const drift = a.bodyDrift || 0.14;
 
-    // 8-keyframe for smooth pulsing
-    const t8 = [0, dur*0.125, dur*0.25, dur*0.375, dur*0.5, dur*0.625, dur*0.75, dur*0.875, dur];
-    const t = [0, dur*0.25, dur*0.5, dur*0.75, dur];
+    // 11-keyframe asymmetric pulse cycle:
+    // SHARP contraction (0-16%) → SLOW expansion/drift (16-100%)
+    // This creates the characteristic jellyfish "pump and glide"
+    const t = [0, dur*0.08, dur*0.16, dur*0.28, dur*0.40, dur*0.52,
+               dur*0.64, dur*0.76, dur*0.88, dur*0.96, dur];
 
     return new THREE.AnimationClip('jellyfish_walk', dur, [
-        // Root: large pulsing bob — rises on bell contraction, sinks on relaxation
-        posTrack('root', t8, [
-            [0, ry, 0], [0, ry + bob * 0.6, 0], [0, ry + bob, 0], [0, ry + bob * 0.6, 0],
-            [0, ry, 0], [0, ry - bob * 0.4, 0], [0, ry - bob * 0.6, 0], [0, ry - bob * 0.3, 0],
-            [0, ry, 0]
+        // Root: SHARP rise on contraction, SLOW dreamy drift down
+        posTrack('root', t, [
+            [0, ry - bob * 0.3, 0],                // low (relaxed bell)
+            [0, ry + bob * 0.5, 0],                // SHARP upward pulse!
+            [0, ry + bob, 0],                      // peak height
+            [0, ry + bob * 0.85, 0],               // drifting down...
+            [0, ry + bob * 0.55, 0],               // drifting...
+            [0, ry + bob * 0.30, 0],               // drifting...
+            [0, ry + bob * 0.05, 0],               // drifting...
+            [0, ry - bob * 0.12, 0],               // still drifting
+            [0, ry - bob * 0.22, 0],               // near bottom
+            [0, ry - bob * 0.28, 0],               // lowest
+            [0, ry - bob * 0.3, 0]                 // ready for next pulse
         ]),
-        // Gentle lateral drift — ethereal, organic
+        // Ethereal drift — dreamy lateral sway
         eulerTrack('root', t, [
-            [0, 0, drift * 0.5], [0, 0, 0], [0, 0, -drift * 0.5], [0, 0, 0], [0, 0, drift * 0.5]
+            [0, 0, drift], [0, 0, drift * 0.6], [0, 0, drift * 0.2],
+            [0, 0, -drift * 0.2], [0, 0, -drift * 0.6], [0, 0, -drift],
+            [0, 0, -drift * 0.6], [0, 0, -drift * 0.2], [0, 0, drift * 0.2],
+            [0, 0, drift * 0.6], [0, 0, drift]
         ]),
-        // Bell: body_front scale Y pulsing — squash on contraction, stretch on relaxation
-        scaleTrack('body_front', t8, [
-            [1.0 + pulse * 0.5, 1.0 - pulse, 1.0 + pulse * 0.5],
-            [1.0 + pulse, 1.0 - pulse * 1.5, 1.0 + pulse],
-            [1.0 + pulse * 0.5, 1.0 - pulse * 0.5, 1.0 + pulse * 0.5],
-            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
-            [1.0 - pulse, 1.0 + pulse, 1.0 - pulse],
-            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
+        // Bell: SHARP contraction (wide + flat) → SLOW expansion (tall + narrow)
+        scaleTrack('body_front', t, [
+            [1.0 - pulse, 1.0 + pulse * 1.2, 1.0 - pulse],
+            [1.0 + pulse * 1.5, 1.0 - pulse * 2.0, 1.0 + pulse * 1.5],  // SHARP CONTRACT!
+            [1.0 + pulse * 0.8, 1.0 - pulse * 1.2, 1.0 + pulse * 0.8],
+            [1.0 + pulse * 0.3, 1.0 - pulse * 0.4, 1.0 + pulse * 0.3],
             [1.0, 1.0, 1.0],
-            [1.0 + pulse * 0.3, 1.0 - pulse * 0.3, 1.0 + pulse * 0.3],
-            [1.0 + pulse * 0.5, 1.0 - pulse, 1.0 + pulse * 0.5]
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.4, 1.0 - pulse * 0.3],
+            [1.0 - pulse * 0.6, 1.0 + pulse * 0.8, 1.0 - pulse * 0.6],
+            [1.0 - pulse * 0.8, 1.0 + pulse * 1.0, 1.0 - pulse * 0.8],
+            [1.0 - pulse * 0.9, 1.0 + pulse * 1.1, 1.0 - pulse * 0.9],
+            [1.0 - pulse, 1.0 + pulse * 1.2, 1.0 - pulse],
+            [1.0 - pulse, 1.0 + pulse * 1.2, 1.0 - pulse]
         ]),
-        // Head (bell top): pulses with body_front but delayed — secondary motion
-        scaleTrack('head', t8, [
-            [1, 1, 1], [1.0 + pulse * 0.3, 1.0 - pulse * 0.5, 1.0 + pulse * 0.3],
+        // Head (bell top): delayed contraction pulse
+        scaleTrack('head', t, [
+            [1, 1, 1],
+            [1.0 + pulse * 0.8, 1.0 - pulse * 1.2, 1.0 + pulse * 0.8],
             [1.0 + pulse * 0.5, 1.0 - pulse * 0.8, 1.0 + pulse * 0.5],
             [1.0 + pulse * 0.2, 1.0 - pulse * 0.3, 1.0 + pulse * 0.2],
-            [1.0 - pulse * 0.3, 1.0 + pulse * 0.3, 1.0 - pulse * 0.3],
-            [1.0 - pulse * 0.5, 1.0 + pulse * 0.5, 1.0 - pulse * 0.5],
-            [1.0 - pulse * 0.2, 1.0 + pulse * 0.2, 1.0 - pulse * 0.2],
-            [1, 1, 1], [1, 1, 1]
-        ]),
-        // Body rear: inverse pulse — expands when bell contracts (water pushed down)
-        scaleTrack('body_rear', t8, [
-            [1.0 - pulse * 0.3, 1.0 + pulse * 0.5, 1.0 - pulse * 0.3],
-            [1.0 - pulse * 0.5, 1.0 + pulse * 0.8, 1.0 - pulse * 0.5],
-            [1.0 - pulse * 0.3, 1.0 + pulse * 0.3, 1.0 - pulse * 0.3],
-            [1.0, 1.0, 1.0],
-            [1.0 + pulse * 0.3, 1.0 - pulse * 0.3, 1.0 + pulse * 0.3],
-            [1.0 + pulse * 0.2, 1.0 - pulse * 0.2, 1.0 + pulse * 0.2],
-            [1.0, 1.0, 1.0],
+            [1, 1, 1],
             [1.0 - pulse * 0.2, 1.0 + pulse * 0.3, 1.0 - pulse * 0.2],
-            [1.0 - pulse * 0.3, 1.0 + pulse * 0.5, 1.0 - pulse * 0.3]
+            [1.0 - pulse * 0.4, 1.0 + pulse * 0.5, 1.0 - pulse * 0.4],
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.4, 1.0 - pulse * 0.3],
+            [1.0 - pulse * 0.1, 1.0 + pulse * 0.1, 1.0 - pulse * 0.1],
+            [1, 1, 1],
+            [1, 1, 1]
         ]),
-        // ── 5 tentacles, each with 3 bones, phase-offset for organic trailing ──
-        // Tentacle 0 (front-center) — phase 0
-        buildRotationTrack('tent_0_01', t8, [
-            tentSway, tentSway * 0.5, 0, -tentSway * 0.5, -tentSway, -tentSway * 0.5, 0, tentSway * 0.5, tentSway
-        ], AXIS_X),
-        buildRotationTrack('tent_0_02', t8, [
-            0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0
-        ], AXIS_X),
-        buildRotationTrack('tent_0_03', t8, [
-            -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6
-        ], AXIS_X),
-        // Tentacle 1 (front-left) — phase offset ~72°, X=forward/back + Z=lateral sway
-        eulerTrack('tent_1_01', t8, [
-            [0, 0, tentSway * 0.3], [-tentSway * 0.5, 0, tentSway * 0.15], [-tentSway, 0, 0],
-            [-tentSway * 0.5, 0, -tentSway * 0.15], [0, 0, -tentSway * 0.3],
-            [tentSway * 0.5, 0, -tentSway * 0.15], [tentSway, 0, 0],
-            [tentSway * 0.5, 0, tentSway * 0.15], [0, 0, tentSway * 0.3]
+        // Body rear: responds to contraction by PUSHING down (water ejection)
+        scaleTrack('body_rear', t, [
+            [1, 1, 1],
+            [1.0 - pulse * 0.6, 1.0 + pulse * 1.0, 1.0 - pulse * 0.6],
+            [1.0 - pulse * 0.3, 1.0 + pulse * 0.5, 1.0 - pulse * 0.3],
+            [1, 1, 1],
+            [1.0 + pulse * 0.2, 1.0 - pulse * 0.3, 1.0 + pulse * 0.2],
+            [1.0 + pulse * 0.3, 1.0 - pulse * 0.4, 1.0 + pulse * 0.3],
+            [1.0 + pulse * 0.2, 1.0 - pulse * 0.2, 1.0 + pulse * 0.2],
+            [1, 1, 1],
+            [1.0 - pulse * 0.2, 1.0 + pulse * 0.3, 1.0 - pulse * 0.2],
+            [1.0 - pulse * 0.4, 1.0 + pulse * 0.6, 1.0 - pulse * 0.4],
+            [1, 1, 1]
         ]),
-        buildRotationTrack('tent_1_02', t8, [
-            tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7
+        // ── TENTACLES: trail BEHIND on contraction, spread during drift ──
+        // Each tentacle responds to the bell pulse — whipped up on contraction, trail down on drift
+        // Progressive phase offsets create organic flowing ballet
+
+        // Tentacle 0 (front-center)
+        buildRotationTrack('tent_0_01', t, [
+            tentSway * 0.5, tentSway * 1.2, tentSway * 0.8, tentSway * 0.3, 0,
+            -tentSway * 0.3, -tentSway * 0.6, -tentSway * 0.8, -tentSway * 0.5, -tentSway * 0.2,
+            tentSway * 0.5
         ], AXIS_X),
-        buildRotationTrack('tent_1_03', t8, [
-            tentSway * 0.8, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 0.8
+        buildRotationTrack('tent_0_02', t, [
+            tentSway * 0.8, tentSway * 1.5, tentSway * 1.2, tentSway * 0.6, tentSway * 0.2,
+            -tentSway * 0.2, -tentSway * 0.6, -tentSway * 1.0, -tentSway * 0.8, -tentSway * 0.4,
+            tentSway * 0.8
         ], AXIS_X),
-        // Tentacle 2 (front-right) — phase offset ~144°, X=forward/back + Z=lateral sway
-        eulerTrack('tent_2_01', t8, [
-            [-tentSway, 0, -tentSway * 0.3], [-tentSway * 0.5, 0, -tentSway * 0.15], [0, 0, 0],
-            [tentSway * 0.5, 0, tentSway * 0.15], [tentSway, 0, tentSway * 0.3],
-            [tentSway * 0.5, 0, tentSway * 0.15], [0, 0, 0],
-            [-tentSway * 0.5, 0, -tentSway * 0.15], [-tentSway, 0, -tentSway * 0.3]
+        buildRotationTrack('tent_0_03', t, [
+            tentSway * 1.0, tentSway * 1.8, tentSway * 1.5, tentSway * 0.9, tentSway * 0.4,
+            0, -tentSway * 0.4, -tentSway * 0.9, -tentSway * 1.0, -tentSway * 0.6,
+            tentSway * 1.0
+        ], AXIS_X),
+
+        // Tentacle 1 (front-left) — phase offset, lateral sway
+        eulerTrack('tent_1_01', t, [
+            [tentSway * 0.3, 0, tentSway * 0.4],
+            [tentSway * 1.0, 0, tentSway * 0.2],
+            [tentSway * 0.6, 0, 0],
+            [tentSway * 0.1, 0, -tentSway * 0.2],
+            [-tentSway * 0.2, 0, -tentSway * 0.4],
+            [-tentSway * 0.5, 0, -tentSway * 0.3],
+            [-tentSway * 0.7, 0, -tentSway * 0.1],
+            [-tentSway * 0.5, 0, tentSway * 0.1],
+            [-tentSway * 0.2, 0, tentSway * 0.3],
+            [tentSway * 0.1, 0, tentSway * 0.4],
+            [tentSway * 0.3, 0, tentSway * 0.4]
         ]),
-        buildRotationTrack('tent_2_02', t8, [
-            -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7
+        buildRotationTrack('tent_1_02', t, [
+            tentSway * 0.6, tentSway * 1.3, tentSway * 1.0, tentSway * 0.5, 0,
+            -tentSway * 0.4, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, -tentSway * 0.2,
+            tentSway * 0.6
         ], AXIS_X),
-        buildRotationTrack('tent_2_03', t8, [
-            0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0
+        buildRotationTrack('tent_1_03', t, [
+            tentSway * 0.9, tentSway * 1.6, tentSway * 1.3, tentSway * 0.8, tentSway * 0.3,
+            -tentSway * 0.1, -tentSway * 0.5, -tentSway * 0.8, -tentSway * 0.9, -tentSway * 0.5,
+            tentSway * 0.9
         ], AXIS_X),
-        // Tentacle 3 (rear-left) — phase offset ~216°, X=forward/back + Z=lateral sway
-        eulerTrack('tent_3_01', t8, [
-            [-tentSway * 0.5, 0, tentSway * 0.2], [-tentSway, 0, 0],
-            [-tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, -tentSway * 0.2],
-            [tentSway * 0.5, 0, tentSway * 0.2], [tentSway, 0, 0],
-            [tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, tentSway * 0.2],
-            [-tentSway * 0.5, 0, tentSway * 0.2]
+
+        // Tentacle 2 (front-right) — mirrored lateral
+        eulerTrack('tent_2_01', t, [
+            [tentSway * 0.3, 0, -tentSway * 0.4],
+            [tentSway * 1.0, 0, -tentSway * 0.2],
+            [tentSway * 0.6, 0, 0],
+            [tentSway * 0.1, 0, tentSway * 0.2],
+            [-tentSway * 0.2, 0, tentSway * 0.4],
+            [-tentSway * 0.5, 0, tentSway * 0.3],
+            [-tentSway * 0.7, 0, tentSway * 0.1],
+            [-tentSway * 0.5, 0, -tentSway * 0.1],
+            [-tentSway * 0.2, 0, -tentSway * 0.3],
+            [tentSway * 0.1, 0, -tentSway * 0.4],
+            [tentSway * 0.3, 0, -tentSway * 0.4]
         ]),
-        buildRotationTrack('tent_3_02', t8, [
-            -tentSway * 1.2, -tentSway * 0.7, 0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2
+        buildRotationTrack('tent_2_02', t, [
+            tentSway * 0.5, tentSway * 1.2, tentSway * 0.9, tentSway * 0.4, -tentSway * 0.1,
+            -tentSway * 0.5, -tentSway * 0.8, -tentSway * 0.9, -tentSway * 0.5, -tentSway * 0.1,
+            tentSway * 0.5
         ], AXIS_X),
-        buildRotationTrack('tent_3_03', t8, [
-            -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8
+        buildRotationTrack('tent_2_03', t, [
+            tentSway * 0.8, tentSway * 1.5, tentSway * 1.2, tentSway * 0.7, tentSway * 0.2,
+            -tentSway * 0.2, -tentSway * 0.6, -tentSway * 0.9, -tentSway * 0.8, -tentSway * 0.4,
+            tentSway * 0.8
         ], AXIS_X),
-        // Tentacle 4 (rear-right) — phase offset ~288°, X=forward/back + Z=lateral sway
-        eulerTrack('tent_4_01', t8, [
-            [tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, 0],
-            [-tentSway * 0.5, 0, tentSway * 0.2], [-tentSway, 0, 0],
-            [-tentSway * 0.5, 0, -tentSway * 0.2], [0, 0, 0],
-            [tentSway * 0.5, 0, tentSway * 0.2], [tentSway, 0, 0],
-            [tentSway * 0.5, 0, -tentSway * 0.2]
+
+        // Tentacle 3 (rear-left) — more phase offset
+        eulerTrack('tent_3_01', t, [
+            [-tentSway * 0.2, 0, tentSway * 0.3],
+            [tentSway * 0.5, 0, tentSway * 0.5],
+            [tentSway * 1.0, 0, tentSway * 0.3],
+            [tentSway * 0.7, 0, 0],
+            [tentSway * 0.2, 0, -tentSway * 0.2],
+            [-tentSway * 0.2, 0, -tentSway * 0.4],
+            [-tentSway * 0.5, 0, -tentSway * 0.3],
+            [-tentSway * 0.7, 0, -tentSway * 0.1],
+            [-tentSway * 0.4, 0, tentSway * 0.1],
+            [-tentSway * 0.1, 0, tentSway * 0.2],
+            [-tentSway * 0.2, 0, tentSway * 0.3]
         ]),
-        buildRotationTrack('tent_4_02', t8, [
-            0, tentSway * 0.7, tentSway * 1.2, tentSway * 0.7, 0, -tentSway * 0.7, -tentSway * 1.2, -tentSway * 0.7, 0
+        buildRotationTrack('tent_3_02', t, [
+            tentSway * 0.2, tentSway * 0.8, tentSway * 1.3, tentSway * 1.0, tentSway * 0.5,
+            0, -tentSway * 0.4, -tentSway * 0.7, -tentSway * 0.8, -tentSway * 0.4,
+            tentSway * 0.2
         ], AXIS_X),
-        buildRotationTrack('tent_4_03', t8, [
-            tentSway * 1.0, tentSway * 0.6, 0, -tentSway * 0.8, -tentSway * 1.0, -tentSway * 0.6, 0, tentSway * 0.8, tentSway * 1.0
+        buildRotationTrack('tent_3_03', t, [
+            tentSway * 0.5, tentSway * 1.0, tentSway * 1.5, tentSway * 1.2, tentSway * 0.7,
+            tentSway * 0.2, -tentSway * 0.3, -tentSway * 0.6, -tentSway * 0.7, -tentSway * 0.3,
+            tentSway * 0.5
+        ], AXIS_X),
+
+        // Tentacle 4 (rear-right) — most delayed phase
+        eulerTrack('tent_4_01', t, [
+            [-tentSway * 0.4, 0, -tentSway * 0.3],
+            [tentSway * 0.2, 0, -tentSway * 0.5],
+            [tentSway * 0.8, 0, -tentSway * 0.3],
+            [tentSway * 1.0, 0, 0],
+            [tentSway * 0.6, 0, tentSway * 0.2],
+            [tentSway * 0.1, 0, tentSway * 0.4],
+            [-tentSway * 0.3, 0, tentSway * 0.3],
+            [-tentSway * 0.6, 0, tentSway * 0.1],
+            [-tentSway * 0.7, 0, -tentSway * 0.1],
+            [-tentSway * 0.5, 0, -tentSway * 0.2],
+            [-tentSway * 0.4, 0, -tentSway * 0.3]
+        ]),
+        buildRotationTrack('tent_4_02', t, [
+            0, tentSway * 0.5, tentSway * 1.0, tentSway * 1.3, tentSway * 0.9,
+            tentSway * 0.4, 0, -tentSway * 0.4, -tentSway * 0.6, -tentSway * 0.3,
+            0
+        ], AXIS_X),
+        buildRotationTrack('tent_4_03', t, [
+            tentSway * 0.3, tentSway * 0.7, tentSway * 1.2, tentSway * 1.5, tentSway * 1.1,
+            tentSway * 0.6, tentSway * 0.1, -tentSway * 0.3, -tentSway * 0.5, -tentSway * 0.2,
+            tentSway * 0.3
         ], AXIS_X),
     ]);
 }

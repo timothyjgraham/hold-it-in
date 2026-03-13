@@ -1214,6 +1214,21 @@ function _buildDolphinGeometry(size, config) {
     geometries.push(eyeGeo); transforms.push(eyeLM); materialIndices.push(2); boneNames.push('head');
     geometries.push(eyeGeo); transforms.push(eyeRM); materialIndices.push(2); boneNames.push('head');
 
+    // --- Dolphin smile line (legs=2 dark) — the characteristic friendly curve ---
+    const smileGeo = new THREE.TorusGeometry(headR * 0.35, headR * 0.025, 4, 8, Math.PI * 0.55);
+    const smileRot = new THREE.Matrix4().makeRotationX(Math.PI * 0.15);
+    smileRot.multiply(new THREE.Matrix4().makeRotationZ(Math.PI));
+    const smilePos = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y - headR * 0.3, w.head.z - headR * 0.7);
+    smilePos.multiply(smileRot);
+    geometries.push(smileGeo); transforms.push(smilePos); materialIndices.push(2); boneNames.push('head');
+
+    // --- Blowhole (legs=2 dark) — small circle on top of head ---
+    const blowholeGeo = new THREE.CircleGeometry(headR * 0.08, 6);
+    const blowholeRot = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
+    const blowholePos = new THREE.Matrix4().makeTranslation(w.head.x, w.head.y + headR * 0.85, w.head.z + headR * 0.1);
+    blowholePos.multiply(blowholeRot);
+    geometries.push(blowholeGeo); transforms.push(blowholePos); materialIndices.push(2); boneNames.push('head');
+
     return { geometries, transforms, materialIndices, boneNames };
 }
 
@@ -1339,6 +1354,16 @@ function _buildSharkGeometry(size, config) {
         const tx = w.head.x - jawW * 0.7 + i * jawW * 0.35;
         const toothM = new THREE.Matrix4().makeTranslation(tx, w.head.y - headR * 0.6, w.head.z - headR * 0.3);
         geometries.push(toothGeo); transforms.push(toothM); materialIndices.push(1); boneNames.push('head');
+    }
+
+    // --- Gill slits (legs=2 dark) — 3 thin slashes on each side, iconic shark detail ---
+    const gillGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.45, headR * 0.06);
+    for (let g = 0; g < 3; g++) {
+        const gz = w.head.z + headR * (0.5 + g * 0.4);
+        const gillLM = new THREE.Matrix4().makeTranslation(w.root.x - bodyW * 0.47, w.root.y - bodyH * 0.05, gz);
+        geometries.push(gillGeo); transforms.push(gillLM); materialIndices.push(2); boneNames.push(null);
+        const gillRM = new THREE.Matrix4().makeTranslation(w.root.x + bodyW * 0.47, w.root.y - bodyH * 0.05, gz);
+        geometries.push(gillGeo.clone()); transforms.push(gillRM); materialIndices.push(2); boneNames.push(null);
     }
 
     // --- HUGE dorsal fin (body=0) — the iconic shark silhouette ---
