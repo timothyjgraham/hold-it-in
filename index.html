@@ -2748,11 +2748,11 @@
                       passthrough: true }
                 );
             } else if (step === 2) {
-                // Place magnet — bubble near the suggested floor spot
+                // Place magnet — closer to toilet so coins collect nearby
                 this._showTutorialBubble(
                     "Place it on the floor!",
-                    { pointerAtWorld: { x: 0, y: 0.1, z: 30 },
-                      nearWorld: { x: 0, y: 0.1, z: 30 },
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 24 },
+                      nearWorld: { x: 0, y: 0.1, z: 24 },
                       passthrough: true }
                 );
             } else if (step === 3) {
@@ -2765,11 +2765,11 @@
                       passthrough: true }
                 );
             } else if (step === 4) {
-                // Place ubik — bubble near the suggested floor spot
+                // Place ubik — in front of magnet (higher Z = closer to enemies)
                 this._showTutorialBubble(
-                    "Place it nearby!",
-                    { pointerAtWorld: { x: 0, y: 0.1, z: 24 },
-                      nearWorld: { x: 0, y: 0.1, z: 24 },
+                    "Place it in front of the magnet!<br>It'll zap enemies before they pass!",
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 34 },
+                      nearWorld: { x: 0, y: 0.1, z: 34 },
                       passthrough: true }
                 );
             } else if (step === 5) {
@@ -5586,7 +5586,9 @@
 
             const def = this.ENEMY_TYPES[enemyType];
             if (!def) return;
-            this._createEnemy(enemyType, def, {});
+            const spawnOpts = (this._tutorialActive && this.wave === 1)
+                ? { xOverride: 0, targetLane: 0 } : {};
+            this._createEnemy(enemyType, def, spawnOpts);
             this.enemiesSpawned++;
             if (window.SFX) SFX.play('enemy_spawn');
         },
