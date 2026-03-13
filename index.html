@@ -2599,11 +2599,6 @@
                 overlay.classList.remove('passthrough');
             }
 
-            // Re-trigger pop animation
-            bubble.style.animation = 'none';
-            void bubble.offsetWidth;
-            bubble.style.animation = '';
-
             overlay.style.display = '';
 
             // Highlight target element
@@ -2627,6 +2622,57 @@
             } else {
                 this._hideTutorialPointer();
             }
+
+            // --- Position the bubble dynamically ---
+            // Briefly measure off-screen, then place
+            bubble.style.left = '-9999px';
+            bubble.style.top = '0';
+            bubble.style.visibility = 'hidden';
+            void bubble.offsetWidth; // force layout
+            const bw = bubble.offsetWidth;
+            const bh = bubble.offsetHeight;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            let bx, by;
+            if (opts.nearElement) {
+                // Position to the left of a DOM element
+                const el = document.querySelector(opts.nearElement);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    bx = rect.left - bw - 24;
+                    by = rect.top + rect.height / 2 - bh / 2;
+                } else {
+                    bx = (vw - bw) / 2;
+                    by = vh * 0.42 - bh / 2;
+                }
+            } else if (opts.nearWorld) {
+                // Position near a 3D-projected world point, offset to not cover it
+                const vec = new THREE.Vector3(opts.nearWorld.x, opts.nearWorld.y, opts.nearWorld.z);
+                vec.project(this.camera);
+                const sx = (vec.x * 0.5 + 0.5) * vw;
+                const sy = (-vec.y * 0.5 + 0.5) * vh;
+                // Place above-left of the projected point
+                bx = sx - bw - 40;
+                by = sy - bh - 20;
+            } else {
+                // Center of screen
+                bx = (vw - bw) / 2;
+                by = vh * 0.42 - bh / 2;
+            }
+
+            // Clamp to viewport
+            bx = Math.max(10, Math.min(bx, vw - bw - 10));
+            by = Math.max(10, Math.min(by, vh - bh - 10));
+
+            bubble.style.left = bx + 'px';
+            bubble.style.top = by + 'px';
+            bubble.style.visibility = '';
+
+            // Re-trigger pop animation
+            bubble.style.animation = 'none';
+            void bubble.offsetWidth;
+            bubble.style.animation = '';
 
             // Auto-dismiss timer
             if (opts.autoAdvance) {
@@ -2688,38 +2734,42 @@
             const step = this._tutorialStep;
 
             if (step === 0) {
-                // Intro
+                // Intro — center screen
                 this._showTutorialBubble(
                     "They want YOUR toilet!<br>Don't let them in!"
                 );
             } else if (step === 1) {
-                // First item: Coin Magnet — arrow points at button
+                // Coin Magnet — bubble next to the button
                 this._showTutorialBubble(
                     "Grab a Coin Magnet!<br>It collects coins for you!",
                     { highlight: '.tower-btn[data-tower="coinmagnet"]',
                       pointerAt: '.tower-btn[data-tower="coinmagnet"]',
+                      nearElement: '.tower-btn[data-tower="coinmagnet"]',
                       passthrough: true }
                 );
             } else if (step === 2) {
-                // Place coin magnet — mid-field where coins will drop from kills
+                // Place magnet — bubble near the suggested floor spot
                 this._showTutorialBubble(
                     "Place it on the floor!",
                     { pointerAtWorld: { x: 0, y: 0.1, z: 30 },
+                      nearWorld: { x: 0, y: 0.1, z: 30 },
                       passthrough: true }
                 );
             } else if (step === 3) {
-                // Second item: Ubik Spray — arrow points at button
+                // Ubik Spray — bubble next to the button
                 this._showTutorialBubble(
                     "Now grab the Ubik Spray!<br>It damages enemies!",
                     { highlight: '.tower-btn[data-tower="ubik"]',
                       pointerAt: '.tower-btn[data-tower="ubik"]',
+                      nearElement: '.tower-btn[data-tower="ubik"]',
                       passthrough: true }
                 );
             } else if (step === 4) {
-                // Place ubik spray — nearby so it kills enemies and magnet collects coins
+                // Place ubik — bubble near the suggested floor spot
                 this._showTutorialBubble(
                     "Place it nearby!",
                     { pointerAtWorld: { x: 0, y: 0.1, z: 24 },
+                      nearWorld: { x: 0, y: 0.1, z: 24 },
                       passthrough: true }
                 );
             } else if (step === 5) {
@@ -2727,7 +2777,7 @@
                 this._hideTutorialBubble();
                 this.waveTimer = 5.0;
             } else if (step === 6) {
-                // First enemy spawned
+                // First enemy spawned — center screen
                 this._showTutorialBubble(
                     "Here they come!<br>Sit back and watch!",
                     { autoAdvance: true, delay: 3500, passthrough: true }
@@ -2736,7 +2786,7 @@
                 // Wait state — waiting for upgrade drones
                 this._hideTutorialBubble();
             } else if (step === 8) {
-                // Upgrade selection
+                // Upgrade selection — center screen
                 this._showTutorialBubble(
                     "Nice work! Pick an upgrade<br>to power up!",
                     { autoAdvance: true, delay: 3500, passthrough: true }
