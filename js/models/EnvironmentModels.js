@@ -1363,7 +1363,6 @@ export function createOfficePeek() {
         { x: 33, z: 25 },
         { x: -33, z: 45 },
         { x: 33, z: 45 },
-        { x: 0, z: 55 },
     ];
     for (const pp of plantPositions) {
         const plant = buildPlant();
@@ -1381,7 +1380,7 @@ export function createOfficePeek() {
     group.add(wb1);
 
     const wb2 = buildWhiteboard();
-    wb2.position.set(35.8, 3.5, 30);
+    wb2.position.set(35.8, 3.5, 40);
     wb2.rotation.y = -Math.PI / 2;
     group.add(wb2);
 
@@ -1409,7 +1408,7 @@ export function createOfficePeek() {
     // ════════════════════════════════════════════════════════════════════════
 
     const bs1 = buildBookshelf();
-    bs1.position.set(-35.5, 0, 38);
+    bs1.position.set(-35.5, 0, 40.5);
     bs1.rotation.y = Math.PI / 2;
     group.add(bs1);
 
