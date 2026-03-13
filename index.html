@@ -6912,48 +6912,75 @@
             }
 
             // --- Exit door spring physics ---
-            // Simple model: enemies walk through freely, but their presence
-            // pushes the door open. If the door swings back into enemies,
-            // it whacks back open. No blocking — just reactive door physics.
+            // Enemies walk through freely. Their presence pushes the door open.
+            // If the closing door panel intersects an enemy, it whacks back open.
             if (this.officeGroup && this.officeGroup.userData.exitDoors) {
                 const doors = this.officeGroup.userData.exitDoors;
                 const { springK, dampK, pushImpulse, maxAngle, minAngle, doorZ, halfWidth } = doors;
+                const panelWidth = halfWidth - 0.1;
 
                 let pushLeft = 0, pushRight = 0;
+                let hitLeft = false, hitRight = false;
 
                 for (const e of this.enemies) {
                     if (e.stunTimer > 0 || e.bashing) continue;
-                    // Enemy in the doorway zone?
-                    if (e.z > doorZ + 1.5 || e.z < doorZ - 2) continue;
-                    if (Math.abs(e.x) >= halfWidth + 1) continue;
-
                     const push = pushImpulse * (e.speed / 3);
 
-                    // Accumulate continuous push while enemies are in the doorway
-                    if (e.x < 2) pushLeft += push;
-                    if (e.x > -2) pushRight += push;
+                    // Enemies at/approaching the door — continuous push
+                    if (e.z >= doorZ - 0.5 && e.z < doorZ + 1.5 && Math.abs(e.x) < halfWidth + 1) {
+                        if (e.x < 2) pushLeft += push;
+                        if (e.x > -2) pushRight += push;
+                        if (!e.pushedExitDoor) {
+                            e.pushedExitDoor = true;
+                            if (window.SFX) SFX.play('exit_door');
+                            if (e.x < 2) doors.leftAngVel += push * 1.5;
+                            if (e.x > -2) doors.rightAngVel += push * 1.5;
+                        }
+                    }
 
-                    // First contact — big initial slam + sound
-                    if (!e.pushedExitDoor) {
-                        e.pushedExitDoor = true;
-                        if (window.SFX) SFX.play('exit_door');
-                        if (e.x < 2) doors.leftAngVel += push * 1.5;
-                        if (e.x > -2) doors.rightAngVel += push * 1.5;
+                    // Enemies past the door — check if the door panel intersects them.
+                    // For each door, compute the perpendicular & parallel distance from
+                    // the enemy to the door panel line (hinge → free edge). If the enemy
+                    // is close to the panel and between hinge and free edge, it's a hit.
+                    if (e.z < doorZ && e.z > doorZ - panelWidth - 1) {
+                        // Left door: hinge at (-halfWidth, doorZ)
+                        const ldx = e.x + halfWidth;
+                        const ldz = doorZ - e.z;
+                        if (ldx > -0.5) {
+                            const cosL = Math.cos(doors.leftAngle);
+                            const sinL = Math.sin(doors.leftAngle);
+                            const par = cosL * ldx + sinL * ldz;
+                            const perp = cosL * ldz - sinL * ldx;
+                            if (par > 0 && par < panelWidth + 0.5 && Math.abs(perp) < 1.0) {
+                                hitLeft = true;
+                            }
+                        }
+                        // Right door: hinge at (+halfWidth, doorZ)
+                        const rdx = halfWidth - e.x;
+                        const rdz = doorZ - e.z;
+                        if (rdx > -0.5) {
+                            const cosR = Math.cos(doors.rightAngle);
+                            const sinR = Math.sin(doors.rightAngle);
+                            const par = cosR * rdx + sinR * rdz;
+                            const perp = cosR * rdz - sinR * rdx;
+                            if (par > 0 && par < panelWidth + 0.5 && Math.abs(perp) < 1.0) {
+                                hitRight = true;
+                            }
+                        }
                     }
                 }
 
-                // Apply continuous push (scales with number of enemies in doorway)
+                // Continuous push from enemies at the door
                 doors.leftAngVel += pushLeft * dt * 3;
                 doors.rightAngVel += pushRight * dt * 3;
 
-                // Whack: if a door is closing and there are enemies in the way,
-                // reverse its velocity — the door bounces off them
-                if (pushLeft > 0 && doors.leftAngVel < -1 && doors.leftAngle < 0.4) {
-                    doors.leftAngVel = Math.max(3, Math.abs(doors.leftAngVel) * 0.7);
+                // Whack: if closing door panel intersects an enemy, bounce it open
+                if (hitLeft && doors.leftAngVel < 0) {
+                    doors.leftAngVel = Math.max(3, Math.abs(doors.leftAngVel) + 2);
                     if (window.SFX) SFX.play('exit_door');
                 }
-                if (pushRight > 0 && doors.rightAngVel < -1 && doors.rightAngle < 0.4) {
-                    doors.rightAngVel = Math.max(3, Math.abs(doors.rightAngVel) * 0.7);
+                if (hitRight && doors.rightAngVel < 0) {
+                    doors.rightAngVel = Math.max(3, Math.abs(doors.rightAngVel) + 2);
                     if (window.SFX) SFX.play('exit_door');
                 }
 
