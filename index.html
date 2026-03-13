@@ -2646,10 +2646,10 @@
                     { position: 'center' }
                 );
             } else if (step === 1) {
-                // Tower selection — highlight panel, block grid clicks
+                // Tower selection — passthrough so tower panel is clickable
                 this._showTutorialBubble(
                     "Pick a tower from the panel!<br>Try the Coin Magnet!",
-                    { position: 'left', highlight: 'tower-panel' }
+                    { position: 'left', highlight: 'tower-panel', passthrough: true }
                 );
             } else if (step === 2) {
                 // Tower placement — let clicks through to the grid
