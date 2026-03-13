@@ -1229,6 +1229,11 @@
                         SFX.startAmbient('ambient_vent');
                     }, 1000);
                 }
+                // Unlock music and start title playlist
+                if (window.Music) {
+                    Music.unlock();
+                    Music.play('title');
+                }
                 window.removeEventListener('click', unlockAudio);
                 window.removeEventListener('keydown', unlockAudio);
                 window.removeEventListener('touchstart', unlockAudio);
@@ -2215,12 +2220,19 @@
             const musicSlider = document.getElementById('slider-music');
             const sfxSlider = document.getElementById('slider-sfx');
 
-            // Initialize slider positions from saved SoundManager state
+            // Initialize slider positions from saved state
             if (window.SFX) {
                 const savedSfx = Math.round(SFX.getCategoryVolume('sfx') * 100);
-                const savedAmbient = Math.round(SFX.getCategoryVolume('ambient') * 100);
                 sfxSlider.value = savedSfx;
                 document.getElementById('val-sfx').textContent = savedSfx + '%';
+            }
+            // Music slider — prefer MusicManager volume, fall back to ambient
+            if (window.Music) {
+                const savedMusic = Math.round(Music.getVolume() * 100);
+                musicSlider.value = savedMusic;
+                document.getElementById('val-music').textContent = savedMusic + '%';
+            } else if (window.SFX) {
+                const savedAmbient = Math.round(SFX.getCategoryVolume('ambient') * 100);
                 musicSlider.value = savedAmbient;
                 document.getElementById('val-music').textContent = savedAmbient + '%';
             }
@@ -2229,6 +2241,7 @@
                 const v = parseInt(e.target.value);
                 document.getElementById('val-music').textContent = v + '%';
                 if (window.SFX) SFX.setAmbientVolume(v / 100);
+                if (window.Music) Music.setVolume(v / 100);
             });
             sfxSlider.addEventListener('input', (e) => {
                 const v = parseInt(e.target.value);
@@ -2255,6 +2268,7 @@
                 this.state = 'title';
                 showScreen('title-screen');
                 this._updateBestStats();
+                if (window.Music) Music.play('title');
             });
 
             // === PAUSE MENU BUTTONS ===
@@ -2286,6 +2300,7 @@
                     showScreen('title-screen');
                     this._updateContinueButtons();
                     this.announceWave('');
+                    if (window.Music) Music.play('title');
                 } else {
                     this.announceWave('SAVE FAILED — STORAGE FULL?');
                 }
@@ -2301,6 +2316,7 @@
                         setGameUIVisible(false);
                         showScreen('title-screen');
                         this._updateBestStats();
+                        if (window.Music) Music.play('title');
                     }
                 );
             });
@@ -2749,6 +2765,13 @@
             }
 
             this.clock.start();
+
+            // Start scenario music
+            if (window.Music) {
+                const scenario = this._currentScenario || 'office';
+                Music.play(scenario);
+            }
+
             console.log('Game started — defend the throne!');
         },
 
@@ -2756,6 +2779,7 @@
             if (this.state !== 'playing') return;
             this.state = 'paused';
             if (window.SFX) SFX.play('ui_pause');
+            if (window.Music) Music.pause();
             document.getElementById('pause-overlay').classList.add('active');
             // Disable save buttons during upgrade/intro selection
             const saveDisabled = this._upgradePhase || this._introPhase;
@@ -2767,12 +2791,14 @@
             if (this.state !== 'paused') return;
             this.state = 'playing';
             if (window.SFX) SFX.play('ui_unpause');
+            if (window.Music) Music.resume();
             document.getElementById('pause-overlay').classList.remove('active');
         },
 
         gameOver() {
             this.state = 'gameover';
             if (window.SFX) SFX.play('game_over');
+            if (window.Music) Music.play('gameover');
             // Delete save — can't continue a lost game
             this._deleteSave();
             // Save best stats
@@ -3978,6 +4004,7 @@
             this._upgradePhase = true;
             this._upgradeOptions = options;
             if (window.SFX) SFX.play('drone_arrive');
+            if (window.Music) Music.duck();
 
             // Target hover positions: 3 drones in a row, centered on camera view axis
             const spacing = 5.0;
@@ -4184,6 +4211,7 @@
             this.upgradeDrones = [];
             this._upgradePhase = false;
             this._upgradeOptions = null;
+            if (window.Music) Music.unduck();
         },
 
         /** Calculate and set the inter-wave timer for the next wave */
@@ -4222,6 +4250,7 @@
 
             // Then clean up drones and restore game flow
             this._upgradePhase = false;
+            if (window.Music) Music.unduck();
             this._cleanupUpgradeDrones();
 
             // Check if next wave introduces a new enemy type
@@ -7500,6 +7529,8 @@
         _startDoorShatter(doorZ) {
             this.state = 'cinematic';
             this._cinematicTimer = 0;
+            // Fade out gameplay music during cinematic
+            if (window.Music) Music.stop(1.5);
             // SFX: toilet flush + door shatter for epic cinematic
             if (window.SFX) { SFX.play('toilet_flush'); SFX.play('door_shatter'); }
 
