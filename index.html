@@ -2080,6 +2080,7 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'flex';
                 setGameUIVisible(false);
+                if (window.SFX) SFX.play('menu_transition');
             };
 
             // Main menu buttons
@@ -2322,9 +2323,15 @@
             });
 
             // Menu hover sounds
-            document.querySelectorAll('.menu-btn, .scenario-card.playable, .scenario-continue-btn').forEach(btn => {
+            document.querySelectorAll('.menu-btn, .scenario-continue-btn').forEach(btn => {
                 btn.addEventListener('mouseenter', () => {
                     if (window.SFX) SFX.play('ui_hover');
+                });
+            });
+            // Scenario card hovers — distinct playful sound
+            document.querySelectorAll('.scenario-card.playable').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    if (window.SFX) SFX.play('scenario_hover');
                 });
             });
 
@@ -2821,8 +2828,13 @@
             const scenario = this._currentScenario || 'office';
             if (!this._bestStats[scenario]) this._bestStats[scenario] = { wave: 0, score: 0 };
             const s = this._bestStats[scenario];
-            if (this.wave > s.wave) s.wave = this.wave;
-            if (this.score > s.score) s.score = this.score;
+            const wasNewWave = this.wave > s.wave;
+            const wasNewScore = this.score > s.score;
+            if (wasNewWave) s.wave = this.wave;
+            if (wasNewScore) s.score = this.score;
+            if ((wasNewWave || wasNewScore) && (s.wave > 1 || s.score > 0)) {
+                if (window.SFX) SFX.play('new_high_score');
+            }
             try {
                 localStorage.setItem('holditin_stats', JSON.stringify(this._bestStats));
             } catch(e) { /* ignore */ }
@@ -3289,7 +3301,10 @@
             // R14: Clearance Sale — tower costs reduced
             const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
             const towerCost = Math.max(5, Math.floor(def.cost * costMult));
-            if (this.coins < towerCost) return;
+            if (this.coins < towerCost) {
+                if (window.SFX) SFX.play('tower_deny');
+                return;
+            }
 
             const gs = CONFIG.grid;
             const tw = def.tileWidth || 1;
@@ -3299,8 +3314,14 @@
             // Validate all cells for multi-tile towers
             for (let dx = 0; dx < tw; dx++) {
                 const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
-                if (cellX < -halfW || cellX > halfW) return; // out of bounds
-                if (this._isCellOccupied(cellX, pos.z)) return;
+                if (cellX < -halfW || cellX > halfW) {
+                    if (window.SFX) SFX.play('tower_deny');
+                    return;
+                }
+                if (this._isCellOccupied(cellX, pos.z)) {
+                    if (window.SFX) SFX.play('tower_deny');
+                    return;
+                }
             }
 
             this.coins -= towerCost;

@@ -306,6 +306,7 @@ export class UpgradeSelectionUI {
         if (bestIndex !== this.hoveredIndex) {
             this.hoveredIndex = bestIndex;
             document.body.style.cursor = bestIndex >= 0 ? 'pointer' : '';
+            if (bestIndex >= 0 && window.SFX) SFX.play('drone_hover');
         }
     }
 

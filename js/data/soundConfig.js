@@ -20,54 +20,107 @@ export const SOUND_EVENTS = {
     // ─── UI ────────────────────────────────────────────────────────────────
 
     ui_click: {
-        files: ['ui_click_1.wav', 'ui_click_2.wav', 'ui_click_3.wav', 'ui_click_4.wav'],
+        // Select Poppy — playful, bubbly button presses
+        files: ['ui_click_1.wav', 'ui_click_2.wav', 'ui_click_3.wav', 'ui_click_4.wav', 'ui_click_5.wav'],
         volume: 0.5,
         pitch: [0.95, 1.05],
         category: 'ui',
     },
     ui_hover: {
-        files: ['ui_hover_1.wav', 'ui_hover_2.wav', 'ui_hover_3.wav'],
+        // Click Tiny Tactile — ultra-subtle micro-feedback
+        files: ['ui_hover_1.wav', 'ui_hover_2.wav', 'ui_hover_3.wav', 'ui_hover_4.wav'],
         volume: 0.2,
         pitch: [0.9, 1.1],
         category: 'ui',
         cooldown: 0.05,
     },
     ui_game_start: {
+        // Alert Unique Discovery — "here we go!" fanfare
         files: ['ui_game_start_1.wav', 'ui_game_start_2.wav'],
         volume: 0.6,
         pitch: [0.95, 1.0],
         category: 'ui',
     },
     ui_pause: {
+        // Swipe Slide — menu sliding in
         files: ['ui_pause.wav'],
         volume: 0.5,
         pitch: [1.0, 1.0],
         category: 'ui',
     },
     ui_unpause: {
+        // Swipe Slide — menu sliding out
         files: ['ui_unpause.wav'],
         volume: 0.5,
         pitch: [1.0, 1.0],
         category: 'ui',
     },
     ui_tower_select: {
-        files: ['ui_tower_select_1.wav', 'ui_tower_select_2.wav', 'ui_tower_select_3.wav'],
+        // Select Magic Crystal — shimmery, strategic feel
+        files: ['ui_tower_select_1.wav', 'ui_tower_select_2.wav', 'ui_tower_select_3.wav', 'ui_tower_select_4.wav'],
         volume: 0.45,
         pitch: [0.95, 1.05],
         category: 'ui',
     },
     ui_tower_deselect: {
-        files: ['ui_tower_deselect.wav'],
+        // Button Back Undo — satisfying "nevermind"
+        files: ['ui_tower_deselect.wav', 'ui_tower_deselect_2.wav'],
         volume: 0.35,
         pitch: [0.9, 1.0],
         category: 'ui',
     },
     slider_tick: {
+        // Click Tiny Tactile — incremental tactile tick
         files: ['slider_tick.wav'],
         volume: 0.15,
         pitch: [0.9, 1.1],
         category: 'ui',
         cooldown: 0.03,
+    },
+    menu_transition: {
+        // Swipe Slide — screen transitions (title→scenario, etc.)
+        files: ['menu_transition_1.wav', 'menu_transition_2.wav', 'menu_transition_3.wav'],
+        volume: 0.4,
+        pitch: [0.95, 1.05],
+        category: 'ui',
+    },
+    scenario_hover: {
+        // General Interact Playful Short — hovering over scenario cards
+        files: ['scenario_hover_1.wav', 'scenario_hover_2.wav', 'scenario_hover_3.wav'],
+        volume: 0.25,
+        pitch: [0.9, 1.1],
+        category: 'ui',
+        cooldown: 0.08,
+    },
+    scenario_lock: {
+        // Alert Playful Deny — "not yet!" for locked scenarios
+        files: ['scenario_lock_1.wav', 'scenario_lock_2.wav'],
+        volume: 0.4,
+        pitch: [0.9, 1.05],
+        category: 'ui',
+    },
+    tower_deny: {
+        // Button Deny — "can't afford" / "can't place here"
+        files: ['tower_deny_1.wav', 'tower_deny_2.wav'],
+        volume: 0.35,
+        pitch: [0.9, 1.05],
+        category: 'ui',
+        cooldown: 0.3,
+    },
+    drone_hover: {
+        // Select Poppy — hovering over an upgrade drone
+        files: ['drone_hover_1.wav', 'drone_hover_2.wav', 'drone_hover_3.wav'],
+        volume: 0.3,
+        pitch: [0.95, 1.1],
+        category: 'ui',
+        cooldown: 0.1,
+    },
+    new_high_score: {
+        // Alert Unique Achievement Long — epic celebration for beating your record
+        files: ['new_high_score_1.wav', 'new_high_score_2.wav'],
+        volume: 0.7,
+        pitch: [0.95, 1.0],
+        category: 'ui',
     },
 
     // ─── WAVE EVENTS ───────────────────────────────────────────────────────
@@ -109,7 +162,8 @@ export const SOUND_EVENTS = {
         category: 'sfx',
     },
     wave_clear: {
-        files: ['wave_clear_1.wav', 'wave_clear_2.wav'],
+        // Alert Unique Achievement Short — quick victory fanfare
+        files: ['wave_clear_1.wav', 'wave_clear_2.wav', 'wave_clear_3.wav'],
         volume: 0.6,
         pitch: [0.95, 1.05],
         category: 'sfx',
@@ -484,6 +538,7 @@ export const SOUND_EVENTS = {
     // ─── UPGRADE SYSTEM ───────────────────────────────────────────────────
 
     drone_arrive: {
+        // General Interact Playful Short — bubbly drone entrance
         files: ['drone_arrive_1.wav', 'drone_arrive_2.wav', 'drone_arrive_3.wav'],
         volume: 0.4,
         pitch: [0.9, 1.1],
@@ -491,53 +546,61 @@ export const SOUND_EVENTS = {
         cooldown: 0.2,
     },
     drone_reject: {
-        files: ['drone_reject.wav'],
+        // Alert Playful Deny — playful "nope, not that one"
+        files: ['drone_reject.wav', 'drone_reject_2.wav', 'drone_reject_3.wav'],
         volume: 0.3,
         pitch: [0.85, 1.0],
         category: 'sfx',
     },
     drone_wobble: {
-        files: ['drone_wobble_1.wav', 'drone_wobble_2.wav'],
+        // Robot Assistant Vocalization — drones chirp and burble with personality
+        files: ['drone_wobble_1.wav', 'drone_wobble_2.wav', 'drone_wobble_3.wav', 'drone_wobble_4.wav'],
         volume: 0.15,
         pitch: [0.9, 1.1],
         category: 'sfx',
         cooldown: 0.3,
     },
     upgrade_common: {
-        files: ['upgrade_common_1.wav', 'upgrade_common_2.wav', 'upgrade_common_3.wav'],
+        // Alert Unique Achievement Short — quick satisfying ping
+        files: ['upgrade_common_1.wav', 'upgrade_common_2.wav', 'upgrade_common_3.wav', 'upgrade_common_4.wav'],
         volume: 0.5,
         pitch: [0.95, 1.05],
-        category: 'sfx',
+        category: 'ui',
     },
     upgrade_rare: {
+        // Alert Unique Discovery — "found something special"
         files: ['upgrade_rare_1.wav', 'upgrade_rare_2.wav', 'upgrade_rare_3.wav'],
-        volume: 0.55,
+        volume: 0.6,
         pitch: [0.95, 1.05],
-        category: 'sfx',
+        category: 'ui',
     },
     upgrade_legendary: {
-        files: ['upgrade_legendary_1.wav', 'upgrade_legendary_2.wav'],
-        volume: 0.65,
+        // Alert Unique Achievement Long — THE triumphant fanfare
+        files: ['upgrade_legendary_1.wav', 'upgrade_legendary_2.wav', 'upgrade_legendary_3.wav'],
+        volume: 0.7,
         pitch: [0.95, 1.0],
-        category: 'sfx',
+        category: 'ui',
     },
     upgrade_acquire: {
+        // Notification Popup — satisfying "got it" confirmation
         files: ['upgrade_acquire_1.wav', 'upgrade_acquire_2.wav'],
         volume: 0.5,
         pitch: [0.95, 1.05],
-        category: 'sfx',
+        category: 'ui',
     },
     card_fly: {
+        // Swipe Slide — swoosh as card flies to HUD
         files: ['card_fly_1.wav', 'card_fly_2.wav'],
-        volume: 0.3,
+        volume: 0.35,
         pitch: [1.0, 1.2],
-        category: 'sfx',
+        category: 'ui',
     },
     card_land: {
-        files: ['card_land_1.wav', 'card_land_2.wav'],
-        volume: 0.4,
+        // Button Plip Pops — satisfying snap into place
+        files: ['card_land_1.wav', 'card_land_2.wav', 'card_land_3.wav'],
+        volume: 0.45,
         pitch: [0.95, 1.05],
-        category: 'sfx',
+        category: 'ui',
     },
 
     // ─── DRONES (TOWER DELIVERY + MEDIC) ──────────────────────────────────
