@@ -2937,11 +2937,12 @@
 
             // 8 second build phase before wave 1
             this.waveTimer = 8.0;
-            this.announceWave('PLACE COIN MAGNETS [1] TO COLLECT!');
 
             // Tutorial — first-time players
             if (this._shouldShowTutorial()) {
                 this._startTutorial();
+            } else {
+                this.announceWave("DON'T LET THEM REACH THE TOILET!");
             }
 
             // Airplane flavor text — dual-access toilet tooltip
