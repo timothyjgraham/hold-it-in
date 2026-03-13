@@ -21,6 +21,7 @@ class MusicManager {
         this._ducked = false;
         this._duckMultiplier = 1.0;
         this._unlocked = false;
+        this._fadeCounter = 0;          // monotonic counter to invalidate stale fade callbacks
 
         // Load saved volume from shared audio settings
         this._loadVolume();
@@ -81,7 +82,8 @@ class MusicManager {
     pause(fadeDuration = MUSIC_DEFAULTS.pauseFadeDuration) {
         if (!this._currentAudio || this._paused) return;
         this._paused = true;
-        this._fadeOut(this._currentAudio, fadeDuration, true); // true = pause, don't destroy
+        this._fadeCounter++;
+        this._fadeOut(this._currentAudio, fadeDuration, true, this._fadeCounter);
     }
 
     /**
@@ -90,6 +92,7 @@ class MusicManager {
     resume(fadeDuration = MUSIC_DEFAULTS.pauseFadeDuration) {
         if (!this._currentAudio || !this._paused) return;
         this._paused = false;
+        this._fadeCounter++;  // invalidate any in-progress fadeOut
         this._currentAudio.play().catch(() => {});
         this._fadeIn(this._currentAudio, fadeDuration);
     }
@@ -179,10 +182,11 @@ class MusicManager {
         }, stepTime);
     }
 
-    _fadeOut(audio, duration, pauseAfter = false) {
+    _fadeOut(audio, duration, pauseAfter = false, fadeId = -1) {
         const startVol = audio.volume;
         if (startVol <= 0) {
             if (!pauseAfter) { audio.pause(); audio.src = ''; }
+            else audio.pause();
             return;
         }
 
@@ -192,6 +196,11 @@ class MusicManager {
         let step = 0;
 
         const interval = setInterval(() => {
+            // If a newer fade operation has started, abort this one
+            if (fadeId >= 0 && fadeId !== this._fadeCounter) {
+                clearInterval(interval);
+                return;
+            }
             step++;
             if (step >= steps) {
                 audio.volume = 0;

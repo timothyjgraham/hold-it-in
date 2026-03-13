@@ -115,9 +115,33 @@
             <div id="pause-text">PAUSED</div>
             <div id="pause-buttons">
                 <button class="menu-btn" id="btn-resume">RESUME</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-settings">SETTINGS</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-quit">SAVE &amp; QUIT</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-menu">SAVE &amp; MAIN MENU</button>
                 <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save">QUIT WITHOUT SAVING</button>
+            </div>
+            <div id="pause-settings" style="display:none;">
+                <h2 class="screen-title" style="margin-top:0;">SETTINGS</h2>
+                <div class="settings-list">
+                    <div class="setting-row">
+                        <span class="setting-label">MUSIC</span>
+                        <input type="range" class="setting-slider" id="pause-slider-music" min="0" max="100" value="70">
+                        <span class="setting-value" id="pause-val-music">70%</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">SFX</span>
+                        <input type="range" class="setting-slider" id="pause-slider-sfx" min="0" max="100" value="80">
+                        <span class="setting-value" id="pause-val-sfx">80%</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">SCREEN SHAKE</span>
+                        <label class="setting-toggle">
+                            <input type="checkbox" id="pause-toggle-shake" checked>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                </div>
+                <button class="menu-btn menu-btn-small" id="btn-pause-settings-back">BACK</button>
             </div>
         </div>
     </div>
@@ -2374,6 +2398,61 @@
                 );
             });
 
+            // === PAUSE SETTINGS ===
+            const pauseButtons = document.getElementById('pause-buttons');
+            const pauseSettings = document.getElementById('pause-settings');
+            const pauseMusicSlider = document.getElementById('pause-slider-music');
+            const pauseSfxSlider = document.getElementById('pause-slider-sfx');
+            const pauseShakeToggle = document.getElementById('pause-toggle-shake');
+
+            document.getElementById('btn-pause-settings').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                // Sync pause sliders with current values from main settings
+                const mainMusicSlider = document.getElementById('slider-music');
+                const mainSfxSlider = document.getElementById('slider-sfx');
+                const mainShakeToggle = document.getElementById('toggle-shake');
+                pauseMusicSlider.value = mainMusicSlider.value;
+                pauseSfxSlider.value = mainSfxSlider.value;
+                pauseShakeToggle.checked = mainShakeToggle.checked;
+                document.getElementById('pause-val-music').textContent = mainMusicSlider.value + '%';
+                document.getElementById('pause-val-sfx').textContent = mainSfxSlider.value + '%';
+                pauseButtons.style.display = 'none';
+                document.getElementById('pause-text').style.display = 'none';
+                pauseSettings.style.display = 'flex';
+            });
+
+            document.getElementById('btn-pause-settings-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                pauseSettings.style.display = 'none';
+                pauseButtons.style.display = 'flex';
+                document.getElementById('pause-text').style.display = '';
+            });
+
+            pauseMusicSlider.addEventListener('input', (ev) => {
+                const v = parseInt(ev.target.value);
+                document.getElementById('pause-val-music').textContent = v + '%';
+                document.getElementById('slider-music').value = v;
+                document.getElementById('val-music').textContent = v + '%';
+                if (window.SFX) SFX.setAmbientVolume(v / 100);
+                if (window.Music) Music.setVolume(v / 100);
+            });
+
+            pauseSfxSlider.addEventListener('input', (ev) => {
+                const v = parseInt(ev.target.value);
+                document.getElementById('pause-val-sfx').textContent = v + '%';
+                document.getElementById('slider-sfx').value = v;
+                document.getElementById('val-sfx').textContent = v + '%';
+                if (window.SFX) {
+                    SFX.setSFXVolume(v / 100);
+                    SFX.setUIVolume(v / 100);
+                    SFX.play('slider_tick');
+                }
+            });
+
+            pauseShakeToggle.addEventListener('change', () => {
+                document.getElementById('toggle-shake').checked = pauseShakeToggle.checked;
+            });
+
             // Menu hover sounds
             document.querySelectorAll('.menu-btn, .scenario-continue-btn').forEach(btn => {
                 btn.addEventListener('mouseenter', () => {
@@ -3111,6 +3190,10 @@
             this.state = 'playing';
             if (window.SFX) SFX.play('ui_unpause');
             if (window.Music) Music.resume();
+            // Reset pause settings panel back to buttons view
+            document.getElementById('pause-settings').style.display = 'none';
+            document.getElementById('pause-buttons').style.display = 'flex';
+            document.getElementById('pause-text').style.display = '';
             document.getElementById('pause-overlay').classList.remove('active');
         },
 
