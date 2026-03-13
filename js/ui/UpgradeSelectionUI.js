@@ -85,12 +85,25 @@ function _ensureDimElement() {
     return _dimEl;
 }
 
+// ─── SHARED PARTICLE GEOMETRY ────────────────────────────────────────────────
+
+let _particleGeoSmall = null;
+let _particleGeoLarge = null;
+function getParticleGeoSmall() {
+    if (!_particleGeoSmall) _particleGeoSmall = new THREE.SphereGeometry(0.08, 4, 4);
+    return _particleGeoSmall;
+}
+function getParticleGeoLarge() {
+    if (!_particleGeoLarge) _particleGeoLarge = new THREE.SphereGeometry(0.12, 4, 4);
+    return _particleGeoLarge;
+}
+
 // ─── PARTICLE BURST SYSTEM ──────────────────────────────────────────────────
 
 function _spawnParticleBurst(scene, position, color, count, speed, lifetime) {
     const particles = [];
     for (let i = 0; i < count; i++) {
-        const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);
+        const geo = getParticleGeoSmall();
         const mat = toonMat(color, {
             emissive: color,
             emissiveIntensity: 0.5,
@@ -118,7 +131,7 @@ function _spawnGoldShower(scene, cameraPos, count) {
     const particles = [];
     const spread = 20;
     for (let i = 0; i < count; i++) {
-        const geo = new THREE.SphereGeometry(0.08 + Math.random() * 0.08, 4, 4);
+        const geo = getParticleGeoLarge();
         const mat = toonMat(PALETTE.gold, {
             emissive: PALETTE.gold,
             emissiveIntensity: 0.6,
@@ -213,11 +226,15 @@ export class UpgradeSelectionUI {
         this._scene = scene;
         this._camera = camera;
 
-        // Store each drone's base brightness for dimming
+        // Store each drone's base brightness and cache meshes for raycasting
         for (const drone of drones) {
             drone.userData._baseBrightness = 1.0;
             drone.userData._currentBrightness = 1.0;
             drone.userData._hoverRise = 0;
+            // Cache mesh array to avoid per-frame traverse in _updateHover
+            const meshes = [];
+            drone.traverse(child => { if (child.isMesh) meshes.push(child); });
+            drone.userData._meshes = meshes;
         }
 
         // Dim background
@@ -290,10 +307,7 @@ export class UpgradeSelectionUI {
             const drone = this.drones[i];
             if (drone.userData.state !== 'hovering' && drone.userData.state !== 'settling') continue;
 
-            const meshes = [];
-            drone.traverse(child => {
-                if (child.isMesh) meshes.push(child);
-            });
+            const meshes = drone.userData._meshes || [];
 
             const hits = this._raycaster.intersectObjects(meshes, false);
             if (hits.length > 0 && hits[0].distance < bestDist) {

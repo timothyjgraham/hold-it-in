@@ -4,7 +4,7 @@ import { CONFIG } from './data/config.js';
 import { PALETTE, OUTLINE_WIDTH, injectCSSPalette } from './data/palette.js';
 import { createToilet, updateToilet } from './models/ToiletModel.js';
 import { AnimationController } from './animation/AnimationController.js';
-import { getAnimationClip } from './animation/AnimationLibrary.js';
+import { getAnimationClip, disposeAnimationCache } from './animation/AnimationLibrary.js';
 import { createEnemyModel } from './models/EnemyModelFactory.js';
 import { EnemyPool } from './systems/EnemyPool.js';
 import { CoinPool } from './systems/CoinPool.js';
@@ -140,6 +140,7 @@ window.createAirplanePassengers = createAirplanePassengers;
 
 window.AnimationController = AnimationController;
 window.getAnimationClip = getAnimationClip;
+window.disposeAnimationCache = disposeAnimationCache;
 window.createEnemyModel = createEnemyModel;
 window.EnemyPool = EnemyPool;
 window.CoinPool = CoinPool;

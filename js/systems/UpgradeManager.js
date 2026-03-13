@@ -131,7 +131,6 @@ export class UpgradeManager {
         // effectFn will be called here in Stages 5-7
         // if (upgrade.effectFn) upgrade.effectFn(this, game);
 
-        console.log(`Upgrade acquired: ${upgrade.name} (${id}) — stack ${this._stacks[id]}/${upgrade.maxStacks}`);
         return true;
     }
 

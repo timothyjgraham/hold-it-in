@@ -164,10 +164,12 @@ export class EnemyPool {
                         if (child.isMesh) {
                             if (child.geometry) child.geometry.dispose();
                             if (child.material) {
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach(m => m.dispose());
-                                } else {
-                                    child.material.dispose();
+                                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                                for (const m of mats) {
+                                    if (m.map) m.map.dispose();
+                                    if (m.normalMap) m.normalMap.dispose();
+                                    if (m.emissiveMap) m.emissiveMap.dispose();
+                                    m.dispose();
                                 }
                             }
                         }

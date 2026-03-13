@@ -5423,6 +5423,10 @@ const _clipBuilders = {
 
 const _clipCache = new Map();
 
+export function disposeAnimationCache() {
+    _clipCache.clear();
+}
+
 /**
  * Get a shared AnimationClip for the given enemy type and state.
  * Clips are built lazily on first request and cached.

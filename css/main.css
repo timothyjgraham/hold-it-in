@@ -1415,3 +1415,91 @@ canvas {
     0%, 100% { box-shadow: 0 0 8px 3px rgba(255, 217, 61, 0.5); }
     50% { box-shadow: 0 0 22px 10px rgba(255, 217, 61, 0.9); }
 }
+
+/* ===== SPLASH SCREEN ===== */
+@keyframes splash-dot-blink {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+}
+
+/* ===== TOWER UNLOCK ===== */
+.tower-btn.tower-locked {
+    opacity: 0.35;
+    filter: grayscale(0.8);
+    pointer-events: none;
+    position: relative;
+}
+
+.tower-btn.tower-locked::after {
+    content: attr(data-unlock);
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bangers', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--pal-gold, #ffd93d);
+    white-space: nowrap;
+    text-shadow: 1px 1px 0 var(--pal-ink, #1a1a1a);
+}
+
+/* ===== VICTORY SCREEN ===== */
+#victory-screen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+#victory-screen.active {
+    display: flex;
+}
+
+#victory-screen h1 {
+    font-family: 'Bangers', sans-serif;
+    font-size: 90px;
+    color: var(--pal-gold, #ffd93d);
+    margin-bottom: 6px;
+    letter-spacing: 8px;
+    text-shadow: 4px 5px 0px var(--pal-ink, #1a1a1a);
+    transform: rotate(-2deg);
+    animation: jitter-slow 2s ease-in-out infinite;
+}
+
+#victory-screen .subtitle {
+    font-family: 'Bangers', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 24px;
+    letter-spacing: 3px;
+    background: var(--pal-success, #50c878);
+    border: 3px solid var(--pal-ink, #1a1a1a);
+    border-radius: 10px;
+    padding: 6px 24px;
+    box-shadow: 2px 3px 0px var(--pal-ink, #1a1a1a);
+    transform: rotate(0.5deg);
+}
+
+#victory-screen .stats {
+    font-family: 'Bangers', sans-serif;
+    font-size: 22px;
+    color: #fff;
+    margin-bottom: 30px;
+    text-align: center;
+    line-height: 2;
+    letter-spacing: 1.5px;
+}
+
+/* ===== PREFERS REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

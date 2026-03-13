@@ -5,9 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOLD IT IN</title>
     <link rel="stylesheet" href="css/main.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="lib/three.min.js"></script>
 </head>
 <body>
+    <!-- Splash / Loading Screen -->
+    <div id="splash-screen" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--pal-charcoal,#2d2b3d); z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; transition:opacity 0.5s;">
+        <h1 class="title-logo" style="margin-bottom:0;">HOLD IT IN</h1>
+        <div style="font-family:'Bangers',sans-serif; font-size:22px; color:#fff; letter-spacing:3px; opacity:0.7;">Your toilet. Your rules.</div>
+        <div class="splash-dots" style="font-family:'Bangers',sans-serif; font-size:36px; color:var(--pal-gold,#ffd93d); letter-spacing:8px; margin-top:20px;">
+            <span style="animation:splash-dot-blink 1.4s ease-in-out infinite;">.</span><span style="animation:splash-dot-blink 1.4s ease-in-out 0.2s infinite;">.</span><span style="animation:splash-dot-blink 1.4s ease-in-out 0.4s infinite;">.</span>
+        </div>
+    </div>
+
     <div id="game-container"></div>
 
     <!-- HUD — multi-layer hand-drawn SVG blobs with independent jitter -->
@@ -437,6 +446,13 @@
     </div>
 
     <!-- Game Over Screen -->
+    <!-- Error Overlay -->
+    <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.92); z-index:9999; justify-content:center; align-items:center; flex-direction:column; gap:20px;">
+        <h2 style="font-family:'Bangers',sans-serif; font-size:48px; color:var(--pal-danger,#ff6b7a); letter-spacing:4px; text-shadow:3px 4px 0px #1a1a1a;">SOMETHING WENT WRONG</h2>
+        <p id="error-message" style="font-family:'Bangers',sans-serif; font-size:18px; color:#fff; letter-spacing:1px; max-width:500px; text-align:center; opacity:0.7;"></p>
+        <button onclick="location.reload()" style="font-family:'Bangers',sans-serif; padding:14px 44px; font-size:24px; background:var(--pal-gold,#ffd93d); color:#1a1a1a; border:4px solid #1a1a1a; border-radius:14px; box-shadow:3px 4px 0px #1a1a1a; cursor:pointer; letter-spacing:3px; text-transform:uppercase;">RESTART</button>
+    </div>
+
     <div id="game-over-screen">
         <h1>OCCUPIED</h1>
         <div class="subtitle" id="game-over-subtitle">They broke through the door!</div>
@@ -447,8 +463,47 @@
         </div>
     </div>
 
+    <!-- Victory Screen (campaign wave 20 completion) -->
+    <div id="victory-screen">
+        <h1>VICTORY!</h1>
+        <div class="subtitle">You held it in!</div>
+        <div class="stats" id="victory-stats"></div>
+        <div class="gameover-buttons">
+            <button id="btn-victory-endless" class="menu-btn">PLAY ENDLESS MODE</button>
+            <button id="btn-victory-menu" class="menu-btn menu-btn-small">MAIN MENU</button>
+        </div>
+    </div>
+
+    <!-- Global error handler -->
+    <script>
+    window.onerror = function(msg, src, line) {
+        const overlay = document.getElementById('error-overlay');
+        if (overlay) {
+            document.getElementById('error-message').textContent = msg;
+            overlay.style.display = 'flex';
+        }
+        return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+        const overlay = document.getElementById('error-overlay');
+        if (overlay) {
+            document.getElementById('error-message').textContent = e.reason?.message || 'An unexpected error occurred';
+            overlay.style.display = 'flex';
+        }
+    });
+    </script>
+
     <!-- Game Logic -->
     <script>
+    // Tower unlock schedule — matches tutorial (Coin Magnet + Ubik first)
+    const TOWER_UNLOCK_WAVES = {
+        coinmagnet: 1,
+        ubik: 1,
+        wetfloor: 3,
+        mop: 5,
+        potplant: 7,
+    };
+
     const Game = {
         // === STATE ===
         scene: null,
@@ -1234,14 +1289,12 @@
             if (window.EnemyPool) {
                 this.enemyPool = new EnemyPool();
                 this.enemyPool.preAllocate();
-                console.log('Enemy pool pre-allocated:', this.enemyPool.getStats().poolSizes);
             }
 
             // Initialize coin drop pool
             if (window.CoinPool) {
                 this.coinPool = new CoinPool();
                 this.coinPool.preAllocate(60);
-                console.log('Coin pool pre-allocated:', this.coinPool.getStats().poolSize);
             }
 
             // Medic drone system (corpse collection ambulances)
@@ -1249,7 +1302,6 @@
                 this.medicDroneSystem = new MedicDroneSystem();
                 this.medicDroneSystem.preAllocate();
                 this._dyingAnimControllers = new Set();
-                console.log('Medic drone system initialized');
             }
 
             // Upgrade system
@@ -1257,20 +1309,17 @@
                 this.upgradeManager = new UpgradeManager();
                 this.upgradeDrones = [];     // Active upgrade drones in scene
                 this._upgradePhase = false;  // True during upgrade selection between waves
-                console.log('Upgrade system initialized');
             }
 
             // Upgrade selection UI (Stage 3-4)
             if (window.UpgradeSelectionUI) {
                 this.upgradeSelectionUI = new UpgradeSelectionUI();
-                console.log('Upgrade selection UI initialized');
             }
 
             // Enemy introduction intermission UI
             if (window.EnemyIntroUI) {
                 this.enemyIntroUI = new EnemyIntroUI();
                 this._introPhase = false;
-                console.log('Enemy intro UI initialized');
             }
 
             // Sound system — unlock on first user gesture
@@ -1300,6 +1349,13 @@
             this._animate();
 
             console.log('Hold It In — initialized');
+
+            // Dismiss splash screen
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.remove(), 600);
+            }
         },
 
         // ============================
@@ -1400,7 +1456,6 @@
             if (window.PlayerCharacter) {
                 this.playerCharacter = new PlayerCharacter();
                 this.playerCharacter.create(this.scene, this.toilet.position);
-                console.log('Player character created — seated on toilet');
             }
         },
 
@@ -2154,6 +2209,10 @@
             });
             document.getElementById('btn-endless').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
+                if (!this._isAnyScenarioCompleted()) {
+                    this._showConfirm('Complete a campaign first to unlock Endless Mode!', () => {});
+                    return;
+                }
                 this._menuMode = 'endless';
                 document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
                 showScreen('scenario-screen');
@@ -2342,6 +2401,27 @@
             document.getElementById('menu-btn-gameover').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 document.getElementById('game-over-screen').classList.remove('active');
+                this.state = 'title';
+                showScreen('title-screen');
+                this._updateBestStats();
+                if (window.Music) Music.play('title');
+            });
+
+            // Victory screen buttons
+            document.getElementById('btn-victory-endless').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('victory-screen').classList.remove('active');
+                this.state = 'title';
+                this._menuMode = 'endless';
+                document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
+                showScreen('scenario-screen');
+                this._updateContinueButtons();
+                this._updateBestStats();
+                if (window.Music) Music.play('title');
+            });
+            document.getElementById('btn-victory-menu').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('victory-screen').classList.remove('active');
                 this.state = 'title';
                 showScreen('title-screen');
                 this._updateBestStats();
@@ -3136,6 +3216,13 @@
             this._updateTowerButtons();
             this.updateHUD();
 
+            // Lock towers that unlock at later waves (campaign only)
+            if (this._gameMode === 'campaign') {
+                this._applyTowerLocks(1);
+            } else {
+                this._applyTowerLocks(999); // Endless: all towers unlocked
+            }
+
             // 8 second build phase before wave 1
             this.waveTimer = 8.0;
 
@@ -3383,7 +3470,14 @@
                 const raw = localStorage.getItem(this._getSaveKey());
                 if (!raw) return false;
                 const data = JSON.parse(raw);
-                if (!data || data.version !== 1) return false;
+                if (!data) return false;
+                if (data.version !== 1) {
+                    this._showConfirm(
+                        'Save file is from an older version and is incompatible. Start fresh?',
+                        () => { this._deleteSave(); }
+                    );
+                    return false;
+                }
 
                 // 1. Clean start — resets scene, entities, door, upgrades
                 this.start();
@@ -3633,10 +3727,12 @@
                 this.updateHUD();
                 this.announceWave(`WAVE ${this.wave} — GAME LOADED`);
 
+                // Unlock towers up to current wave
+                this._applyTowerLocks(this.wave);
+
                 // 11. Delete save (consumed — prevents save scumming)
                 localStorage.removeItem(this._getSaveKey());
 
-                console.log(`Game loaded — Wave ${this.wave}, ${this.enemies.length} enemies, ${this.towers.length} towers`);
                 return true;
             } catch(e) {
                 console.error('Load failed:', e);
@@ -3652,6 +3748,82 @@
                     btn.style.display = hasSave ? '' : 'none';
                 }
             }
+        },
+
+        // ============================
+        // TOWER UNLOCK SYSTEM
+        // ============================
+        _applyTowerLocks(currentWave) {
+            document.querySelectorAll('.tower-btn').forEach(btn => {
+                const tower = btn.dataset.tower;
+                const unlockWave = TOWER_UNLOCK_WAVES[tower] || 1;
+                if (currentWave >= unlockWave) {
+                    btn.classList.remove('tower-locked');
+                    btn.disabled = false;
+                    btn.removeAttribute('data-unlock');
+                } else {
+                    btn.classList.add('tower-locked');
+                    btn.disabled = true;
+                    btn.setAttribute('data-unlock', `WAVE ${unlockWave}`);
+                }
+            });
+        },
+
+        _checkTowerUnlocks() {
+            let unlocked = [];
+            document.querySelectorAll('.tower-btn.tower-locked').forEach(btn => {
+                const tower = btn.dataset.tower;
+                const unlockWave = TOWER_UNLOCK_WAVES[tower] || 1;
+                if (this.wave >= unlockWave) {
+                    btn.classList.remove('tower-locked');
+                    btn.disabled = false;
+                    btn.removeAttribute('data-unlock');
+                    const name = btn.getAttribute('data-tip-name');
+                    if (name) unlocked.push(name);
+                }
+            });
+            if (unlocked.length > 0) {
+                this.announceWave(`NEW TOWER: ${unlocked.join(' + ').toUpperCase()}!`);
+                if (window.SFX) SFX.play('wave_clear');
+            }
+        },
+
+        // ============================
+        // CAMPAIGN VICTORY
+        // ============================
+        _campaignVictory() {
+            this.state = 'gameover';
+            if (window.SFX) SFX.play('wave_clear');
+            if (window.Music) Music.play('title');
+
+            // Delete save — campaign complete
+            this._deleteSave();
+
+            // Save completion to localStorage
+            const scenario = this._currentScenario || 'office';
+            localStorage.setItem(`holditin_completed_${scenario}`, 'true');
+
+            // Save best stats
+            this._saveBestStats();
+
+            // Show victory screen
+            const elapsed = Math.floor(this.time || 0);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const stats = document.getElementById('victory-stats');
+            stats.innerHTML = `Waves Survived: ${this.wave}<br>Score: ${this.score}<br>Enemies Repelled: ${this._totalRepelled || 0}<br>Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('victory-screen').classList.add('active');
+        },
+
+        _isScenarioCompleted(scenario) {
+            return localStorage.getItem(`holditin_completed_${scenario}`) === 'true';
+        },
+
+        _isAnyScenarioCompleted() {
+            for (const s of ['office', 'forest', 'ocean', 'airplane']) {
+                if (this._isScenarioCompleted(s)) return true;
+            }
+            return false;
         },
 
         _showConfirm(message, onConfirm) {
@@ -4515,7 +4687,6 @@
                 this.upgradeDrones.push(drone);
             }
 
-            console.log(`Upgrade drones spawned: ${options.map(o => o.name).join(', ')}`);
         },
 
         _updateUpgradeDrones(dt) {
@@ -5503,6 +5674,9 @@
             this.waveActive = true;
             this.enemiesSpawned = 0;
 
+            // Check for new tower unlocks
+            this._checkTowerUnlocks();
+
             // Build spawn queue from scenario-specific composition or procedural generation
             const compositions = this._getWaveCompositions();
             const events = this._getWaveEvents();
@@ -5974,6 +6148,13 @@
                 // Wave complete — all spawned + cleared (or overlap threshold met)
                 const overlapThreshold = this.wave >= 20 ? 10 : (this.wave >= 15 ? 5 : 0);
                 if (this.enemiesSpawned >= this.enemiesPerWave && this.enemies.length <= overlapThreshold) {
+                    // Campaign victory — completed wave 20
+                    if (this._gameMode === 'campaign' && this.wave >= 20) {
+                        this.waveActive = false;
+                        this._campaignVictory();
+                        return;
+                    }
+
                     this.waveActive = false;
                     // Bonus coins — caps at wave 10 to pressure late-game economy
                     const waveBonus = 15 + Math.min(this.wave, 10) * 5;

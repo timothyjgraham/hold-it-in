@@ -1,0 +1,13 @@
+appId: com.holditin.game
+productName: Hold It In
+directories:
+  output: release
+files:
+  - dist/**/*
+  - electron-main.js
+  - electron-preload.js
+mac:
+  category: public.app-category.games
+  target: dmg
+win:
+  target: nsis

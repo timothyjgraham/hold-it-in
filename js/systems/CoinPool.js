@@ -390,6 +390,24 @@ export class CoinPool {
         return this._createCoinMesh();
     }
 
+    dispose() {
+        const all = [...this._pool, ...this._active.map(c => c.mesh)];
+        for (const mesh of all) {
+            mesh.traverse(child => {
+                if (child.isMesh) {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                }
+            });
+        }
+        this._coinGeo.dispose();
+        this._stampGeo.dispose();
+        this._coinMat.dispose();
+        this._stampMat.dispose();
+        this._pool = [];
+        this._active = [];
+    }
+
     _removeCoin(index, scene) {
         const c = this._active[index];
         scene.remove(c.mesh);
