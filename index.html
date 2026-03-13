@@ -2712,6 +2712,22 @@
             this.waveTimer = 8.0;
             this.announceWave('PLACE COIN MAGNETS [1] TO COLLECT!');
 
+            // Airplane flavor text — dual-access toilet tooltip
+            if (this._currentScenario === 'airplane') {
+                setTimeout(() => {
+                    if (this.state !== 'playing') return;
+                    const el = document.getElementById('wave-announce');
+                    el.textContent = 'THIS PLANE IS EQUIPPED WITH A DUAL-ACCESS TOILET, FOR MAXIMUM CONVENIENCE';
+                    el.classList.remove('visible');
+                    el.classList.add('hint');
+                    void el.offsetWidth;
+                    el.classList.add('visible');
+                    setTimeout(() => {
+                        el.classList.remove('visible', 'hint');
+                    }, 3000);
+                }, 2800);
+            }
+
             this.clock.start();
             console.log('Game started — defend the throne!');
         },
