@@ -6911,114 +6911,53 @@
                 this._updateUbikFloodZones(dt);
             }
 
-            // --- Exit door spring physics + collision ---
+            // --- Exit door spring physics ---
+            // Simple model: enemies walk through freely, but their presence
+            // pushes the door open. If the door swings back into enemies,
+            // it whacks back open. No blocking — just reactive door physics.
             if (this.officeGroup && this.officeGroup.userData.exitDoors) {
                 const doors = this.officeGroup.userData.exitDoors;
                 const { springK, dampK, pushImpulse, maxAngle, minAngle, doorZ, halfWidth } = doors;
-                const panelWidth = halfWidth - 0.1; // matches door mesh BoxGeometry
 
-                // Door-enemy collision: the door panel is a line from hinge to free edge.
-                // At angle θ, the door surface Z at an enemy's X position is:
-                //   surfaceZ = doorZ - distFromHinge * tan(θ)
-                // This means near the hinge the surface is at z≈68, but near the
-                // free edge it's much lower (door has swung into the room).
+                let pushLeft = 0, pushRight = 0;
+
                 for (const e of this.enemies) {
                     if (e.stunTimer > 0 || e.bashing) continue;
+                    // Enemy in the doorway zone?
+                    if (e.z > doorZ + 1.5 || e.z < doorZ - 2) continue;
+                    if (Math.abs(e.x) >= halfWidth + 1) continue;
 
-                    // Only process enemies that could be near the door panel
-                    // (panel extends up to panelWidth below doorZ when fully open)
-                    if (e.z > doorZ + 3 || e.z < doorZ - panelWidth - 1) {
-                        e._doorBlocked = false;
-                        continue;
-                    }
+                    const push = pushImpulse * (e.speed / 3);
 
-                    // Free edge X of each door panel — the gap is between these
-                    const leftEdgeX = -halfWidth + panelWidth * Math.cos(doors.leftAngle);
-                    const rightEdgeX = halfWidth - panelWidth * Math.cos(doors.rightAngle);
+                    // Accumulate continuous push while enemies are in the doorway
+                    if (e.x < 2) pushLeft += push;
+                    if (e.x > -2) pushRight += push;
 
-                    // Enemy body half-width (larger enemies need wider gap)
-                    const bodyHW = (e.size || 1) * 0.3;
-
-                    // Check if enemy body overlaps a door panel's X range,
-                    // then compute the actual door surface Z at that X
-                    let blocked = false;
-                    let touchLeft = false;
-                    let touchRight = false;
-                    let blockZ = -Infinity;
-
-                    // Left door panel
-                    if (e.x - bodyHW < leftEdgeX && e.x > -halfWidth - 1) {
-                        touchLeft = true;
-                        const distFromHinge = Math.max(0, e.x + halfWidth);
-                        const surfZ = (doors.leftAngle > 0.01)
-                            ? doorZ - distFromHinge * Math.tan(doors.leftAngle)
-                            : doorZ;
-                        if (e.z <= surfZ + 0.5) {
-                            blocked = true;
-                            blockZ = Math.max(blockZ, surfZ);
-                        }
-                    }
-
-                    // Right door panel
-                    if (e.x + bodyHW > rightEdgeX && e.x < halfWidth + 1) {
-                        touchRight = true;
-                        const distFromHinge = Math.max(0, halfWidth - e.x);
-                        const surfZ = (doors.rightAngle > 0.01)
-                            ? doorZ - distFromHinge * Math.tan(doors.rightAngle)
-                            : doorZ;
-                        if (e.z <= surfZ + 0.5) {
-                            blocked = true;
-                            if (surfZ > blockZ) blockZ = surfZ;
-                        }
-                    }
-
-                    if (blocked) {
-                        // Enemy has reached the angled door surface — hold them there
-                        const wasBlocked = e._doorBlocked;
-                        e._doorBlocked = true;
-
-                        e.z = blockZ + 0.3;
-                        e.mesh.position.z = e.z;
-
-                        // Door just closed on them — bump back + sound
-                        if (!wasBlocked) {
-                            e.z = blockZ + 0.5;
-                            e.mesh.position.z = e.z;
-                            if (window.SFX) SFX.play('exit_door');
-                            e.pushedExitDoor = false;
-                        }
-
-                        // Continuous push force while blocked
-                        const force = pushImpulse * (e.speed / 3) * dt * 2.0;
-                        if (touchLeft) doors.leftAngVel += force;
-                        if (touchRight) doors.rightAngVel += force;
-
-                        // Slide along the door surface toward the gap —
-                        // enemies near the hinge would get stuck forever otherwise
-                        const slideRate = e.speed * 0.6 * dt;
-                        if (touchLeft && !touchRight) e.x += slideRate;
-                        else if (touchRight && !touchLeft) e.x -= slideRate;
-                        e.mesh.position.x = e.x;
-
-                    } else if (touchLeft || touchRight) {
-                        // Behind a panel's X range but haven't reached its surface yet
-                        // — keep walking, don't trigger gap code
-
-                    } else if (!e.pushedExitDoor && e.z < doorZ + 1 && e.z > doorZ - 1 && Math.abs(e.x) < halfWidth) {
-                        // Fully in the gap (not behind either panel) — brush push
+                    // First contact — big initial slam + sound
+                    if (!e.pushedExitDoor) {
                         e.pushedExitDoor = true;
-                        e._doorBlocked = false;
                         if (window.SFX) SFX.play('exit_door');
-                        const force = pushImpulse * (e.speed / 3) * 0.5;
-                        if (e.x <= 1) doors.leftAngVel += force;
-                        if (e.x >= -1) doors.rightAngVel += force;
-                    } else {
-                        e._doorBlocked = false;
+                        if (e.x < 2) doors.leftAngVel += push * 1.5;
+                        if (e.x > -2) doors.rightAngVel += push * 1.5;
                     }
                 }
 
+                // Apply continuous push (scales with number of enemies in doorway)
+                doors.leftAngVel += pushLeft * dt * 3;
+                doors.rightAngVel += pushRight * dt * 3;
+
+                // Whack: if a door is closing and there are enemies in the way,
+                // reverse its velocity — the door bounces off them
+                if (pushLeft > 0 && doors.leftAngVel < -1 && doors.leftAngle < 0.4) {
+                    doors.leftAngVel = Math.max(3, Math.abs(doors.leftAngVel) * 0.7);
+                    if (window.SFX) SFX.play('exit_door');
+                }
+                if (pushRight > 0 && doors.rightAngVel < -1 && doors.rightAngle < 0.4) {
+                    doors.rightAngVel = Math.max(3, Math.abs(doors.rightAngVel) * 0.7);
+                    if (window.SFX) SFX.play('exit_door');
+                }
+
                 // Spring physics for left door
-                // Positive angle = swung open inward (toward playing field)
                 doors.leftAngVel += (-springK * doors.leftAngle - dampK * doors.leftAngVel) * dt;
                 doors.leftAngle += doors.leftAngVel * dt;
                 doors.leftAngle = Math.max(minAngle, Math.min(maxAngle, doors.leftAngle));
