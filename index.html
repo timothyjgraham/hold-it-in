@@ -404,6 +404,13 @@
             <div id="tutorial-prompt">CLICK TO CONTINUE</div>
         </div>
     </div>
+    <!-- Tutorial bouncy arrow pointer -->
+    <div id="tutorial-pointer" style="display:none;">
+        <svg viewBox="0 0 44 58" width="44" height="58">
+            <line x1="22" y1="6" x2="22" y2="32" stroke="#1a1a2e" stroke-width="7" stroke-linecap="round"/>
+            <polygon points="22,52 7,28 37,28" fill="#ffd93d" stroke="#1a1a2e" stroke-width="4.5" stroke-linejoin="round"/>
+        </svg>
+    </div>
 
     <!-- Game Over Screen -->
     <div id="game-over-screen">
@@ -2585,11 +2592,6 @@
             textEl.innerHTML = text;
             promptEl.style.display = opts.autoAdvance ? 'none' : '';
 
-            // Position via CSS class
-            bubble.classList.remove('pos-top', 'pos-left');
-            if (opts.position === 'top') bubble.classList.add('pos-top');
-            if (opts.position === 'left') bubble.classList.add('pos-left');
-
             // Passthrough: let clicks reach the game canvas
             if (opts.passthrough) {
                 overlay.classList.add('passthrough');
@@ -2617,6 +2619,15 @@
                 }
             }
 
+            // Position bouncy arrow pointer
+            if (opts.pointerAt) {
+                this._showTutorialPointer(opts.pointerAt);
+            } else if (opts.pointerAtWorld) {
+                this._showTutorialPointerAtWorld(opts.pointerAtWorld.x, opts.pointerAtWorld.y, opts.pointerAtWorld.z);
+            } else {
+                this._hideTutorialPointer();
+            }
+
             // Auto-dismiss timer
             if (opts.autoAdvance) {
                 clearTimeout(this._tutorialAutoTimeout);
@@ -2626,6 +2637,37 @@
             }
         },
 
+        // Position bouncy arrow above a DOM element
+        _showTutorialPointer(selector) {
+            const target = document.querySelector(selector);
+            const pointer = document.getElementById('tutorial-pointer');
+            if (!target || !pointer) return;
+            const rect = target.getBoundingClientRect();
+            pointer.style.left = (rect.left + rect.width / 2 - 22) + 'px';
+            pointer.style.top = (rect.top - 62) + 'px';
+            pointer.style.display = '';
+        },
+
+        // Position bouncy arrow at a projected 3D world position
+        _showTutorialPointerAtWorld(x, y, z) {
+            const pointer = document.getElementById('tutorial-pointer');
+            if (!pointer || !this.camera || !this.renderer) return;
+            const vec = new THREE.Vector3(x, y, z);
+            vec.project(this.camera);
+            const hw = this.renderer.domElement.clientWidth / 2;
+            const hh = this.renderer.domElement.clientHeight / 2;
+            const sx = (vec.x * hw) + hw;
+            const sy = -(vec.y * hh) + hh;
+            pointer.style.left = (sx - 22) + 'px';
+            pointer.style.top = (sy - 62) + 'px';
+            pointer.style.display = '';
+        },
+
+        _hideTutorialPointer() {
+            const pointer = document.getElementById('tutorial-pointer');
+            if (pointer) pointer.style.display = 'none';
+        },
+
         _hideTutorialBubble() {
             document.getElementById('tutorial-overlay').style.display = 'none';
             document.getElementById('tutorial-overlay').classList.remove('passthrough');
@@ -2633,6 +2675,7 @@
                 this._tutorialHighlight.classList.remove('tutorial-highlight');
                 this._tutorialHighlight = null;
             }
+            this._hideTutorialPointer();
         },
 
         _advanceTutorial() {
@@ -2642,32 +2685,37 @@
             if (step === 0) {
                 // Intro
                 this._showTutorialBubble(
-                    "They want YOUR toilet!<br>Don't let them in!",
-                    { position: 'center' }
+                    "They want YOUR toilet!<br>Don't let them in!"
                 );
             } else if (step === 1) {
-                // First item: Coin Magnet
+                // First item: Coin Magnet — arrow points at button
                 this._showTutorialBubble(
                     "Grab a Coin Magnet!<br>It collects coins for you!",
-                    { position: 'left', highlight: '.tower-btn[data-tower="coinmagnet"]', passthrough: true }
+                    { highlight: '.tower-btn[data-tower="coinmagnet"]',
+                      pointerAt: '.tower-btn[data-tower="coinmagnet"]',
+                      passthrough: true }
                 );
             } else if (step === 2) {
-                // Place coin magnet
+                // Place coin magnet — arrow points at a good mid-field spot
                 this._showTutorialBubble(
-                    "Now click the floor to place it!",
-                    { position: 'center', passthrough: true }
+                    "Now place it on the floor!",
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 28 },
+                      passthrough: true }
                 );
             } else if (step === 3) {
-                // Second item: Wet Floor Sign
+                // Second item: Ubik Spray — arrow points at button
                 this._showTutorialBubble(
-                    "Now grab a Wet Floor Sign!<br>It slows them down!",
-                    { position: 'left', highlight: '.tower-btn[data-tower="wetfloor"]', passthrough: true }
+                    "Now grab the Ubik Spray!<br>It damages enemies!",
+                    { highlight: '.tower-btn[data-tower="ubik"]',
+                      pointerAt: '.tower-btn[data-tower="ubik"]',
+                      passthrough: true }
                 );
             } else if (step === 4) {
-                // Place wet floor sign
+                // Place ubik spray — arrow points closer to door
                 this._showTutorialBubble(
                     "Place it closer to the door!",
-                    { position: 'center', passthrough: true }
+                    { pointerAtWorld: { x: 0, y: 0.1, z: 14 },
+                      passthrough: true }
                 );
             } else if (step === 5) {
                 // Build phase over — unfreeze wave timer, wait for enemies
@@ -2677,7 +2725,7 @@
                 // First enemy spawned
                 this._showTutorialBubble(
                     "Here they come!<br>Sit back and watch!",
-                    { position: 'top', autoAdvance: true, delay: 3500, passthrough: true }
+                    { autoAdvance: true, delay: 3500, passthrough: true }
                 );
             } else if (step === 7) {
                 // Wait state — waiting for upgrade drones
@@ -2686,7 +2734,7 @@
                 // Upgrade selection
                 this._showTutorialBubble(
                     "Nice work! Pick an upgrade<br>to power up!",
-                    { position: 'center', autoAdvance: true, delay: 3500, passthrough: true }
+                    { autoAdvance: true, delay: 3500, passthrough: true }
                 );
             } else {
                 this._endTutorial();
