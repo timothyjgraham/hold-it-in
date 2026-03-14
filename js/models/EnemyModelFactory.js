@@ -11,7 +11,7 @@ import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } fr
 import { GLBModelCache } from '../loaders/GLBModelCache.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly']);
 
 /**
  * Create a fully rigged enemy model.
@@ -55,11 +55,22 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 
     const parts = builder(size, config, materials, boneMap);
 
-    // 4. Create outline meshes for each visible part
+    // 4. Create outline meshes for STRUCTURAL parts only.
+    //    Skip facial features, accessories, and small details — they create
+    //    visual noise when outlined at small sizes.
     const outlineWidth = _outlineWidthForRigidType(enemyType);
     const outlineParts = [];
+    const _outlinePartNames = new Set([
+        'torso', 'head', 'belly',
+        'armL', 'armR', 'handL', 'handR',
+        'upperLegL', 'upperLegR', 'lowerLegL', 'lowerLegR',
+        'shoeL', 'shoeR',
+        // GLB body parts (ocean)
+        'glbBody',
+    ]);
     for (const [partName, mesh] of Object.entries(parts)) {
         if (!mesh || !mesh.geometry) continue;
+        if (!_outlinePartNames.has(partName) && !partName.startsWith('glb_')) continue;
         const outlineGeo = mesh.geometry.clone();
         const outlineMat = materials.outline.clone();
         const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
@@ -105,7 +116,7 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 }
 
 function _outlineWidthForRigidType(type) {
-    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03 };
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03, nervous: 0.03, business: 0.03, stumbler: 0.04, attendant: 0.03, marshal: 0.03, unruly: 0.02 };
     return map[type] || 0.03;
 }
 
@@ -3190,6 +3201,830 @@ function _buildGLBPirateBoat(size, boneMap, parts) {
 }
 
 
+// ═══════════════════════════════════════════════════════
+// AIRPLANE ENEMIES — fully procedural, matching Office quality bar.
+// Each has: distinctive silhouette, expressive Mii-style face,
+// signature accessories, and personality-driven proportions.
+// ═══════════════════════════════════════════════════════
+
+// Shared ink material for facial features
+// Helper: standard biped face (eyes, brows, mouth) on head bone
+function _addFace(parts, boneMap, headR, faceMat, opts = {}) {
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * (opts.eyeY || 0.05);
+    const eyeZ = -headR * 0.90;
+    const eyeScaleY = opts.eyeScaleY || 1.3;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, eyeScaleY, 0.5);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, eyeScaleY, 0.5);
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Eyebrows
+    const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.045, headR * 0.05);
+    const browAngle = opts.browAngle || 0;
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, browAngle);
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, -browAngle);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth
+    if (opts.mouthShape === 'O') {
+        const mouthGeo = new THREE.TorusGeometry(headR * 0.09, headR * 0.025, 6, 8);
+        const mouth = new THREE.Mesh(mouthGeo, faceMat);
+        mouth.name = 'mouth';
+        mouth.position.set(0, -headR * 0.22, eyeZ);
+        mouth.rotation.set(Math.PI / 2, 0, 0);
+        boneMap.head.add(mouth);
+        parts.mouth = mouth;
+    } else if (opts.mouthShape === 'smile') {
+        const mouthGeo = new THREE.TorusGeometry(headR * 0.10, headR * 0.02, 4, 8, Math.PI);
+        const mouth = new THREE.Mesh(mouthGeo, faceMat);
+        mouth.name = 'mouth';
+        mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
+        mouth.rotation.set(0, 0, Math.PI);
+        boneMap.head.add(mouth);
+        parts.mouth = mouth;
+    } else {
+        const mw = opts.mouthWidth || 0.22;
+        const mouthGeo = new THREE.BoxGeometry(headR * mw, headR * 0.04, headR * 0.05);
+        const mouth = new THREE.Mesh(mouthGeo, faceMat);
+        mouth.name = 'mouth';
+        mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
+        if (opts.mouthAngle) mouth.rotation.set(0, 0, opts.mouthAngle);
+        boneMap.head.add(mouth);
+        parts.mouth = mouth;
+    }
+}
+
+// Helper: standard procedural arms (capsules on arm bones)
+function _addArms(parts, boneMap, s, materials, opts = {}) {
+    const armRadius = (opts.armRadius || 0.065) * s;
+    const armLength = (opts.armLength || 0.50) * s;
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+    const armMat = opts.armMaterial || materials.body;
+
+    const armL = new THREE.Mesh(armGeo, armMat);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, armMat);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // Hands
+    const handGeo = new THREE.SphereGeometry(armRadius * 1.1, 6, 5);
+    const handL = new THREE.Mesh(handGeo, materials.skin);
+    handL.name = 'handL';
+    handL.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_L.add(handL);
+    parts.handL = handL;
+
+    const handR = new THREE.Mesh(handGeo, materials.skin);
+    handR.name = 'handR';
+    handR.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_R.add(handR);
+    parts.handR = handR;
+}
+
+// Helper: standard procedural legs (capsules on leg bones)
+function _addLegs(parts, boneMap, s, materials, opts = {}) {
+    const ulRadius = (opts.ulRadius || 0.095) * s;
+    const ulH = (opts.ulHeight || 0.34) * s;
+    const ulGeo = createCapsule(ulRadius, ulH, 8, 4);
+
+    const ulL = new THREE.Mesh(ulGeo, materials.legs);
+    ulL.name = 'upperLegL';
+    ulL.position.set(0, -ulH * 0.3, 0);
+    boneMap.upperLeg_L.add(ulL);
+    parts.upperLegL = ulL;
+
+    const ulR = new THREE.Mesh(ulGeo, materials.legs);
+    ulR.name = 'upperLegR';
+    ulR.position.set(0, -ulH * 0.3, 0);
+    boneMap.upperLeg_R.add(ulR);
+    parts.upperLegR = ulR;
+
+    const llRadius = (opts.llRadius || 0.08) * s;
+    const llH = (opts.llHeight || 0.32) * s;
+    const llGeo = createCapsule(llRadius, llH, 8, 4);
+
+    const llL = new THREE.Mesh(llGeo, materials.legs);
+    llL.name = 'lowerLegL';
+    llL.position.set(0, -llH * 0.35, 0);
+    boneMap.lowerLeg_L.add(llL);
+    parts.lowerLegL = llL;
+
+    const llR = new THREE.Mesh(llGeo, materials.legs);
+    llR.name = 'lowerLegR';
+    llR.position.set(0, -llH * 0.35, 0);
+    boneMap.lowerLeg_R.add(llR);
+    parts.lowerLegR = llR;
+
+    // Shoes — chunky rounded blocks, visible from top-down
+    const shoeW = Math.max(0.11 * s, llRadius * 1.6);
+    const shoeH = Math.max(0.05 * s, llRadius * 0.5);
+    const shoeD = Math.max(0.15 * s, llRadius * 2.0);
+    const shoeGeo = createRoundedBox(shoeW, shoeH, shoeD, 0.02 * s);
+    const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeL.name = 'shoeL';
+    shoeL.position.set(0, -llH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_L.add(shoeL);
+    parts.shoeL = shoeL;
+
+    const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeR.name = 'shoeR';
+    shoeR.position.set(0, -llH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_R.add(shoeR);
+    parts.shoeR = shoeR;
+}
+
+// ─── NERVOUS FLYER ─── hunched anxious body, huge worried eyes, neck pillow, sweat drops
+function _buildRigidNervousFlyer(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: slightly hunched, compressed — tense posture ═══
+    const spineToRoot = 0.25 * s;
+    const spineToChest = 0.30 * s;
+    const torsoW = 0.42 * s;   // wide enough to read
+    const torsoH = (spineToRoot + spineToChest) * 1.15;
+    const torsoD = 0.34 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.07 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    torso.scale.set(1.0, 0.95, 1.0);  // slightly compressed — tense
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: sphere with PANIC face — huge wide eyes, arched brows ═══
+    const headR = 0.30 * s;  // slightly larger head — vulnerability
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.92, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — WIDE with visible whites (pupils + white eyeball)
+    const eyeSize = headR * 0.13;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.06;
+    const eyeZ = -headR * 0.90;
+    // White eyeball
+    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.2, 6, 5);
+    const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
+    whiteL.name = 'whiteL';
+    whiteL.position.set(-eyeSpacing, eyeY, eyeZ + headR * 0.02);
+    whiteL.scale.set(1.0, 1.3, 0.4);
+    boneMap.head.add(whiteL);
+    parts.whiteL = whiteL;
+    const whiteR = whiteL.clone();
+    whiteR.name = 'whiteR';
+    whiteR.position.x = eyeSpacing;
+    boneMap.head.add(whiteR);
+    parts.whiteR = whiteR;
+    // Dark pupils — small, high (showing whites below)
+    const pupilL = new THREE.Mesh(eyeGeo, faceMat);
+    pupilL.name = 'eyeL';
+    pupilL.position.set(-eyeSpacing, eyeY + headR * 0.04, eyeZ);
+    pupilL.scale.set(0.7, 0.9, 0.5);
+    boneMap.head.add(pupilL);
+    parts.eyeL = pupilL;
+    const pupilR = pupilL.clone();
+    pupilR.name = 'eyeR';
+    pupilR.position.x = eyeSpacing;
+    boneMap.head.add(pupilR);
+    parts.eyeR = pupilR;
+
+    // Eyebrows — high worried arch (/\)
+    const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.05, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.24, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, 0.35);
+    boneMap.head.add(browL);
+    parts.browL = browL;
+    const browR = browL.clone();
+    browR.name = 'browR';
+    browR.position.x = eyeSpacing;
+    browR.rotation.set(0, 0, -0.35);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — tight grimace line
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.20, headR * 0.04, headR * 0.05);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.24, eyeZ - headR * 0.02);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ NECK PILLOW: big puffy torus — signature accessory ═══
+    const pillowGeo = new THREE.TorusGeometry(headR * 0.62, headR * 0.22, 8, 14);
+    const pillowMat = materials.body.clone();
+    pillowMat.uniforms.uBaseColor = { value: new THREE.Color(0x6688aa) };
+    const pillow = new THREE.Mesh(pillowGeo, pillowMat);
+    pillow.name = 'neckPillow';
+    pillow.position.set(0, -headR * 0.50, 0);
+    pillow.rotation.set(Math.PI / 2, 0, 0);
+    boneMap.head.add(pillow);
+    parts.neckPillow = pillow;
+
+    // ═══ SWEAT DROPS: two floating droplets — stress indicator ═══
+    const sweatGeo = new THREE.SphereGeometry(headR * 0.08, 5, 4);
+    const sweatMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.8 });
+    const sweat1 = new THREE.Mesh(sweatGeo, sweatMat);
+    sweat1.name = 'sweat1';
+    sweat1.position.set(-headR * 0.60, headR * 0.30, -headR * 0.50);
+    sweat1.scale.set(0.6, 1.4, 0.5);
+    boneMap.head.add(sweat1);
+    parts.sweat1 = sweat1;
+    const sweat2 = new THREE.Mesh(sweatGeo, sweatMat);
+    sweat2.name = 'sweat2';
+    sweat2.position.set(headR * 0.55, headR * 0.45, -headR * 0.40);
+    sweat2.scale.set(0.5, 1.2, 0.4);
+    boneMap.head.add(sweat2);
+    parts.sweat2 = sweat2;
+
+    // Small messy hair tuft
+    const tuftGeo = new THREE.SphereGeometry(headR * 0.30, 6, 5);
+    const tuft = new THREE.Mesh(tuftGeo, materials.body);
+    tuft.name = 'tuft';
+    tuft.position.set(0, headR * 0.72, -headR * 0.1);
+    tuft.scale.set(1.2, 0.50, 1.0);
+    boneMap.head.add(tuft);
+    parts.tuft = tuft;
+
+    // ═══ ARMS: chunky, close to body ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.085, armLength: 0.42 });
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.11, ulHeight: 0.30, llRadius: 0.09, llHeight: 0.28 });
+
+    return parts;
+}
+
+// ─── BUSINESS CLASS ─── broad shoulders, dark navy suit, briefcase, tie, slicked hair, stern
+function _buildRigidBusinessClass(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: wider at shoulders, tapered — power suit silhouette ═══
+    const spineToRoot = 0.28 * s;
+    const spineToChest = 0.32 * s;
+    const torsoW = 0.46 * s;  // broad shoulders
+    const torsoH = (spineToRoot + spineToChest) * 1.18;
+    const torsoD = 0.34 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.30, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Shirt collar — white V-shape at top of torso
+    const collarGeo = new THREE.BoxGeometry(torsoW * 0.50, 0.04 * s, torsoD * 0.30);
+    const collarMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8 });
+    const collar = new THREE.Mesh(collarGeo, collarMat);
+    collar.name = 'collar';
+    collar.position.set(0, torsoH * 0.42, -torsoD * 0.42);
+    boneMap.spine.add(collar);
+    parts.collar = collar;
+
+    // TIE: red stripe down front
+    const tieGeo = new THREE.BoxGeometry(0.04 * s, torsoH * 0.65, 0.015 * s);
+    const tieMat = new THREE.MeshBasicMaterial({ color: 0xc03040 });
+    const tie = new THREE.Mesh(tieGeo, tieMat);
+    tie.name = 'tie';
+    tie.position.set(0, 0, -torsoD * 0.52);
+    boneMap.spine.add(tie);
+    parts.tie = tie;
+
+    // ═══ HEAD: slightly smaller (proportionally) — suit makes body dominant ═══
+    const headR = 0.27 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.95, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — narrowed, judgmental
+    _addFace(parts, boneMap, headR, faceMat, {
+        browAngle: -0.20,    // stern furrowed
+        eyeScaleY: 0.9,     // narrowed, disapproving
+        mouthWidth: 0.16,   // tight pursed lips
+    });
+
+    // Slicked-back hair — prominent dark cap
+    const hairGeo = new THREE.SphereGeometry(headR * 0.92, 10, 8);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x1a1a1a) };
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.18, headR * 0.10);
+    hair.scale.set(1.06, 0.50, 1.12);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // ═══ BRIEFCASE: prominent leather box at hand height ═══
+    const bcW = 0.22 * s;
+    const bcH = 0.16 * s;
+    const bcD = 0.06 * s;
+    const bcGeo = createRoundedBox(bcW, bcH, bcD, 0.012 * s);
+    const bcMat = new THREE.MeshBasicMaterial({ color: 0x4a3a2a });
+    const bc = new THREE.Mesh(bcGeo, bcMat);
+    bc.name = 'briefcase';
+    bc.position.set(0, -0.46 * s, 0);
+    boneMap.upperArm_R.add(bc);
+    parts.briefcase = bc;
+    // Briefcase clasp
+    const claspGeo = new THREE.BoxGeometry(bcW * 0.15, bcH * 0.08, bcD * 0.5);
+    const claspMat = new THREE.MeshBasicMaterial({ color: 0xdaa520 });
+    const clasp = new THREE.Mesh(claspGeo, claspMat);
+    clasp.name = 'clasp';
+    clasp.position.set(0, -0.46 * s + bcH * 0.35, -bcD * 0.55);
+    boneMap.upperArm_R.add(clasp);
+    parts.clasp = clasp;
+
+    // ═══ ARMS (chunky suit) + LEGS (matching suit, thick) ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.090, armLength: 0.40 });
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.115, ulHeight: 0.30, llRadius: 0.095, llHeight: 0.28 });
+
+    return parts;
+}
+
+// ─── TURBULENCE STUMBLER ─── pear-shaped, huge belly, green-sick, vomit bag, wide stance
+function _buildRigidStumbler(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: pear-shaped organic — bottom-heavy like the Waddle Tank ═══
+    const waistR = 0.32 * s;
+    const chestR = 0.22 * s;
+    const torsoH = 0.65 * s;
+    const torsoGeo = createOrganicTorso(waistR, chestR, torsoH, 0.15, 10, 10);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, 0, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ BELLY: protruding gut — parented to belly bone ═══
+    if (boneMap.belly) {
+        const bellyR = (d.bellyRadius || 0.45) * s;
+        const bellyGeo = new THREE.SphereGeometry(bellyR * 0.7, 10, 8);
+        const belly = new THREE.Mesh(bellyGeo, materials.body);
+        belly.name = 'belly';
+        belly.scale.set(1.15, 0.85, 1.3);  // wide and protruding forward
+        belly.position.set(0, 0, -0.05 * s);
+        boneMap.belly.add(belly);
+        parts.belly = belly;
+    }
+
+    // ═══ HEAD: big, greenish-tinged, queasy expression ═══
+    const headR = 0.32 * s;  // big round head
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.05, 0.95, 1.0);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — HUGE with terror/nausea, pupils tiny
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.08;
+    const eyeZ = -headR * 0.90;
+    // White eyeballs
+    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xeeffee });  // slightly green whites
+    const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.3, 6, 5);
+    const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
+    whiteL.name = 'whiteL';
+    whiteL.position.set(-eyeSpacing, eyeY, eyeZ + headR * 0.02);
+    whiteL.scale.set(1.0, 1.5, 0.4);
+    boneMap.head.add(whiteL);
+    parts.whiteL = whiteL;
+    const whiteR = whiteL.clone();
+    whiteR.name = 'whiteR';
+    whiteR.position.x = eyeSpacing;
+    boneMap.head.add(whiteR);
+    parts.whiteR = whiteR;
+    // Tiny terrified pupils
+    const pupilL = new THREE.Mesh(eyeGeo, faceMat);
+    pupilL.name = 'eyeL';
+    pupilL.position.set(-eyeSpacing, eyeY, eyeZ);
+    pupilL.scale.set(0.5, 0.6, 0.5);
+    boneMap.head.add(pupilL);
+    parts.eyeL = pupilL;
+    const pupilR = pupilL.clone();
+    pupilR.name = 'eyeR';
+    pupilR.position.x = eyeSpacing;
+    boneMap.head.add(pupilR);
+    parts.eyeR = pupilR;
+
+    // Brows — high arch
+    const browGeo = new THREE.BoxGeometry(headR * 0.26, headR * 0.05, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, 0.40);
+    boneMap.head.add(browL);
+    parts.browL = browL;
+    const browR = browL.clone();
+    browR.name = 'browR';
+    browR.position.x = eyeSpacing;
+    browR.rotation.set(0, 0, -0.40);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — big O (about to be sick)
+    const mouthGeo = new THREE.SphereGeometry(headR * 0.12, 8, 6);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.22, eyeZ);
+    mouth.scale.set(1.0, 1.3, 0.5);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // Green cheek patches — queasy tint
+    const cheekGeo = new THREE.SphereGeometry(headR * 0.18, 6, 5);
+    const cheekMat = new THREE.MeshBasicMaterial({ color: 0x7ab87a, transparent: true, opacity: 0.45 });
+    const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
+    cheekL.name = 'cheekL';
+    cheekL.position.set(-headR * 0.38, -headR * 0.08, -headR * 0.72);
+    cheekL.scale.set(1.0, 0.65, 0.3);
+    boneMap.head.add(cheekL);
+    parts.cheekL = cheekL;
+    const cheekR = cheekL.clone();
+    cheekR.name = 'cheekR';
+    cheekR.position.x = headR * 0.38;
+    boneMap.head.add(cheekR);
+    parts.cheekR = cheekR;
+
+    // ═══ VOMIT BAG: white paper bag held in front ═══
+    const bagW = 0.10 * s;
+    const bagH = 0.16 * s;
+    const bagGeo = createRoundedBox(bagW, bagH, 0.06 * s, 0.008 * s);
+    const bagMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e0 });
+    const bag = new THREE.Mesh(bagGeo, bagMat);
+    bag.name = 'vomitBag';
+    bag.position.set(0, -0.36 * s, -0.04 * s);
+    boneMap.upperArm_L.add(bag);
+    parts.vomitBag = bag;
+
+    // ═══ ARMS (thick, unsteady) + LEGS (wide stumpy stance) ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.095, armLength: 0.38 });
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.13, ulHeight: 0.28, llRadius: 0.105, llHeight: 0.26 });
+
+    return parts;
+}
+
+// ─── FLIGHT ATTENDANT ─── slim upright, pill hat, serving tray, forced smile, heels
+function _buildRigidAttendant(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: narrow, tall, upright — professional stance ═══
+    const spineToRoot = 0.25 * s;
+    const spineToChest = 0.30 * s;
+    const torsoW = 0.32 * s;  // slim
+    const torsoH = (spineToRoot + spineToChest) * 1.20;  // tall
+    const torsoD = 0.26 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Scarf/neckerchief — bright gold triangle at neck
+    const scarfGeo = new THREE.BoxGeometry(torsoW * 0.65, 0.06 * s, 0.015 * s);
+    const scarfMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const scarf = new THREE.Mesh(scarfGeo, scarfMat);
+    scarf.name = 'scarf';
+    scarf.position.set(0, torsoH * 0.38, -torsoD * 0.50);
+    boneMap.spine.add(scarf);
+    parts.scarf = scarf;
+
+    // Name badge — small white rectangle
+    const badgeGeo = new THREE.BoxGeometry(0.10 * s, 0.04 * s, 0.01 * s);
+    const badgeMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    const nameBadge = new THREE.Mesh(badgeGeo, badgeMat);
+    nameBadge.name = 'nameBadge';
+    nameBadge.position.set(0.10 * s, torsoH * 0.20, -torsoD * 0.52);
+    boneMap.spine.add(nameBadge);
+    parts.nameBadge = nameBadge;
+
+    // ═══ HEAD: neat, with pill-box hat and bun ═══
+    const headR = 0.26 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(0.95, 0.95, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Face — professional forced smile
+    _addFace(parts, boneMap, headR, faceMat, {
+        browAngle: 0.08,       // politely raised
+        eyeScaleY: 1.15,      // bright, attentive
+        mouthShape: 'smile',
+    });
+
+    // Pill-box hat (small cylinder on top)
+    const hatGeo = createFlatCap(headR * 0.50, headR * 0.22, 8);
+    const hat = new THREE.Mesh(hatGeo, materials.body);
+    hat.name = 'hat';
+    hat.position.set(0, headR * 0.72, headR * 0.10);
+    hat.rotation.set(-0.10, 0, 0);
+    boneMap.head.add(hat);
+    parts.hat = hat;
+
+    // Dark brown hair — neat bob under hat
+    const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x3a2a1a) };
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.10, headR * 0.05);
+    hair.scale.set(1.05, 0.55, 1.08);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // Hair bun at back
+    const bunGeo = new THREE.SphereGeometry(headR * 0.28, 8, 6);
+    const bun = new THREE.Mesh(bunGeo, hairMat);
+    bun.name = 'hairBun';
+    bun.position.set(0, headR * 0.15, headR * 0.72);
+    boneMap.head.add(bun);
+    parts.hairBun = bun;
+
+    // ═══ SERVING TRAY: prominent silver platform with cups ═══
+    const trayGeo = createRoundedBox(0.24 * s, 0.02 * s, 0.16 * s, 0.005 * s);
+    const trayMat = new THREE.MeshBasicMaterial({ color: 0xc8c8c8 });
+    const tray = new THREE.Mesh(trayGeo, trayMat);
+    tray.name = 'tray';
+    tray.position.set(0.04 * s, -0.28 * s, -0.04 * s);
+    boneMap.upperArm_R.add(tray);
+    parts.tray = tray;
+    // Cups on tray
+    const cupGeo = new THREE.CylinderGeometry(0.022 * s, 0.018 * s, 0.055 * s, 6);
+    const cupMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e0 });
+    for (let i = 0; i < 2; i++) {
+        const cup = new THREE.Mesh(cupGeo, cupMat);
+        cup.name = 'cup' + i;
+        cup.position.set((i - 0.5) * 0.06 * s + 0.04 * s, -0.25 * s, -0.04 * s);
+        boneMap.upperArm_R.add(cup);
+        parts['cup' + i] = cup;
+    }
+
+    // ═══ ARMS (slim but readable) + LEGS (neat, professional) ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.075, armLength: 0.40 });
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.10, ulHeight: 0.30, llRadius: 0.08, llHeight: 0.28 });
+
+    return parts;
+}
+
+// ─── AIR MARSHAL ─── broad V-torso, sunglasses (signature!), earpiece, badge, tactical
+function _buildRigidMarshal(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: V-shaped, broad chest — athletic authority ═══
+    const spineToRoot = 0.28 * s;
+    const spineToChest = 0.32 * s;
+    const torsoW = 0.48 * s;  // broadest of all airplane types
+    const torsoH = (spineToRoot + spineToChest) * 1.18;
+    const torsoD = 0.36 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.05 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.30, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Badge — gold star/disc
+    const badgeGeo = new THREE.CylinderGeometry(0.055 * s, 0.055 * s, 0.012 * s, 6);
+    const badgeMat = new THREE.MeshBasicMaterial({ color: 0xffd93d });
+    const badge = new THREE.Mesh(badgeGeo, badgeMat);
+    badge.name = 'badge';
+    badge.position.set(0.14 * s, torsoH * 0.20, -torsoD * 0.52);
+    badge.rotation.set(Math.PI / 2, 0, 0);
+    boneMap.spine.add(badge);
+    parts.badge = badge;
+
+    // ═══ HEAD: square-jawed, with SUNGLASSES (defining feature) ═══
+    const headR = 0.28 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.02, 0.94, 0.97);  // slightly wider jaw
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // SUNGLASSES — the defining visual element, dark visor across face
+    const glassW = headR * 0.78;
+    const glassH = headR * 0.18;
+    const glassGeo = new THREE.BoxGeometry(glassW, glassH, headR * 0.05);
+    const glassMat = new THREE.MeshBasicMaterial({ color: 0x0a0a14 });
+    const glasses = new THREE.Mesh(glassGeo, glassMat);
+    glasses.name = 'sunglasses';
+    glasses.position.set(0, headR * 0.06, -headR * 0.92);
+    boneMap.head.add(glasses);
+    parts.sunglasses = glasses;
+    // Frame — thin line above lenses
+    const frameGeo = new THREE.BoxGeometry(glassW * 1.08, glassH * 0.18, headR * 0.06);
+    const frame = new THREE.Mesh(frameGeo, glassMat);
+    frame.name = 'frame';
+    frame.position.set(0, headR * 0.06 + glassH * 0.55, -headR * 0.93);
+    boneMap.head.add(frame);
+    parts.frame = frame;
+
+    // Mouth — set jaw, thin determined line
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.26, -headR * 0.90);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // Buzz-cut hair — military tight
+    const hairGeo = new THREE.SphereGeometry(headR * 0.90, 10, 8);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x2a2a2a) };
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.20, 0);
+    hair.scale.set(1.04, 0.42, 1.04);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // ═══ EARPIECE + COILED WIRE ═══
+    const earMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const earGeo = new THREE.SphereGeometry(headR * 0.09, 5, 4);
+    const earpiece = new THREE.Mesh(earGeo, earMat);
+    earpiece.name = 'earpiece';
+    earpiece.position.set(headR * 0.78, -headR * 0.08, -headR * 0.12);
+    boneMap.head.add(earpiece);
+    parts.earpiece = earpiece;
+    const wireGeo = new THREE.CylinderGeometry(headR * 0.018, headR * 0.018, headR * 0.55, 4);
+    const wire = new THREE.Mesh(wireGeo, earMat);
+    wire.name = 'wire';
+    wire.position.set(headR * 0.78, -headR * 0.42, -headR * 0.12);
+    boneMap.head.add(wire);
+    parts.wire = wire;
+
+    // ═══ ARMS (thick, powerful) + LEGS (wide tactical stance) ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.095, armLength: 0.40 });
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.12, ulHeight: 0.30, llRadius: 0.10, llHeight: 0.28 });
+
+    return parts;
+}
+
+// ─── UNRULY PASSENGERS ─── tiny, NO ARMS, oversized head, angry yelling, messy hair, drink
+function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: small compact pill — no arms means torso IS the silhouette ═══
+    const spineToRoot = 0.20 * s;
+    const spineToChest = 0.22 * s;
+    const torsoW = 0.30 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.10;
+    const torsoD = 0.24 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.07 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Drink stain on shirt
+    const stainGeo = new THREE.SphereGeometry(0.07 * s, 5, 4);
+    const stainMat = new THREE.MeshBasicMaterial({ color: 0xa05020, transparent: true, opacity: 0.45 });
+    const stain = new THREE.Mesh(stainGeo, stainMat);
+    stain.name = 'stain';
+    stain.position.set(0.04 * s, 0, -torsoD * 0.48);
+    stain.scale.set(1.3, 1.0, 0.3);
+    boneMap.spine.add(stain);
+    parts.stain = stain;
+
+    // ═══ HEAD: OVERSIZED for comedy — angry screaming face ═══
+    const headR = 0.32 * s;  // huge relative to tiny body
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.88, 0.95);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — angry squinting
+    const eyeSize = headR * 0.12;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.26;
+    const eyeY = headR * 0.08;
+    const eyeZ = -headR * 0.90;
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 0.7, 0.5);  // squinted
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+    const eyeR = eyeL.clone();
+    eyeR.name = 'eyeR';
+    eyeR.position.x = eyeSpacing;
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Brows — ANGRY V
+    const browGeo = new THREE.BoxGeometry(headR * 0.26, headR * 0.055, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.16, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, -0.38);  // angry V
+    boneMap.head.add(browL);
+    parts.browL = browL;
+    const browR = browL.clone();
+    browR.name = 'browR';
+    browR.position.x = eyeSpacing;
+    browR.rotation.set(0, 0, 0.38);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — wide open YELLING
+    const mouthGeo = new THREE.SphereGeometry(headR * 0.14, 8, 6);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.20, eyeZ);
+    mouth.scale.set(1.2, 1.0, 0.5);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ MESSY HAIR — 4 wild tufts like the Panicker ═══
+    const tuftGeo = new THREE.SphereGeometry(headR * 0.25, 6, 5);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x8a6a3a) };
+    for (let i = 0; i < 4; i++) {
+        const tuft = new THREE.Mesh(tuftGeo, hairMat);
+        tuft.name = 'hairTuft' + i;
+        const angle = (i / 4) * Math.PI * 2 + 0.3;
+        tuft.position.set(
+            Math.cos(angle) * headR * 0.38,
+            headR * 0.58 + (i % 2) * headR * 0.12,
+            Math.sin(angle) * headR * 0.38
+        );
+        tuft.scale.set(0.55, 0.35 + (i % 2) * 0.15, 0.55);
+        boneMap.head.add(tuft);
+        parts['hairTuft' + i] = tuft;
+    }
+
+    // ═══ NO ARMS — chaotic swarm type (like Dancer/Girls) ═══
+
+    // ═══ LEGS: stubby little stompers ═══
+    _addLegs(parts, boneMap, s, materials, {
+        ulRadius: 0.085, ulHeight: 0.26,
+        llRadius: 0.065, llHeight: 0.22,
+    });
+
+    return parts;
+}
+
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
@@ -3205,6 +4040,13 @@ const _rigidBuilders = {
     pirate: _buildRigidPirate,
     seaturtle: _buildRigidSeaturtle,
     jellyfish: _buildRigidJellyfish,
+    // Airplane enemies
+    nervous: _buildRigidNervousFlyer,
+    business: _buildRigidBusinessClass,
+    stumbler: _buildRigidStumbler,
+    attendant: _buildRigidAttendant,
+    marshal: _buildRigidMarshal,
+    unruly: _buildRigidUnrulyPassengers,
 };
 
 

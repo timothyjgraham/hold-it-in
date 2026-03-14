@@ -1,4 +1,4 @@
-// GLBModelCache — preloads and caches GLB ocean creature models
+// GLBModelCache — preloads and caches GLB models (ocean creatures + airplane characters)
 // Strips meshes from loaded scenes, stores geometry + metadata for EnemyModelFactory
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -10,12 +10,18 @@ let _loading = null;         // singleton Promise
 
 // Model manifest — modelKey → path relative to public/
 const MANIFEST = {
+    // Ocean creatures
     dolphin:   'models/ocean/dolphin.glb',
     shark:     'models/ocean/shark_lowpoly.glb',
     seaturtle: 'models/ocean/turtle.glb',
     jellyfish: 'models/ocean/jellyfish.glb',
     flyfish:   'models/ocean/fish_lowpoly.glb',
     boat:      'models/ocean/boat-row-small.glb',
+    // Airplane character base models (KayKit CC0)
+    airplane_slim:   'models/airplane/kaykit_rogue.glb',       // Rogue — slim build
+    airplane_broad:  'models/airplane/kaykit_knight.glb',      // Knight — broad build
+    airplane_stocky: 'models/airplane/kaykit_barbarian.glb',   // Barbarian — stocky build
+    airplane_mage:   'models/airplane/kaykit_mage.glb',        // Mage — slim, flowing
 };
 
 function _loadOne(url) {
@@ -41,6 +47,14 @@ function _extractMeshData(gltf, key) {
         // Apply the node's world transform to geometry so we get pre-baked positions
         const geo = child.geometry.clone();
         geo.applyMatrix4(child.matrixWorld);
+
+        // Strip skinning attributes — we use rigid parts, not SkinnedMesh
+        geo.deleteAttribute('skinIndex');
+        geo.deleteAttribute('skinWeight');
+        // Also strip JOINTS_0 / WEIGHTS_0 (GLTF naming convention)
+        if (geo.attributes['JOINTS_0']) geo.deleteAttribute('JOINTS_0');
+        if (geo.attributes['WEIGHTS_0']) geo.deleteAttribute('WEIGHTS_0');
+
         geo.computeBoundingBox();
 
         meshes.push({
@@ -143,5 +157,57 @@ export const GLBModelCache = {
         const center = new THREE.Vector3();
         data.bbox.getCenter(center);
         return center;
+    },
+
+    /**
+     * Clone a single named body part, centered at its own bbox origin.
+     * Used for KayKit character models that have separate Body/Head/Arm/Leg meshes.
+     * @param {string} key - Model cache key (e.g. 'airplane_slim')
+     * @param {string} partName - Mesh name to extract (e.g. 'Rogue_Body')
+     * @param {number} targetHeight - Desired height of the FULL model (for consistent scaling)
+     * @returns {{ geometry: THREE.BufferGeometry, scale: number, center: THREE.Vector3 } | null}
+     */
+    cloneNamedPart(key, partName, targetHeight) {
+        const data = _cache.get(key);
+        if (!data) return null;
+
+        const match = data.meshes.find(m => m.name === partName);
+        if (!match) return null;
+
+        // Scale factor based on full model height
+        const fullSize = new THREE.Vector3();
+        data.bbox.getSize(fullSize);
+        const scale = targetHeight / fullSize.y;
+
+        // Clone and center this part at its own origin
+        const geo = match.geometry.clone();
+        geo.computeBoundingBox();
+        const partCenter = new THREE.Vector3();
+        geo.boundingBox.getCenter(partCenter);
+        geo.translate(-partCenter.x, -partCenter.y, -partCenter.z);
+        geo.scale(scale, scale, scale);
+        geo.computeVertexNormals();
+
+        return {
+            geometry: geo,
+            scale,
+            center: partCenter.multiplyScalar(scale),  // where this part WAS in scaled model space
+        };
+    },
+
+    /**
+     * Clone all body parts for a KayKit model, each centered at its own origin.
+     * @param {string} key - Model cache key
+     * @param {number} targetHeight - Desired height of the full model
+     * @param {Array<string>} partNames - Which mesh names to extract
+     * @returns {Object<string, { geometry, scale, center }>}
+     */
+    cloneNamedParts(key, targetHeight, partNames) {
+        const result = {};
+        for (const name of partNames) {
+            const part = this.cloneNamedPart(key, name, targetHeight);
+            if (part) result[name] = part;
+        }
+        return result;
     },
 };
