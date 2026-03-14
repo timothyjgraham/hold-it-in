@@ -167,7 +167,7 @@ These are four-legged animals with horizontal spine, tail chains, and completely
 - Body oriented along Z axis (length), not Y axis (height)
 - Animations: 4-beat walk gait, not 2-beat biped
 
-- [ ] **Deer** — Size 4.5. Graceful, elegant. Long legs, thin body. Antlers (cone clusters on head). Ears (flattened cones). 4-beat walk with head bob. Tail: 2 segments, gentle wave.
+- [x] **Deer** — DONE. Size 4.5, graceful quadruped baseline. Horizontal organic body barrel on spine_mid with shoulder/haunch ellipsoids bridging to legs. 2-segment neck, elongated head with snout/nose, lateral eyes, flattened cone ears, 3-tine antlers per side. 4 slender legs with tapered lower segments, rounded hooves at foot bones, short 2-segment tail. Existing deer_walk/bash/hit/death anims auto-adapt via config.
 
 - [ ] **Squirrel** — Size 3.0. Small, fast bounding. Big fluffy tail (5 segments, large radius). Oversized head (chibi). Bounding gait (front legs then hind legs together). Very fast cycle (0.35s).
 

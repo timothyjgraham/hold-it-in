@@ -6973,7 +6973,9 @@
                 }
 
                 // Impact squash-and-stretch — compress on Y, expand on XZ, spring back
-                if (e._impactSquash > 0) {
+                // Skip for quadruped/marine enemies — horizontal bodies look wrong when squashed vertically
+                const _noSquashTypes = this._noSquashTypes || (this._noSquashTypes = new Set(['deer','squirrel','bear','fox','moose','raccoon','dolphin','flyfish','shark','seaturtle','jellyfish']));
+                if (e._impactSquash > 0 && !_noSquashTypes.has(e.type)) {
                     e._impactSquash -= dt;
                     const t = Math.max(0, e._impactSquash / 0.18);  // 1→0
                     // Phase 1 (t > 0.5): squash down. Phase 2: spring overshoot back
@@ -6990,6 +6992,9 @@
                         scaleXZ = 1 - 0.04 * Math.sin(spring * Math.PI);
                     }
                     e.mesh.scale.set(scaleXZ, scaleY, scaleXZ);
+                } else if (e._impactSquash > 0 && _noSquashTypes.has(e.type)) {
+                    // For non-squash types, just count down the timer without scaling
+                    e._impactSquash -= dt;
                 } else if (!e._pilingOn && e.mesh.scale.y !== 1) {
                     e.mesh.scale.set(1, 1, 1);
                 }

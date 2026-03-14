@@ -5,7 +5,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE } from '../data/palette.js';
-import { toonMat, outlineMatStatic } from '../shaders/toonMaterials.js';
+import { toonMat } from '../shaders/toonMaterials.js';
 import { ENEMY_INTRO_DATA, INTRO_WAVE_MAP } from '../data/enemyIntroData.js';
 import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from '../models/UpgradeDroneModel.js';
@@ -169,8 +169,7 @@ export class EnemyIntroUI {
         this._signTexture = null;
         this._enemyGroup = null;
         this._enemyAnimCtrl = null;
-        this._pedestal = null;
-        this._pedestalOutline = null;
+        this._displayScale = 1.0;
         this._particles = [];
         this._introLights = [];
 
@@ -286,9 +285,9 @@ export class EnemyIntroUI {
         this._scene.add(keyLight);
         this._introLights.push(keyLight);
 
-        // Fill from the right side (illuminates enemy model)
+        // Fill from the left side (illuminates enemy model on its left position)
         const fillLight = new THREE.PointLight(0xfff0d0, 0.3, 20, 1);
-        fillLight.position.set(5, 28, 2);
+        fillLight.position.set(-8, 28, 2);
         this._scene.add(fillLight);
         this._introLights.push(fillLight);
     }
@@ -328,8 +327,8 @@ export class EnemyIntroUI {
         // Mark all drone meshes to render on top of dim plane
         _setRenderOrder(this._drone, INTRO_RENDER_ORDER);
 
-        // Flight path: pick random window → hover position (right of center, higher to avoid overlap)
-        const hoverPos = new THREE.Vector3(-1.5, 30, 3);
+        // Flight path: pick random window → hover position (right of center, model is on left)
+        const hoverPos = new THREE.Vector3(2.5, 30, 3);
         let startPos;
 
         if (windowPositions && windowPositions.length > 0) {
@@ -364,65 +363,56 @@ export class EnemyIntroUI {
     }
 
     /**
-     * Create the enemy model and pedestal for display.
+     * Create the enemy model for display (no pedestal).
+     * Model is created at normal config size with a group scale to normalize visual size.
      */
     _createEnemyDisplay(enemyType) {
         const config = ENEMY_VISUAL_CONFIG[enemyType];
         const introData = ENEMY_INTRO_DATA[enemyType];
 
-        // Create enemy model at display scale (2x for drama)
-        const displayScale = config.size * 2.0;
-        const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
+        // Create at normal game size so animations match correctly
+        const result = createEnemyModel(enemyType, config.materialColors.body, false, config.size);
         this._enemyGroup = result.group;
 
-        // Calculate where the feet/shoes bottom out so pedestal sits under them.
-        // Trace the bone chain: root → upperLeg → lowerLeg → [foot] to find the lowest point.
+        // Normalize visual size — all enemies appear roughly similar screen size
+        const targetSize = 4.5;
+        this._displayScale = targetSize / config.size;
+
+        // Calculate approximate feet bottom in local space for Y positioning
         const bp = config.bonePositions;
-        const upperLegY = (bp.upperLeg_L || {}).y || 0;
-        const lowerLegY = (bp.lowerLeg_L || {}).y || 0;
-        const footBoneY = (bp.foot_L || {}).y || 0;
-        // Approximate shoe/foot mesh extent below the lowest bone
-        const shoeExtent = 0.08;
-        const feetBottomY = (bp.root.y + upperLegY + lowerLegY + footBoneY - shoeExtent) * displayScale;
+        const isQuad = config.skeletonType === 'quadruped';
+        let feetLocalY;
+        if (isQuad) {
+            const pelvisY = (bp.pelvis || {}).y || 0;
+            const hULY = (bp.hindUpperLeg_L || {}).y || 0;
+            const hLLY = (bp.hindLowerLeg_L || {}).y || 0;
+            const hFY = (bp.hindFoot_L || {}).y || 0;
+            feetLocalY = (bp.root.y + pelvisY + hULY + hLLY + hFY) * config.size;
+        } else {
+            const uLY = (bp.upperLeg_L || {}).y || 0;
+            const lLY = (bp.lowerLeg_L || {}).y || 0;
+            const fY = (bp.foot_L || {}).y || 0;
+            feetLocalY = (bp.root.y + uLY + lLY + fY) * config.size;
+        }
+        const feetMargin = 0.08 * config.size;
+        const groundY = 22;
+        const groupY = groundY - (feetLocalY - feetMargin) * this._displayScale;
 
-        // Position enemy so feet rest on the pedestal platform
-        const platformY = 23;
-        this._enemyGroup.position.set(3.5, platformY - feetBottomY, 4);
-        this._enemyGroup.scale.setScalar(0); // Start at 0, will pop in
+        // Position model to the LEFT of the info card
+        this._enemyGroup.position.set(-5, groupY, 4);
+        this._enemyGroup.scale.setScalar(0); // pop-in starts at 0
 
-        // No Y rotation needed — rigid models face -Z which already points toward the camera.
-        // Legacy models also face -Z by construction.
-
-        // Mark all enemy meshes to render on top of dim plane
         _setRenderOrder(this._enemyGroup, INTRO_RENDER_ORDER);
-
         this._scene.add(this._enemyGroup);
 
-        // Start walk animation — rigid models need animRoot (a Bone), not the material shim
+        // Start walk animation
         const animTarget = result.isRigid ? result.animRoot : result.skinnedMesh;
         this._enemyAnimCtrl = new AnimationController(
             animTarget, enemyType, result.isRigid ? result.skeleton : undefined
         );
         this._enemyAnimCtrl.setState(introData.walkState);
 
-        // Create pedestal (cream cylinder with outline)
-        const pedR = displayScale * 0.5;
-        const pedH = 0.3;
-        const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
-        const pedMat = toonMat(PALETTE.cream);
-        this._pedestal = new THREE.Mesh(pedGeo, pedMat);
-        this._pedestal.position.set(3.5, platformY - pedH / 2, 4);
-        this._pedestal.scale.setScalar(0);
-        this._pedestal.renderOrder = INTRO_RENDER_ORDER;
-        this._scene.add(this._pedestal);
-
-        // Pedestal outline
-        const outGeo = new THREE.CylinderGeometry(pedR + 0.03, pedR + 0.03, pedH + 0.03, 24);
-        this._pedestalOutline = new THREE.Mesh(outGeo, outlineMatStatic(0.03));
-        this._pedestalOutline.position.copy(this._pedestal.position);
-        this._pedestalOutline.scale.setScalar(0);
-        this._pedestalOutline.renderOrder = INTRO_RENDER_ORDER;
-        this._scene.add(this._pedestalOutline);
+        // No pedestal — clean floating display
     }
 
     /**
@@ -431,7 +421,7 @@ export class EnemyIntroUI {
     _spawnEnemyParticles() {
         const config = ENEMY_VISUAL_CONFIG[this._enemyType];
         const color = config.materialColors.body;
-        const center = new THREE.Vector3(3.5, 24.5, 4);
+        const center = new THREE.Vector3(-5, 24.5, 4);
 
         for (let i = 0; i < 20; i++) {
             const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);
@@ -585,28 +575,22 @@ export class EnemyIntroUI {
             this._drone.position.y = ud.targetPos.y + bob;
         }
 
-        // Enemy model pop-in
+        // Enemy model pop-in (scales to _displayScale instead of 1.0)
         if (this._enemyGroup && this._timer >= ENEMY_APPEAR_DELAY) {
+            const ds = this._displayScale || 1.0;
             const enemyT = this._timer - ENEMY_APPEAR_DELAY;
             if (enemyT < ENEMY_POP_DUR) {
-                // Scale 0 → 1.1
+                // Scale 0 → ds*1.1
                 const t = enemyT / ENEMY_POP_DUR;
                 const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-                this._enemyGroup.scale.setScalar(eased * 1.1);
+                this._enemyGroup.scale.setScalar(eased * ds * 1.1);
             } else if (enemyT < ENEMY_POP_DUR + ENEMY_SETTLE_DUR) {
-                // Scale 1.1 → 1.0
+                // Scale ds*1.1 → ds
                 const t = (enemyT - ENEMY_POP_DUR) / ENEMY_SETTLE_DUR;
-                this._enemyGroup.scale.setScalar(1.1 - t * 0.1);
+                this._enemyGroup.scale.setScalar(ds * (1.1 - t * 0.1));
             } else {
-                this._enemyGroup.scale.setScalar(1.0);
+                this._enemyGroup.scale.setScalar(ds);
             }
-        }
-
-        // Pedestal fade in
-        if (this._pedestal && this._timer >= PEDESTAL_FADE_DELAY) {
-            const pedT = Math.min(1, (this._timer - PEDESTAL_FADE_DELAY) / 0.4);
-            this._pedestal.scale.setScalar(pedT);
-            this._pedestalOutline.scale.setScalar(pedT);
         }
 
         // Particle burst
@@ -730,16 +714,10 @@ export class EnemyIntroUI {
 
         // Enemy model: spin + scale to 0
         if (this._enemyGroup) {
+            const ds = this._displayScale || 1.0;
             const t = Math.min(1, exitT / ENEMY_EXIT_DUR);
             this._enemyGroup.rotation.y += dt * 8; // fast spin
-            this._enemyGroup.scale.setScalar(Math.max(0, 1 - t));
-        }
-
-        // Pedestal fade
-        if (this._pedestal) {
-            const t = Math.min(1, exitT / ENEMY_EXIT_DUR);
-            this._pedestal.scale.setScalar(Math.max(0, 1 - t));
-            this._pedestalOutline.scale.setScalar(Math.max(0, 1 - t));
+            this._enemyGroup.scale.setScalar(Math.max(0, ds * (1 - t)));
         }
 
         // Dim plane fade out
@@ -803,20 +781,6 @@ export class EnemyIntroUI {
         if (this._enemyAnimCtrl) {
             this._enemyAnimCtrl.dispose();
             this._enemyAnimCtrl = null;
-        }
-
-        // Clean up pedestal
-        if (this._pedestal && this._scene) {
-            this._scene.remove(this._pedestal);
-            this._pedestal.geometry.dispose();
-            this._pedestal.material.dispose();
-            this._pedestal = null;
-        }
-        if (this._pedestalOutline && this._scene) {
-            this._scene.remove(this._pedestalOutline);
-            this._pedestalOutline.geometry.dispose();
-            this._pedestalOutline.material.dispose();
-            this._pedestalOutline = null;
         }
 
         // Clean up dim plane
