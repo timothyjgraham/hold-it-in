@@ -139,7 +139,7 @@ All office enemies are bipeds sharing the same skeleton structure. Follow the Po
 
 - [x] **Waddle Tank** — DONE. Size 3.5, pear-shaped organicTorso, belly jiggle sphere on belly bone, thick stumpy arms/forearms/legs/feet, hard hat + brim, determined Mii grimace (squinting eyes, angry brows, wide mouth). Existing waddle/panic_sprint/bash/hit/death anims auto-adapt.
 
-- [ ] **Panicker** — Size 1.6 → scale up. Has forearms. Narrow torso. Personality: total meltdown, arms flailing wildly. Face: wide terrified eyes, open screaming mouth. Walk: fast erratic (0.5s), huge arm swing (1.2 rad), legs pumping. Asymmetric arm frequencies for chaotic feel.
+- [x] **Panicker** — DONE. Size 2.8, narrow torso, thin long arms+forearms for flailing, 3 spiky hair tufts (disheveled), terrified Mii face (huge tall eyes + tiny pupils, high-arched brows, screaming O mouth). Existing panic_run/bash/hit/death anims auto-adapt.
 
 - [ ] **Power Walker** — Size 1.4 → scale up. Full skeleton with feet. Personality: determined, athletic, methodical. Face: focused stern expression. Accessory: sweatband/visor. Walk: smooth efficient stride (0.7s), minimal bob (0.02), matched arm/leg swing (0.61), perfectly upright spine.
 

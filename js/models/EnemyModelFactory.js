@@ -10,7 +10,7 @@ import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker']);
 
 /**
  * Create a fully rigged enemy model.
@@ -664,10 +664,221 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
     return parts;
 }
 
+// ─── PANICKER ─── narrow frantic runner, flailing arms+forearms, terrified screaming face
+function _buildRigidPanicker(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+
+    const spineToRoot = 0.22 * s;
+    const spineToChest = 0.26 * s;
+
+    // ═══ TORSO: narrow and slim — scrawny panicked person ═══
+    const torsoW = 0.32 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.12;
+    const torsoD = 0.26 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: big — panicked people look big-headed ═══
+    const headR = 0.28 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.95, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Messy spiky hair — panicked, disheveled
+    const tuftGeo = new THREE.SphereGeometry(headR * 0.28, 6, 5);
+    for (let i = 0; i < 3; i++) {
+        const tuft = new THREE.Mesh(tuftGeo, materials.body);
+        tuft.name = 'tuft' + i;
+        const angle = (i - 1) * 0.4;
+        tuft.position.set(
+            Math.sin(angle) * headR * 0.3,
+            headR * 0.72,
+            -headR * 0.1 + Math.cos(angle) * headR * 0.15
+        );
+        tuft.scale.set(0.8, 0.6, 0.7);
+        boneMap.head.add(tuft);
+        parts['tuft' + i] = tuft;
+    }
+
+    // ═══ FACE: Mii-style — wide terrified eyes, screaming O mouth ═══
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // Eyes — HUGE terrified circles
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.08;
+    const eyeZ = -headR * 0.90;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 1.5, 0.5);  // very tall — terrified
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, 1.5, 0.5);
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Tiny pupils — wild-eyed terror
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.30, 4, 3);
+
+    const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilL.name = 'pupilL';
+    pupilL.position.set(-eyeSpacing, eyeY + eyeSize * 0.15, eyeZ - eyeSize * 0.2);
+    boneMap.head.add(pupilL);
+    parts.pupilL = pupilL;
+
+    const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilR.name = 'pupilR';
+    pupilR.position.set(eyeSpacing, eyeY + eyeSize * 0.15, eyeZ - eyeSize * 0.2);
+    boneMap.head.add(pupilR);
+    parts.pupilR = pupilR;
+
+    // Eyebrows — high arched terror (/\)
+    const browGeo = new THREE.BoxGeometry(headR * 0.20, headR * 0.04, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.30, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, 0.40);  // very high arch
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.30, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, -0.40);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — big open screaming O
+    const mouthGeo = new THREE.SphereGeometry(headR * 0.12, 6, 5);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
+    mouth.scale.set(1.0, 1.3, 0.5);  // tall oval scream
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ ARMS: thin, long — for dramatic flailing ═══
+    const armRadius = 0.055 * s;
+    const armLength = 0.40 * s;
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+
+    const armL = new THREE.Mesh(armGeo, materials.body);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.body);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // ═══ FOREARMS: thin whipping appendages ═══
+    const forearmRadius = 0.045 * s;
+    const forearmLength = 0.32 * s;
+    const forearmGeo = createCapsule(forearmRadius, forearmLength, 8, 4);
+
+    const forearmL = new THREE.Mesh(forearmGeo, materials.body);
+    forearmL.name = 'forearmL';
+    forearmL.position.set(0, -forearmLength * 0.42, 0);
+    boneMap.forearm_L.add(forearmL);
+    parts.forearmL = forearmL;
+
+    const forearmR = new THREE.Mesh(forearmGeo, materials.body);
+    forearmR.name = 'forearmR';
+    forearmR.position.set(0, -forearmLength * 0.42, 0);
+    boneMap.forearm_R.add(forearmR);
+    parts.forearmR = forearmR;
+
+    // Hands — small frantic fists
+    const handGeo = new THREE.SphereGeometry(forearmRadius * 1.2, 6, 5);
+
+    const handL = new THREE.Mesh(handGeo, materials.skin);
+    handL.name = 'handL';
+    handL.position.set(0, -forearmLength * 0.88, 0);
+    boneMap.forearm_L.add(handL);
+    parts.handL = handL;
+
+    const handR = new THREE.Mesh(handGeo, materials.skin);
+    handR.name = 'handR';
+    handR.position.set(0, -forearmLength * 0.88, 0);
+    boneMap.forearm_R.add(handR);
+    parts.handR = handR;
+
+    // ═══ UPPER LEGS ═══
+    const upperLegRadius = 0.08 * s;
+    const upperLegH = 0.32 * s;
+    const upperLegGeo = createCapsule(upperLegRadius, upperLegH, 8, 4);
+
+    const upperLegL = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegL.name = 'upperLegL';
+    upperLegL.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_L.add(upperLegL);
+    parts.upperLegL = upperLegL;
+
+    const upperLegR = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegR.name = 'upperLegR';
+    upperLegR.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_R.add(upperLegR);
+    parts.upperLegR = upperLegR;
+
+    // ═══ LOWER LEGS ═══
+    const lowerLegRadius = 0.065 * s;
+    const lowerLegH = 0.30 * s;
+    const lowerLegGeo = createCapsule(lowerLegRadius, lowerLegH, 8, 4);
+
+    const lowerLegL = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegL.name = 'lowerLegL';
+    lowerLegL.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_L.add(lowerLegL);
+    parts.lowerLegL = lowerLegL;
+
+    const lowerLegR = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegR.name = 'lowerLegR';
+    lowerLegR.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_R.add(lowerLegR);
+    parts.lowerLegR = lowerLegR;
+
+    // ═══ SHOES ═══
+    const shoeGeo = createRoundedBox(0.10 * s, 0.045 * s, 0.14 * s, 0.018 * s);
+
+    const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeL.name = 'shoeL';
+    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_L.add(shoeL);
+    parts.shoeL = shoeL;
+
+    const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeR.name = 'shoeR';
+    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_R.add(shoeR);
+    parts.shoeR = shoeR;
+
+    return parts;
+}
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
     waddle: _buildRigidWaddleTank,
+    panicker: _buildRigidPanicker,
 };
 
 
