@@ -1,21 +1,313 @@
-// Enemy Model Factory — builds fully skinned + shaded enemy meshes
-// Calls SkeletonFactory, builds per-type geometry, merges, auto-skins, binds skeleton.
+// Enemy Model Factory — builds enemy meshes
+// Supports two pipelines:
+//   1. Rigid body parts (new) — each part is a Mesh parented to its bone. No skinning.
+//   2. Legacy skinned mesh — merge + auto-skin (for types not yet migrated).
 
 import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
 import { createSkeleton } from '../animation/SkeletonFactory.js';
-import { createEnemyMaterials } from './EnemyMaterials.js';
+import { createEnemyMaterials, createRigidEnemyMaterials } from './EnemyMaterials.js';
 import { mergeGeometries } from '../utils/geometryUtils.js';
+import { createCapsule, createRoundedBox, createFlatCap } from '../utils/characterGeometry.js';
+
+// Types that use the new rigid body parts pipeline
+const RIGID_TYPES = new Set(['polite']);
 
 /**
  * Create a fully rigged enemy model.
+ * Routes to rigid-body or legacy pipeline based on enemy type.
  *
  * @param {string} enemyType - Key into ENEMY_VISUAL_CONFIG
  * @param {number|THREE.Color} color - Body color override
  * @param {boolean} isDesperate - Apply desperate tint
  * @param {number} size - Scale factor (defaults to config size)
- * @returns {{ group: THREE.Group, skinnedMesh: THREE.SkinnedMesh, skeleton: THREE.Skeleton, boneMap: Object, outlineMesh: THREE.SkinnedMesh }}
+ * @returns {{ group, skinnedMesh, skeleton, boneMap, outlineMesh, materials, parts }}
  */
 export function createEnemyModel(enemyType, color, isDesperate, size) {
+    if (RIGID_TYPES.has(enemyType)) {
+        return _createRigidModel(enemyType, color, isDesperate, size);
+    }
+    return _createLegacyModel(enemyType, color, isDesperate, size);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// NEW: Rigid Body Parts Pipeline
+// Each body part = separate Mesh parented to its bone.
+// No SkinnedMesh, no skin weights, no deformation artifacts.
+// ═══════════════════════════════════════════════════════
+
+function _createRigidModel(enemyType, color, isDesperate, size) {
+    const config = ENEMY_VISUAL_CONFIG[enemyType];
+    if (!config) throw new Error(`EnemyModelFactory: unknown enemy type "${enemyType}"`);
+
+    size = size !== undefined ? size : config.size;
+
+    // 1. Build skeleton (same as before — bones are Object3D hierarchy)
+    const { bones, rootBone, boneMap } = createSkeleton(enemyType, size);
+
+    // 2. Build materials for rigid parts (no skinning needed)
+    const materials = createRigidEnemyMaterials(enemyType, color, isDesperate);
+
+    // 3. Build body parts and parent to bones
+    const builder = _rigidBuilders[enemyType];
+    if (!builder) throw new Error(`EnemyModelFactory: no rigid builder for "${enemyType}"`);
+
+    const parts = builder(size, config, materials, boneMap);
+
+    // 4. Create outline meshes for each visible part
+    const outlineWidth = _outlineWidthForRigidType(enemyType);
+    const outlineParts = [];
+    for (const [partName, mesh] of Object.entries(parts)) {
+        if (!mesh || !mesh.geometry) continue;
+        const outlineGeo = mesh.geometry.clone();
+        const outlineMat = materials.outline.clone();
+        const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
+        outlineMesh.name = partName + '_outline';
+        // Position/rotation matches the part mesh (both parented to same bone)
+        outlineMesh.position.copy(mesh.position);
+        outlineMesh.rotation.copy(mesh.rotation);
+        outlineMesh.scale.copy(mesh.scale);
+        mesh.parent.add(outlineMesh);
+        outlineParts.push(outlineMesh);
+    }
+
+    // 5. Wrap in group
+    const group = new THREE.Group();
+    group.add(rootBone);
+
+    // 6. Build a Skeleton object for AnimationController compatibility
+    const skeleton = new THREE.Skeleton(bones);
+
+    // 7. Backward-compatible "skinnedMesh" shim for index.html uniform access.
+    //    This is a lightweight proxy — not an actual SkinnedMesh.
+    const allPartMaterials = Object.values(parts)
+        .filter(m => m && m.material)
+        .map(m => m.material);
+    const materialShim = {
+        material: allPartMaterials,
+        // For AnimationMixer — it needs to call .traverse() on the root
+        skeleton: skeleton,
+    };
+
+    return {
+        group,
+        skinnedMesh: materialShim,    // Shim — Array.isArray(mats) checks still work
+        skeleton,
+        boneMap,
+        outlineMesh: null,             // No single outline mesh; outlines are per-part
+        outlineParts,                  // Array of outline meshes for LOD toggling
+        materials,
+        parts,
+        animRoot: rootBone,            // For AnimationMixer (new path)
+        isRigid: true,                 // Flag for code that needs to distinguish
+    };
+}
+
+function _outlineWidthForRigidType(type) {
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02 };
+    return map[type] || 0.03;
+}
+
+
+// ═══════════════════════════════════════════════════════
+// Rigid body part builders — one per migrated type
+// Each returns a parts object: { torso: Mesh, head: Mesh, armL: Mesh, ... }
+// ═══════════════════════════════════════════════════════
+
+function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+
+    // ══════════════════════════════════════════════════════════════
+    // BONE WORLD Y POSITIONS (with size=1.5):
+    //   root=1.2, spine=1.575, chest=2.025, neck=2.325, head=2.7
+    //   upperLeg=1.125, lowerLeg=0.645
+    //
+    // KEY INSIGHT: torso must bridge from chest area down to hip area.
+    // Parent torso to SPINE (y≈1.575) so it extends both up and down.
+    // ══════════════════════════════════════════════════════════════
+
+    // Bone-local offset from spine to root ≈ -0.25*s (spine offset from root)
+    // Bone-local offset from spine to chest ≈ +0.30*s (chest offset from spine)
+    // Torso needs to cover this full range plus a little overlap at each end.
+    const spineToRoot = 0.25 * s;  // how far below spine the root is
+    const spineToChest = 0.30 * s; // how far above spine the chest is
+
+    // ═══ TORSO: tall rounded box that bridges from shoulders to hips ═══
+    const torsoW = 0.42 * s;  // narrow enough that arms don't clip
+    const torsoH = (spineToRoot + spineToChest) * 1.15;  // covers full spine-to-chest plus overlap
+    const torsoD = 0.32 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.07 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    // Center slightly above spine midpoint (biased toward chest for natural look)
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: clean sphere, no hat — keep it simple and readable ═══
+    const headR = 0.28 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.92, 0.97);  // slightly oblate
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Small hair tuft on top — subtle identity marker
+    const tuftGeo = new THREE.SphereGeometry(headR * 0.35, 6, 5);
+    const tuft = new THREE.Mesh(tuftGeo, materials.body);
+    tuft.name = 'tuft';
+    tuft.position.set(0, headR * 0.75, -headR * 0.1);
+    tuft.scale.set(1.2, 0.5, 1.0);
+    boneMap.head.add(tuft);
+    parts.tuft = tuft;
+
+    // ═══ FACE: Mii-style — dot eyes, worried brows, grimace mouth ═══
+    // Use simple MeshBasicMaterial (outline shader won't render front faces correctly)
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });  // PALETTE.ink
+
+    // Eyes — dark spheres on the front of the head, big enough to read from top-down
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.05;
+    const eyeZ = -headR * 0.90;  // front of head (faces -Z, toward camera)
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 1.3, 0.5);  // tall ovals, flattened into head
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, 1.3, 0.5);
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Eyebrows — worried angle (/\)
+    const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.045, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, 0.30);  // angled worried
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, -0.30);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — small worried line
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ ARMS: chunky capsules — hang mostly DOWN, animation angles them to groin ═══
+    // Keep mesh centered near the bone. The ANIMATION rotation (moderate forward + inward)
+    // swings the arm down-and-in so hands end up at the crotch.
+    const armRadius = 0.065 * s;
+    const armLength = 0.50 * s;  // long enough to reach from shoulder to groin
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+
+    const armL = new THREE.Mesh(armGeo, materials.body);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);  // centered below bone
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.body);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // Hands — small skin spheres at arm tips
+    const handGeo = new THREE.SphereGeometry(armRadius * 1.1, 6, 5);
+
+    const handL = new THREE.Mesh(handGeo, materials.skin);
+    handL.name = 'handL';
+    handL.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_L.add(handL);
+    parts.handL = handL;
+
+    const handR = new THREE.Mesh(handGeo, materials.skin);
+    handR.name = 'handR';
+    handR.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_R.add(handR);
+    parts.handR = handR;
+
+    // ═══ UPPER LEGS: thick capsules that start right at the hip ═══
+    const upperLegRadius = 0.095 * s;
+    const upperLegH = 0.34 * s;
+    const upperLegGeo = createCapsule(upperLegRadius, upperLegH, 8, 4);
+
+    const upperLegL = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegL.name = 'upperLegL';
+    upperLegL.position.set(0, -upperLegH * 0.3, 0);  // offset down from bone
+    boneMap.upperLeg_L.add(upperLegL);
+    parts.upperLegL = upperLegL;
+
+    const upperLegR = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegR.name = 'upperLegR';
+    upperLegR.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_R.add(upperLegR);
+    parts.upperLegR = upperLegR;
+
+    // ═══ LOWER LEGS: slightly slimmer ═══
+    const lowerLegRadius = 0.08 * s;
+    const lowerLegH = 0.32 * s;
+    const lowerLegGeo = createCapsule(lowerLegRadius, lowerLegH, 8, 4);
+
+    const lowerLegL = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegL.name = 'lowerLegL';
+    lowerLegL.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_L.add(lowerLegL);
+    parts.lowerLegL = lowerLegL;
+
+    const lowerLegR = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegR.name = 'lowerLegR';
+    lowerLegR.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_R.add(lowerLegR);
+    parts.lowerLegR = lowerLegR;
+
+    // ═══ SHOES: little rounded blocks ═══
+    const shoeGeo = createRoundedBox(0.11 * s, 0.05 * s, 0.15 * s, 0.02 * s);
+
+    const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeL.name = 'shoeL';
+    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_L.add(shoeL);
+    parts.shoeL = shoeL;
+
+    const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeR.name = 'shoeR';
+    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_R.add(shoeR);
+    parts.shoeR = shoeR;
+
+    return parts;
+}
+
+const _rigidBuilders = {
+    polite: _buildRigidPoliteKnocker,
+};
+
+
+// ═══════════════════════════════════════════════════════
+// LEGACY: Skinned Mesh Pipeline (unchanged — for non-migrated types)
+// ═══════════════════════════════════════════════════════
+
+function _createLegacyModel(enemyType, color, isDesperate, size) {
     const config = ENEMY_VISUAL_CONFIG[enemyType];
     if (!config) {
         throw new Error(`EnemyModelFactory: unknown enemy type "${enemyType}"`);
@@ -118,7 +410,7 @@ export function createEnemyModel(enemyType, color, isDesperate, size) {
     group.add(skinnedMesh);
     group.add(outlineMesh);
 
-    return { group, skinnedMesh, skeleton, boneMap, outlineMesh, materials };
+    return { group, skinnedMesh, skeleton, boneMap, outlineMesh, materials, isRigid: false };
 }
 
 

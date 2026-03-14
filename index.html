@@ -3627,7 +3627,11 @@
                         skeleton: model.skeleton || null,
                         boneMap: model.boneMap || null,
                         outlineMesh: model.outlineMesh || null,
+                        outlineParts: model.outlineParts || null,
                         materials: model.materials || null,
+                        isRigid: model.isRigid || false,
+                        animRoot: model.animRoot || null,
+                        parts: model.parts || null,
                         animController: null,
                         x: ed.x, z: ed.z,
                         speed: ed.speed,
@@ -3663,7 +3667,8 @@
                     };
 
                     // Animation controller
-                    const ac = model.animController || new AnimationController(model.skinnedMesh, ed.type);
+                    const _animTarget = model.isRigid ? model.animRoot : model.skinnedMesh;
+                    const ac = model.animController || new AnimationController(_animTarget, ed.type, model.isRigid ? model.skeleton : undefined);
                     enemy.animController = ac;
                     ac.setState(ed.walkState || 'walk');
                     if (ed.desperate) ac.setTimeScale(1.5);
@@ -6037,6 +6042,7 @@
 
             let group, skinnedMesh, skeleton, boneMap, outlineMesh, materials;
             let pooledAnimController = null;
+            let isRigid = false, animRoot = null, outlineParts = null, parts = null;
 
             // Skeletal model (Phase 5 + 6A pooling)
             let model;
@@ -6052,6 +6058,10 @@
             boneMap = model.boneMap;
             outlineMesh = model.outlineMesh;
             materials = model.materials;
+            isRigid = model.isRigid || false;
+            animRoot = model.animRoot || null;
+            outlineParts = model.outlineParts || null;
+            parts = model.parts || null;
 
             group.position.set(x, 0, z);
             this.scene.add(group);
@@ -6064,8 +6074,13 @@
                 skeleton: skeleton || null,
                 boneMap: boneMap || null,
                 outlineMesh: outlineMesh || null,
+                outlineParts: outlineParts,
                 materials: materials || null,
                 animController: null,
+                // Rigid body parts fields
+                isRigid: isRigid,
+                animRoot: animRoot,
+                parts: parts,
                 // Common fields
                 x: x,
                 z: z,
@@ -6090,7 +6105,8 @@
             };
 
             // Set up AnimationController (6A: reuse from pool)
-            const ac = pooledAnimController || new AnimationController(skinnedMesh, enemyType);
+            const animTarget = isRigid ? animRoot : skinnedMesh;
+            const ac = pooledAnimController || new AnimationController(animTarget, enemyType, isRigid ? skeleton : undefined);
             enemy.animController = ac;
 
             // Initial animation state per type
@@ -6839,6 +6855,10 @@
                     if (e.outlineMesh) {
                         e.outlineMesh.visible = camDist < 40;
                     }
+                    if (e.outlineParts) {
+                        const olVis = camDist < 40;
+                        for (const ol of e.outlineParts) ol.visible = olVis;
+                    }
 
                     // AnimationController handles all animation
                     e.animController.update(dt, camDist);
@@ -6877,6 +6897,7 @@
                         e.bashTimer -= dt;
                         const camDist = e.mesh.position.distanceTo(this.camera.position);
                         if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
+                        if (e.outlineParts) { const _v = camDist < 40; for (const _o of e.outlineParts) _o.visible = _v; }
                         e.animController.update(dt, camDist);
 
                         if (e.bashTimer <= 0) {
@@ -7033,8 +7054,32 @@
                         if (e.type === 'polite') {
                             e.knockSide = Math.random() < 0.5 ? 'L' : 'R';
                             e.animController.setState('bash_door_' + e.knockSide);
+                            // Random look-back timer: 2-6s before first look
+                            e._lookBackTimer = 2 + Math.random() * 4;
+                            e._lookingBack = false;
                         } else {
                             e.animController.setState('bash_door');
+                        }
+                    }
+
+                    // Polite knocker: random look-back at camera ("come on!")
+                    if (e.type === 'polite' && e._lookBackTimer !== undefined) {
+                        e._lookBackTimer -= dt;
+                        if (e._lookBackTimer <= 0) {
+                            if (!e._lookingBack) {
+                                // Start looking back at camera
+                                e._lookingBack = true;
+                                // Random stare duration: 0.8 to 4 seconds
+                                e._lookBackTimer = 0.8 + Math.random() * 3.2;
+                                e.animController.setState('look_back');
+                            } else {
+                                // Done staring — go back to knocking
+                                e._lookingBack = false;
+                                // Random delay before next look: 2 to 6 seconds
+                                e._lookBackTimer = 2 + Math.random() * 4;
+                                e.knockSide = Math.random() < 0.5 ? 'L' : 'R';
+                                e.animController.setState('bash_door_' + e.knockSide);
+                            }
                         }
                     }
 
@@ -7053,6 +7098,7 @@
                     }
                     // 6E: outline LOD
                     if (e.outlineMesh) e.outlineMesh.visible = camDist < 40;
+                    if (e.outlineParts) { const _v = camDist < 40; for (const _o of e.outlineParts) _o.visible = _v; }
                     e.animController.update(dt, camDist);
 
                     // Time to bash!
@@ -7267,9 +7313,13 @@
                                 skeleton: enemyRef.skeleton,
                                 boneMap: enemyRef.boneMap,
                                 outlineMesh: enemyRef.outlineMesh,
+                                outlineParts: enemyRef.outlineParts,
                                 materials: enemyRef.materials,
                                 animController: enemyRef.animController,
                                 enemyType: enemyRef.type,
+                                parts: enemyRef.parts,
+                                animRoot: enemyRef.animRoot,
+                                isRigid: enemyRef.isRigid,
                             };
                             if (this.medicDroneSystem) {
                                 // Queue corpse for medic drone collection (with birdies)

@@ -8,7 +8,7 @@ export const ENEMY_VISUAL_CONFIG = {
 
     // ─── POLITE KNOCKER ─── wave 1, baseline, 11 bones
     polite: {
-        size: 1.5,
+        size: 2.8,
         bones: {
             neck: true,
             upperArms: true,
@@ -17,17 +17,17 @@ export const ENEMY_VISUAL_CONFIG = {
             belly: false,
         },
         bonePositions: {
-            root:        { x: 0,     y: 0.80,  z: 0 },
-            spine:       { x: 0,     y: 0.25,  z: 0 },
-            chest:       { x: 0,     y: 0.30,  z: 0 },
-            neck:        { x: 0,     y: 0.20,  z: 0 },
-            head:        { x: 0,     y: 0.25,  z: 0 },
-            upperArm_L:  { x: -0.45, y: 0.05,  z: 0 },
-            upperArm_R:  { x: 0.45,  y: 0.05,  z: 0 },
-            upperLeg_L:  { x: -0.15, y: 0,     z: 0 },
-            upperLeg_R:  { x: 0.15,  y: 0,     z: 0 },
-            lowerLeg_L:  { x: 0,     y: -0.40, z: 0 },
-            lowerLeg_R:  { x: 0,     y: -0.40, z: 0 },
+            root:        { x: 0,     y: 0.65,  z: 0 },
+            spine:       { x: 0,     y: 0.18,  z: 0 },
+            chest:       { x: 0,     y: 0.22,  z: 0 },
+            neck:        { x: 0,     y: 0.15,  z: 0 },
+            head:        { x: 0,     y: 0.18,  z: 0 },
+            upperArm_L:  { x: -0.35, y: 0.0,   z: 0 },
+            upperArm_R:  { x: 0.35,  y: 0.0,   z: 0 },
+            upperLeg_L:  { x: -0.10, y: 0.0,   z: 0 },
+            upperLeg_R:  { x: 0.10,  y: 0.0,   z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.28, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.28, z: 0 },
         },
         bodyDimensions: {
             torsoWidth: 0.80,
@@ -45,11 +45,11 @@ export const ENEMY_VISUAL_CONFIG = {
             outline: PALETTE.ink,
         },
         animationParams: {
-            walkDuration: 1.0,
-            bobHeight: 0.05,
-            legSwing: 0.52,     // ~30°
-            armSwing: 0.35,     // ~20°
-            spineForwardLean: 0.087, // ~5°
+            walkDuration: 0.75,    // fast urgent shuffle
+            bobHeight: 0.08,       // bouncy desperate bob
+            legSwing: 0.25,        // tiny pigeon-toed steps
+            armSwing: 0.35,
+            spineForwardLean: 0.18, // hunched forward — really busting
         },
         restPose: {},
     },

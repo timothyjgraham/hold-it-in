@@ -69,45 +69,66 @@ function _politeWalk() {
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const bob = c.animationParams.bobHeight;
-    const lsw = c.animationParams.legSwing;
-    const asw = c.animationParams.armSwing;
     const lean = -c.animationParams.spineForwardLean;
     const dur = c.animationParams.walkDuration;
     const t = [0, 0.25, 0.5, 0.75, dur];
 
-    // Spine counter-twist: shoulders rotate opposite to hips
-    const twist = 0.09;
-    // Lateral sway toward planted foot
-    const sway = 0.04;
+    // Tiny desperate shuffle steps
+    const lsw = 0.25;
+    // Spine twist (subtle)
+    const twist = 0.05;
+    // Pronounced side-to-side weight shift — desperate waddle
+    const sway = 0.10;
 
     return new THREE.AnimationClip('polite_walk', dur, [
-        // Root: bob down at contact, up at passing position
+        // Root: exaggerated bob — bouncing urgently
         posTrack('root', t, [
-            [0, ry, 0], [0, ry + bob, 0], [0, ry, 0], [0, ry + bob, 0], [0, ry, 0]
+            [0, ry - bob * 0.3, 0], [0, ry + bob, 0], [0, ry - bob * 0.3, 0], [0, ry + bob, 0], [0, ry - bob * 0.3, 0]
         ]),
-        // Spine: forward lean + counter-twist + weight-shift sway
+        // Spine: hunched forward, swaying side to side desperately
         eulerTrack('spine', t, [
-            [lean, twist, sway], [lean, 0, 0], [lean, -twist, -sway],
-            [lean, 0, 0], [lean, twist, sway]
+            [lean - 0.08, twist, sway], [lean - 0.03, 0, 0], [lean - 0.08, -twist, -sway],
+            [lean - 0.03, 0, 0], [lean - 0.08, twist, sway]
         ]),
-        // Head: counter-twist stabilization + downward gaze (uncomfortable)
+        // Head: looking down, wincing with each step
         eulerTrack('head', t, [
-            [-0.08, -twist * 0.6, 0], [-0.05, 0, 0], [-0.08, twist * 0.6, 0],
-            [-0.05, 0, 0], [-0.08, -twist * 0.6, 0]
+            [-0.18, -twist * 0.4, 0], [-0.10, 0, 0.03], [-0.18, twist * 0.4, 0],
+            [-0.10, 0, -0.03], [-0.18, -twist * 0.4, 0]
         ]),
-        // Arms: held across groin (busting to pee!), slight squeeze with each step
+        // Arms: hanging DOWN and angled INWARD — hands press on crotch
+        // Low X = arms mostly hang down (not forward). High Z = angled inward.
+        // The long arms (0.50*s) reach from shoulder to groin when hanging.
+        // Rhythmic squeeze on each step.
         eulerTrack('upperArm_L', t, [
-            [0.7, 0, 0.6], [0.72, 0, 0.62], [0.7, 0, 0.6], [0.72, 0, 0.62], [0.7, 0, 0.6]
+            [0.35, 0.15, 0.55],  [0.40, 0.15, 0.60], [0.35, 0.15, 0.55],  [0.40, 0.15, 0.60], [0.35, 0.15, 0.55]
         ]),
         eulerTrack('upperArm_R', t, [
-            [0.7, 0, -0.6], [0.72, 0, -0.62], [0.7, 0, -0.6], [0.72, 0, -0.62], [0.7, 0, -0.6]
+            [0.35, -0.15, -0.55], [0.40, -0.15, -0.60], [0.35, -0.15, -0.55], [0.40, -0.15, -0.60], [0.35, -0.15, -0.55]
         ]),
-        // Upper legs: measured stride
-        buildRotationTrack('upperLeg_L', t, [lsw, 0, -lsw, 0, lsw], AXIS_X),
-        buildRotationTrack('upperLeg_R', t, [-lsw, 0, lsw, 0, -lsw], AXIS_X),
-        // Lower legs: proper knee bend — flex peaks during swing-through
-        buildRotationTrack('lowerLeg_L', t, [-0.10, -0.55, -0.15, -0.65, -0.10], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.65, -0.10, -0.55, -0.15], AXIS_X),
+        // Upper legs: VERY pigeon-toed — knees together, feet turned in
+        // Tiny steps, constant inward rotation, slight cross-legged feel
+        eulerTrack('upperLeg_L', t, [
+            [lsw, 0.30, 0.18],       // forward step, knee strongly inward
+            [0, 0.25, 0.15],          // passing — knees still together
+            [-lsw, 0.30, 0.18],       // back step
+            [0, 0.25, 0.15],          // passing
+            [lsw, 0.30, 0.18]         // forward
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [-lsw, -0.30, -0.18],     // mirror
+            [0, -0.25, -0.15],
+            [lsw, -0.30, -0.18],
+            [0, -0.25, -0.15],
+            [-lsw, -0.30, -0.18]
+        ]),
+        // Lower legs: knees permanently bent — crouching shuffle
+        // More bend = more desperate look
+        eulerTrack('lowerLeg_L', t, [
+            [-0.35, 0, 0], [-0.55, 0, 0], [-0.40, 0, 0], [-0.60, 0, 0], [-0.35, 0, 0]
+        ]),
+        eulerTrack('lowerLeg_R', t, [
+            [-0.40, 0, 0], [-0.60, 0, 0], [-0.35, 0, 0], [-0.55, 0, 0], [-0.40, 0, 0]
+        ]),
     ]);
 }
 
@@ -118,116 +139,164 @@ function _politeBashR() {
     const lean = -c.animationParams.spineForwardLean;
     const dur = 1.0;
 
-    // Right arm lifts from groin hold → knock × 3 → returns to groin
-    // Polite knock-knock-knock with pauses to listen
-    const t = [0, 0.15, 0.22, 0.35, 0.42, 0.55, 0.62, 0.78, dur];
+    // knock×3 with pauses to listen
+    const t = [0, 0.12, 0.18, 0.30, 0.36, 0.48, 0.54, 0.72, dur];
 
     return new THREE.AnimationClip('polite_bash_door_R', dur, [
-        // Root: subtle forward lean into each knock
         posTrack('root', t, [
-            [0, ry, 0], [0, ry, 0], [0, ry, 0.06 * s], [0, ry, 0.02 * s],
-            [0, ry, 0.06 * s], [0, ry, 0.02 * s], [0, ry, 0.06 * s],
-            [0, ry, 0.01 * s], [0, ry, 0]
+            [0,ry,0], [0,ry,0], [0,ry,0.06*s], [0,ry,0.02*s],
+            [0,ry,0.06*s], [0,ry,0.02*s], [0,ry,0.06*s],
+            [0,ry,0.01*s], [0,ry,0]
         ]),
-        // Spine: leans into each knock, slight tilt toward knocking arm
         eulerTrack('spine', t, [
-            [lean, 0, 0], [lean - 0.03, 0, 0], [lean - 0.12, 0, -0.04], [lean - 0.04, 0, 0],
-            [lean - 0.12, 0, -0.04], [lean - 0.04, 0, 0.03], [lean - 0.12, 0, -0.04],
-            [lean - 0.03, 0, 0], [lean, 0, 0]
+            [lean,0,0], [lean-0.03,0,0], [lean-0.12,0,-0.04], [lean-0.04,0,0],
+            [lean-0.12,0,-0.04], [lean-0.04,0,0.03], [lean-0.12,0,-0.04],
+            [lean-0.03,0,0], [lean,0,0]
         ]),
-        // Right arm (knocking): groin hold → raise → knock × 3 → return
         eulerTrack('upperArm_R', t, [
-            [0.7, 0, -0.6],     // groin hold
-            [1.8, 0, -0.1],     // arm raised high, fist ready
-            [0.8, 0, 0.1],      // first knock — fist contacts door
-            [1.3, 0, 0],        // recoil
-            [0.8, 0, 0.1],      // second knock
-            [1.2, 0, 0],        // recoil
-            [0.8, 0, 0.1],      // third knock
-            [0.9, 0, -0.3],     // arm lowering back
-            [0.7, 0, -0.6],     // return to groin hold
+            [0.35,0,-0.55], [1.8,0,-0.1], [0.8,0,0.1], [1.3,0,0],
+            [0.8,0,0.1], [1.2,0,0], [0.8,0,0.1],
+            [0.5,0,-0.3], [0.35,0,-0.55]
         ]),
-        // Left arm (stays holding groin, squeezes harder on impacts)
         eulerTrack('upperArm_L', t, [
-            [0.7, 0, 0.6], [0.72, 0, 0.62], [0.75, 0, 0.65], [0.72, 0, 0.62],
-            [0.75, 0, 0.65], [0.72, 0, 0.62], [0.75, 0, 0.65],
-            [0.72, 0, 0.62], [0.7, 0, 0.6]
+            [0.35,0,0.55], [0.37,0,0.57], [0.40,0,0.60], [0.37,0,0.57],
+            [0.40,0,0.60], [0.37,0,0.57], [0.40,0,0.60],
+            [0.37,0,0.57], [0.35,0,0.55]
         ]),
-        // Head: tilts to listen between knocks
         eulerTrack('head', t, [
-            [-0.06, 0, 0], [-0.02, 0, 0], [-0.08, 0, 0.05], [-0.04, 0.14, 0.08],
-            [-0.08, 0, -0.05], [-0.04, -0.12, -0.06], [-0.08, 0, 0.04],
-            [-0.04, 0.05, 0.03], [-0.06, 0, 0]
+            [-0.10,0,0], [-0.05,0,0], [-0.12,0,0.05], [-0.06,0.14,0.08],
+            [-0.12,0,-0.05], [-0.06,-0.12,-0.06], [-0.12,0,0.04],
+            [-0.06,0.05,0.03], [-0.10,0,0]
         ]),
-        // Legs: shift weight forward on knocks
-        buildRotationTrack('upperLeg_L', t,
-            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
-        buildRotationTrack('upperLeg_R', t,
-            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
-        // Knees absorb lean
-        buildRotationTrack('lowerLeg_L', t,
-            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t,
-            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
+        eulerTrack('upperLeg_L', t, [
+            [0,0.15,0.08], [-0.03,0.15,0.08], [0.06,0.15,0.08], [0.03,0.15,0.08],
+            [0.06,0.15,0.08], [0.03,0.15,0.08], [0.06,0.15,0.08],
+            [0.02,0.15,0.08], [0,0.15,0.08]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [0,-0.15,-0.08], [-0.03,-0.15,-0.08], [0.06,-0.15,-0.08], [0.03,-0.15,-0.08],
+            [0.06,-0.15,-0.08], [0.03,-0.15,-0.08], [0.06,-0.15,-0.08],
+            [0.02,-0.15,-0.08], [0,-0.15,-0.08]
+        ]),
+        eulerTrack('lowerLeg_L', t, [
+            [-0.15,0,0], [-0.12,0,0], [-0.20,0,0], [-0.15,0,0],
+            [-0.20,0,0], [-0.15,0,0], [-0.20,0,0], [-0.15,0,0], [-0.15,0,0]
+        ]),
+        eulerTrack('lowerLeg_R', t, [
+            [-0.15,0,0], [-0.12,0,0], [-0.20,0,0], [-0.15,0,0],
+            [-0.20,0,0], [-0.15,0,0], [-0.20,0,0], [-0.15,0,0], [-0.15,0,0]
+        ]),
     ]);
 }
 
 function _politeBashL() {
-    // Mirror of _politeBashR — left arm knocks, right holds groin
     const c = ENEMY_VISUAL_CONFIG.polite;
     const s = c.size;
     const ry = c.bonePositions.root.y * s;
     const lean = -c.animationParams.spineForwardLean;
     const dur = 1.0;
 
-    const t = [0, 0.15, 0.22, 0.35, 0.42, 0.55, 0.62, 0.78, dur];
+    const t = [0, 0.12, 0.18, 0.30, 0.36, 0.48, 0.54, 0.72, dur];
 
     return new THREE.AnimationClip('polite_bash_door_L', dur, [
-        // Root: same forward lean
         posTrack('root', t, [
-            [0, ry, 0], [0, ry, 0], [0, ry, 0.06 * s], [0, ry, 0.02 * s],
-            [0, ry, 0.06 * s], [0, ry, 0.02 * s], [0, ry, 0.06 * s],
-            [0, ry, 0.01 * s], [0, ry, 0]
+            [0,ry,0], [0,ry,0], [0,ry,0.06*s], [0,ry,0.02*s],
+            [0,ry,0.06*s], [0,ry,0.02*s], [0,ry,0.06*s],
+            [0,ry,0.01*s], [0,ry,0]
         ]),
-        // Spine: leans into each knock, slight tilt toward left arm
         eulerTrack('spine', t, [
-            [lean, 0, 0], [lean - 0.03, 0, 0], [lean - 0.12, 0, 0.04], [lean - 0.04, 0, 0],
-            [lean - 0.12, 0, 0.04], [lean - 0.04, 0, -0.03], [lean - 0.12, 0, 0.04],
-            [lean - 0.03, 0, 0], [lean, 0, 0]
+            [lean,0,0], [lean-0.03,0,0], [lean-0.12,0,0.04], [lean-0.04,0,0],
+            [lean-0.12,0,0.04], [lean-0.04,0,-0.03], [lean-0.12,0,0.04],
+            [lean-0.03,0,0], [lean,0,0]
         ]),
-        // Left arm (knocking): groin hold → raise → knock × 3 → return
         eulerTrack('upperArm_L', t, [
-            [0.7, 0, 0.6],      // groin hold
-            [1.8, 0, 0.1],      // arm raised high
-            [0.8, 0, -0.1],     // first knock
-            [1.3, 0, 0],        // recoil
-            [0.8, 0, -0.1],     // second knock
-            [1.2, 0, 0],        // recoil
-            [0.8, 0, -0.1],     // third knock
-            [0.9, 0, 0.3],      // arm lowering
-            [0.7, 0, 0.6],      // return to groin hold
+            [0.35,0,0.55], [1.8,0,0.1], [0.8,0,-0.1], [1.3,0,0],
+            [0.8,0,-0.1], [1.2,0,0], [0.8,0,-0.1],
+            [0.5,0,0.3], [0.35,0,0.55]
         ]),
-        // Right arm (stays holding groin, squeezes harder on impacts)
         eulerTrack('upperArm_R', t, [
-            [0.7, 0, -0.6], [0.72, 0, -0.62], [0.75, 0, -0.65], [0.72, 0, -0.62],
-            [0.75, 0, -0.65], [0.72, 0, -0.62], [0.75, 0, -0.65],
-            [0.72, 0, -0.62], [0.7, 0, -0.6]
+            [0.35,0,-0.55], [0.37,0,-0.57], [0.40,0,-0.60], [0.37,0,-0.57],
+            [0.40,0,-0.60], [0.37,0,-0.57], [0.40,0,-0.60],
+            [0.37,0,-0.57], [0.35,0,-0.55]
         ]),
-        // Head: tilts to listen (mirrored from R version)
         eulerTrack('head', t, [
-            [-0.06, 0, 0], [-0.02, 0, 0], [-0.08, 0, -0.05], [-0.04, -0.14, -0.08],
-            [-0.08, 0, 0.05], [-0.04, 0.12, 0.06], [-0.08, 0, -0.04],
-            [-0.04, -0.05, -0.03], [-0.06, 0, 0]
+            [-0.10,0,0], [-0.05,0,0], [-0.12,0,-0.05], [-0.06,-0.14,-0.08],
+            [-0.12,0,0.05], [-0.06,0.12,0.06], [-0.12,0,-0.04],
+            [-0.06,-0.05,-0.03], [-0.10,0,0]
         ]),
-        // Legs: same as R version
-        buildRotationTrack('upperLeg_L', t,
-            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
-        buildRotationTrack('upperLeg_R', t,
-            [0, -0.03, 0.06, 0.03, 0.06, 0.03, 0.06, 0.02, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_L', t,
-            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
-        buildRotationTrack('lowerLeg_R', t,
-            [0, 0.02, -0.10, -0.05, -0.10, -0.05, -0.10, -0.04, 0], AXIS_X),
+        eulerTrack('upperLeg_L', t, [
+            [0,0.15,0.08], [-0.03,0.15,0.08], [0.06,0.15,0.08], [0.03,0.15,0.08],
+            [0.06,0.15,0.08], [0.03,0.15,0.08], [0.06,0.15,0.08],
+            [0.02,0.15,0.08], [0,0.15,0.08]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [0,-0.15,-0.08], [-0.03,-0.15,-0.08], [0.06,-0.15,-0.08], [0.03,-0.15,-0.08],
+            [0.06,-0.15,-0.08], [0.03,-0.15,-0.08], [0.06,-0.15,-0.08],
+            [0.02,-0.15,-0.08], [0,-0.15,-0.08]
+        ]),
+        eulerTrack('lowerLeg_L', t, [
+            [-0.15,0,0], [-0.12,0,0], [-0.20,0,0], [-0.15,0,0],
+            [-0.20,0,0], [-0.15,0,0], [-0.20,0,0], [-0.15,0,0], [-0.15,0,0]
+        ]),
+        eulerTrack('lowerLeg_R', t, [
+            [-0.15,0,0], [-0.12,0,0], [-0.20,0,0], [-0.15,0,0],
+            [-0.20,0,0], [-0.15,0,0], [-0.20,0,0], [-0.15,0,0], [-0.15,0,0]
+        ]),
+    ]);
+}
+
+function _politeLookBack() {
+    // Looping "staring at camera" pose — desperate plea.
+    // Spine leans back, head tilts up, knees squeeze together, hands on crotch.
+    // Gentle fidgeting loop so it doesn't look frozen.
+    const c = ENEMY_VISUAL_CONFIG.polite;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 2.0; // fidget loop period
+
+    const t = [0, 0.5, 1.0, 1.5, dur];
+
+    return new THREE.AnimationClip('polite_look_back', dur, [
+        // Root: slight shift back, gentle weight shift
+        posTrack('root', t, [
+            [0, ry, -0.03*s], [0, ry+0.02, -0.04*s], [0, ry, -0.03*s],
+            [0, ry+0.02, -0.04*s], [0, ry, -0.03*s]
+        ]),
+        // Spine: leaning BACK to face camera, gentle sway
+        eulerTrack('spine', t, [
+            [0.10, 0, 0.03], [0.12, 0, -0.03], [0.10, 0, 0.03],
+            [0.12, 0, -0.03], [0.10, 0, 0.03]
+        ]),
+        // Head: tilted UP, staring right at camera, slight fidgeting
+        eulerTrack('head', t, [
+            [0.40, 0, 0], [0.45, 0.06, 0.03], [0.40, 0, 0],
+            [0.45, -0.06, -0.03], [0.40, 0, 0]
+        ]),
+        // Arms: both clamped on crotch, rhythmic squeeze
+        eulerTrack('upperArm_L', t, [
+            [0.35, 0, 0.55], [0.40, 0, 0.60], [0.35, 0, 0.55],
+            [0.40, 0, 0.60], [0.35, 0, 0.55]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.35, 0, -0.55], [0.40, 0, -0.60], [0.35, 0, -0.55],
+            [0.40, 0, -0.60], [0.35, 0, -0.55]
+        ]),
+        // Legs: knees pressed together extra tight, slight bounce
+        eulerTrack('upperLeg_L', t, [
+            [0, 0.28, 0.15], [0.03, 0.32, 0.18], [0, 0.28, 0.15],
+            [0.03, 0.32, 0.18], [0, 0.28, 0.15]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [0, -0.28, -0.15], [0.03, -0.32, -0.18], [0, -0.28, -0.15],
+            [0.03, -0.32, -0.18], [0, -0.28, -0.15]
+        ]),
+        // Deep crouch
+        eulerTrack('lowerLeg_L', t, [
+            [-0.40, 0, 0], [-0.45, 0, 0], [-0.40, 0, 0], [-0.45, 0, 0], [-0.40, 0, 0]
+        ]),
+        eulerTrack('lowerLeg_R', t, [
+            [-0.40, 0, 0], [-0.45, 0, 0], [-0.40, 0, 0], [-0.45, 0, 0], [-0.40, 0, 0]
+        ]),
     ]);
 }
 
@@ -5274,6 +5343,7 @@ const _clipBuilders = {
     polite_bash_door:    _politeBashR,    // default (backward compat for barriers)
     polite_bash_door_L:  _politeBashL,
     polite_bash_door_R:  _politeBashR,
+    polite_look_back:   _politeLookBack,
     polite_hit_react:   _politeHitReact,
     polite_death:       _politeDeath,
 

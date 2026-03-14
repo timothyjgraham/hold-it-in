@@ -58,7 +58,9 @@ export class EnemyPool {
             for (let i = 0; i < count; i++) {
                 const defaultColor = this._defaultColor(type);
                 const model = createEnemyModel(type, defaultColor, false, undefined);
-                const ac = new AnimationController(model.skinnedMesh, type);
+                // Rigid models use animRoot (bone hierarchy), legacy uses skinnedMesh
+                const animTarget = model.isRigid ? model.animRoot : model.skinnedMesh;
+                const ac = new AnimationController(animTarget, type, model.isRigid ? model.skeleton : undefined);
                 model.animController = ac;
                 model.enemyType = type;
                 model.group.visible = false;
@@ -90,7 +92,8 @@ export class EnemyPool {
         // Pool miss — create new
         this._stats.misses++;
         const model = createEnemyModel(type, color, isDesperate, size);
-        const ac = new AnimationController(model.skinnedMesh, type);
+        const animTarget = model.isRigid ? model.animRoot : model.skinnedMesh;
+        const ac = new AnimationController(animTarget, type, model.isRigid ? model.skeleton : undefined);
         model.animController = ac;
         model.enemyType = type;
         return model;
@@ -126,8 +129,11 @@ export class EnemyPool {
         }
 
         model.group.visible = false;
-        // Ensure outline is visible again (may have been hidden by LOD)
+        // Ensure outlines are visible again (may have been hidden by LOD)
         if (model.outlineMesh) model.outlineMesh.visible = true;
+        if (model.outlineParts) {
+            for (const ol of model.outlineParts) ol.visible = true;
+        }
 
         this._pools[type].push(model);
     }
@@ -144,9 +150,13 @@ export class EnemyPool {
                 skeleton: e.skeleton,
                 boneMap: e.boneMap,
                 outlineMesh: e.outlineMesh,
+                outlineParts: e.outlineParts,
                 materials: e.materials,
                 animController: e.animController,
                 enemyType: e.type,
+                parts: e.parts,
+                animRoot: e.animRoot,
+                isRigid: e.isRigid,
             };
             this.release(model);
         }
@@ -194,11 +204,14 @@ export class EnemyPool {
     _resetModel(model, color, isDesperate) {
         // Update body color uniform
         const bodyColor = new THREE.Color(color);
-        const mats = model.skinnedMesh.material;
+        const mats = this._getMaterials(model);
         if (Array.isArray(mats)) {
-            // Index 0 = body material — update its base color
-            if (mats[0] && mats[0].uniforms && mats[0].uniforms.uBaseColor) {
-                mats[0].uniforms.uBaseColor.value.copy(bodyColor);
+            // Find a body material — one with uBaseColor
+            for (const m of mats) {
+                if (m.uniforms && m.uniforms.uBaseColor) {
+                    m.uniforms.uBaseColor.value.copy(bodyColor);
+                    break;
+                }
             }
         }
 
@@ -212,6 +225,9 @@ export class EnemyPool {
 
         model.group.visible = true;
         if (model.outlineMesh) model.outlineMesh.visible = true;
+        if (model.outlineParts) {
+            for (const ol of model.outlineParts) ol.visible = true;
+        }
     }
 
     _resetUniforms(model) {
@@ -220,8 +236,17 @@ export class EnemyPool {
         this._setUniformAll(model, 'uAuraGlow', 0.0);
     }
 
+    _getMaterials(model) {
+        // Rigid models: skinnedMesh is a shim with .material = array of part materials
+        // Legacy models: skinnedMesh is actual SkinnedMesh with .material = array or single
+        if (model.skinnedMesh && model.skinnedMesh.material) {
+            return model.skinnedMesh.material;
+        }
+        return null;
+    }
+
     _setUniformAll(model, name, value) {
-        const mats = model.skinnedMesh.material;
+        const mats = this._getMaterials(model);
         if (Array.isArray(mats)) {
             for (const m of mats) {
                 if (m.uniforms && m.uniforms[name]) m.uniforms[name].value = value;

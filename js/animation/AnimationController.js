@@ -38,13 +38,14 @@ const HIT_REACT_COOLDOWN = 0.25; // seconds — prevents rapid retrigger jerking
 export class AnimationController {
 
     /**
-     * @param {THREE.SkinnedMesh} skinnedMesh — the mesh to animate
+     * @param {THREE.SkinnedMesh|THREE.Bone} target — SkinnedMesh (legacy) or root Bone (rigid)
      * @param {string} enemyType — key into ENEMY_VISUAL_CONFIG (polite, dancer, etc.)
+     * @param {THREE.Skeleton} [skeleton] — optional skeleton for rigid models
      */
-    constructor(skinnedMesh, enemyType) {
-        this.mesh = skinnedMesh;
+    constructor(target, enemyType, skeleton) {
+        this.mesh = target;
         this.type = enemyType;
-        this.mixer = new THREE.AnimationMixer(skinnedMesh);
+        this.mixer = new THREE.AnimationMixer(target);
 
         this.currentState = null;
         this.currentAction = null;
@@ -63,8 +64,11 @@ export class AnimationController {
         // ensuring we can fully restore bones after death animations that scale to 0
         // or rotate to extreme values.
         this._boneRestState = [];
-        if (skinnedMesh.skeleton) {
-            for (const bone of skinnedMesh.skeleton.bones) {
+
+        // Resolve skeleton from either a SkinnedMesh or an explicit parameter
+        const skel = skeleton || (target.skeleton ? target.skeleton : null);
+        if (skel) {
+            for (const bone of skel.bones) {
                 this._boneRestState.push({
                     bone: bone,
                     position: bone.position.clone(),

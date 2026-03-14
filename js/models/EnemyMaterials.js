@@ -102,6 +102,91 @@ function _buildTemplate(enemyType, config) {
     return { body, skin, legs, outline };
 }
 
+// ─── Rigid body part materials (no skinning) ───
+
+const _rigidTemplateCache = new Map();
+
+/**
+ * Create materials for rigid body part enemies (no skinning required).
+ * Same visual output as skinned materials but without skinning overhead.
+ *
+ * @param {string} enemyType
+ * @param {number|THREE.Color} baseColor
+ * @param {boolean} isDesperate
+ * @returns {{ body, skin, legs, outline }}
+ */
+export function createRigidEnemyMaterials(enemyType, baseColor, isDesperate) {
+    const config = ENEMY_VISUAL_CONFIG[enemyType];
+    if (!config) throw new Error(`EnemyMaterials: unknown enemy type "${enemyType}"`);
+
+    const bodyColor = baseColor instanceof THREE.Color
+        ? baseColor.clone()
+        : new THREE.Color(baseColor !== undefined ? baseColor : config.materialColors.body);
+
+    if (!_rigidTemplateCache.has(enemyType)) {
+        _rigidTemplateCache.set(enemyType, _buildRigidTemplate(enemyType, config));
+    }
+    const template = _rigidTemplateCache.get(enemyType);
+
+    const body = template.body.clone();
+    const skin = template.skin.clone();
+    const legs = template.legs.clone();
+    const outline = template.outline.clone();
+
+    body.uniforms.uBaseColor = { value: bodyColor };
+    body.uniforms.uHitFlash = { value: 0.0 };
+    body.uniforms.uDesperateTint = { value: isDesperate ? 1.0 : 0.0 };
+    body.uniforms.uAuraGlow = { value: 0.0 };
+
+    skin.uniforms.uHitFlash = { value: 0.0 };
+    skin.uniforms.uDesperateTint = { value: isDesperate ? 1.0 : 0.0 };
+    skin.uniforms.uAuraGlow = { value: 0.0 };
+
+    legs.uniforms.uHitFlash = { value: 0.0 };
+    legs.uniforms.uDesperateTint = { value: isDesperate ? 1.0 : 0.0 };
+    legs.uniforms.uAuraGlow = { value: 0.0 };
+
+    return { body, skin, legs, outline };
+}
+
+function _buildRigidTemplate(enemyType, config) {
+    const colors = config.materialColors;
+    const lightDir = new THREE.Vector3(0.5, 1.0, 0.3).normalize();
+
+    const body = createToonMaterial({
+        baseColor: new THREE.Color(colors.body),
+        lightDir,
+        skinning: false,
+        rimPower: 3.0,
+        rimIntensity: 0.4,
+    });
+
+    const skin = createToonMaterial({
+        baseColor: new THREE.Color(colors.skin),
+        lightDir,
+        skinning: false,
+        rimPower: 3.0,
+        rimIntensity: 0.3,
+    });
+
+    const legs = createToonMaterial({
+        baseColor: new THREE.Color(colors.legs),
+        lightDir,
+        skinning: false,
+        rimPower: 3.5,
+        rimIntensity: 0.3,
+    });
+
+    const outlineWidth = _outlineWidthForType(enemyType);
+    const outline = createOutlineMaterial({
+        outlineWidth,
+        outlineColor: new THREE.Color(colors.outline),
+        skinning: false,
+    });
+
+    return { body, skin, legs, outline };
+}
+
 /**
  * Scale outline width by enemy size — larger enemies get slightly thicker outlines.
  */
