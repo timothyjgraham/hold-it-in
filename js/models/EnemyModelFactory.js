@@ -10,7 +10,7 @@ import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap } from '../utils/characterGeometry.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite']);
+const RIGID_TYPES = new Set(['polite', 'dancer']);
 
 /**
  * Create a fully rigged enemy model.
@@ -298,8 +298,174 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
     return parts;
 }
 
+// ─── PEE DANCER ─── no arms, frantic bouncy hop, legs crossed, panicked face, sweat droplet
+function _buildRigidPeeDancer(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+
+    // Compact bone chain — spine to root and spine to chest distances
+    const spineToRoot = 0.22 * s;
+    const spineToChest = 0.26 * s;
+
+    // ═══ TORSO: pill-shaped, slightly narrow — no arms so silhouette IS the torso ═══
+    const torsoW = 0.34 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.12;
+    const torsoD = 0.28 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.08 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: big sphere — readable from top-down, slightly larger than polite ═══
+    const headR = 0.30 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.90, 0.95);  // slightly squished — frantic energy
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Small messy hair tuft — frazzled look
+    const tuftGeo = new THREE.SphereGeometry(headR * 0.30, 6, 5);
+    const tuft = new THREE.Mesh(tuftGeo, materials.body);
+    tuft.name = 'tuft';
+    tuft.position.set(0, headR * 0.70, -headR * 0.05);
+    tuft.scale.set(1.3, 0.45, 1.0);
+    boneMap.head.add(tuft);
+    parts.tuft = tuft;
+
+    // ═══ FACE: Mii-style — panicked wide eyes, open mouth ═══
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // Eyes — big wide panicked circles
+    const eyeSize = headR * 0.13;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.30;
+    const eyeY = headR * 0.08;
+    const eyeZ = -headR * 0.90;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 1.4, 0.5);  // tall wide ovals — panicked
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, 1.4, 0.5);
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Pupils — tiny white dots for wide-eyed panic look
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.35, 4, 3);
+
+    const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilL.name = 'pupilL';
+    pupilL.position.set(-eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ - eyeSize * 0.2);
+    boneMap.head.add(pupilL);
+    parts.pupilL = pupilL;
+
+    const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilR.name = 'pupilR';
+    pupilR.position.set(eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ - eyeSize * 0.2);
+    boneMap.head.add(pupilR);
+    parts.pupilR = pupilR;
+
+    // Eyebrows — high arched panic (/\)
+    const browGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, 0.35);
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, -0.35);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — open circle (panicked "oh no!")
+    const mouthGeo = new THREE.SphereGeometry(headR * 0.09, 6, 5);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.20, eyeZ - headR * 0.02);
+    mouth.scale.set(1.0, 1.2, 0.5);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ SWEAT DROPLET — floating above head ═══
+    const sweatMat = new THREE.MeshBasicMaterial({ color: 0x59c3e8, transparent: true, opacity: 0.8 });
+    const sweatGeo = new THREE.SphereGeometry(headR * 0.12, 5, 4);
+    const sweat = new THREE.Mesh(sweatGeo, sweatMat);
+    sweat.name = 'sweat';
+    sweat.position.set(headR * 0.25, headR * 1.0, -headR * 0.3);
+    sweat.scale.set(0.7, 1.2, 0.6);  // teardrop shape
+    boneMap.head.add(sweat);
+    parts.sweat = sweat;
+
+    // ═══ UPPER LEGS: close together — knees pressed ═══
+    const upperLegRadius = 0.085 * s;
+    const upperLegH = 0.30 * s;
+    const upperLegGeo = createCapsule(upperLegRadius, upperLegH, 8, 4);
+
+    const upperLegL = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegL.name = 'upperLegL';
+    upperLegL.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_L.add(upperLegL);
+    parts.upperLegL = upperLegL;
+
+    const upperLegR = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegR.name = 'upperLegR';
+    upperLegR.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_R.add(upperLegR);
+    parts.upperLegR = upperLegR;
+
+    // ═══ LOWER LEGS: slightly slimmer ═══
+    const lowerLegRadius = 0.07 * s;
+    const lowerLegH = 0.28 * s;
+    const lowerLegGeo = createCapsule(lowerLegRadius, lowerLegH, 8, 4);
+
+    const lowerLegL = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegL.name = 'lowerLegL';
+    lowerLegL.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_L.add(lowerLegL);
+    parts.lowerLegL = lowerLegL;
+
+    const lowerLegR = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegR.name = 'lowerLegR';
+    lowerLegR.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_R.add(lowerLegR);
+    parts.lowerLegR = lowerLegR;
+
+    // ═══ SHOES: small rounded blocks ═══
+    const shoeGeo = createRoundedBox(0.10 * s, 0.045 * s, 0.13 * s, 0.018 * s);
+
+    const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeL.name = 'shoeL';
+    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_L.add(shoeL);
+    parts.shoeL = shoeL;
+
+    const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
+    shoeR.name = 'shoeR';
+    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    boneMap.lowerLeg_R.add(shoeR);
+    parts.shoeR = shoeR;
+
+    return parts;
+}
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
+    dancer: _buildRigidPeeDancer,
 };
 
 
