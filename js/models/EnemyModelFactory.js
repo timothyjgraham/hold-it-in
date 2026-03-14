@@ -2866,11 +2866,11 @@ function _buildGLBDolphin(size, config, materials, boneMap) {
     const targetLen = d.bodyLength * s * 1.4;
 
     const result = _glbMeshFromCache('dolphin', materials.body, targetLen, boneMap.root, {
-        rotY: Math.PI,  // flip to face +Z (toward toilet)
+        rotY: Math.PI,
     });
     if (!result) return _buildRigidDolphin(size, config, materials, boneMap);
 
-    // Attach whole mesh to root — no split, no gap
+    // GLB body on root — the model already has dorsal, flippers, tail, flukes built in
     const body = result.parts[0];
     body.name = 'glbBody';
     body.material = materials.body;
@@ -2911,10 +2911,12 @@ function _buildGLBDolphin(size, config, materials, boneMap) {
 
 
 // ─── GLB FLYING FISH ───
+// GLB body on root + fix wing attachment + procedural animated parts on bones
 function _buildGLBFlyfish(size, config, materials, boneMap) {
     const parts = {};
     const s = size;
     const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
     const targetLen = d.bodyLength * s * 1.4;
 
     const result = _glbMeshFromCache('flyfish', materials.body, targetLen, boneMap.root, {
@@ -2922,36 +2924,36 @@ function _buildGLBFlyfish(size, config, materials, boneMap) {
     });
     if (!result) return _buildRigidFlyfish(size, config, materials, boneMap);
 
-    // Whole mesh on root — no gap
+    // ═══ GLB body on root — preserves beautiful 3D model shape ═══
     const body = result.parts[0];
     body.name = 'glbBody';
     body.material = materials.body;
     boneMap.root.add(body);
     parts.glbBody = body;
 
-    // Massive wing-like pectoral fins — procedural for animation
+    // ═══ Wings: FIXED attachment — overlaps body at base, no gap ═══
     const flipLen = d.flipperLength * s;
     const flipW = d.flipperWidth * s;
     const flipGeo = createCapsule(flipW, flipLen, 6, 3);
 
+    // Wings centered on bone (bone is at body edge), inner portion overlaps body
     const flipL = new THREE.Mesh(flipGeo, materials.body);
     flipL.name = 'flipperL';
-    flipL.scale.set(0.25, 1.0, 1.0);
+    flipL.scale.set(0.28, 1.0, 1.0);
     flipL.rotation.z = 0.50;
-    flipL.position.set(0, -flipLen * 0.25, 0);
+    flipL.position.set(0, -flipLen * 0.08, 0); // minimal drop — stays connected
     boneMap.flipper_L.add(flipL);
     parts.flipperL = flipL;
 
     const flipR = new THREE.Mesh(flipGeo, materials.body);
     flipR.name = 'flipperR';
-    flipR.scale.set(0.25, 1.0, 1.0);
+    flipR.scale.set(0.28, 1.0, 1.0);
     flipR.rotation.z = -0.50;
-    flipR.position.set(0, -flipLen * 0.25, 0);
+    flipR.position.set(0, -flipLen * 0.08, 0);
     boneMap.flipper_R.add(flipR);
     parts.flipperR = flipR;
 
-    // Eyes
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    // ═══ Eyes on head bone ═══
     const headR = d.headRadius * s;
     const eyeGeo = new THREE.SphereGeometry(headR * 0.12, 5, 4);
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
@@ -2973,10 +2975,12 @@ function _buildGLBFlyfish(size, config, materials, boneMap) {
 
 
 // ─── GLB SHARK ───
+// GLB body on root + procedural animated appendages on bones
 function _buildGLBShark(size, config, materials, boneMap) {
     const parts = {};
     const s = size;
     const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
     const targetLen = d.bodyLength * s * 1.3;
 
     const result = _glbMeshFromCache('shark', materials.body, targetLen, boneMap.root, {
@@ -2984,7 +2988,7 @@ function _buildGLBShark(size, config, materials, boneMap) {
     });
     if (!result) return _buildRigidShark(size, config, materials, boneMap);
 
-    // Whole mesh on root
+    // ═══ GLB body on root — preserves beautiful 3D model shape ═══
     const body = result.parts[0];
     body.name = 'glbBody';
     body.material = materials.body;
@@ -3000,8 +3004,7 @@ function _buildGLBShark(size, config, materials, boneMap) {
     boneMap.root.add(belly);
     parts.belly = belly;
 
-    // Menacing eyes
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    // ═══ Eyes on head bone ═══
     const headR = d.headRadius * s;
     const eyeGeo = new THREE.SphereGeometry(headR * 0.10, 5, 4);
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
@@ -3018,22 +3021,26 @@ function _buildGLBShark(size, config, materials, boneMap) {
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
 
-    // Jaw with teeth
+    // ═══ Jaw: organic rounded shape (no more square box!) ═══
     const jawW = d.jawWidth * s;
-    const jawGeo = new THREE.BoxGeometry(jawW, jawW * 0.15, jawW * 0.80);
+    const jawGeo = new THREE.SphereGeometry(jawW * 0.55, 10, 5);
     const jaw = new THREE.Mesh(jawGeo, faceMat);
     jaw.name = 'jaw';
-    jaw.position.set(0, -headR * 0.50, headR * 0.35);
+    jaw.position.set(0, -headR * 0.45, headR * 0.30);
+    jaw.scale.set(1.3, 0.35, 0.9); // wide, thin ellipsoid — organic mouth
     boneMap.head.add(jaw);
     parts.jaw = jaw;
 
+    // Teeth arranged in gentle arc
     const toothGeo = new THREE.ConeGeometry(jawW * 0.04, jawW * 0.12, 3);
     const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
     for (let t = 0; t < 5; t++) {
         const tooth = new THREE.Mesh(toothGeo, toothMat);
         tooth.name = `tooth${t}`;
-        const tx = (t - 2) * jawW * 0.18;
-        tooth.position.set(tx, -headR * 0.52, headR * 0.55);
+        const frac = (t - 2) / 2.5;
+        const tx = frac * jawW * 0.50;
+        const tz = headR * 0.50 + (1 - frac * frac) * jawW * 0.15;
+        tooth.position.set(tx, -headR * 0.50, tz);
         tooth.rotation.x = Math.PI;
         boneMap.head.add(tooth);
         parts[`tooth${t}`] = tooth;
@@ -3049,22 +3056,19 @@ function _buildGLBSeaturtle(size, config, materials, boneMap) {
     const s = size;
     const d = config.bodyDimensions;
 
-    // Turtle is multi-mesh but simpler to handle as a single unit on root
-    // (individual part → bone mapping caused offset issues)
     const targetWidth = d.shellWidth * s * 1.2;
     const result = _glbMeshFromCache('seaturtle', materials.body, targetWidth, boneMap.root, {
-        rotY: Math.PI,  // face +Z toward toilet
+        rotY: Math.PI,
     });
     if (!result) return _buildRigidSeaturtle(size, config, materials, boneMap);
 
     const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
 
-    // Attach all turtle meshes to root as a group
+    // Attach all turtle meshes to root
     for (let i = 0; i < result.parts.length; i++) {
         const mesh = result.parts[i];
         const name = mesh.name;
 
-        // Assign materials by mesh name
         if (name === 'Plastron') {
             mesh.material = materials.skin;
         } else if (name === 'Eye_Left' || name === 'Eye_Right') {
