@@ -439,7 +439,14 @@ export const ENEMY_VISUAL_CONFIG = {
             tailWave: 0.35,
             bodyRock: 0.12,
         },
-        restPose: {},
+        restPose: {
+            // Tail curls up and over the back — iconic squirrel plume
+            tail_01: { x: -0.30, y: 0, z: 0 },
+            tail_02: { x: -0.35, y: 0, z: 0 },
+            tail_03: { x: -0.30, y: 0, z: 0 },
+            tail_04: { x: -0.20, y: 0, z: 0 },
+            tail_05: { x: -0.10, y: 0, z: 0 },
+        },
     },
 
     // ─── BEAR ─── big tank, lumbering 4-beat walk (→ Waddle Tank), ~18 bones

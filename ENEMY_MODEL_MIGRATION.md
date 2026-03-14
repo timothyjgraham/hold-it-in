@@ -169,7 +169,7 @@ These are four-legged animals with horizontal spine, tail chains, and completely
 
 - [x] **Deer** — DONE. Size 4.5, graceful quadruped baseline. Horizontal organic body barrel on spine_mid with shoulder/haunch ellipsoids bridging to legs. 2-segment neck, elongated head with snout/nose, lateral eyes, flattened cone ears, 3-tine antlers per side. 4 slender legs with tapered lower segments, rounded hooves at foot bones, short 2-segment tail. Existing deer_walk/bash/hit/death anims auto-adapt via config.
 
-- [ ] **Squirrel** — Size 3.0. Small, fast bounding. Big fluffy tail (5 segments, large radius). Oversized head (chibi). Bounding gait (front legs then hind legs together). Very fast cycle (0.35s).
+- [x] **Squirrel** — DONE. Size 3.0, chibi proportions (oversized head, puffy cheeks, big round eyes with sparkle highlights, buck teeth). Compact organic body barrel, thin legs (thicker hind for bounding). BIG fluffy 5-segment tail (bell-curve sphere sizes, rest pose curls up and over back). Small rounded ears. Existing squirrel_hop/bash/hit/death anims auto-adapt via config.
 
 - [ ] **Bear** — Size 6.6 (largest enemy). Massive, lumbering. Pear-shaped body via `createOrganicTorso()`. Shoulder hump. Belly jiggle. Thick legs. Slow heavy waddle (1.5s). Pronounced body rock.
 

@@ -10,7 +10,7 @@ import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel']);
 
 /**
  * Create a fully rigged enemy model.
@@ -104,7 +104,7 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 }
 
 function _outlineWidthForRigidType(type) {
-    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03 };
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02 };
     return map[type] || 0.03;
 }
 
@@ -1536,6 +1536,260 @@ function _buildRigidDeer(size, config, materials, boneMap) {
 }
 
 
+// ═══════════════════════════════════════
+// SQUIRREL — chibi quadruped, oversized head, BIG fluffy 5-segment tail
+// ═══════════════════════════════════════
+
+function _buildRigidSquirrel(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+
+    // ═══ BODY: small compact barrel on spine_mid ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW, bodyLen, 0.12, 10, 10);
+    const body = new THREE.Mesh(bodyGeo, materials.body);
+    body.name = 'body';
+    body.rotation.x = Math.PI / 2;  // horizontal
+    body.scale.set(1.0, 1.0, bodyH / bodyW); // slightly flattened oval
+    boneMap.spine_mid.add(body);
+    parts.body = body;
+
+    // ═══ SHOULDER: small ellipsoid on chest — bridges body to front legs ═══
+    const shoulderR = bodyW * 0.88;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 8, 6);
+    const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
+    shoulder.name = 'shoulder';
+    shoulder.scale.set(1.0, 0.78, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    boneMap.chest.add(shoulder);
+    parts.shoulder = shoulder;
+
+    // ═══ HAUNCH: slightly larger ellipsoid on pelvis — bridges to hind legs ═══
+    const haunchR = bodyW * 1.0;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 8, 6);
+    const haunch = new THREE.Mesh(haunchGeo, materials.body);
+    haunch.name = 'haunch';
+    haunch.scale.set(1.05, 0.82, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.06, 0);
+    boneMap.pelvis.add(haunch);
+    parts.haunch = haunch;
+
+    // ═══ NECK: single short segment (no neck_02) ═══
+    const neckR = bodyW * 0.50;
+    const neckLen = 0.06 * s;
+    const neckGeo = createCapsule(neckR, neckLen, 8, 4);
+    const neck = new THREE.Mesh(neckGeo, materials.body);
+    neck.name = 'neck';
+    neck.position.set(0, neckLen * 0.08, 0);
+    boneMap.neck_01.add(neck);
+    parts.neck = neck;
+
+    // ═══ HEAD: oversized chibi sphere — signature squirrel proportions ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(1.0, 0.95, 1.05); // very slightly stretched toward snout
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Cheeks: small puffed spheres on sides of head for chubby chibi look
+    const cheekR = headR * 0.32;
+    const cheekGeo = new THREE.SphereGeometry(cheekR, 6, 5);
+    const cheekL = new THREE.Mesh(cheekGeo, materials.body);
+    cheekL.name = 'cheekL';
+    cheekL.position.set(-headR * 0.58, -headR * 0.18, -headR * 0.38);
+    cheekL.scale.set(1.0, 0.80, 0.90);
+    boneMap.head.add(cheekL);
+    parts.cheekL = cheekL;
+
+    const cheekR2 = new THREE.Mesh(cheekGeo, materials.body);
+    cheekR2.name = 'cheekR';
+    cheekR2.position.set(headR * 0.58, -headR * 0.18, -headR * 0.38);
+    cheekR2.scale.set(1.0, 0.80, 0.90);
+    boneMap.head.add(cheekR2);
+    parts.cheekR = cheekR2;
+
+    // Snout: tiny rounded bump (squirrels have small noses)
+    const snoutR = headR * 0.22;
+    const snoutGeo = new THREE.SphereGeometry(snoutR, 6, 5);
+    const snoutMesh = new THREE.Mesh(snoutGeo, materials.body);
+    snoutMesh.name = 'snout';
+    snoutMesh.position.set(0, -headR * 0.22, -headR * 0.88);
+    snoutMesh.scale.set(1.0, 0.80, 0.80);
+    boneMap.head.add(snoutMesh);
+    parts.snout = snoutMesh;
+
+    // Nose: small dark oval
+    const noseGeo = new THREE.SphereGeometry(snoutR * 0.55, 5, 4);
+    const nose = new THREE.Mesh(noseGeo, faceMat);
+    nose.name = 'nose';
+    nose.position.set(0, -headR * 0.22, -headR * 1.05);
+    nose.scale.set(1.0, 0.70, 0.50);
+    boneMap.head.add(nose);
+    parts.nose = nose;
+
+    // Eyes: BIG round — chibi squirrel eyes, set forward for cute look
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.32;
+    const eyeY = headR * 0.12;
+    const eyeZ = -headR * 0.72;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(0.80, 1.10, 0.50); // tall round ovals
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR.scale.set(0.80, 1.10, 0.50);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Eye highlights: tiny white sparkles for chibi cuteness
+    const highlightGeo = new THREE.SphereGeometry(eyeSize * 0.30, 4, 3);
+    const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const hlL = new THREE.Mesh(highlightGeo, highlightMat);
+    hlL.name = 'hlL';
+    hlL.position.set(-eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ - eyeSize * 0.30);
+    boneMap.head.add(hlL);
+    parts.hlL = hlL;
+
+    const hlR = new THREE.Mesh(highlightGeo, highlightMat);
+    hlR.name = 'hlR';
+    hlR.position.set(eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ - eyeSize * 0.30);
+    boneMap.head.add(hlR);
+    parts.hlR = hlR;
+
+    // ═══ EARS: small rounded ovals, perked up ═══
+    const earH = d.earSize * s;
+    const earGeo = new THREE.SphereGeometry(earH, 6, 5);
+
+    const earL = new THREE.Mesh(earGeo, materials.body);
+    earL.name = 'earL';
+    earL.position.set(-headR * 0.42, headR * 0.68, headR * 0.10);
+    earL.scale.set(0.50, 1.20, 0.45); // tall, thin, flat
+    earL.rotation.set(-0.15, 0, 0.35);
+    boneMap.head.add(earL);
+    parts.earL = earL;
+
+    const earR = new THREE.Mesh(earGeo, materials.body);
+    earR.name = 'earR';
+    earR.position.set(headR * 0.42, headR * 0.68, headR * 0.10);
+    earR.scale.set(0.50, 1.20, 0.45);
+    earR.rotation.set(-0.15, 0, -0.35);
+    boneMap.head.add(earR);
+    parts.earR = earR;
+
+    // Buck teeth: two tiny white rectangles under snout
+    const toothGeo = new THREE.BoxGeometry(snoutR * 0.28, snoutR * 0.40, snoutR * 0.15);
+    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef }); // PALETTE.white
+
+    const toothL = new THREE.Mesh(toothGeo, toothMat);
+    toothL.name = 'toothL';
+    toothL.position.set(-snoutR * 0.22, -headR * 0.42, -headR * 0.90);
+    boneMap.head.add(toothL);
+    parts.toothL = toothL;
+
+    const toothR = new THREE.Mesh(toothGeo, toothMat);
+    toothR.name = 'toothR';
+    toothR.position.set(snoutR * 0.22, -headR * 0.42, -headR * 0.90);
+    boneMap.head.add(toothR);
+    parts.toothR = toothR;
+
+    // ═══ FRONT LEGS: very thin, squirrel limbs ═══
+    const legThick = d.legThickness * s;
+    const fUpperH = 0.14 * s;
+    const fUpperGeo = createCapsule(legThick, fUpperH, 6, 3);
+
+    const fUpperL = new THREE.Mesh(fUpperGeo, materials.legs);
+    fUpperL.name = 'frontUpperLegL';
+    fUpperL.position.set(0, -fUpperH * 0.38, 0);
+    boneMap.frontUpperLeg_L.add(fUpperL);
+    parts.frontUpperLegL = fUpperL;
+
+    const fUpperR = new THREE.Mesh(fUpperGeo, materials.legs);
+    fUpperR.name = 'frontUpperLegR';
+    fUpperR.position.set(0, -fUpperH * 0.38, 0);
+    boneMap.frontUpperLeg_R.add(fUpperR);
+    parts.frontUpperLegR = fUpperR;
+
+    const fLowerH = 0.14 * s;
+    const fLowerGeo = createCapsule(legThick * 0.80, fLowerH, 6, 3);
+
+    const fLowerL = new THREE.Mesh(fLowerGeo, materials.legs);
+    fLowerL.name = 'frontLowerLegL';
+    fLowerL.position.set(0, -fLowerH * 0.38, 0);
+    boneMap.frontLowerLeg_L.add(fLowerL);
+    parts.frontLowerLegL = fLowerL;
+
+    const fLowerR = new THREE.Mesh(fLowerGeo, materials.legs);
+    fLowerR.name = 'frontLowerLegR';
+    fLowerR.position.set(0, -fLowerH * 0.38, 0);
+    boneMap.frontLowerLeg_R.add(fLowerR);
+    parts.frontLowerLegR = fLowerR;
+
+    // ═══ HIND LEGS: slightly thicker than fronts (powerful spring legs) ═══
+    const hUpperH = 0.14 * s;
+    const hUpperGeo = createCapsule(legThick * 1.30, hUpperH, 6, 3);
+
+    const hUpperL = new THREE.Mesh(hUpperGeo, materials.legs);
+    hUpperL.name = 'hindUpperLegL';
+    hUpperL.position.set(0, -hUpperH * 0.38, 0);
+    boneMap.hindUpperLeg_L.add(hUpperL);
+    parts.hindUpperLegL = hUpperL;
+
+    const hUpperR = new THREE.Mesh(hUpperGeo, materials.legs);
+    hUpperR.name = 'hindUpperLegR';
+    hUpperR.position.set(0, -hUpperH * 0.38, 0);
+    boneMap.hindUpperLeg_R.add(hUpperR);
+    parts.hindUpperLegR = hUpperR;
+
+    const hLowerH = 0.14 * s;
+    const hLowerGeo = createCapsule(legThick * 0.90, hLowerH, 6, 3);
+
+    const hLowerL = new THREE.Mesh(hLowerGeo, materials.legs);
+    hLowerL.name = 'hindLowerLegL';
+    hLowerL.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_L.add(hLowerL);
+    parts.hindLowerLegL = hLowerL;
+
+    const hLowerR = new THREE.Mesh(hLowerGeo, materials.legs);
+    hLowerR.name = 'hindLowerLegR';
+    hLowerR.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_R.add(hLowerR);
+    parts.hindLowerLegR = hLowerR;
+
+    // ═══ TAIL: BIG fluffy 5-segment plume — the signature squirrel feature ═══
+    // Each segment is a squashed sphere that gets progressively larger then tapers
+    // Curls upward and over the back, creating the iconic bushy tail silhouette
+    const tailR = d.tailRadius * s;
+    const tailSegRadii = [tailR * 0.70, tailR * 0.90, tailR * 1.10, tailR * 1.00, tailR * 0.75]; // bell curve shape
+
+    for (let i = 0; i < 5; i++) {
+        const segR = tailSegRadii[i];
+        const segGeo = new THREE.SphereGeometry(segR, 7, 5);
+        const seg = new THREE.Mesh(segGeo, materials.body);
+        seg.name = `tail${i + 1}`;
+        seg.scale.set(0.75, 0.85, 1.10); // flattened side-to-side, stretched along tail axis
+        boneMap[`tail_0${i + 1}`].add(seg);
+        parts[`tail${i + 1}`] = seg;
+    }
+
+    return parts;
+}
+
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
@@ -1544,6 +1798,7 @@ const _rigidBuilders = {
     powerwalker: _buildRigidPowerWalker,
     girls: _buildRigidGirls,
     deer: _buildRigidDeer,
+    squirrel: _buildRigidSquirrel,
 };
 
 
