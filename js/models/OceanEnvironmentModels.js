@@ -166,8 +166,7 @@ export function createOceanWater() {
             float crestMask = smoothstep(0.45, 0.75, hNorm);
             float foam = smoothstep(0.30, 0.42, crestMask * foamNoise);
 
-            // Scattered foam blobs across surface
-            foam = max(foam, smoothstep(0.72, 0.78, foamNoise) * 0.35);
+            // (scattered foam blobs removed — read as white debris from camera)
 
             color = mix(color, COL_FOAM, foam);
 
@@ -588,60 +587,72 @@ export function createBuoyPlatform() {
     group.name = 'buoyPlatform';
 
     const redMat = toonMat(PALETTE.oceanBuoy);
-    const yellowMat = toonMat(PALETTE.oceanBuoyYellow);
+    const whiteMat = toonMat(PALETTE.white);
     const ropeMat = toonMat(PALETTE.oceanRope);
-    const darkMat = matInk();
 
-    // --- Ring float (life preserver shape) ---
-    // Top half — red
-    const ringGeo = new THREE.TorusGeometry(0.5, 0.15, 8, 16);
-    const ringRed = new THREE.Mesh(ringGeo, redMat);
-    ringRed.rotation.x = -Math.PI / 2;
-    ringRed.position.y = 0.0;
-    ringRed.castShadow = true;
-    ringRed.receiveShadow = true;
-    group.add(ringRed);
+    // --- Life ring float — classic red & white alternating sections ---
+    const ringRadius = 1.0;
+    const tubeRadius = 0.22;
+    const segments = 8; // 8 sections: alternating red/white
 
-    // Yellow stripe bands (4 sections around the ring)
-    for (let i = 0; i < 4; i++) {
-        const angle = (i / 4) * Math.PI * 2;
-        const stripeGeo = new THREE.BoxGeometry(0.18, 0.08, 0.32);
-        const stripe = new THREE.Mesh(stripeGeo, yellowMat);
-        stripe.position.set(
-            Math.cos(angle) * 0.5,
-            0.0,
-            Math.sin(angle) * 0.5
-        );
-        stripe.rotation.y = -angle;
-        stripe.castShadow = true;
-        group.add(stripe);
+    for (let i = 0; i < segments; i++) {
+        const thetaStart = (i / segments) * Math.PI * 2;
+        const thetaLen = (1 / segments) * Math.PI * 2;
+        const segGeo = new THREE.TorusGeometry(ringRadius, tubeRadius, 6, 6, thetaLen);
+        const mat = i % 2 === 0 ? redMat : whiteMat;
+        const seg = new THREE.Mesh(segGeo, mat);
+        seg.rotation.x = -Math.PI / 2;
+        seg.rotation.z = thetaStart;
+        seg.castShadow = true;
+        seg.receiveShadow = true;
+        group.add(seg);
     }
 
-    // --- Center platform (flat cylinder for tower to sit on) ---
-    const platformGeo = new THREE.CylinderGeometry(0.4, 0.35, 0.12, 10);
+    // Rope cross-ties (4 visible rope lines across the ring)
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2 + Math.PI / 8;
+        const ropeGeo = new THREE.CylinderGeometry(0.025, 0.025, ringRadius * 1.6, 4);
+        const rope = new THREE.Mesh(ropeGeo, ropeMat);
+        rope.position.y = 0.0;
+        rope.rotation.z = Math.PI / 2;
+        rope.rotation.y = angle;
+        group.add(rope);
+    }
+
+    // --- Center platform (wooden disc for tower to sit on) ---
+    const platformGeo = new THREE.CylinderGeometry(0.7, 0.65, 0.14, 12);
     const platformMat = toonMat(PALETTE.oceanBoatWood);
     const platform = new THREE.Mesh(platformGeo, platformMat);
-    platform.position.y = 0.1;
+    platform.position.y = 0.12;
     platform.castShadow = true;
     platform.receiveShadow = true;
     group.add(platform);
 
-    // --- Rope/chain hanging down ---
-    const chainSegments = 4;
-    for (let i = 0; i < chainSegments; i++) {
-        const linkGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 4);
-        const link = new THREE.Mesh(linkGeo, ropeMat);
-        link.position.set(0.0, -0.15 - i * 0.14, 0.0);
-        // Alternate rotation for chain link look
-        link.rotation.z = i % 2 === 0 ? 0 : Math.PI / 4;
-        group.add(link);
+    // --- Ripple rings (concentric expanding circles) ---
+    // 3 rings that will be animated (scale + opacity pulse)
+    const rippleGroup = new THREE.Group();
+    rippleGroup.name = 'ripples';
+    for (let r = 0; r < 3; r++) {
+        const rippleGeo = new THREE.RingGeometry(
+            ringRadius + 0.3 + r * 0.6,
+            ringRadius + 0.38 + r * 0.6,
+            24
+        );
+        const rippleMat = new THREE.MeshBasicMaterial({
+            color: PALETTE.white,
+            transparent: true,
+            opacity: 0.12 - r * 0.03,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+        });
+        const ripple = new THREE.Mesh(rippleGeo, rippleMat);
+        ripple.rotation.x = -Math.PI / 2;
+        ripple.position.y = 0.02;
+        ripple.userData.baseOpacity = rippleMat.opacity;
+        ripple.userData.ring = r;
+        rippleGroup.add(ripple);
     }
-
-    // Small anchor weight at bottom
-    const weightGeo = new THREE.SphereGeometry(0.06, 6, 4);
-    const weight = new THREE.Mesh(weightGeo, darkMat);
-    weight.position.set(0, -0.15 - chainSegments * 0.14 - 0.06, 0);
-    group.add(weight);
+    group.add(rippleGroup);
 
     return group;
 }
@@ -649,188 +660,21 @@ export function createBuoyPlatform() {
 // ─── 5. Seagulls ────────────────────────────────────────────────────────────
 
 export function createSeagulls() {
+    // Seagulls removed — too small to read as birds from top-down camera,
+    // look like white debris with outlines
     const group = new THREE.Group();
     group.name = 'oceanSeagulls';
-
-    const bodyMat = toonMat(PALETTE.cream);
-    const wingTipMat = toonMat(PALETTE.fixture);
-    const beakMat = toonMat(PALETTE.oceanBuoyYellow);
-    const inkMat = matInk();
-
-    const seagulls = [];
-    const count = 6 + Math.floor(Math.random() * 5); // 6-10
-
-    for (let i = 0; i < count; i++) {
-        const gull = new THREE.Group();
-        gull.name = 'seagull';
-
-        // Body — small elongated cylinder
-        const bodyGeo = new THREE.CylinderGeometry(0.08, 0.06, 0.4, 6);
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.rotation.z = Math.PI / 2;
-        body.castShadow = true;
-        gull.add(body);
-
-        // Head — small sphere
-        const headGeo = new THREE.SphereGeometry(0.07, 6, 6);
-        const head = new THREE.Mesh(headGeo, bodyMat);
-        head.position.set(0.22, 0.03, 0);
-        gull.add(head);
-
-        // Beak — tiny cone
-        const beakGeo = new THREE.ConeGeometry(0.025, 0.08, 4);
-        const beak = new THREE.Mesh(beakGeo, beakMat);
-        beak.rotation.z = -Math.PI / 2;
-        beak.position.set(0.32, 0.02, 0);
-        gull.add(beak);
-
-        // Eye — tiny dark sphere
-        const eyeGeo = new THREE.SphereGeometry(0.012, 4, 4);
-        const eye = new THREE.Mesh(eyeGeo, inkMat);
-        eye.position.set(0.26, 0.06, 0.05);
-        gull.add(eye);
-
-        // --- Wings (triangular shapes) ---
-        const wingShape = new THREE.Shape();
-        wingShape.moveTo(0, 0);
-        wingShape.lineTo(0.35, 0.05);
-        wingShape.lineTo(0.25, -0.15);
-        wingShape.lineTo(0.05, -0.05);
-        wingShape.closePath();
-
-        const wingGeo = new THREE.ShapeGeometry(wingShape);
-
-        // Left wing
-        const leftWing = new THREE.Mesh(wingGeo, bodyMat);
-        leftWing.position.set(-0.05, 0.02, 0.08);
-        leftWing.rotation.y = Math.PI / 2;
-        leftWing.rotation.x = 0.2;
-        gull.add(leftWing);
-
-        // Left wing tip (darker)
-        const tipShapeL = new THREE.Shape();
-        tipShapeL.moveTo(0.25, -0.1);
-        tipShapeL.lineTo(0.35, 0.05);
-        tipShapeL.lineTo(0.25, -0.15);
-        tipShapeL.closePath();
-
-        const tipGeoL = new THREE.ShapeGeometry(tipShapeL);
-        const tipL = new THREE.Mesh(tipGeoL, wingTipMat);
-        tipL.position.set(-0.05, 0.02, 0.085);
-        tipL.rotation.y = Math.PI / 2;
-        tipL.rotation.x = 0.2;
-        gull.add(tipL);
-
-        // Right wing
-        const rightWing = new THREE.Mesh(wingGeo, bodyMat);
-        rightWing.position.set(-0.05, 0.02, -0.08);
-        rightWing.rotation.y = -Math.PI / 2;
-        rightWing.rotation.x = -0.2;
-        rightWing.scale.x = -1;
-        gull.add(rightWing);
-
-        // Right wing tip (darker)
-        const tipR = new THREE.Mesh(tipGeoL, wingTipMat);
-        tipR.position.set(-0.05, 0.02, -0.085);
-        tipR.rotation.y = -Math.PI / 2;
-        tipR.rotation.x = -0.2;
-        tipR.scale.x = -1;
-        gull.add(tipR);
-
-        // Tail — small wedge
-        const tailGeo = new THREE.ConeGeometry(0.04, 0.12, 3);
-        const tail = new THREE.Mesh(tailGeo, bodyMat);
-        tail.rotation.z = Math.PI / 2;
-        tail.position.set(-0.25, 0.0, 0);
-        gull.add(tail);
-
-        // Random orbit position
-        const cx = rand(-30, 30);
-        const cy = rand(8, 16);
-        const cz = rand(10, 60);
-        gull.position.set(cx, cy, cz);
-
-        group.add(gull);
-
-        seagulls.push({
-            mesh: gull,
-            phase: Math.random() * Math.PI * 2,
-            speed: rand(0.2, 0.5),
-            center: new THREE.Vector3(cx, cy, cz),
-            radius: rand(3, 8),
-            leftWing: leftWing,
-            rightWing: rightWing,
-        });
-    }
-
-    group.userData.seagulls = seagulls;
-
+    group.userData.seagulls = [];
     return group;
 }
 
 // ─── 6. Sun Sparkles ────────────────────────────────────────────────────────
 
 export function createSunSparkles() {
+    // Sparkles removed — didn't read well from camera height
     const group = new THREE.Group();
     group.name = 'oceanSunSparkles';
-
-    const sparkles = [];
-    const count = 15 + Math.floor(Math.random() * 11); // 15-25
-
-    const sparkleMat = toonMat(PALETTE.gold, {
-        emissive: PALETTE.gold,
-        emissiveIntensity: 0.6,
-        transparent: true,
-        opacity: 0.8,
-    });
-    sparkleMat.depthWrite = false;
-
-    for (let i = 0; i < count; i++) {
-        // Diamond/star shape — a rotated box
-        const sparkle = new THREE.Group();
-        sparkle.name = 'sparkle';
-
-        // Clone material per sparkle so each can twinkle independently
-        const mat = sparkleMat.clone();
-        mat.depthWrite = false;
-
-        // Primary diamond (rotated plane)
-        const diamondGeo = new THREE.PlaneGeometry(0.2, 0.2);
-        const diamond = new THREE.Mesh(diamondGeo, mat);
-        diamond.rotation.z = Math.PI / 4;
-        diamond.rotation.x = -Math.PI / 2;
-        sparkle.add(diamond);
-
-        // Cross-plane for 3D look
-        const crossGeo = new THREE.PlaneGeometry(0.15, 0.15);
-        const cross = new THREE.Mesh(crossGeo, mat);
-        cross.rotation.z = Math.PI / 4;
-        cross.rotation.y = Math.PI / 2;
-        sparkle.add(cross);
-
-        // Position scattered on water surface
-        const sx = rand(-40, 40);
-        const sz = rand(5, 65);
-        sparkle.position.set(sx, 0.5, sz);
-
-        // Random size variation
-        const s = rand(0.5, 1.5);
-        sparkle.scale.set(s, s, s);
-
-        group.add(sparkle);
-
-        sparkles.push({
-            mesh: sparkle,
-            material: mat,
-            phase: Math.random() * Math.PI * 2,
-            baseY: 0.5,
-            x: sx,
-            z: sz,
-        });
-    }
-
-    group.userData.sparkles = sparkles;
-
+    group.userData.sparkles = [];
     return group;
 }
 
@@ -850,13 +694,13 @@ export function createOceanProps() {
         emissiveIntensity: 0.2,
     });
 
-    // --- Floating barrels (3-4) ---
+    // --- Floating barrels (3-4) — scaled up for camera readability ---
     const barrelCount = 3 + Math.floor(Math.random() * 2);
     for (let i = 0; i < barrelCount; i++) {
         const barrel = new THREE.Group();
         barrel.name = 'floatingBarrel';
 
-        const barrelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.9, 8);
+        const barrelGeo = new THREE.CylinderGeometry(0.65, 0.60, 1.6, 10);
         const barrelMesh = new THREE.Mesh(barrelGeo, woodMat);
         barrelMesh.castShadow = true;
         barrelMesh.receiveShadow = true;
@@ -864,141 +708,141 @@ export function createOceanProps() {
 
         // Metal bands
         for (let b = -1; b <= 1; b++) {
-            const bandGeo = new THREE.TorusGeometry(0.36, 0.02, 4, 12);
+            const bandGeo = new THREE.TorusGeometry(0.66, 0.04, 4, 14);
             const band = new THREE.Mesh(bandGeo, fixtureMat);
-            band.position.y = b * 0.3;
+            band.position.y = b * 0.5;
             barrel.add(band);
         }
 
         // Tilt slightly for floating look
-        barrel.rotation.x = rand(-0.2, 0.2);
-        barrel.rotation.z = rand(-0.3, 0.3);
+        barrel.rotation.x = rand(-0.15, 0.15);
+        barrel.rotation.z = rand(-0.25, 0.25);
         barrel.position.set(
             rand(-15, 15),
-            rand(-0.1, 0.2),
+            rand(-0.15, 0.3),
             rand(15, 55)
         );
 
         group.add(barrel);
     }
 
-    // --- Floating crates (2-3) ---
+    // --- Floating crates (2-3) — scaled up for camera readability ---
     const crateCount = 2 + Math.floor(Math.random() * 2);
     for (let i = 0; i < crateCount; i++) {
         const crate = new THREE.Group();
         crate.name = 'floatingCrate';
 
-        const crateGeo = new THREE.BoxGeometry(0.7, 0.5, 0.7);
+        const crateGeo = new THREE.BoxGeometry(1.3, 0.9, 1.3);
         const crateMesh = new THREE.Mesh(crateGeo, woodMat);
         crateMesh.castShadow = true;
         crateMesh.receiveShadow = true;
         crate.add(crateMesh);
 
         // Cross slats on top
-        const slatGeo = new THREE.BoxGeometry(0.72, 0.02, 0.08);
+        const slatGeo = new THREE.BoxGeometry(1.34, 0.04, 0.12);
         const slatMat = darkWoodMat;
         const slat1 = new THREE.Mesh(slatGeo, slatMat);
-        slat1.position.y = 0.26;
+        slat1.position.y = 0.46;
         crate.add(slat1);
 
         const slat2 = new THREE.Mesh(slatGeo, slatMat);
-        slat2.position.y = 0.26;
+        slat2.position.y = 0.46;
         slat2.rotation.y = Math.PI / 2;
         crate.add(slat2);
 
         crate.rotation.y = rand(0, Math.PI);
-        crate.rotation.x = rand(-0.1, 0.1);
+        crate.rotation.x = rand(-0.08, 0.08);
         crate.position.set(
             rand(-18, 18),
-            rand(-0.05, 0.15),
+            rand(-0.05, 0.25),
             rand(12, 58)
         );
 
         group.add(crate);
     }
 
-    // --- Anchor near the boat ---
+    // --- Anchor near the boat — scaled up 2x ---
     const anchor = new THREE.Group();
     anchor.name = 'anchor';
 
     // Anchor shank (vertical bar)
-    const shankGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 6);
+    const shankGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.6, 6);
     const shank = new THREE.Mesh(shankGeo, fixtureMat);
-    shank.position.y = -0.4;
+    shank.position.y = -0.8;
     shank.castShadow = true;
     anchor.add(shank);
 
     // Anchor ring at top
-    const ringGeo = new THREE.TorusGeometry(0.08, 0.02, 6, 8);
+    const ringGeo = new THREE.TorusGeometry(0.16, 0.04, 6, 8);
     const ring = new THREE.Mesh(ringGeo, fixtureMat);
     ring.position.y = 0.0;
     anchor.add(ring);
 
     // Anchor arms (curved flukes) — left
-    const armGeoL = new THREE.CylinderGeometry(0.03, 0.03, 0.35, 6);
+    const armGeoL = new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6);
     const armL = new THREE.Mesh(armGeoL, fixtureMat);
     armL.rotation.z = Math.PI / 4;
-    armL.position.set(-0.12, -0.75, 0);
+    armL.position.set(-0.24, -1.50, 0);
     anchor.add(armL);
 
     // Anchor arms — right
     const armR = new THREE.Mesh(armGeoL, fixtureMat);
     armR.rotation.z = -Math.PI / 4;
-    armR.position.set(0.12, -0.75, 0);
+    armR.position.set(0.24, -1.50, 0);
     anchor.add(armR);
 
     // Anchor chain going up to boat
     for (let c = 0; c < 6; c++) {
-        const chainGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.12, 4);
+        const chainGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.22, 4);
         const chain = new THREE.Mesh(chainGeo, fixtureMat);
-        chain.position.set(0, 0.05 + c * 0.1, 0);
+        chain.position.set(0, 0.10 + c * 0.20, 0);
         chain.rotation.z = c % 2 === 0 ? 0.3 : -0.3;
         anchor.add(chain);
     }
 
-    anchor.position.set(1.8, -0.3, 1.5);
+    anchor.position.set(2.5, -0.4, 1.5);
     anchor.rotation.z = 0.2;
     group.add(anchor);
 
-    // --- Flag / pennant on thin pole at stern ---
+    // --- Flag / pennant on pole at stern — scaled up ---
     const flagGroup = new THREE.Group();
     flagGroup.name = 'flag';
 
     // Pole
-    const poleGeo = new THREE.CylinderGeometry(0.02, 0.025, 2.5, 6);
+    const poleGeo = new THREE.CylinderGeometry(0.04, 0.05, 3.5, 6);
     const pole = new THREE.Mesh(poleGeo, darkWoodMat);
-    pole.position.y = 1.25;
+    pole.position.y = 1.75;
     pole.castShadow = true;
     flagGroup.add(pole);
 
-    // Pennant (triangular shape)
+    // Pennant (triangular shape) — bigger, more visible
     const pennantShape = new THREE.Shape();
     pennantShape.moveTo(0, 0);
-    pennantShape.lineTo(0.6, -0.15);
-    pennantShape.lineTo(0, -0.35);
+    pennantShape.lineTo(1.2, -0.25);
+    pennantShape.lineTo(0, -0.6);
     pennantShape.closePath();
 
     const pennantGeo = new THREE.ShapeGeometry(pennantShape);
     const pennantMat = toonMat(PALETTE.oceanBuoy, { side: THREE.DoubleSide });
     const pennant = new THREE.Mesh(pennantGeo, pennantMat);
-    pennant.position.set(0.02, 2.4, 0);
+    pennant.position.set(0.04, 3.3, 0);
     flagGroup.add(pennant);
 
     flagGroup.position.set(1.8, 0.3, 0.5);
     group.add(flagGroup);
 
-    // --- Compass / lantern on forward bench ---
+    // --- Lantern on forward bench — scaled up ---
     const lanternGroup = new THREE.Group();
     lanternGroup.name = 'lantern';
 
-    // Lantern body (small box)
-    const lanternGeo = new THREE.BoxGeometry(0.15, 0.22, 0.15);
+    // Lantern body
+    const lanternGeo = new THREE.BoxGeometry(0.30, 0.40, 0.30);
     const lanternMesh = new THREE.Mesh(lanternGeo, fixtureMat);
-    lanternMesh.position.y = 0.11;
+    lanternMesh.position.y = 0.20;
     lanternGroup.add(lanternMesh);
 
     // Lantern glass (glowing)
-    const glassGeo = new THREE.BoxGeometry(0.1, 0.12, 0.1);
+    const glassGeo = new THREE.BoxGeometry(0.20, 0.22, 0.20);
     const glassMat = toonMat(PALETTE.oceanSun, {
         emissive: PALETTE.oceanSun,
         emissiveIntensity: 0.5,
@@ -1007,45 +851,25 @@ export function createOceanProps() {
     });
     glassMat.depthWrite = false;
     const glass = new THREE.Mesh(glassGeo, glassMat);
-    glass.position.y = 0.15;
+    glass.position.y = 0.26;
     lanternGroup.add(glass);
 
     // Handle
-    const handleGeo = new THREE.TorusGeometry(0.06, 0.01, 4, 8, Math.PI);
+    const handleGeo = new THREE.TorusGeometry(0.12, 0.02, 4, 8, Math.PI);
     const handle = new THREE.Mesh(handleGeo, fixtureMat);
-    handle.position.y = 0.24;
+    handle.position.y = 0.44;
     handle.rotation.x = Math.PI;
     lanternGroup.add(handle);
 
-    // Small warm light
-    const lanternLight = new THREE.PointLight(PALETTE.oceanSun, 0.3, 5);
-    lanternLight.position.y = 0.2;
+    // Warm light
+    const lanternLight = new THREE.PointLight(PALETTE.oceanSun, 0.4, 6);
+    lanternLight.position.y = 0.35;
     lanternGroup.add(lanternLight);
 
     lanternGroup.position.set(2.2, 0.45, 2.0);
     group.add(lanternGroup);
 
-    // --- Floating seaweed patches ---
-    const seaweedMat = toonMat(PALETTE.oceanSurf, {
-        transparent: true,
-        opacity: 0.6,
-        side: THREE.DoubleSide,
-    });
-    seaweedMat.depthWrite = false;
-
-    for (let i = 0; i < 6; i++) {
-        const swGeo = new THREE.PlaneGeometry(rand(0.5, 1.5), rand(0.3, 0.8));
-        const seaweed = new THREE.Mesh(swGeo, seaweedMat);
-        seaweed.rotation.x = -Math.PI / 2;
-        seaweed.rotation.z = rand(0, Math.PI * 2);
-        seaweed.position.set(
-            rand(-20, 20),
-            0.05,
-            rand(10, 60)
-        );
-        seaweed.receiveShadow = true;
-        group.add(seaweed);
-    }
+    // (seaweed removed — didn't read well from camera height)
 
     return group;
 }
