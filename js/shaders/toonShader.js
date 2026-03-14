@@ -10,6 +10,11 @@ export const toonVertexShader = /* glsl */ `
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
 
+#ifdef USE_VERTEX_COLORS
+attribute vec3 color;
+varying vec3 vColor;
+#endif
+
 void main() {
     #include <skinbase_vertex>
 
@@ -29,6 +34,10 @@ void main() {
     // World position for rim lighting
     vec4 worldPos = modelMatrix * vec4(transformed, 1.0);
     vWorldPosition = worldPos.xyz;
+
+    #ifdef USE_VERTEX_COLORS
+    vColor = color;
+    #endif
 }
 `;
 
@@ -48,9 +57,19 @@ uniform float uRimIntensity;
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
 
+#ifdef USE_VERTEX_COLORS
+varying vec3 vColor;
+#endif
+
 void main() {
     vec3 normal = normalize(vNormal);
     vec3 lightDir = normalize(uLightDir);
+
+    #ifdef USE_VERTEX_COLORS
+    vec3 baseCol = vColor;
+    #else
+    vec3 baseCol = uBaseColor;
+    #endif
 
     float NdotL = dot(normal, lightDir);
 
@@ -58,8 +77,8 @@ void main() {
     float shadow = smoothstep(0.25, 0.35, NdotL);
     float highlight = smoothstep(0.65, 0.75, NdotL);
 
-    vec3 color = mix(uBaseColor * 0.4, uBaseColor, shadow);
-    color = mix(color, uBaseColor * 1.2, highlight);
+    vec3 color = mix(baseCol * 0.4, baseCol, shadow);
+    color = mix(color, baseCol * 1.2, highlight);
 
     // Rim lighting (fresnel) — silhouette pop at steep camera angle
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
@@ -165,10 +184,16 @@ export function createToonMaterial(options = {}) {
         Object.assign(uniforms, fogUniforms);
     }
 
+    const defines = {};
+    if (options.vertexColors) {
+        defines.USE_VERTEX_COLORS = '';
+    }
+
     return new THREE.ShaderMaterial({
         vertexShader: toonVertexShader,
         fragmentShader: toonFragmentShader,
         uniforms,
+        defines,
         skinning: options.skinning || false,
         fog: true,
     });

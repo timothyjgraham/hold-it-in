@@ -20,6 +20,7 @@ import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
 import { Music } from './systems/MusicManager.js';
 import { GLBModelCache } from './loaders/GLBModelCache.js';
+import { PlayerModelLoader } from './loaders/PlayerModelLoader.js';
 import { ENEMY_DEATH_VOCAL } from './data/soundConfig.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
@@ -162,6 +163,7 @@ window.SFX = SFX;
 window.Music = Music;
 window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;
 window.GLBModelCache = GLBModelCache;
+window.PlayerModelLoader = PlayerModelLoader;
 
 // Initialize game
 window.Game = Game;

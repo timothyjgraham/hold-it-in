@@ -1265,6 +1265,17 @@
             // Post-processing (screen-space edges + vignette)
             this.postFX = setupPostProcessing(this.renderer, this.scene, this.camera);
 
+            // Preload GLB models in parallel (ocean/airplane enemies + player Mixamo model)
+            // Must happen BEFORE _setupScenario which creates the player character
+            await Promise.all([
+                window.GLBModelCache ? GLBModelCache.preloadAll().catch(e => {
+                    console.warn('GLB preload failed, falling back to procedural:', e);
+                }) : Promise.resolve(),
+                window.PlayerModelLoader ? PlayerModelLoader.preloadAll().catch(e => {
+                    console.warn('Player model preload failed:', e);
+                }) : Promise.resolve(),
+            ]);
+
             // Build the scene — default to office scenario
             this._environmentGroup = new THREE.Group();
             this._environmentGroup.name = 'environment';
@@ -1291,13 +1302,6 @@
             this.windowPositions = [];
             if (this.officeGroup && this.officeGroup.userData.windowPositions) {
                 this.windowPositions = this.officeGroup.userData.windowPositions;
-            }
-
-            // Preload GLB models for ocean enemies (non-blocking for other scenarios)
-            if (window.GLBModelCache) {
-                await GLBModelCache.preloadAll().catch(e => {
-                    console.warn('GLB preload failed, falling back to procedural:', e);
-                });
             }
 
             // Phase 6A: Initialize enemy object pool
@@ -7182,6 +7186,8 @@
                         const dmg = e.doorDmg || 3;
                         ud.doorHP = Math.max(0, ud.doorHP - dmg);
                         this._animateDoorHit(dmg);
+                        // Player reacts to door bash
+                        if (this.playerCharacter) this.playerCharacter.playDisapproval();
                         // SFX: door bash — heavier crack sounds at low HP
                         if (window.SFX) {
                             const pctHP = ud.doorHP / ud.maxDoorHP;
