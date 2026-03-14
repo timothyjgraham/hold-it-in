@@ -137,7 +137,7 @@ All office enemies are bipeds sharing the same skeleton structure. Follow the Po
 
 - [x] **Pee Dancer** — DONE. Size 2.4, no arms (torso IS silhouette), tight legs (0.07 spacing), panicked Mii face (wide eyes + pupils, open mouth, arched brows), sweat droplet above head. Existing hop_walk/bash/hit/death anims auto-adapt via config.
 
-- [ ] **Waddle Tank** — Size 2.0 → scale up. Full skeleton (arms, forearms, feet, BELLY). Use `createOrganicTorso()` for pear-shaped body. Belly jiggle bone. Thick stumpy limbs. Personality: lumbering, unstoppable. Face: determined grimace. Accessory: hard hat or bandana. Walk: slow heavy waddle (1.4s), minimal bob, pronounced body rock.
+- [x] **Waddle Tank** — DONE. Size 3.5, pear-shaped organicTorso, belly jiggle sphere on belly bone, thick stumpy arms/forearms/legs/feet, hard hat + brim, determined Mii grimace (squinting eyes, angry brows, wide mouth). Existing waddle/panic_sprint/bash/hit/death anims auto-adapt.
 
 - [ ] **Panicker** — Size 1.6 → scale up. Has forearms. Narrow torso. Personality: total meltdown, arms flailing wildly. Face: wide terrified eyes, open screaming mouth. Walk: fast erratic (0.5s), huge arm swing (1.2 rad), legs pumping. Asymmetric arm frequencies for chaotic feel.
 

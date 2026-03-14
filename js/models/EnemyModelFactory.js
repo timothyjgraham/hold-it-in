@@ -7,10 +7,10 @@ import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
 import { createSkeleton } from '../animation/SkeletonFactory.js';
 import { createEnemyMaterials, createRigidEnemyMaterials } from './EnemyMaterials.js';
 import { mergeGeometries } from '../utils/geometryUtils.js';
-import { createCapsule, createRoundedBox, createFlatCap } from '../utils/characterGeometry.js';
+import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle']);
 
 /**
  * Create a fully rigged enemy model.
@@ -463,9 +463,211 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     return parts;
 }
 
+// ─── WADDLE TANK ─── pear-shaped tank, stumpy limbs, belly, hard hat, determined grimace
+function _buildRigidWaddleTank(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+
+    const spineToRoot = 0.22 * s;
+    const spineToChest = 0.28 * s;
+
+    // ═══ TORSO: pear-shaped organic body — wide bottom, narrower chest ═══
+    const waistR = 0.30 * s;
+    const chestR = 0.22 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.10;
+    const torsoGeo = createOrganicTorso(waistR, chestR, torsoH, 0.35);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.30, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ BELLY: secondary sphere parented to belly bone for jiggle ═══
+    const bellyR = 0.22 * s;
+    const bellyGeo = new THREE.SphereGeometry(bellyR, 10, 8);
+    const belly = new THREE.Mesh(bellyGeo, materials.body);
+    belly.name = 'belly';
+    belly.scale.set(1.1, 0.85, 1.0);
+    boneMap.belly.add(belly);
+    parts.belly = belly;
+
+    // ═══ HEAD: smaller relative to body — tough little melon ═══
+    const headR = 0.22 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.90, 0.95);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // ═══ HARD HAT: flat cap on top ═══
+    const hatGeo = createFlatCap(headR * 0.85, headR * 0.22, 8);
+    const hatMat = new THREE.MeshBasicMaterial({ color: 0xf0c030 });  // safety yellow
+    const hat = new THREE.Mesh(hatGeo, hatMat);
+    hat.name = 'hat';
+    hat.position.set(0, headR * 0.72, 0);
+    boneMap.head.add(hat);
+    parts.hat = hat;
+
+    // Hat brim
+    const brimGeo = new THREE.CylinderGeometry(headR * 0.95, headR * 0.95, headR * 0.04, 8);
+    const brim = new THREE.Mesh(brimGeo, hatMat);
+    brim.name = 'hatBrim';
+    brim.position.set(0, headR * 0.58, 0);
+    boneMap.head.add(brim);
+    parts.hatBrim = brim;
+
+    // ═══ FACE: Mii-style — determined grimace, thick brows ═══
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.26;
+    const eyeY = headR * 0.05;
+    const eyeZ = -headR * 0.90;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 0.8, 0.5);  // narrow squinting eyes — determined
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, 0.8, 0.5);
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Eyebrows — flat angry/determined (\_/)
+    const browGeo = new THREE.BoxGeometry(headR * 0.28, headR * 0.06, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.18, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, -0.20);  // angled down inward — determined
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.18, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, 0.20);
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // Mouth — wide grimace line
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.32, headR * 0.05, headR * 0.05);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.24, eyeZ - headR * 0.02);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ ARMS: thick stumpy — splayed out for balance ═══
+    const armRadius = 0.075 * s;
+    const armLength = 0.32 * s;
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+
+    const armL = new THREE.Mesh(armGeo, materials.body);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.body);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // ═══ FOREARMS: slightly thinner ═══
+    const forearmRadius = 0.065 * s;
+    const forearmLength = 0.24 * s;
+    const forearmGeo = createCapsule(forearmRadius, forearmLength, 8, 4);
+
+    const forearmL = new THREE.Mesh(forearmGeo, materials.body);
+    forearmL.name = 'forearmL';
+    forearmL.position.set(0, -forearmLength * 0.42, 0);
+    boneMap.forearm_L.add(forearmL);
+    parts.forearmL = forearmL;
+
+    const forearmR = new THREE.Mesh(forearmGeo, materials.body);
+    forearmR.name = 'forearmR';
+    forearmR.position.set(0, -forearmLength * 0.42, 0);
+    boneMap.forearm_R.add(forearmR);
+    parts.forearmR = forearmR;
+
+    // Hands — chunky fists
+    const handGeo = new THREE.SphereGeometry(forearmRadius * 1.2, 6, 5);
+
+    const handL = new THREE.Mesh(handGeo, materials.skin);
+    handL.name = 'handL';
+    handL.position.set(0, -forearmLength * 0.85, 0);
+    boneMap.forearm_L.add(handL);
+    parts.handL = handL;
+
+    const handR = new THREE.Mesh(handGeo, materials.skin);
+    handR.name = 'handR';
+    handR.position.set(0, -forearmLength * 0.85, 0);
+    boneMap.forearm_R.add(handR);
+    parts.handR = handR;
+
+    // ═══ UPPER LEGS: thick stumpy ═══
+    const upperLegRadius = 0.10 * s;
+    const upperLegH = 0.32 * s;
+    const upperLegGeo = createCapsule(upperLegRadius, upperLegH, 8, 4);
+
+    const upperLegL = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegL.name = 'upperLegL';
+    upperLegL.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_L.add(upperLegL);
+    parts.upperLegL = upperLegL;
+
+    const upperLegR = new THREE.Mesh(upperLegGeo, materials.legs);
+    upperLegR.name = 'upperLegR';
+    upperLegR.position.set(0, -upperLegH * 0.3, 0);
+    boneMap.upperLeg_R.add(upperLegR);
+    parts.upperLegR = upperLegR;
+
+    // ═══ LOWER LEGS: ═══
+    const lowerLegRadius = 0.085 * s;
+    const lowerLegH = 0.30 * s;
+    const lowerLegGeo = createCapsule(lowerLegRadius, lowerLegH, 8, 4);
+
+    const lowerLegL = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegL.name = 'lowerLegL';
+    lowerLegL.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_L.add(lowerLegL);
+    parts.lowerLegL = lowerLegL;
+
+    const lowerLegR = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegR.name = 'lowerLegR';
+    lowerLegR.position.set(0, -lowerLegH * 0.35, 0);
+    boneMap.lowerLeg_R.add(lowerLegR);
+    parts.lowerLegR = lowerLegR;
+
+    // ═══ FEET: big flat stompers ═══
+    const footGeo = createRoundedBox(0.14 * s, 0.055 * s, 0.18 * s, 0.025 * s);
+
+    const footL = new THREE.Mesh(footGeo, materials.legs);
+    footL.name = 'footL';
+    footL.position.set(0, -lowerLegH * 0.12, 0.03 * s);
+    boneMap.foot_L.add(footL);
+    parts.footL = footL;
+
+    const footR = new THREE.Mesh(footGeo, materials.legs);
+    footR.name = 'footR';
+    footR.position.set(0, -lowerLegH * 0.12, 0.03 * s);
+    boneMap.foot_R.add(footR);
+    parts.footR = footR;
+
+    return parts;
+}
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
+    waddle: _buildRigidWaddleTank,
 };
 
 
