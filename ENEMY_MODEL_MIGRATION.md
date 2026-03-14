@@ -141,7 +141,7 @@ All office enemies are bipeds sharing the same skeleton structure. Follow the Po
 
 - [x] **Panicker** — DONE. Size 2.8, narrow torso, thin long arms+forearms for flailing, 3 spiky hair tufts (disheveled), terrified Mii face (huge tall eyes + tiny pupils, high-arched brows, screaming O mouth). Existing panic_run/bash/hit/death anims auto-adapt.
 
-- [ ] **Power Walker** — Size 1.4 → scale up. Full skeleton with feet. Personality: determined, athletic, methodical. Face: focused stern expression. Accessory: sweatband/visor. Walk: smooth efficient stride (0.7s), minimal bob (0.02), matched arm/leg swing (0.61), perfectly upright spine.
+- [x] **Power Walker** — DONE. Size 2.6, broad-shouldered athletic torso, full arms+forearms+feet, white sweatband, focused Mii face (narrow eyes, flat stern brows, tight mouth). Existing power_walk/bash/hit/death anims auto-adapt.
 
 - [ ] **The Girls** — Size 0.85 → scale up. No arms (like dancer). Tiny chibi proportions. Big head relative to body. Personality: giggling, bouncy, casual. Face: happy/mischievous eyes. Accessory: ponytail (offset sphere behind head). Walk: casual sway (0.9s), hip sway (0.10), small steps.
 
