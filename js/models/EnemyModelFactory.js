@@ -8,6 +8,7 @@ import { createSkeleton } from '../animation/SkeletonFactory.js';
 import { createEnemyMaterials, createRigidEnemyMaterials } from './EnemyMaterials.js';
 import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
+import { GLBModelCache } from '../loaders/GLBModelCache.js';
 
 // Types that use the new rigid body parts pipeline
 const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish']);
@@ -1799,6 +1800,11 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 // ═══════════════════════════════════════
 
 function _buildRigidDolphin(size, config, materials, boneMap) {
+    // GLB model path — use imported mesh if available
+    if (GLBModelCache.isLoaded('dolphin')) {
+        return _buildGLBDolphin(size, config, materials, boneMap);
+    }
+
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
@@ -1978,6 +1984,11 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
 // ═══════════════════════════════════════
 
 function _buildRigidFlyfish(size, config, materials, boneMap) {
+    // GLB model path
+    if (GLBModelCache.isLoaded('flyfish')) {
+        return _buildGLBFlyfish(size, config, materials, boneMap);
+    }
+
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
@@ -2124,6 +2135,11 @@ function _buildRigidFlyfish(size, config, materials, boneMap) {
 // ═══════════════════════════════════════
 
 function _buildRigidShark(size, config, materials, boneMap) {
+    // GLB model path
+    if (GLBModelCache.isLoaded('shark')) {
+        return _buildGLBShark(size, config, materials, boneMap);
+    }
+
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
@@ -2316,28 +2332,33 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     const d = config.bodyDimensions;
     const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
 
+    // Try GLB boat — replace procedural rowboat with imported model
+    const hasGLBBoat = GLBModelCache.isLoaded('boat') && _buildGLBPirateBoat(s, boneMap, parts);
+
     // ═══ ROWBOAT: wooden boat on root, pirate sits inside ═══
     const boatL = d.boatLength * s;
     const boatW = d.boatWidth * s;
     const boatH = d.boatHeight * s;
 
-    // Hull: rounded box
-    const hullGeo = createRoundedBox(boatW, boatH, boatL, boatH * 0.20);
-    const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 }); // PALETTE.oceanBoatWood
-    const hull = new THREE.Mesh(hullGeo, boatMat);
-    hull.name = 'hull';
-    hull.position.set(0, -boatH * 0.80, 0);
-    boneMap.root.add(hull);
-    parts.hull = hull;
+    // Hull: rounded box (skip if GLB boat loaded)
+    if (!hasGLBBoat) {
+        const hullGeo = createRoundedBox(boatW, boatH, boatL, boatH * 0.20);
+        const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 }); // PALETTE.oceanBoatWood
+        const hull = new THREE.Mesh(hullGeo, boatMat);
+        hull.name = 'hull';
+        hull.position.set(0, -boatH * 0.80, 0);
+        boneMap.root.add(hull);
+        parts.hull = hull;
 
-    // Boat rim / gunwale: slightly wider
-    const rimGeo = createRoundedBox(boatW * 1.08, boatH * 0.15, boatL * 1.02, boatH * 0.06);
-    const rimMat = new THREE.MeshBasicMaterial({ color: 0x6b5030 }); // PALETTE.oceanBoatDark
-    const rim = new THREE.Mesh(rimGeo, rimMat);
-    rim.name = 'boatRim';
-    rim.position.set(0, -boatH * 0.55, 0);
-    boneMap.root.add(rim);
-    parts.boatRim = rim;
+        // Boat rim / gunwale: slightly wider
+        const rimGeo = createRoundedBox(boatW * 1.08, boatH * 0.15, boatL * 1.02, boatH * 0.06);
+        const rimMat = new THREE.MeshBasicMaterial({ color: 0x6b5030 }); // PALETTE.oceanBoatDark
+        const rim = new THREE.Mesh(rimGeo, rimMat);
+        rim.name = 'boatRim';
+        rim.position.set(0, -boatH * 0.55, 0);
+        boneMap.root.add(rim);
+        parts.boatRim = rim;
+    }
 
     // ═══ TORSO: pirate body sitting in the boat ═══
     const torsoW = d.torsoWidth * 0.45 * s;
@@ -2498,6 +2519,11 @@ function _buildRigidPirate(size, config, materials, boneMap) {
 // ═══════════════════════════════════════
 
 function _buildRigidSeaturtle(size, config, materials, boneMap) {
+    // GLB model path — turtle GLB has separate parts, perfect for bone mapping
+    if (GLBModelCache.isLoaded('seaturtle')) {
+        return _buildGLBSeaturtle(size, config, materials, boneMap);
+    }
+
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
@@ -2664,6 +2690,11 @@ function _buildRigidSeaturtle(size, config, materials, boneMap) {
 // ═══════════════════════════════════════
 
 function _buildRigidJellyfish(size, config, materials, boneMap) {
+    // GLB model path — use imported bell, keep procedural tentacles
+    if (GLBModelCache.isLoaded('jellyfish')) {
+        return _buildGLBJellyfish(size, config, materials, boneMap);
+    }
+
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
@@ -2741,6 +2772,417 @@ function _buildRigidJellyfish(size, config, materials, boneMap) {
     }
 
     return parts;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// GLB MODEL BUILDERS — imported 3D models, toon-shaded
+// Each builder loads geometry from GLBModelCache, centers/scales it,
+// applies toon materials, and parents to bones for animation.
+// Falls back to procedural if GLB not loaded.
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Helper: take a cached GLB geometry, center it, scale to target length,
+ * create a Mesh with given material, and parent to a bone.
+ */
+function _glbMeshFromCache(key, material, targetLength, bone, opts = {}) {
+    const clones = GLBModelCache.cloneGeometries(key);
+    if (!clones || clones.length === 0) return null;
+
+    const bboxSize = GLBModelCache.getBBoxSize(key);
+    const bboxCenter = GLBModelCache.getBBoxCenter(key);
+
+    // Determine which axis is longest for scale reference
+    const longest = Math.max(bboxSize.x, bboxSize.y, bboxSize.z);
+    const scale = targetLength / longest;
+
+    // Merge all sub-meshes into a single group or use first mesh
+    const parts = [];
+    for (const clone of clones) {
+        const geo = clone.geometry;
+        // Center geometry at origin
+        geo.translate(-bboxCenter.x, -bboxCenter.y, -bboxCenter.z);
+        // Scale to target
+        geo.scale(scale, scale, scale);
+        // Optional rotation correction
+        if (opts.rotX) geo.rotateX(opts.rotX);
+        if (opts.rotY) geo.rotateY(opts.rotY);
+        if (opts.rotZ) geo.rotateZ(opts.rotZ);
+        // Recompute normals after transform
+        geo.computeVertexNormals();
+
+        const mat = opts.materialForMesh
+            ? opts.materialForMesh(clone.name, clone.originalMaterialName)
+            : material;
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.name = clone.name;
+        parts.push(mesh);
+    }
+    return { parts, scale };
+}
+
+/**
+ * Split a single geometry into front (z < splitZ) and rear (z >= splitZ) halves.
+ * Returns { frontGeo, rearGeo } — both cloned and ready for use.
+ */
+function _splitGeometryZ(geometry, splitZ) {
+    const pos = geometry.getAttribute('position');
+    const idx = geometry.getIndex();
+    if (!idx || !pos) return null;
+
+    const indices = idx.array;
+    const positions = pos.array;
+    const frontIndices = [];
+    const rearIndices = [];
+
+    for (let i = 0; i < indices.length; i += 3) {
+        const i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+        const z0 = positions[i0 * 3 + 2];
+        const z1 = positions[i1 * 3 + 2];
+        const z2 = positions[i2 * 3 + 2];
+        const avgZ = (z0 + z1 + z2) / 3;
+        if (avgZ < splitZ) {
+            frontIndices.push(i0, i1, i2);
+        } else {
+            rearIndices.push(i0, i1, i2);
+        }
+    }
+
+    const frontGeo = geometry.clone();
+    frontGeo.setIndex(frontIndices);
+    const rearGeo = geometry.clone();
+    rearGeo.setIndex(rearIndices);
+
+    return { frontGeo, rearGeo };
+}
+
+
+// ─── GLB DOLPHIN ───
+function _buildGLBDolphin(size, config, materials, boneMap) {
+    const parts = {};
+    const s = size;
+    const d = config.bodyDimensions;
+    const targetLen = d.bodyLength * s * 1.4;
+
+    const result = _glbMeshFromCache('dolphin', materials.body, targetLen, boneMap.root, {
+        rotY: Math.PI,  // flip to face +Z (toward toilet)
+    });
+    if (!result) return _buildRigidDolphin(size, config, materials, boneMap);
+
+    // Attach whole mesh to root — no split, no gap
+    const body = result.parts[0];
+    body.name = 'glbBody';
+    body.material = materials.body;
+    boneMap.root.add(body);
+    parts.glbBody = body;
+
+    // Belly highlight — skin-colored underside
+    const bellyGeo = body.geometry.clone();
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.scale.set(0.92, 0.82, 0.92);
+    belly.position.y = -d.bodyHeight * s * 0.10;
+    boneMap.root.add(belly);
+    parts.belly = belly;
+
+    // Eyes on head bone
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const headR = d.headRadius * s;
+    const eyeGeo = new THREE.SphereGeometry(headR * 0.14, 6, 5);
+    const eyeSpacing = headR * 0.48;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.05, headR * 0.50);
+    eyeL.scale.set(0.55, 1.10, 0.45);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.05, headR * 0.50);
+    eyeR.scale.set(0.55, 1.10, 0.45);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    return parts;
+}
+
+
+// ─── GLB FLYING FISH ───
+function _buildGLBFlyfish(size, config, materials, boneMap) {
+    const parts = {};
+    const s = size;
+    const d = config.bodyDimensions;
+    const targetLen = d.bodyLength * s * 1.4;
+
+    const result = _glbMeshFromCache('flyfish', materials.body, targetLen, boneMap.root, {
+        rotY: Math.PI,
+    });
+    if (!result) return _buildRigidFlyfish(size, config, materials, boneMap);
+
+    // Whole mesh on root — no gap
+    const body = result.parts[0];
+    body.name = 'glbBody';
+    body.material = materials.body;
+    boneMap.root.add(body);
+    parts.glbBody = body;
+
+    // Massive wing-like pectoral fins — procedural for animation
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = createCapsule(flipW, flipLen, 6, 3);
+
+    const flipL = new THREE.Mesh(flipGeo, materials.body);
+    flipL.name = 'flipperL';
+    flipL.scale.set(0.25, 1.0, 1.0);
+    flipL.rotation.z = 0.50;
+    flipL.position.set(0, -flipLen * 0.25, 0);
+    boneMap.flipper_L.add(flipL);
+    parts.flipperL = flipL;
+
+    const flipR = new THREE.Mesh(flipGeo, materials.body);
+    flipR.name = 'flipperR';
+    flipR.scale.set(0.25, 1.0, 1.0);
+    flipR.rotation.z = -0.50;
+    flipR.position.set(0, -flipLen * 0.25, 0);
+    boneMap.flipper_R.add(flipR);
+    parts.flipperR = flipR;
+
+    // Eyes
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const headR = d.headRadius * s;
+    const eyeGeo = new THREE.SphereGeometry(headR * 0.12, 5, 4);
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-headR * 0.42, headR * 0.05, headR * 0.45);
+    eyeL.scale.set(0.55, 1.0, 0.50);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(headR * 0.42, headR * 0.05, headR * 0.45);
+    eyeR.scale.set(0.55, 1.0, 0.50);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    return parts;
+}
+
+
+// ─── GLB SHARK ───
+function _buildGLBShark(size, config, materials, boneMap) {
+    const parts = {};
+    const s = size;
+    const d = config.bodyDimensions;
+    const targetLen = d.bodyLength * s * 1.3;
+
+    const result = _glbMeshFromCache('shark', materials.body, targetLen, boneMap.root, {
+        rotY: Math.PI,
+    });
+    if (!result) return _buildRigidShark(size, config, materials, boneMap);
+
+    // Whole mesh on root
+    const body = result.parts[0];
+    body.name = 'glbBody';
+    body.material = materials.body;
+    boneMap.root.add(body);
+    parts.glbBody = body;
+
+    // Belly counter-shading
+    const bellyGeo = body.geometry.clone();
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.scale.set(0.90, 0.80, 0.90);
+    belly.position.y = -d.bodyHeight * s * 0.08;
+    boneMap.root.add(belly);
+    parts.belly = belly;
+
+    // Menacing eyes
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const headR = d.headRadius * s;
+    const eyeGeo = new THREE.SphereGeometry(headR * 0.10, 5, 4);
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-headR * 0.68, headR * 0.08, headR * 0.40);
+    eyeL.scale.set(0.50, 0.90, 0.45);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(headR * 0.68, headR * 0.08, headR * 0.40);
+    eyeR.scale.set(0.50, 0.90, 0.45);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Jaw with teeth
+    const jawW = d.jawWidth * s;
+    const jawGeo = new THREE.BoxGeometry(jawW, jawW * 0.15, jawW * 0.80);
+    const jaw = new THREE.Mesh(jawGeo, faceMat);
+    jaw.name = 'jaw';
+    jaw.position.set(0, -headR * 0.50, headR * 0.35);
+    boneMap.head.add(jaw);
+    parts.jaw = jaw;
+
+    const toothGeo = new THREE.ConeGeometry(jawW * 0.04, jawW * 0.12, 3);
+    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    for (let t = 0; t < 5; t++) {
+        const tooth = new THREE.Mesh(toothGeo, toothMat);
+        tooth.name = `tooth${t}`;
+        const tx = (t - 2) * jawW * 0.18;
+        tooth.position.set(tx, -headR * 0.52, headR * 0.55);
+        tooth.rotation.x = Math.PI;
+        boneMap.head.add(tooth);
+        parts[`tooth${t}`] = tooth;
+    }
+
+    return parts;
+}
+
+
+// ─── GLB SEA TURTLE ───
+function _buildGLBSeaturtle(size, config, materials, boneMap) {
+    const parts = {};
+    const s = size;
+    const d = config.bodyDimensions;
+
+    // Turtle is multi-mesh but simpler to handle as a single unit on root
+    // (individual part → bone mapping caused offset issues)
+    const targetWidth = d.shellWidth * s * 1.2;
+    const result = _glbMeshFromCache('seaturtle', materials.body, targetWidth, boneMap.root, {
+        rotY: Math.PI,  // face +Z toward toilet
+    });
+    if (!result) return _buildRigidSeaturtle(size, config, materials, boneMap);
+
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // Attach all turtle meshes to root as a group
+    for (let i = 0; i < result.parts.length; i++) {
+        const mesh = result.parts[i];
+        const name = mesh.name;
+
+        // Assign materials by mesh name
+        if (name === 'Plastron') {
+            mesh.material = materials.skin;
+        } else if (name === 'Eye_Left' || name === 'Eye_Right') {
+            mesh.material = faceMat;
+        } else {
+            mesh.material = materials.body;
+        }
+
+        boneMap.root.add(mesh);
+        parts[name || `part${i}`] = mesh;
+    }
+
+    return parts;
+}
+
+
+// ─── GLB JELLYFISH ───
+function _buildGLBJellyfish(size, config, materials, boneMap) {
+    const parts = {};
+    const s = size;
+    const d = config.bodyDimensions;
+    const targetDiam = d.bellRadius * s * 2.5; // bell diameter
+
+    const result = _glbMeshFromCache('jellyfish', materials.body, targetDiam, boneMap.root);
+    if (!result) return _buildRigidJellyfish(size, config, materials, boneMap);
+
+    // Bell — attach to root (body_front offset causes misalignment)
+    const bellMesh = result.parts[0];
+    bellMesh.name = 'bell';
+    bellMesh.material = materials.body.clone();
+    bellMesh.material.transparent = true;
+    bellMesh.material.opacity = 0.85;
+    boneMap.root.add(bellMesh);
+    parts.bell = bellMesh;
+
+    // Inner glow — brighter sphere visible through bell
+    const glowR = d.innerGlowRadius * s;
+    const glowGeo = new THREE.SphereGeometry(glowR, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.50);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: config.materialColors.skin,
+        transparent: true,
+        opacity: 0.60,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.name = 'innerGlow';
+    glow.scale.set(1.0, d.bellHeight / glowR * 0.65, 1.0);
+    glow.position.set(0, d.bellHeight * s * 0.05, 0);
+    boneMap.head.add(glow);
+    parts.innerGlow = glow;
+
+    // Tentacles — keep procedural for per-bone animation
+    const tentR = d.tentacleThickness * s;
+    const tentLen = d.tentacleLength * s;
+    const segLens = [tentLen * 0.35, tentLen * 0.35, tentLen * 0.30];
+    const segRadii = [tentR, tentR * 0.75, tentR * 0.50];
+
+    for (let t = 0; t < 5; t++) {
+        for (let seg = 0; seg < 3; seg++) {
+            const segGeo = createCapsule(segRadii[seg], segLens[seg], 5, 3);
+            const segMesh = new THREE.Mesh(segGeo, materials.body);
+            segMesh.name = `tent${t}_${seg + 1}`;
+            segMesh.position.set(0, -segLens[seg] * 0.35, 0);
+            const boneName = `tent_${t}_0${seg + 1}`;
+            boneMap[boneName].add(segMesh);
+            parts[`tent${t}_${seg + 1}`] = segMesh;
+        }
+    }
+
+    // Oral arms
+    const oralGeo = createCapsule(tentR * 1.20, tentLen * 0.20, 4, 2);
+    for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2;
+        const oral = new THREE.Mesh(oralGeo, materials.skin);
+        oral.name = `oral${i}`;
+        oral.position.set(
+            Math.sin(angle) * d.bellRadius * s * 0.25,
+            -d.bellHeight * s * 0.30,
+            Math.cos(angle) * d.bellRadius * s * 0.25
+        );
+        boneMap.body_rear.add(oral);
+        parts[`oral${i}`] = oral;
+    }
+
+    return parts;
+}
+
+
+// ─── GLB PIRATE BOAT ───
+// Pirate stays fully procedural, but swaps procedural rowboat for GLB version
+function _buildGLBPirateBoat(size, boneMap, parts) {
+    const data = GLBModelCache.get('boat');
+    if (!data) return false;
+
+    const bboxSize = GLBModelCache.getBBoxSize('boat');
+    const bboxCenter = GLBModelCache.getBBoxCenter('boat');
+
+    // Scale boat to match pirate's boat dimensions
+    const targetLen = 1.8 * size; // boatLength from config
+    const scaleFactor = targetLen / Math.max(bboxSize.x, bboxSize.y, bboxSize.z);
+
+    const clones = GLBModelCache.cloneGeometries('boat');
+    if (!clones) return false;
+
+    const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 });
+    for (const clone of clones) {
+        const geo = clone.geometry;
+        geo.translate(-bboxCenter.x, -bboxCenter.y, -bboxCenter.z);
+        geo.scale(scaleFactor, scaleFactor, scaleFactor);
+        geo.rotateY(Math.PI); // face +Z (toward toilet)
+        geo.computeVertexNormals();
+
+        const mesh = new THREE.Mesh(geo, boatMat);
+        mesh.name = 'glb_' + clone.name;
+        mesh.position.y = -0.4 * size; // sit below the pirate
+        boneMap.root.add(mesh);
+        parts['glb_' + clone.name] = mesh;
+    }
+    return true;
 }
 
 

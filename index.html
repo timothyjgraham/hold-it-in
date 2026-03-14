@@ -1224,17 +1224,15 @@
                 setTimeout(() => Game.init(), 50);
                 return;
             }
-            try {
-                this._initCore();
-            } catch (e) {
+            this._initCore().catch(e => {
                 console.error('INIT FAILED:', e);
                 // Dismiss splash even on error so user can see the console
                 const splash = document.getElementById('splash-screen');
                 if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 600); }
-            }
+            });
         },
 
-        _initCore() {
+        async _initCore() {
             // Init THREE-dependent objects
             this.raycaster = new THREE.Raycaster();
             this.mouse = new THREE.Vector2();
@@ -1293,6 +1291,13 @@
             this.windowPositions = [];
             if (this.officeGroup && this.officeGroup.userData.windowPositions) {
                 this.windowPositions = this.officeGroup.userData.windowPositions;
+            }
+
+            // Preload GLB models for ocean enemies (non-blocking for other scenarios)
+            if (window.GLBModelCache) {
+                await GLBModelCache.preloadAll().catch(e => {
+                    console.warn('GLB preload failed, falling back to procedural:', e);
+                });
             }
 
             // Phase 6A: Initialize enemy object pool
