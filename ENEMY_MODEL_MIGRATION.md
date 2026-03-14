@@ -143,7 +143,7 @@ All office enemies are bipeds sharing the same skeleton structure. Follow the Po
 
 - [x] **Power Walker** — DONE. Size 2.6, broad-shouldered athletic torso, full arms+forearms+feet, white sweatband, focused Mii face (narrow eyes, flat stern brows, tight mouth). Existing power_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **The Girls** — Size 0.85 → scale up. No arms (like dancer). Tiny chibi proportions. Big head relative to body. Personality: giggling, bouncy, casual. Face: happy/mischievous eyes. Accessory: ponytail (offset sphere behind head). Walk: casual sway (0.9s), hip sway (0.10), small steps.
+- [x] **The Girls** — DONE. Size 1.8, chibi proportions (big head 0.32*s, small body), no arms, ponytail + tie on head, happy Mii face (round eyes + sparkle highlights, playful brows, smile + corners), body-colored cute shoes. Existing walk_chat/bash/hit/death anims auto-adapt.
 
 ---
 
