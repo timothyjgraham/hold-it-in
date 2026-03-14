@@ -328,8 +328,8 @@ export class EnemyIntroUI {
         // Mark all drone meshes to render on top of dim plane
         _setRenderOrder(this._drone, INTRO_RENDER_ORDER);
 
-        // Flight path: pick random window → hover position (left side, enemy visible on right)
-        const hoverPos = new THREE.Vector3(-3.5, 28, 3);
+        // Flight path: pick random window → hover position (right of center, higher to avoid overlap)
+        const hoverPos = new THREE.Vector3(-1.5, 30, 3);
         let startPos;
 
         if (windowPositions && windowPositions.length > 0) {
@@ -374,19 +374,35 @@ export class EnemyIntroUI {
         const displayScale = config.size * 2.0;
         const result = createEnemyModel(enemyType, config.materialColors.body, false, displayScale);
         this._enemyGroup = result.group;
-        this._enemyGroup.position.set(3.5, 23, 4);
+
+        // Calculate where the feet/shoes bottom out so pedestal sits under them.
+        // Trace the bone chain: root → upperLeg → lowerLeg → [foot] to find the lowest point.
+        const bp = config.bonePositions;
+        const upperLegY = (bp.upperLeg_L || {}).y || 0;
+        const lowerLegY = (bp.lowerLeg_L || {}).y || 0;
+        const footBoneY = (bp.foot_L || {}).y || 0;
+        // Approximate shoe/foot mesh extent below the lowest bone
+        const shoeExtent = 0.08;
+        const feetBottomY = (bp.root.y + upperLegY + lowerLegY + footBoneY - shoeExtent) * displayScale;
+
+        // Position enemy so feet rest on the pedestal platform
+        const platformY = 23;
+        this._enemyGroup.position.set(3.5, platformY - feetBottomY, 4);
         this._enemyGroup.scale.setScalar(0); // Start at 0, will pop in
 
-        // Rotate to face camera (face -Z direction is toward camera at Z=-7)
-        this._enemyGroup.rotation.y = Math.PI;
+        // No Y rotation needed — rigid models face -Z which already points toward the camera.
+        // Legacy models also face -Z by construction.
 
         // Mark all enemy meshes to render on top of dim plane
         _setRenderOrder(this._enemyGroup, INTRO_RENDER_ORDER);
 
         this._scene.add(this._enemyGroup);
 
-        // Start walk animation
-        this._enemyAnimCtrl = new AnimationController(result.skinnedMesh, enemyType);
+        // Start walk animation — rigid models need animRoot (a Bone), not the material shim
+        const animTarget = result.isRigid ? result.animRoot : result.skinnedMesh;
+        this._enemyAnimCtrl = new AnimationController(
+            animTarget, enemyType, result.isRigid ? result.skeleton : undefined
+        );
         this._enemyAnimCtrl.setState(introData.walkState);
 
         // Create pedestal (cream cylinder with outline)
@@ -395,7 +411,7 @@ export class EnemyIntroUI {
         const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
         const pedMat = toonMat(PALETTE.cream);
         this._pedestal = new THREE.Mesh(pedGeo, pedMat);
-        this._pedestal.position.set(3.5, 23 - pedH / 2, 4);
+        this._pedestal.position.set(3.5, platformY - pedH / 2, 4);
         this._pedestal.scale.setScalar(0);
         this._pedestal.renderOrder = INTRO_RENDER_ORDER;
         this._scene.add(this._pedestal);
