@@ -10,7 +10,7 @@ import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish']);
 
 /**
  * Create a fully rigged enemy model.
@@ -104,7 +104,7 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 }
 
 function _outlineWidthForRigidType(type) {
-    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02 };
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03 };
     return map[type] || 0.03;
 }
 
@@ -1790,6 +1790,960 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 }
 
 
+// ═══════════════════════════════════════════════════════════════
+// OCEAN ENEMIES — marine creatures + pirate
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════
+// DOLPHIN — friendly torpedo, sleek body, snout, dorsal fin, flippers, tail + flukes
+// ═══════════════════════════════════════
+
+function _buildRigidDolphin(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ BODY: split torpedo into front half (body_front) and rear half (body_rear) ═══
+    // This allows undulation animations to flex the body visually
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Front body: wider, rounder — attached to body_front
+    const frontLen = bodyLen * 0.52;
+    const frontGeo = createOrganicTorso(bodyW * 0.65, bodyW, frontLen, 0.08, 8, 8);
+    const frontBody = new THREE.Mesh(frontGeo, materials.body);
+    frontBody.name = 'bodyFront';
+    frontBody.rotation.x = Math.PI / 2; // horizontal
+    frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    frontBody.position.set(0, 0, frontLen * 0.15);
+    boneMap.body_front.add(frontBody);
+    parts.bodyFront = frontBody;
+
+    // Rear body: tapers toward tail — attached to body_rear
+    const rearLen = bodyLen * 0.52;
+    const rearGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.70, rearLen, 0.04, 8, 8);
+    const rearBody = new THREE.Mesh(rearGeo, materials.body);
+    rearBody.name = 'bodyRear';
+    rearBody.rotation.x = Math.PI / 2;
+    rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    rearBody.position.set(0, 0, -rearLen * 0.15);
+    boneMap.body_rear.add(rearBody);
+    parts.bodyRear = rearBody;
+
+    // Bridging mid-section on root
+    const midR = bodyW * 0.95;
+    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    const mid = new THREE.Mesh(midGeo, materials.body);
+    mid.name = 'bodyMid';
+    mid.scale.set(1.0, bodyH / bodyW, 1.15);
+    boneMap.root.add(mid);
+    parts.bodyMid = mid;
+
+    // Belly: lighter underside on body_front
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.80, 8, 5,
+        0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45);
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.position.set(0, -bodyH * 0.10, 0);
+    belly.scale.set(1.0, 0.90, 1.30);
+    boneMap.body_front.add(belly);
+    parts.belly = belly;
+
+    // ═══ HEAD: rounded melon (dolphin forehead) ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.95, 0.90, 1.05);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Snout: elongated beak
+    const snoutLen = d.snoutLength * s;
+    const snoutR = headR * 0.30;
+    const snoutGeo = createCapsule(snoutR, snoutLen, 8, 4);
+    const snout = new THREE.Mesh(snoutGeo, materials.body);
+    snout.name = 'snout';
+    snout.rotation.x = Math.PI * 0.52;
+    snout.position.set(0, -headR * 0.25, -headR * 0.60);
+    boneMap.snout.add(snout);
+    parts.snout = snout;
+
+    // Eyes: friendly round, set on sides
+    const eyeSize = headR * 0.12;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.52;
+    const eyeY = headR * 0.05;
+    const eyeZ = -headR * 0.45;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(0.60, 1.10, 0.50);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR.scale.set(0.60, 1.10, 0.50);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Mouth line: subtle smile
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.02, headR * 0.40);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.28, -headR * 0.70);
+    mouth.rotation.y = 0.05; // slight curve hint
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ DORSAL FIN: tall triangle on top of body_front ═══
+    const dorsalH = d.dorsalHeight * s;
+    const dorsalL = d.dorsalLength * s;
+    const dorsalGeo = new THREE.ConeGeometry(dorsalL * 0.5, dorsalH, 4);
+    const dorsal = new THREE.Mesh(dorsalGeo, materials.body);
+    dorsal.name = 'dorsal';
+    dorsal.rotation.z = 0; // upright
+    dorsal.position.set(0, dorsalH * 0.35, 0);
+    boneMap.dorsal.add(dorsal);
+    parts.dorsal = dorsal;
+
+    // ═══ FLIPPERS: flat paddle shapes ═══
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = createCapsule(flipW, flipLen, 6, 3);
+
+    const flipL = new THREE.Mesh(flipGeo, materials.body);
+    flipL.name = 'flipperL';
+    flipL.scale.set(0.40, 1.0, 1.0); // flattened
+    flipL.rotation.z = 0.35; // angled out
+    flipL.position.set(0, -flipLen * 0.30, 0);
+    boneMap.flipper_L.add(flipL);
+    parts.flipperL = flipL;
+
+    const flipR = new THREE.Mesh(flipGeo, materials.body);
+    flipR.name = 'flipperR';
+    flipR.scale.set(0.40, 1.0, 1.0);
+    flipR.rotation.z = -0.35;
+    flipR.position.set(0, -flipLen * 0.30, 0);
+    boneMap.flipper_R.add(flipR);
+    parts.flipperR = flipR;
+
+    // ═══ TAIL: 2 segments tapering toward flukes ═══
+    const tailW = d.tailWidth * s;
+    const tail1Len = 0.12 * s;
+    const tail1Geo = createCapsule(tailW * 0.30, tail1Len, 6, 3);
+    const tail1 = new THREE.Mesh(tail1Geo, materials.body);
+    tail1.name = 'tail1';
+    tail1.rotation.x = Math.PI * 0.50;
+    boneMap.tail_01.add(tail1);
+    parts.tail1 = tail1;
+
+    const tail2Len = 0.10 * s;
+    const tail2Geo = createCapsule(tailW * 0.22, tail2Len, 6, 3);
+    const tail2 = new THREE.Mesh(tail2Geo, materials.body);
+    tail2.name = 'tail2';
+    tail2.rotation.x = Math.PI * 0.50;
+    boneMap.tail_02.add(tail2);
+    parts.tail2 = tail2;
+
+    // ═══ FLUKES: horizontal tail fins ═══
+    const flukeSpan = d.flukeSpan * s;
+    const flukeGeo = createCapsule(flukeSpan * 0.12, flukeSpan * 0.50, 5, 3);
+
+    const flukeL = new THREE.Mesh(flukeGeo, materials.body);
+    flukeL.name = 'flukeL';
+    flukeL.scale.set(0.30, 1.0, 1.0); // flat
+    flukeL.rotation.z = 0.60;
+    boneMap.fluke_L.add(flukeL);
+    parts.flukeL = flukeL;
+
+    const flukeR = new THREE.Mesh(flukeGeo, materials.body);
+    flukeR.name = 'flukeR';
+    flukeR.scale.set(0.30, 1.0, 1.0);
+    flukeR.rotation.z = -0.60;
+    boneMap.fluke_R.add(flukeR);
+    parts.flukeR = flukeR;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// FLYING FISH — sleek body, massive wing-like pectoral fins, fast darting
+// ═══════════════════════════════════════
+
+function _buildRigidFlyfish(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ BODY: sleek streamlined torpedo, split front/rear ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Front body: slightly wider, attached to body_front
+    const frontLen = bodyLen * 0.50;
+    const frontGeo = createOrganicTorso(bodyW * 0.60, bodyW, frontLen, 0.06, 8, 8);
+    const frontBody = new THREE.Mesh(frontGeo, materials.body);
+    frontBody.name = 'bodyFront';
+    frontBody.rotation.x = Math.PI / 2;
+    frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    frontBody.position.set(0, 0, frontLen * 0.15);
+    boneMap.body_front.add(frontBody);
+    parts.bodyFront = frontBody;
+
+    // Rear body: tapers sharply
+    const rearLen = bodyLen * 0.50;
+    const rearGeo = createOrganicTorso(bodyW * 0.22, bodyW * 0.65, rearLen, 0.03, 8, 8);
+    const rearBody = new THREE.Mesh(rearGeo, materials.body);
+    rearBody.name = 'bodyRear';
+    rearBody.rotation.x = Math.PI / 2;
+    rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    rearBody.position.set(0, 0, -rearLen * 0.15);
+    boneMap.body_rear.add(rearBody);
+    parts.bodyRear = rearBody;
+
+    // Bridging mid-section
+    const midR = bodyW * 0.85;
+    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    const mid = new THREE.Mesh(midGeo, materials.body);
+    mid.name = 'bodyMid';
+    mid.scale.set(1.0, bodyH / bodyW, 1.10);
+    boneMap.root.add(mid);
+    parts.bodyMid = mid;
+
+    // Silver belly highlight
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.70, 6, 4,
+        0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45);
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.position.set(0, -bodyH * 0.10, 0);
+    belly.scale.set(1.0, 0.85, 1.20);
+    boneMap.body_front.add(belly);
+    parts.belly = belly;
+
+    // ═══ HEAD: small pointed ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.90, 0.85, 1.15); // narrow, elongated
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes: small, alert
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
+    const eyeSpacing = headR * 0.48;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.40);
+    eyeL.scale.set(0.55, 1.0, 0.45);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.40);
+    eyeR.scale.set(0.55, 1.0, 0.45);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // ═══ DORSAL: small fin ═══
+    const dorsalH = d.dorsalHeight * s;
+    const dorsalGeo = new THREE.ConeGeometry(d.dorsalLength * s * 0.4, dorsalH, 4);
+    const dorsal = new THREE.Mesh(dorsalGeo, materials.body);
+    dorsal.name = 'dorsal';
+    dorsal.position.set(0, dorsalH * 0.35, 0);
+    boneMap.dorsal.add(dorsal);
+    parts.dorsal = dorsal;
+
+    // ═══ FLIPPERS: MASSIVE wing-like pectoral fins — signature feature ═══
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = createCapsule(flipW, flipLen, 6, 3);
+
+    const flipL = new THREE.Mesh(flipGeo, materials.body);
+    flipL.name = 'flipperL';
+    flipL.scale.set(0.25, 1.0, 1.0); // very flat
+    flipL.rotation.z = 0.50; // swept outward
+    flipL.position.set(0, -flipLen * 0.25, 0);
+    boneMap.flipper_L.add(flipL);
+    parts.flipperL = flipL;
+
+    const flipR = new THREE.Mesh(flipGeo, materials.body);
+    flipR.name = 'flipperR';
+    flipR.scale.set(0.25, 1.0, 1.0);
+    flipR.rotation.z = -0.50;
+    flipR.position.set(0, -flipLen * 0.25, 0);
+    boneMap.flipper_R.add(flipR);
+    parts.flipperR = flipR;
+
+    // ═══ TAIL: single segment + flukes ═══
+    const tailW = d.tailWidth * s;
+    const tail1Len = 0.08 * s;
+    const tail1Geo = createCapsule(tailW * 0.25, tail1Len, 6, 3);
+    const tail1 = new THREE.Mesh(tail1Geo, materials.body);
+    tail1.name = 'tail1';
+    tail1.rotation.x = Math.PI * 0.50;
+    boneMap.tail_01.add(tail1);
+    parts.tail1 = tail1;
+
+    // Flukes: forked tail fin
+    const flukeSpan = d.flukeSpan * s;
+    const flukeGeo = createCapsule(flukeSpan * 0.10, flukeSpan * 0.40, 5, 3);
+
+    const flukeL = new THREE.Mesh(flukeGeo, materials.body);
+    flukeL.name = 'flukeL';
+    flukeL.scale.set(0.25, 1.0, 1.0);
+    flukeL.rotation.z = 0.70;
+    boneMap.fluke_L.add(flukeL);
+    parts.flukeL = flukeL;
+
+    const flukeR = new THREE.Mesh(flukeGeo, materials.body);
+    flukeR.name = 'flukeR';
+    flukeR.scale.set(0.25, 1.0, 1.0);
+    flukeR.rotation.z = -0.70;
+    boneMap.fluke_R.add(flukeR);
+    parts.flukeR = flukeR;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// SHARK — massive menacing torpedo, big dorsal fin, jaw, 3-segment tail
+// ═══════════════════════════════════════
+
+function _buildRigidShark(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ BODY: massive torpedo, split front/rear ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Front body: wide, intimidating
+    const frontLen = bodyLen * 0.52;
+    const frontGeo = createOrganicTorso(bodyW * 0.70, bodyW, frontLen, 0.10, 10, 10);
+    const frontBody = new THREE.Mesh(frontGeo, materials.body);
+    frontBody.name = 'bodyFront';
+    frontBody.rotation.x = Math.PI / 2;
+    frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    frontBody.position.set(0, 0, frontLen * 0.12);
+    boneMap.body_front.add(frontBody);
+    parts.bodyFront = frontBody;
+
+    // Rear body: long taper to tail
+    const rearLen = bodyLen * 0.52;
+    const rearGeo = createOrganicTorso(bodyW * 0.25, bodyW * 0.75, rearLen, 0.04, 10, 10);
+    const rearBody = new THREE.Mesh(rearGeo, materials.body);
+    rearBody.name = 'bodyRear';
+    rearBody.rotation.x = Math.PI / 2;
+    rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    rearBody.position.set(0, 0, -rearLen * 0.12);
+    boneMap.body_rear.add(rearBody);
+    parts.bodyRear = rearBody;
+
+    // Bridging mid-section
+    const midR = bodyW * 1.0;
+    const midGeo = new THREE.SphereGeometry(midR, 10, 8);
+    const mid = new THREE.Mesh(midGeo, materials.body);
+    mid.name = 'bodyMid';
+    mid.scale.set(1.0, bodyH / bodyW, 1.15);
+    boneMap.root.add(mid);
+    parts.bodyMid = mid;
+
+    // Light belly (classic counter-shading)
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.85, 8, 5,
+        0, Math.PI * 2, Math.PI * 0.52, Math.PI * 0.48);
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.position.set(0, -bodyH * 0.12, 0);
+    belly.scale.set(1.0, 0.90, 1.35);
+    boneMap.body_front.add(belly);
+    parts.belly = belly;
+
+    // ═══ HEAD: blunt, wide snout with menacing jaw ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(1.10, 0.75, 1.05); // wide, flat
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Snout: broad and flat
+    const snoutLen = d.snoutLength * s;
+    const snoutR = headR * 0.40;
+    const snoutGeo = createCapsule(snoutR, snoutLen, 8, 4);
+    const snoutMesh = new THREE.Mesh(snoutGeo, materials.body);
+    snoutMesh.name = 'snout';
+    snoutMesh.rotation.x = Math.PI * 0.50;
+    snoutMesh.position.set(0, -headR * 0.20, -headR * 0.50);
+    snoutMesh.scale.set(1.30, 1.0, 0.70); // wide, flat
+    boneMap.snout.add(snoutMesh);
+    parts.snout = snoutMesh;
+
+    // Eyes: small, cold, set far to sides
+    const eyeSize = headR * 0.08;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
+    const eyeSpacing = headR * 0.68;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.30);
+    eyeL.scale.set(0.50, 0.80, 0.40);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.30);
+    eyeR.scale.set(0.50, 0.80, 0.40);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Jaw: dark underside gap suggesting open mouth
+    const jawW = d.jawWidth * s;
+    const jawGeo = new THREE.BoxGeometry(jawW, headR * 0.10, headR * 0.50);
+    const jaw = new THREE.Mesh(jawGeo, faceMat);
+    jaw.name = 'jaw';
+    jaw.position.set(0, -headR * 0.42, -headR * 0.60);
+    boneMap.head.add(jaw);
+    parts.jaw = jaw;
+
+    // Teeth: small white triangles in jaw
+    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    const toothGeo = new THREE.ConeGeometry(headR * 0.03, headR * 0.08, 3);
+    for (let i = 0; i < 5; i++) {
+        const tx = (i - 2) * jawW * 0.18;
+        const tooth = new THREE.Mesh(toothGeo, toothMat);
+        tooth.name = `tooth${i}`;
+        tooth.position.set(tx, -headR * 0.36, -headR * 0.50 - i * 0.003);
+        tooth.rotation.x = Math.PI; // point down
+        boneMap.head.add(tooth);
+        parts[`tooth${i}`] = tooth;
+    }
+
+    // ═══ DORSAL FIN: big iconic shark fin ═══
+    const dorsalH = d.dorsalHeight * s;
+    const dorsalL = d.dorsalLength * s;
+    const dorsalGeo = new THREE.ConeGeometry(dorsalL * 0.5, dorsalH, 4);
+    const dorsal = new THREE.Mesh(dorsalGeo, materials.body);
+    dorsal.name = 'dorsal';
+    dorsal.position.set(0, dorsalH * 0.40, 0);
+    dorsal.rotation.x = -0.08; // slight backward lean
+    boneMap.dorsal.add(dorsal);
+    parts.dorsal = dorsal;
+
+    // ═══ FLIPPERS: wide pectoral fins ═══
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = createCapsule(flipW, flipLen, 6, 3);
+
+    const flipL = new THREE.Mesh(flipGeo, materials.body);
+    flipL.name = 'flipperL';
+    flipL.scale.set(0.35, 1.0, 1.0);
+    flipL.rotation.z = 0.45;
+    flipL.position.set(0, -flipLen * 0.28, 0);
+    boneMap.flipper_L.add(flipL);
+    parts.flipperL = flipL;
+
+    const flipR = new THREE.Mesh(flipGeo, materials.body);
+    flipR.name = 'flipperR';
+    flipR.scale.set(0.35, 1.0, 1.0);
+    flipR.rotation.z = -0.45;
+    flipR.position.set(0, -flipLen * 0.28, 0);
+    boneMap.flipper_R.add(flipR);
+    parts.flipperR = flipR;
+
+    // ═══ TAIL: 3 segments progressively thinner ═══
+    const tailW2 = d.tailWidth * s;
+    const tailRadii = [tailW2 * 0.28, tailW2 * 0.22, tailW2 * 0.16];
+    const tailLens = [0.12 * s, 0.10 * s, 0.08 * s];
+    for (let i = 0; i < 3; i++) {
+        const tGeo = createCapsule(tailRadii[i], tailLens[i], 6, 3);
+        const tMesh = new THREE.Mesh(tGeo, materials.body);
+        tMesh.name = `tail${i + 1}`;
+        tMesh.rotation.x = Math.PI * 0.50;
+        boneMap[`tail_0${i + 1}`].add(tMesh);
+        parts[`tail${i + 1}`] = tMesh;
+    }
+
+    // ═══ FLUKES: vertical crescent tail fin (sharks have vertical tails!) ═══
+    const flukeSpan = d.flukeSpan * s;
+    const flukeGeo = createCapsule(flukeSpan * 0.10, flukeSpan * 0.55, 5, 3);
+
+    // Shark flukes are VERTICAL (unlike horizontal dolphin flukes)
+    const flukeL = new THREE.Mesh(flukeGeo, materials.body);
+    flukeL.name = 'flukeL';
+    flukeL.scale.set(0.25, 1.0, 1.0);
+    flukeL.position.set(0, flukeSpan * 0.15, 0);
+    boneMap.fluke_L.add(flukeL);
+    parts.flukeL = flukeL;
+
+    const flukeR = new THREE.Mesh(flukeGeo, materials.body);
+    flukeR.name = 'flukeR';
+    flukeR.scale.set(0.25, 1.0, 1.0);
+    flukeR.position.set(0, -flukeSpan * 0.15, 0);
+    boneMap.fluke_R.add(flukeR);
+    parts.flukeR = flukeR;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// PIRATE — biped human in a rowboat, hat, rowing arms
+// Uses biped skeleton (not marine)
+// ═══════════════════════════════════════
+
+function _buildRigidPirate(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ ROWBOAT: wooden boat on root, pirate sits inside ═══
+    const boatL = d.boatLength * s;
+    const boatW = d.boatWidth * s;
+    const boatH = d.boatHeight * s;
+
+    // Hull: rounded box
+    const hullGeo = createRoundedBox(boatW, boatH, boatL, boatH * 0.20);
+    const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 }); // PALETTE.oceanBoatWood
+    const hull = new THREE.Mesh(hullGeo, boatMat);
+    hull.name = 'hull';
+    hull.position.set(0, -boatH * 0.80, 0);
+    boneMap.root.add(hull);
+    parts.hull = hull;
+
+    // Boat rim / gunwale: slightly wider
+    const rimGeo = createRoundedBox(boatW * 1.08, boatH * 0.15, boatL * 1.02, boatH * 0.06);
+    const rimMat = new THREE.MeshBasicMaterial({ color: 0x6b5030 }); // PALETTE.oceanBoatDark
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.name = 'boatRim';
+    rim.position.set(0, -boatH * 0.55, 0);
+    boneMap.root.add(rim);
+    parts.boatRim = rim;
+
+    // ═══ TORSO: pirate body sitting in the boat ═══
+    const torsoW = d.torsoWidth * 0.45 * s;
+    const torsoH = (config.bonePositions.spine.y + config.bonePositions.chest.y) * s * 1.10;
+    const torsoD = d.torsoDepth * 0.45 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, Math.min(torsoW, torsoD) * 0.20);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, torsoH * 0.15, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: round with scruffy personality ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.95, 1.0);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes: narrowed, determined
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.08;
+    const eyeZ = -headR * 0.88;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 0.70, 0.50); // squinting
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR.scale.set(1.0, 0.70, 0.50);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Eyepatch: dark box over right eye
+    const patchGeo = new THREE.BoxGeometry(headR * 0.18, headR * 0.14, headR * 0.04);
+    const patch = new THREE.Mesh(patchGeo, faceMat);
+    patch.name = 'eyepatch';
+    patch.position.set(eyeSpacing, eyeY, eyeZ - eyeSize * 0.30);
+    boneMap.head.add(patch);
+    parts.eyepatch = patch;
+
+    // Eyepatch strap
+    const strapGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.04, headR * 0.80);
+    const strap = new THREE.Mesh(strapGeo, faceMat);
+    strap.name = 'strap';
+    strap.position.set(eyeSpacing + headR * 0.08, eyeY + headR * 0.06, -headR * 0.40);
+    boneMap.head.add(strap);
+    parts.strap = strap;
+
+    // Mouth: wide grin
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.25, headR * 0.05, headR * 0.04);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.28, eyeZ);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // ═══ PIRATE HAT: tricorn with brim ═══
+    const hatH = d.hatHeight * s;
+    const hatBrim = d.hatBrim * s;
+
+    // Hat crown
+    const crownGeo = createRoundedBox(headR * 0.65, hatH, headR * 0.55, hatH * 0.15);
+    const hatMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // dark hat
+    const crown = new THREE.Mesh(crownGeo, hatMat);
+    crown.name = 'hatCrown';
+    crown.position.set(0, headR * 0.70, 0);
+    boneMap.head.add(crown);
+    parts.hatCrown = crown;
+
+    // Hat brim
+    const brimGeo = new THREE.CylinderGeometry(hatBrim, hatBrim, hatH * 0.12, 8);
+    const brim = new THREE.Mesh(brimGeo, hatMat);
+    brim.name = 'hatBrim';
+    brim.position.set(0, headR * 0.55, -headR * 0.05);
+    boneMap.head.add(brim);
+    parts.hatBrim = brim;
+
+    // ═══ ARMS: rowing arms with forearms ═══
+    const armR2 = d.limbThickness * 0.45 * s;
+    const armLen = 0.32 * s;
+    const armGeo = createCapsule(armR2, armLen, 6, 3);
+
+    const armL = new THREE.Mesh(armGeo, materials.skin);
+    armL.name = 'armL';
+    armL.position.set(0, -armLen * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.skin);
+    armR.name = 'armR';
+    armR.position.set(0, -armLen * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    const forearmLen = 0.28 * s;
+    const forearmGeo = createCapsule(armR2 * 0.85, forearmLen, 6, 3);
+
+    const forearmL = new THREE.Mesh(forearmGeo, materials.skin);
+    forearmL.name = 'forearmL';
+    forearmL.position.set(0, -forearmLen * 0.42, 0);
+    boneMap.forearm_L.add(forearmL);
+    parts.forearmL = forearmL;
+
+    const forearmR = new THREE.Mesh(forearmGeo, materials.skin);
+    forearmR.name = 'forearmR';
+    forearmR.position.set(0, -forearmLen * 0.42, 0);
+    boneMap.forearm_R.add(forearmR);
+    parts.forearmR = forearmR;
+
+    // ═══ LEGS: hidden in boat but needed for skeleton ═══
+    const legR2 = d.limbThickness * 0.40 * s;
+    const legLen = 0.30 * s;
+    const legGeo = createCapsule(legR2, legLen, 6, 3);
+
+    const legL = new THREE.Mesh(legGeo, materials.legs);
+    legL.name = 'legL';
+    legL.position.set(0, -legLen * 0.38, 0);
+    boneMap.upperLeg_L.add(legL);
+    parts.legL = legL;
+
+    const legR = new THREE.Mesh(legGeo, materials.legs);
+    legR.name = 'legR';
+    legR.position.set(0, -legLen * 0.38, 0);
+    boneMap.upperLeg_R.add(legR);
+    parts.legR = legR;
+
+    const lowerLegLen = 0.30 * s;
+    const lowerLegGeo = createCapsule(legR2 * 0.85, lowerLegLen, 6, 3);
+
+    const lowerLegL = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegL.name = 'lowerLegL';
+    lowerLegL.position.set(0, -lowerLegLen * 0.38, 0);
+    boneMap.lowerLeg_L.add(lowerLegL);
+    parts.lowerLegL = lowerLegL;
+
+    const lowerLegR = new THREE.Mesh(lowerLegGeo, materials.legs);
+    lowerLegR.name = 'lowerLegR';
+    lowerLegR.position.set(0, -lowerLegLen * 0.38, 0);
+    boneMap.lowerLeg_R.add(lowerLegR);
+    parts.lowerLegR = lowerLegR;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// SEA TURTLE — dome shell, flat body, 4 paddle flippers, small head
+// ═══════════════════════════════════════
+
+function _buildRigidSeaturtle(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ SHELL: dominant visual — dome on top, flat on bottom ═══
+    const shellW = d.shellWidth * s;
+    const shellH = d.shellHeight * s;
+    const shellL = d.shellLength * s;
+
+    // Shell dome: upper hemisphere
+    const shellGeo = new THREE.SphereGeometry(shellW * 0.50, 10, 6,
+        0, Math.PI * 2, 0, Math.PI * 0.55); // just top portion
+    const shell = new THREE.Mesh(shellGeo, materials.body);
+    shell.name = 'shell';
+    shell.scale.set(1.0, shellH / (shellW * 0.50), shellL / shellW);
+    shell.position.set(0, shellH * 0.10, 0);
+    boneMap.shell.add(shell);
+    parts.shell = shell;
+
+    // Shell underside / plastron: flat
+    const plastronGeo = new THREE.CylinderGeometry(shellW * 0.42, shellW * 0.38, shellH * 0.20, 10);
+    const plastron = new THREE.Mesh(plastronGeo, materials.skin);
+    plastron.name = 'plastron';
+    plastron.position.set(0, -shellH * 0.15, 0);
+    plastron.scale.set(1.0, 1.0, shellL / shellW);
+    boneMap.shell.add(plastron);
+    parts.plastron = plastron;
+
+    // Shell pattern: subtle hexagonal scute marks (dark lines on shell)
+    // Simple: a few dark rings as scute boundaries
+    const scuteGeo = new THREE.TorusGeometry(shellW * 0.22, shellW * 0.008, 4, 6);
+    const scute1 = new THREE.Mesh(scuteGeo, faceMat);
+    scute1.name = 'scute1';
+    scute1.position.set(0, shellH * 0.55, 0);
+    scute1.rotation.x = Math.PI / 2;
+    boneMap.shell.add(scute1);
+    parts.scute1 = scute1;
+
+    const scute2Geo = new THREE.TorusGeometry(shellW * 0.35, shellW * 0.006, 4, 8);
+    const scute2 = new THREE.Mesh(scute2Geo, faceMat);
+    scute2.name = 'scute2';
+    scute2.position.set(0, shellH * 0.38, 0);
+    scute2.rotation.x = Math.PI / 2;
+    boneMap.shell.add(scute2);
+    parts.scute2 = scute2;
+
+    // ═══ BODY: flat horizontal body under shell ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Front body section
+    const frontGeo = new THREE.SphereGeometry(bodyW * 0.40, 8, 6);
+    const frontBody = new THREE.Mesh(frontGeo, materials.body);
+    frontBody.name = 'bodyFront';
+    frontBody.scale.set(1.0, 0.50, 1.30);
+    boneMap.body_front.add(frontBody);
+    parts.bodyFront = frontBody;
+
+    // Rear body section
+    const rearGeo = new THREE.SphereGeometry(bodyW * 0.35, 8, 6);
+    const rearBody = new THREE.Mesh(rearGeo, materials.body);
+    rearBody.name = 'bodyRear';
+    rearBody.scale.set(1.0, 0.45, 1.20);
+    boneMap.body_rear.add(rearBody);
+    parts.bodyRear = rearBody;
+
+    // ═══ HEAD: small, endearing, extends forward ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 8, 6);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.90, 0.85, 1.10);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes: small, kind
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
+    const eyeSpacing = headR * 0.45;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.12, -headR * 0.55);
+    eyeL.scale.set(0.60, 1.0, 0.45);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.12, -headR * 0.55);
+    eyeR.scale.set(0.60, 1.0, 0.45);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // Beak: small hooked mouth
+    const beakGeo = new THREE.ConeGeometry(headR * 0.12, headR * 0.15, 4);
+    const beak = new THREE.Mesh(beakGeo, faceMat);
+    beak.name = 'beak';
+    beak.position.set(0, -headR * 0.15, -headR * 0.80);
+    beak.rotation.x = Math.PI * 0.60; // points down-forward
+    boneMap.head.add(beak);
+    parts.beak = beak;
+
+    // ═══ FLIPPERS: 4 paddle-like limbs ═══
+    const flipLen = d.flipperLength * s;
+    const flipW = d.flipperWidth * s;
+    const flipGeo = createCapsule(flipW, flipLen, 6, 3);
+
+    // Front flippers: larger, for swimming
+    const fFlipL = new THREE.Mesh(flipGeo, materials.body);
+    fFlipL.name = 'frontFlipperL';
+    fFlipL.scale.set(0.35, 1.0, 1.0); // flat
+    fFlipL.rotation.z = 0.50;
+    fFlipL.position.set(0, -flipLen * 0.30, 0);
+    boneMap.frontFlipper_L.add(fFlipL);
+    parts.frontFlipperL = fFlipL;
+
+    const fFlipR = new THREE.Mesh(flipGeo, materials.body);
+    fFlipR.name = 'frontFlipperR';
+    fFlipR.scale.set(0.35, 1.0, 1.0);
+    fFlipR.rotation.z = -0.50;
+    fFlipR.position.set(0, -flipLen * 0.30, 0);
+    boneMap.frontFlipper_R.add(fFlipR);
+    parts.frontFlipperR = fFlipR;
+
+    // Hind flippers: smaller
+    const hFlipLen = flipLen * 0.65;
+    const hFlipGeo = createCapsule(flipW * 0.80, hFlipLen, 6, 3);
+
+    const hFlipL = new THREE.Mesh(hFlipGeo, materials.body);
+    hFlipL.name = 'hindFlipperL';
+    hFlipL.scale.set(0.30, 1.0, 1.0);
+    hFlipL.rotation.z = 0.40;
+    hFlipL.position.set(0, -hFlipLen * 0.30, 0);
+    boneMap.hindFlipper_L.add(hFlipL);
+    parts.hindFlipperL = hFlipL;
+
+    const hFlipR = new THREE.Mesh(hFlipGeo, materials.body);
+    hFlipR.name = 'hindFlipperR';
+    hFlipR.scale.set(0.30, 1.0, 1.0);
+    hFlipR.rotation.z = -0.40;
+    hFlipR.position.set(0, -hFlipLen * 0.30, 0);
+    boneMap.hindFlipper_R.add(hFlipR);
+    parts.hindFlipperR = hFlipR;
+
+    // ═══ TAIL: short stubby ═══
+    const tailLen = 0.06 * s;
+    const tailR2 = bodyW * 0.08;
+    const tailGeo = createCapsule(tailR2, tailLen, 5, 3);
+    const tail = new THREE.Mesh(tailGeo, materials.body);
+    tail.name = 'tail1';
+    tail.rotation.x = Math.PI * 0.55;
+    boneMap.tail_01.add(tail);
+    parts.tail1 = tail;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// JELLYFISH — pulsing bell, 5 tentacle chains, ethereal glow
+// ═══════════════════════════════════════
+
+function _buildRigidJellyfish(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+
+    // ═══ BELL: half-sphere, the main body ═══
+    const bellR = d.bellRadius * s;
+    const bellH = d.bellHeight * s;
+
+    // Bell dome: upper hemisphere (pulsing via animation scale)
+    const bellGeo = new THREE.SphereGeometry(bellR, 12, 8,
+        0, Math.PI * 2, 0, Math.PI * 0.60); // top portion
+    const bell = new THREE.Mesh(bellGeo, materials.body);
+    bell.name = 'bell';
+    bell.scale.set(1.0, bellH / bellR, 1.0);
+    boneMap.body_front.add(bell);
+    parts.bell = bell;
+
+    // Bell underside rim: slight lip
+    const rimGeo = new THREE.TorusGeometry(bellR * 0.85, bellR * 0.06, 6, 16);
+    const rim = new THREE.Mesh(rimGeo, materials.body);
+    rim.name = 'bellRim';
+    rim.rotation.x = Math.PI / 2;
+    rim.position.set(0, -bellH * 0.15, 0);
+    boneMap.body_front.add(rim);
+    parts.bellRim = rim;
+
+    // Inner glow: slightly smaller, brighter sphere visible through translucent bell
+    const glowR = d.innerGlowRadius * s;
+    const glowGeo = new THREE.SphereGeometry(glowR, 8, 6,
+        0, Math.PI * 2, 0, Math.PI * 0.50);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: config.materialColors.skin,
+        transparent: true,
+        opacity: 0.60,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.name = 'innerGlow';
+    glow.scale.set(1.0, bellH / glowR * 0.65, 1.0);
+    glow.position.set(0, bellH * 0.05, 0);
+    boneMap.head.add(glow);
+    parts.innerGlow = glow;
+
+    // ═══ TENTACLES: 5 chains of 3 segments each ═══
+    const tentR = d.tentacleThickness * s;
+    const tentLen = d.tentacleLength * s;
+    const segLens = [tentLen * 0.35, tentLen * 0.35, tentLen * 0.30];
+    const segRadii = [tentR, tentR * 0.75, tentR * 0.50];
+
+    for (let t = 0; t < 5; t++) {
+        for (let seg = 0; seg < 3; seg++) {
+            const segGeo = createCapsule(segRadii[seg], segLens[seg], 5, 3);
+            const segMesh = new THREE.Mesh(segGeo, materials.body);
+            segMesh.name = `tent${t}_${seg + 1}`;
+            segMesh.position.set(0, -segLens[seg] * 0.35, 0);
+            const boneName = `tent_${t}_0${seg + 1}`;
+            boneMap[boneName].add(segMesh);
+            parts[`tent${t}_${seg + 1}`] = segMesh;
+        }
+    }
+
+    // Small oral arms: short frilly bits near center under bell
+    const oralGeo = createCapsule(tentR * 1.20, tentLen * 0.20, 4, 2);
+    const oralMat = materials.skin;
+    for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2;
+        const oral = new THREE.Mesh(oralGeo, oralMat);
+        oral.name = `oral${i}`;
+        oral.position.set(
+            Math.sin(angle) * bellR * 0.25,
+            -bellH * 0.30,
+            Math.cos(angle) * bellR * 0.25
+        );
+        boneMap.body_rear.add(oral);
+        parts[`oral${i}`] = oral;
+    }
+
+    return parts;
+}
+
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
@@ -1799,6 +2753,12 @@ const _rigidBuilders = {
     girls: _buildRigidGirls,
     deer: _buildRigidDeer,
     squirrel: _buildRigidSquirrel,
+    dolphin: _buildRigidDolphin,
+    flyfish: _buildRigidFlyfish,
+    shark: _buildRigidShark,
+    pirate: _buildRigidPirate,
+    seaturtle: _buildRigidSeaturtle,
+    jellyfish: _buildRigidJellyfish,
 };
 
 

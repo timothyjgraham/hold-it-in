@@ -202,17 +202,17 @@ Marine creatures have horizontal bodies with tail chains, flippers, and complete
 - Swimming animation: body undulation, tail swing, flipper paddle
 - Many have bob height for water surface bobbing
 
-- [ ] **Dolphin** — Size 4.0. Torpedo body. Snout, dorsal fin, pectoral flippers. 2 tail segments + flukes. High vertical bob (0.55). Body undulation + tail swing.
+- [x] **Dolphin** — DONE. Size 4.0, split torpedo body (front/rear halves + bridging mid for undulation), lighter belly underside, elongated snout beak, friendly side-set eyes + smile, tall dorsal fin, flat paddle flippers, 2 tapering tail segments + horizontal flukes. Existing dolphin_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **Flying Fish** — Size 4.5. Small sleek body. Long wing-like flippers. Fast darting (0.55s). Active wing flapping. High tail swing.
+- [x] **Flying Fish** — DONE. Size 4.5, sleek streamlined split body, silver belly, small pointed head, small dorsal fin, MASSIVE wing-like pectoral fins (signature feature), single tail segment + forked flukes. Existing flyfish_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **Shark** — Size 6.0 (tank). Massive torpedo body. Large dorsal fin. Jaw. 3 tail segments + flukes. Slow menacing movement. Minimal bob. Jaw open animation.
+- [x] **Shark** — DONE. Size 6.0 (tank), massive split torpedo body, counter-shaded belly, wide flat head + broad snout, small cold side-set eyes, dark jaw gap + white teeth, BIG iconic dorsal fin, wide pectoral fins, 3 progressively thinner tail segments + vertical crescent flukes. Existing shark_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **Pirate** — Size 1.5. BIPED in rowboat. Use biped skeleton. Seated pose (no leg motion). Rowing arm animation. Has hat (large brim). Boat geometry parented to root.
+- [x] **Pirate** — DONE. Size 1.5, BIPED skeleton. Wooden rowboat hull + dark rim on root, torso in crimson coat, sun-weathered skin head, eyepatch + strap, squinting eye, wide grin, tricorn hat (crown + brim), rowing arms with forearms, legs hidden in boat. Existing pirate_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **Sea Turtle** — Size 5.0. Wide flat shell (dome). Four flipper limbs. Small head. Slow steady paddling. Shell geometry = dominant visual element.
+- [x] **Sea Turtle** — DONE. Size 5.0, dome shell (upper hemisphere + flat plastron + scute ring markings), flat front/rear body sections, small kind head with beak, 4 paddle flippers (larger front, smaller hind), short stubby tail. Existing seaturtle_walk/bash/hit/death anims auto-adapt.
 
-- [ ] **Jellyfish** — Size 4.0. Bell (half-sphere, pulsing). 5 tentacle chains (3 segments each). Bioluminescent glow material. Pulsing bell propulsion. Tentacle sway. Floating drift.
+- [x] **Jellyfish** — DONE. Size 4.0, pulsing bell dome (upper hemisphere + rim torus), translucent inner glow sphere, 5 tentacle chains (3 tapering segments each), oral arms under bell center. Existing jellyfish_walk/bash/hit/death anims auto-adapt.
 
 ---
 
