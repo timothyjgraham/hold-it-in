@@ -3799,10 +3799,10 @@ function _buildBearGeometry(size, config) {
     const frPawBottom = w.frontLowerLeg_R.y - lt * 1.5;
     const hlPawBottom = w.hindLowerLeg_L.y - lt * 1.5;
     const hrPawBottom = w.hindLowerLeg_R.y - lt * 1.5;
-    const flPawM = new THREE.Matrix4().makeTranslation(w.frontLowerLeg_L.x, flPawBottom - pawH2 * 0.3, w.frontLowerLeg_L.z);
-    const frPawM = new THREE.Matrix4().makeTranslation(w.frontLowerLeg_R.x, frPawBottom - pawH2 * 0.3, w.frontLowerLeg_R.z);
-    const hlPawM = new THREE.Matrix4().makeTranslation(w.hindLowerLeg_L.x, hlPawBottom - pawH2 * 0.3, w.hindLowerLeg_L.z);
-    const hrPawM = new THREE.Matrix4().makeTranslation(w.hindLowerLeg_R.x, hrPawBottom - pawH2 * 0.3, w.hindLowerLeg_R.z);
+    const flPawM = new THREE.Matrix4().makeTranslation(w.frontLowerLeg_L.x, flPawBottom - pawR * 0.3, w.frontLowerLeg_L.z);
+    const frPawM = new THREE.Matrix4().makeTranslation(w.frontLowerLeg_R.x, frPawBottom - pawR * 0.3, w.frontLowerLeg_R.z);
+    const hlPawM = new THREE.Matrix4().makeTranslation(w.hindLowerLeg_L.x, hlPawBottom - pawR * 0.3, w.hindLowerLeg_L.z);
+    const hrPawM = new THREE.Matrix4().makeTranslation(w.hindLowerLeg_R.x, hrPawBottom - pawR * 0.3, w.hindLowerLeg_R.z);
     geometries.push(pawGeo); transforms.push(flPawM); materialIndices.push(0); boneNames.push('frontLowerLeg_L');
     geometries.push(pawGeo); transforms.push(frPawM); materialIndices.push(0); boneNames.push('frontLowerLeg_R');
     geometries.push(pawGeo); transforms.push(hlPawM); materialIndices.push(0); boneNames.push('hindLowerLeg_L');

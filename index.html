@@ -1224,7 +1224,17 @@
                 setTimeout(() => Game.init(), 50);
                 return;
             }
+            try {
+                this._initCore();
+            } catch (e) {
+                console.error('INIT FAILED:', e);
+                // Dismiss splash even on error so user can see the console
+                const splash = document.getElementById('splash-screen');
+                if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 600); }
+            }
+        },
 
+        _initCore() {
             // Init THREE-dependent objects
             this.raycaster = new THREE.Raycaster();
             this.mouse = new THREE.Vector2();
