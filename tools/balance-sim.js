@@ -23,7 +23,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 const GAME = {
-  startingCoins: 60,
+  startingCoins: 80,
   doorMaxHP: 100,
   gridCell: 2,
   laneWidth: 30,
@@ -284,7 +284,7 @@ const GAME = {
     // Build-Defining Rares (R23-R32)
     { id: 'R23', name: 'Devotion', rarity: 'rare', tower: null, maxStacks: 1, effect: 'devotion', value: 0.6, buildDefining: true },
     { id: 'R24', name: 'Skeleton Crew', rarity: 'rare', tower: null, maxStacks: 1, effect: 'skeletonCrew', value: 0.25, exclusive: 'L13', buildDefining: true },
-    { id: 'R25', name: 'Compound Interest', rarity: 'rare', tower: null, maxStacks: 1, effect: 'compoundInterest', value: 0.08, buildDefining: true },
+    { id: 'R25', name: 'Compound Interest', rarity: 'rare', tower: null, maxStacks: 1, effect: 'compoundInterest', value: 0.05, buildDefining: true },
     { id: 'R26', name: 'Controlled Demolition', rarity: 'rare', tower: null, maxStacks: 1, effect: 'controlledDemo', value: 0.08, buildDefining: true },
     { id: 'R27', name: 'Double Shift', rarity: 'rare', tower: null, maxStacks: 1, effect: 'doubleShift', value: 1.6, buildDefining: true },
     { id: 'R28', name: 'Danger Pay', rarity: 'rare', tower: null, maxStacks: 1, effect: 'dangerPay', value: 0.5, buildDefining: true },
@@ -344,7 +344,7 @@ function burstSize(wave) {
 }
 
 function waveBonus(wave) {
-  return 6 + Math.min(wave, 6) * 2;
+  return 10 + Math.min(wave, 8) * 2;
 }
 
 function desperateChance(wave, eventChance = 0) {
@@ -1385,9 +1385,9 @@ function runMonteCarlo(numRuns, maxWaves, scenario) {
 
         coins += collected + waveBonusCoins;
 
-        // R25: Compound Interest (8% of coins as bonus, cap 12)
+        // R25: Compound Interest (5% of coins as bonus, uncapped)
         if (upgrader.acquired.R25) {
-          coins += Math.min(12, Math.round(coins * 0.08));
+          coins += Math.floor(coins * 0.05);
         }
         doorHP -= doorDamage;
 

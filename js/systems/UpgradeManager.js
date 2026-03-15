@@ -174,7 +174,7 @@ export class UpgradeManager {
             case 'skeletonCrewDamagePerSlot':
                 return this.hasUpgrade('R24') ? 0.25 : 0;     // +25% per empty slot
 
-            // R25: Compound Interest — 10% of coins as wave-end bonus
+            // R25: Compound Interest — 5% of coins as wave-end bonus (uncapped)
             case 'compoundInterestActive':
                 return this.hasUpgrade('R25') ? 1 : 0;
             case 'compoundInterestRate':

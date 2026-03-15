@@ -7067,8 +7067,8 @@
                     }
 
                     this.waveActive = false;
-                    // Bonus coins — caps at wave 10 to pressure late-game economy
-                    let waveBonus = 6 + Math.min(this.wave, 6) * 2;
+                    // Bonus coins — ramps through wave 8 then caps
+                    let waveBonus = 10 + Math.min(this.wave, 8) * 2;
                     // L16: Loan Shark — wave bonuses halved
                     if (this.upgradeManager && this.upgradeManager.hasUpgrade('L16')) {
                         waveBonus = Math.floor(waveBonus * 0.5);
@@ -7076,9 +7076,9 @@
                     this.coins += waveBonus;
                     this._animateCoinGain(waveBonus);
 
-                    // R25: Compound Interest — 8% of coins as bonus (cap 12)
+                    // R25: Compound Interest — 5% of coins as bonus (uncapped)
                     if (this.upgradeManager && this.upgradeManager.hasUpgrade('R25')) {
-                        const interest = Math.min(12, Math.floor(this.coins * 0.08));
+                        const interest = Math.floor(this.coins * 0.05);
                         if (interest > 0) {
                             this.coins += interest;
                             this._animateCoinGain(interest);

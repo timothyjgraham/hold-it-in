@@ -22,7 +22,7 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 60,          // Comfortable wave 1 buy — economy nerfs kick in later
+    startingCoins: 80,          // Comfortable wave 1 buy — economy nerfs kick in later
     MAX_TOWERS: Infinity,       // No global tower cap (Skeleton Crew still limits to 6)
 
     // Spawn

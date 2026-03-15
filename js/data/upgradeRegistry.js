@@ -528,7 +528,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R25',
         name: 'Compound Interest',
-        description: 'End of each wave: gain 8% of your coins as bonus (max 12 per wave).',
+        description: 'End of each wave: gain 5% of your coins as bonus.',
         rarity: 'rare',
         icon: 'coin',
         towerRequirement: null,  // general
