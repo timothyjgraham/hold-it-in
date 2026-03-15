@@ -59,11 +59,11 @@ export class UpgradeManager {
             case 'coinValueMult':
                 return 1.0 + this.getStacks('C2') * 0.5;      // C2: +50% per stack
             case 'signSlowMult':
-                return this.hasUpgrade('C5') ? 0.2 : 0.4;     // C5: 20% speed (base 40%)
+                return this.hasUpgrade('C5') ? 0.15 : 0.4;    // C5: 15% speed (base 40%)
             case 'mopCooldownMult':
                 return 1.0 - this.getStacks('C8') * 0.3;      // C8: -30% per stack
             case 'mopKnockbackMult':
-                return 1.0 + this.getStacks('C9') * 0.5;      // C9: +50% per stack
+                return 1.0 + this.getStacks('C9') * 0.75;     // C9: +75% per stack
             case 'ubikWidthMult':
                 if (this.hasUpgrade('C11')) return 0.5;        // C11: Pressure Washer halves width
                 if (this.hasUpgrade('C12')) return 1.6;        // C12: Wide Spray +60% width
@@ -71,7 +71,8 @@ export class UpgradeManager {
             case 'ubikRangeMult':
                 return this.hasUpgrade('C11') ? 2.0 : 1.0;    // C11: Pressure Washer doubles range
             case 'ubikDamageMult': {
-                const base = this.hasUpgrade('C12') ? 0.7 : 1.0; // C12: Wide Spray -30% damage
+                let base = 1.0;                                // C12: Wide Spray no longer penalizes damage
+                if (this.hasUpgrade('C11')) base = 1.25;       // C11: Pressure Washer +25% damage
                 return base + this.getStacks('C13') * 0.4;    // C13: +40% per stack
             }
             case 'ubikCooldownMult':
@@ -81,19 +82,23 @@ export class UpgradeManager {
 
             // ─── Additive stats (return 0 = no change) ───
             case 'magnetRange':
-                return this.hasUpgrade('C1') ? 8 : 0;         // C1: +8 units (doubles 8→16)
+                return this.hasUpgrade('C1') ? 12 : 0;        // C1: +12 units (8→20)
             case 'magnetHP':
                 return this.getStacks('C3') * 4;               // C3: +4 per stack
             case 'signHP':
                 return this.getStacks('C4') * 1.0;             // C4: +100% per stack (mult on base)
             case 'signBashDamage':
-                return this.getStacks('C6') * 5;               // C6: +5 per stack
+                return this.getStacks('C6') * 8;               // C6: +8 per stack
             case 'mopMinArc':
-                return this.hasUpgrade('C7') ? Math.PI : 1.05; // C7: 180° (base ~60°)
+                return this.hasUpgrade('C7') ? Math.PI : 1.05; // C7: 180° (base ~60°) + 15% mop damage
+            case 'mopDamageMult':
+                return this.hasUpgrade('C7') ? 1.15 : 1.0;    // C7: Industrial Mop Head +15% damage
             case 'mopHP':
                 return this.getStacks('C10') * 4;              // C10: +4 per stack
             case 'potContactDPS':
-                return this.getStacks('C16') * 3;              // C16: +3 dps per stack
+                return this.getStacks('C16') * 5;              // C16: +5 dps per stack
+            case 'potStunBonus':
+                return this.hasUpgrade('C15') ? 0.5 : 0;      // C15: Spring-Loaded +0.5s stun
             case 'doorMaxHP':
                 return this.hasUpgrade('L1') ? 4 : 0;         // L1: Double Flush +4
 
@@ -111,7 +116,7 @@ export class UpgradeManager {
             case 'slowSteadyCooldownMult':
                 return this.hasUpgrade('C18') ? 1.4 : 1.0;    // 40% slower = 1.4× cooldown
             case 'bargainBinCost':
-                return this.hasUpgrade('C19') ? 1 : 0;        // C19: Pot Plants cost 0, 1 HP
+                return this.hasUpgrade('C19') ? 1 : 0;        // C19: Pot Plants cost 0, 2 HP
             case 'staticChargeDPS':
                 return this.getStacks('C20') * 1;              // C20: +1 dps per stack
             case 'markedForDeathMult':
@@ -129,15 +134,15 @@ export class UpgradeManager {
             case 'recyclerBuff':
                 return this.hasUpgrade('R22') ? 0.1 : 0;      // R22: +10% dmg to adjacent
             case 'minimalistMult':
-                return this.hasUpgrade('L13') ? 2.5 : 1.0;    // L13: 2.5× if ≤4 towers
+                return this.hasUpgrade('L13') ? 2.0 : 1.0;    // L13: 2.0× if ≤4 towers
             case 'minimalistThreshold':
                 return this.hasUpgrade('L13') ? 4 : 0;        // L13: tower count cap
             case 'hoarderPer50':
-                return this.hasUpgrade('L14') ? 0.12 : 0;     // L14: +12% per 50 coins
+                return this.hasUpgrade('L14') ? 0.12 : 0;     // L14: +12% per 50 coins, cap +100%
             case 'chainReactionRange':
                 return this.hasUpgrade('L15') ? 12 : 0;       // L15: 12 unit trigger range
             case 'loanSharkBonus':
-                return this.hasUpgrade('L16') ? 100 : 0;      // L16: instant 100 coins
+                return this.hasUpgrade('L16') ? 60 : 0;       // L16: instant 60 coins
             case 'loanSharkPenalty':
                 return this.hasUpgrade('L16') ? 0.5 : 1.0;    // L16: wave bonus halved
             case 'assemblyLinePer':
@@ -173,9 +178,9 @@ export class UpgradeManager {
             case 'compoundInterestActive':
                 return this.hasUpgrade('R25') ? 1 : 0;
             case 'compoundInterestRate':
-                return this.hasUpgrade('R25') ? 0.10 : 0;
+                return this.hasUpgrade('R25') ? 0.08 : 0;
             case 'compoundInterestCap':
-                return this.hasUpgrade('R25') ? 20 : 0;
+                return this.hasUpgrade('R25') ? 12 : 0;
 
             // R26: Controlled Demolition — sell = explode + permanent buff
             case 'controlledDemolitionActive':
@@ -187,19 +192,19 @@ export class UpgradeManager {
             case 'controlledDemolitionBuff':
                 return this.hasUpgrade('R26') ? 0.08 : 0;     // +8% permanent per sell
 
-            // R27: Double Shift — attack twice, 1 self-damage per attack
+            // R27: Double Shift — cooldown ×0.625 (1.6× attack rate), 2 self-damage per attack
             case 'doubleShiftActive':
                 return this.hasUpgrade('R27') ? 1 : 0;
             case 'doubleShiftSelfDamage':
-                return this.hasUpgrade('R27') ? 1 : 0;
+                return this.hasUpgrade('R27') ? 2 : 0;
 
             // R28: Danger Pay — front rows +80%, back rows -20%
             case 'dangerPayActive':
                 return this.hasUpgrade('R28') ? 1 : 0;
             case 'dangerPayFrontMult':
-                return this.hasUpgrade('R28') ? 1.8 : 1.0;
+                return this.hasUpgrade('R28') ? 1.5 : 1.0;
             case 'dangerPayBackMult':
-                return this.hasUpgrade('R28') ? 0.8 : 1.0;
+                return this.hasUpgrade('R28') ? 0.7 : 1.0;
             case 'dangerPayFrontRows':
                 return this.hasUpgrade('R28') ? 3 : 0;        // first 3 rows from spawn
 
@@ -217,17 +222,17 @@ export class UpgradeManager {
             case 'sympatheticDamageRadius':
                 return this.hasUpgrade('R30') ? 4 : 0;
             case 'sympatheticDamagePct':
-                return this.hasUpgrade('R30') ? 0.15 : 0;     // 15% splash
+                return this.hasUpgrade('R30') ? 0.08 : 0;     // 8% splash
 
             // R31: Rush Defense — 3s burst, then -15% penalty
             case 'rushDefenseActive':
                 return this.hasUpgrade('R31') ? 1 : 0;
             case 'rushDefenseBurstMult':
-                return this.hasUpgrade('R31') ? 3.0 : 1.0;
+                return this.hasUpgrade('R31') ? 2.5 : 1.0;
             case 'rushDefenseBurstDuration':
                 return this.hasUpgrade('R31') ? 3 : 0;        // 3 seconds
             case 'rushDefensePenaltyMult':
-                return this.hasUpgrade('R31') ? 0.85 : 1.0;
+                return this.hasUpgrade('R31') ? 0.75 : 1.0;
 
             // R32: Attrition — +5%/sec while enemies alive, caps +80%
             case 'attritionActive':
@@ -371,17 +376,17 @@ export class UpgradeManager {
         // Early: mostly common, small rare/legendary chance
         // Late: common still anchors, but rare/legendary become frequent
         let cRate, rRate, lRate;
-        if (wave <= 3) {
-            // Waves 1-3: heavy common, but legendary is possible
-            cRate = 0.82; rRate = 0.15; lRate = 0.03;
-        } else if (wave <= 7) {
-            // Waves 4-7: rares become noticeable
-            cRate = 0.65; rRate = 0.28; lRate = 0.07;
-        } else if (wave <= 12) {
-            // Waves 8-12: solid rare presence, legendary creeping up
+        if (wave <= 5) {
+            // Waves 1-5: heavy common, no legendaries
+            cRate = 0.90; rRate = 0.10; lRate = 0.00;
+        } else if (wave <= 9) {
+            // Waves 6-9: rares become noticeable, legendaries rare
+            cRate = 0.70; rRate = 0.27; lRate = 0.03;
+        } else if (wave <= 14) {
+            // Waves 10-14: solid rare presence, legendary creeping up
             cRate = 0.50; rRate = 0.35; lRate = 0.15;
-        } else if (wave <= 18) {
-            // Waves 13-18: late-game ramp
+        } else if (wave <= 19) {
+            // Waves 15-19: late-game ramp
             cRate = 0.38; rRate = 0.37; lRate = 0.25;
         } else {
             // Waves 19+: endgame — legendaries are common treats

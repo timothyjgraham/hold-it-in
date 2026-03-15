@@ -23,7 +23,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 const GAME = {
-  startingCoins: 60,
+  startingCoins: 50,
   doorMaxHP: 100,
   gridCell: 2,
   laneWidth: 30,
@@ -45,57 +45,57 @@ const GAME = {
   // ── ENEMIES ─────────────────────────────────────────────────────────────
   enemies: {
     // Office
-    polite:      { name: 'Polite Knocker',   baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 6,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'basic' },
-    dancer:      { name: 'Pee Dancer',       baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 2,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'office', archetype: 'fast', canJumpBarrier: true },
-    waddle:      { name: 'Waddle Tank',      baseSpeed: 2.0, speedVar: 0.3, baseHP: 60, hpPerWave: 11, coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'office', archetype: 'tank', panicThreshold: 0.5 },
-    panicker:    { name: 'Panicker',         baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 7,  coins: 10, doorDmg: 2, flankChance: 0.40, scenario: 'office', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
-    powerwalker: { name: 'Power Walker',     baseSpeed: 3.5, speedVar: 0.3, baseHP: 30, hpPerWave: 6,  coins: 7,  doorDmg: 2, flankChance: 0.70, scenario: 'office', archetype: 'immune', slowImmune: true },
+    polite:      { name: 'Polite Knocker',   baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'basic' },
+    dancer:      { name: 'Pee Dancer',       baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'office', archetype: 'fast', canJumpBarrier: true },
+    waddle:      { name: 'Waddle Tank',      baseSpeed: 2.0, speedVar: 0.3, baseHP: 60, hpPerWave: 14, coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'office', archetype: 'tank', panicThreshold: 0.5 },
+    panicker:    { name: 'Panicker',         baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 9,  coins: 10, doorDmg: 2, flankChance: 0.40, scenario: 'office', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
+    powerwalker: { name: 'Power Walker',     baseSpeed: 3.5, speedVar: 0.3, baseHP: 30, hpPerWave: 8,  coins: 7,  doorDmg: 2, flankChance: 0.70, scenario: 'office', archetype: 'immune', slowImmune: true },
     girls:       { name: 'The Girls',        baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'office', archetype: 'swarm' },
     // Forest
-    deer:        { name: 'Deer',             baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 6,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'forest', archetype: 'basic' },
-    squirrel:    { name: 'Squirrel',         baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 2,  coins: 3,  doorDmg: 1, flankChance: 0.55, scenario: 'forest', archetype: 'fast', canJumpBarrier: true },
-    bear:        { name: 'Bear',             baseSpeed: 2.0, speedVar: 0.3, baseHP: 65, hpPerWave: 12, coins: 14, doorDmg: 5, flankChance: 0.08, scenario: 'forest', archetype: 'tank', panicThreshold: 0.5 },
-    fox:         { name: 'Fox',              baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 7,  coins: 10, doorDmg: 2, flankChance: 0.45, scenario: 'forest', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
-    moose:       { name: 'Moose',            baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 7,  coins: 8,  doorDmg: 3, flankChance: 0.60, scenario: 'forest', archetype: 'immune', slowImmune: true },
+    deer:        { name: 'Deer',             baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'forest', archetype: 'basic' },
+    squirrel:    { name: 'Squirrel',         baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.55, scenario: 'forest', archetype: 'fast', canJumpBarrier: true },
+    bear:        { name: 'Bear',             baseSpeed: 2.0, speedVar: 0.3, baseHP: 65, hpPerWave: 15, coins: 14, doorDmg: 5, flankChance: 0.08, scenario: 'forest', archetype: 'tank', panicThreshold: 0.5 },
+    fox:         { name: 'Fox',              baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 9,  coins: 10, doorDmg: 2, flankChance: 0.45, scenario: 'forest', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
+    moose:       { name: 'Moose',            baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 9,  coins: 8,  doorDmg: 3, flankChance: 0.60, scenario: 'forest', archetype: 'immune', slowImmune: true },
     raccoon:     { name: 'Raccoon',          baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'forest', archetype: 'swarm' },
     // Ocean
-    dolphin:     { name: 'Dolphin',          baseSpeed: 3.0, speedVar: 0.5, baseHP: 22, hpPerWave: 6,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'ocean', archetype: 'basic' },
-    flyfish:     { name: 'Flying Fish',      baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 2,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'ocean', archetype: 'fast', canJumpBarrier: true },
-    shark:       { name: 'Shark',            baseSpeed: 2.0, speedVar: 0.3, baseHP: 70, hpPerWave: 13, coins: 15, doorDmg: 5, flankChance: 0.08, scenario: 'ocean', archetype: 'tank', panicThreshold: 0.5 },
-    pirate:      { name: 'Pirate',           baseSpeed: 4.0, speedVar: 0.5, baseHP: 42, hpPerWave: 8,  coins: 11, doorDmg: 3, flankChance: 0.40, scenario: 'ocean', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
-    seaturtle:   { name: 'Sea Turtle',       baseSpeed: 3.5, speedVar: 0.3, baseHP: 38, hpPerWave: 7,  coins: 8,  doorDmg: 2, flankChance: 0.55, scenario: 'ocean', archetype: 'immune', slowImmune: true },
+    dolphin:     { name: 'Dolphin',          baseSpeed: 3.0, speedVar: 0.5, baseHP: 22, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'ocean', archetype: 'basic' },
+    flyfish:     { name: 'Flying Fish',      baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'ocean', archetype: 'fast', canJumpBarrier: true },
+    shark:       { name: 'Shark',            baseSpeed: 2.0, speedVar: 0.3, baseHP: 70, hpPerWave: 17, coins: 15, doorDmg: 5, flankChance: 0.08, scenario: 'ocean', archetype: 'tank', panicThreshold: 0.5 },
+    pirate:      { name: 'Pirate',           baseSpeed: 4.0, speedVar: 0.5, baseHP: 42, hpPerWave: 10, coins: 11, doorDmg: 3, flankChance: 0.40, scenario: 'ocean', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
+    seaturtle:   { name: 'Sea Turtle',       baseSpeed: 3.5, speedVar: 0.3, baseHP: 38, hpPerWave: 9,  coins: 8,  doorDmg: 2, flankChance: 0.55, scenario: 'ocean', archetype: 'immune', slowImmune: true },
     jellyfish:   { name: 'Jellyfish',        baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'ocean', archetype: 'swarm' },
     // Airplane
-    nervous:     { name: 'Nervous Flyer',    baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 6,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'airplane', archetype: 'basic' },
-    business:    { name: 'Business Class',   baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 7,  coins: 8,  doorDmg: 2, flankChance: 0.60, scenario: 'airplane', archetype: 'immune', knockbackImmune: true },
-    stumbler:    { name: 'Turb. Stumbler',   baseSpeed: 2.0, speedVar: 0.3, baseHP: 55, hpPerWave: 9,  coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'airplane', archetype: 'tank', panicThreshold: 0.5, barrierBust: true },
-    attendant:   { name: 'Flight Attendant', baseSpeed: 5.0, speedVar: 1.0, baseHP: 15, hpPerWave: 3,  coins: 4,  doorDmg: 1, flankChance: 0.50, scenario: 'airplane', archetype: 'fast', canJumpBarrier: true, sprayResist: 0.5 },
-    marshal:     { name: 'Air Marshal',      baseSpeed: 3.5, speedVar: 0.3, baseHP: 40, hpPerWave: 8,  coins: 10, doorDmg: 3, flankChance: 0.50, scenario: 'airplane', archetype: 'support', slowImmune: true, magnetDisableRange: 6, speedAuraRange: 6, speedAuraBonus: 0.3 },
+    nervous:     { name: 'Nervous Flyer',    baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'airplane', archetype: 'basic' },
+    business:    { name: 'Business Class',   baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 9,  coins: 8,  doorDmg: 2, flankChance: 0.60, scenario: 'airplane', archetype: 'immune', knockbackImmune: true },
+    stumbler:    { name: 'Turb. Stumbler',   baseSpeed: 2.0, speedVar: 0.3, baseHP: 55, hpPerWave: 12, coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'airplane', archetype: 'tank', panicThreshold: 0.5, barrierBust: true },
+    attendant:   { name: 'Flight Attendant', baseSpeed: 5.0, speedVar: 1.0, baseHP: 15, hpPerWave: 4,  coins: 4,  doorDmg: 1, flankChance: 0.50, scenario: 'airplane', archetype: 'fast', canJumpBarrier: true, sprayResist: 0.5 },
+    marshal:     { name: 'Air Marshal',      baseSpeed: 3.5, speedVar: 0.3, baseHP: 40, hpPerWave: 10, coins: 10, doorDmg: 3, flankChance: 0.50, scenario: 'airplane', archetype: 'support', slowImmune: true, magnetDisableRange: 6, speedAuraRange: 6, speedAuraBonus: 0.3 },
     unruly:      { name: 'Unruly Passengers',baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'airplane', archetype: 'swarm', tripImmune: true },
     // Jumpers (all scenarios)
-    vaulter:     { name: 'Office Parkour',   baseSpeed: 2.0, speedVar: 0.3, baseHP: 40, hpPerWave: 7,  coins: 9,  doorDmg: 3, flankChance: 0.30, scenario: 'office', archetype: 'jumper', canJumpTower: true },
-    kangaroo:    { name: 'Kangaroo',         baseSpeed: 2.2, speedVar: 0.3, baseHP: 45, hpPerWave: 8,  coins: 10, doorDmg: 3, flankChance: 0.25, scenario: 'forest', archetype: 'jumper', canJumpTower: true },
-    frog:        { name: 'Tree Frog',        baseSpeed: 2.0, speedVar: 0.3, baseHP: 42, hpPerWave: 8,  coins: 9,  doorDmg: 3, flankChance: 0.30, scenario: 'ocean', archetype: 'jumper', canJumpTower: true },
-    hurdler:     { name: 'Olympic Hurdler',  baseSpeed: 2.2, speedVar: 0.3, baseHP: 40, hpPerWave: 7,  coins: 9,  doorDmg: 3, flankChance: 0.35, scenario: 'airplane', archetype: 'jumper', canJumpTower: true },
+    vaulter:     { name: 'Office Parkour',   baseSpeed: 2.0, speedVar: 0.3, baseHP: 40, hpPerWave: 9,  coins: 9,  doorDmg: 3, flankChance: 0.30, scenario: 'office', archetype: 'jumper', canJumpTower: true },
+    kangaroo:    { name: 'Kangaroo',         baseSpeed: 2.2, speedVar: 0.3, baseHP: 45, hpPerWave: 10, coins: 10, doorDmg: 3, flankChance: 0.25, scenario: 'forest', archetype: 'jumper', canJumpTower: true },
+    frog:        { name: 'Tree Frog',        baseSpeed: 2.0, speedVar: 0.3, baseHP: 42, hpPerWave: 10, coins: 9,  doorDmg: 3, flankChance: 0.30, scenario: 'ocean', archetype: 'jumper', canJumpTower: true },
+    hurdler:     { name: 'Olympic Hurdler',  baseSpeed: 2.2, speedVar: 0.3, baseHP: 40, hpPerWave: 9,  coins: 9,  doorDmg: 3, flankChance: 0.35, scenario: 'airplane', archetype: 'jumper', canJumpTower: true },
     // Trains (all scenarios)
-    drunk:       { name: 'Drunken Worker',   baseSpeed: 2.5, speedVar: 0.4, baseHP: 20, hpPerWave: 5,  coins: 3,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'train' },
-    ant:         { name: 'Giant Ant',        baseSpeed: 4.0, speedVar: 0.3, baseHP: 12, hpPerWave: 3,  coins: 2,  doorDmg: 1, flankChance: 0.10, scenario: 'forest', archetype: 'train' },
-    seahorse:    { name: 'Sea Horse',        baseSpeed: 2.8, speedVar: 0.2, baseHP: 10, hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.00, scenario: 'ocean', archetype: 'train' },
-    trolley:     { name: 'Drinks Trolley',   baseSpeed: 1.8, speedVar: 0.2, baseHP: 65, hpPerWave: 10, coins: 12, doorDmg: 5, flankChance: 0.00, scenario: 'airplane', archetype: 'train', knockbackImmune: true },
+    drunk:       { name: 'Drunken Worker',   baseSpeed: 2.5, speedVar: 0.4, baseHP: 20, hpPerWave: 6,  coins: 3,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'train' },
+    ant:         { name: 'Giant Ant',        baseSpeed: 4.0, speedVar: 0.3, baseHP: 12, hpPerWave: 4,  coins: 2,  doorDmg: 1, flankChance: 0.10, scenario: 'forest', archetype: 'train' },
+    seahorse:    { name: 'Sea Horse',        baseSpeed: 2.8, speedVar: 0.2, baseHP: 10, hpPerWave: 3,  coins: 2,  doorDmg: 1, flankChance: 0.00, scenario: 'ocean', archetype: 'train' },
+    trolley:     { name: 'Drinks Trolley',   baseSpeed: 1.8, speedVar: 0.2, baseHP: 65, hpPerWave: 13, coins: 12, doorDmg: 5, flankChance: 0.00, scenario: 'airplane', archetype: 'train', knockbackImmune: true },
   },
 
   // ── COIN DROPS ──────────────────────────────────────────────────────────
   coinDrops: {
-    polite: { value: 3, count: 2 }, dancer: { value: 2, count: 1 }, waddle: { value: 8, count: 3 },
-    panicker: { value: 6, count: 2 }, powerwalker: { value: 5, count: 2 }, girls: { value: 1, count: 1 },
-    deer: { value: 3, count: 2 }, squirrel: { value: 2, count: 1 }, bear: { value: 8, count: 3 },
-    fox: { value: 6, count: 2 }, moose: { value: 5, count: 2 }, raccoon: { value: 1, count: 1 },
-    dolphin: { value: 3, count: 2 }, flyfish: { value: 2, count: 1 }, shark: { value: 9, count: 3 },
-    pirate: { value: 7, count: 2 }, seaturtle: { value: 5, count: 2 }, jellyfish: { value: 1, count: 1 },
-    nervous: { value: 3, count: 2 }, business: { value: 5, count: 2 }, stumbler: { value: 8, count: 3 },
-    attendant: { value: 2, count: 1 }, marshal: { value: 6, count: 2 }, unruly: { value: 1, count: 1 },
-    vaulter: { value: 5, count: 2 }, kangaroo: { value: 6, count: 2 }, frog: { value: 5, count: 2 }, hurdler: { value: 5, count: 2 },
-    drunk: { value: 2, count: 1 }, ant: { value: 1, count: 1 }, seahorse: { value: 1, count: 1 }, trolley: { value: 9, count: 3 },
+    polite: { value: 2, count: 2 }, dancer: { value: 2, count: 1 }, waddle: { value: 5, count: 3 },
+    panicker: { value: 4, count: 2 }, powerwalker: { value: 3, count: 2 }, girls: { value: 1, count: 1 },
+    deer: { value: 2, count: 2 }, squirrel: { value: 2, count: 1 }, bear: { value: 5, count: 3 },
+    fox: { value: 4, count: 2 }, moose: { value: 3, count: 2 }, raccoon: { value: 1, count: 1 },
+    dolphin: { value: 2, count: 2 }, flyfish: { value: 2, count: 1 }, shark: { value: 6, count: 3 },
+    pirate: { value: 5, count: 2 }, seaturtle: { value: 3, count: 2 }, jellyfish: { value: 1, count: 1 },
+    nervous: { value: 2, count: 2 }, business: { value: 3, count: 2 }, stumbler: { value: 5, count: 3 },
+    attendant: { value: 2, count: 1 }, marshal: { value: 4, count: 2 }, unruly: { value: 1, count: 1 },
+    vaulter: { value: 3, count: 2 }, kangaroo: { value: 4, count: 2 }, frog: { value: 3, count: 2 }, hurdler: { value: 3, count: 2 },
+    drunk: { value: 2, count: 1 }, ant: { value: 1, count: 1 }, seahorse: { value: 1, count: 1 }, trolley: { value: 6, count: 3 },
   },
 
   trainSizes: { drunk: [6,8], ant: [8,10], seahorse: [6,8], trolley: [3,4] },
@@ -162,38 +162,38 @@ const GAME = {
     office: {
       15: { name: 'TACO TUESDAY', enemyMult: 2.5, spawnMult: 0.5, weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.06, girls_group: 0.05, drunk_train: 0.04 } },
       20: { name: 'LUNCH RUSH', enemyMult: 3.0, spawnMult: 0.4, weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.16, panicker: 0.10, waddle: 0.05, girls_group: 0.05, drunk_train: 0.04 } },
-      25: { name: 'COFFEE KICKED IN', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.4, desperateChance: 0.6 },
+      25: { name: 'COFFEE KICKED IN', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.5, desperateChance: 0.6 },
       30: { name: 'FOOD POISONING', enemyMult: 3.5, spawnMult: 0.3, weights: { waddle: 0.25, panicker: 0.20, dancer: 0.20, polite: 0.15, vaulter: 0.10, girls_group: 0.10 } },
-      35: { name: 'WING NIGHT', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.3, weights: { waddle: 0.35, polite: 0.18, powerwalker: 0.15, dancer: 0.12, panicker: 0.10, vaulter: 0.10 } },
-      40: { name: 'FIRE DRILL', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.5, desperateChance: 0.8 },
+      35: { name: 'WING NIGHT', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.4, weights: { waddle: 0.35, polite: 0.18, powerwalker: 0.15, dancer: 0.12, panicker: 0.10, vaulter: 0.10 } },
+      40: { name: 'FIRE DRILL', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.6, desperateChance: 0.8 },
       45: { name: 'CHILI COOK-OFF', enemyMult: 4.0, spawnMult: 0.25, weights: { waddle: 0.35, panicker: 0.30, powerwalker: 0.15, dancer: 0.10, girls_group: 0.10 } },
-      50: { name: 'BLACK FRIDAY', enemyMult: 5.0, spawnMult: 0.15, speedMult: 1.6, desperateChance: 0.5 },
+      50: { name: 'BLACK FRIDAY', enemyMult: 5.0, spawnMult: 0.15, speedMult: 1.8, desperateChance: 0.5 },
     },
     forest: {
       15: { name: 'BERRY SEASON', enemyMult: 2.5, spawnMult: 0.5, weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.06, moose: 0.10, raccoon_group: 0.05, ant_train: 0.04 } },
       20: { name: 'MIGRATION', enemyMult: 3.0, spawnMult: 0.4, weights: { deer: 0.35, moose: 0.25, squirrel: 0.16, fox: 0.10, bear: 0.05, raccoon_group: 0.05, ant_train: 0.04 } },
-      25: { name: 'FULL MOON', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.4, desperateChance: 0.6 },
+      25: { name: 'FULL MOON', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.5, desperateChance: 0.6 },
       30: { name: 'FOREST FIRE', enemyMult: 3.5, spawnMult: 0.3, weights: { bear: 0.25, fox: 0.20, squirrel: 0.20, deer: 0.15, kangaroo: 0.10, raccoon_group: 0.10 } },
-      35: { name: 'HIBERNATION PANIC', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.3, weights: { bear: 0.35, deer: 0.18, moose: 0.15, squirrel: 0.12, fox: 0.10, kangaroo: 0.10 } },
-      40: { name: 'STAMPEDE', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.5, desperateChance: 0.8 },
+      35: { name: 'HIBERNATION PANIC', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.4, weights: { bear: 0.35, deer: 0.18, moose: 0.15, squirrel: 0.12, fox: 0.10, kangaroo: 0.10 } },
+      40: { name: 'STAMPEDE', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.6, desperateChance: 0.8 },
     },
     ocean: {
       15: { name: 'FEEDING FRENZY', enemyMult: 2.5, spawnMult: 0.5, weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.16, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 } },
       20: { name: 'TIDAL WAVE', enemyMult: 3.0, spawnMult: 0.4, weights: { dolphin: 0.30, seaturtle: 0.21, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 } },
-      25: { name: 'BLOOD MOON', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.4, desperateChance: 0.6 },
+      25: { name: 'BLOOD MOON', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.5, desperateChance: 0.6 },
       30: { name: 'PIRATE ARMADA', enemyMult: 3.5, spawnMult: 0.3, weights: { pirate: 0.35, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, frog: 0.05, jellyfish_group: 0.05 } },
-      35: { name: 'KRAKEN STIRS', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.3, weights: { shark: 0.30, seaturtle: 0.18, pirate: 0.18, dolphin: 0.12, frog: 0.12, jellyfish_group: 0.10 } },
-      40: { name: 'MAELSTROM', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.5, desperateChance: 0.8 },
+      35: { name: 'KRAKEN STIRS', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.4, weights: { shark: 0.30, seaturtle: 0.18, pirate: 0.18, dolphin: 0.12, frog: 0.12, jellyfish_group: 0.10 } },
+      40: { name: 'MAELSTROM', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.6, desperateChance: 0.8 },
     },
     airplane: {
       15: { name: 'TURBULENCE', enemyMult: 2.5, spawnMult: 0.5, weights: { stumbler: 0.35, nervous: 0.20, business: 0.16, attendant: 0.10, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 } },
       20: { name: 'MEAL SERVICE', enemyMult: 3.0, spawnMult: 0.4, weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.11, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 } },
-      25: { name: 'SEATBELT OFF', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.4, desperateChance: 0.6 },
+      25: { name: 'SEATBELT OFF', enemyMult: 2.5, spawnMult: 0.35, speedMult: 1.5, desperateChance: 0.6 },
       30: { name: 'BAD FISH', enemyMult: 3.5, spawnMult: 0.3, weights: { stumbler: 0.30, nervous: 0.20, attendant: 0.15, business: 0.15, hurdler: 0.10, unruly_group: 0.10 } },
-      35: { name: 'DUTY FREE', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.3, weights: { business: 0.25, nervous: 0.22, marshal: 0.18, attendant: 0.13, hurdler: 0.12, stumbler: 0.10 } },
-      40: { name: 'EMERGENCY LANDING', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.5, desperateChance: 0.8 },
+      35: { name: 'DUTY FREE', enemyMult: 3.0, spawnMult: 0.3, speedMult: 1.4, weights: { business: 0.25, nervous: 0.22, marshal: 0.18, attendant: 0.13, hurdler: 0.12, stumbler: 0.10 } },
+      40: { name: 'EMERGENCY LANDING', enemyMult: 4.0, spawnMult: 0.2, speedMult: 1.6, desperateChance: 0.8 },
       45: { name: 'OPEN BAR', enemyMult: 4.0, spawnMult: 0.25, weights: { unruly_group: 0.30, stumbler: 0.25, nervous: 0.20, business: 0.15, attendant: 0.10 } },
-      50: { name: 'FINAL DESCENT', enemyMult: 5.0, spawnMult: 0.15, speedMult: 1.6, desperateChance: 0.5 },
+      50: { name: 'FINAL DESCENT', enemyMult: 5.0, spawnMult: 0.15, speedMult: 1.8, desperateChance: 0.5 },
     },
   },
 
@@ -238,22 +238,22 @@ const GAME = {
   // ── UPGRADES ────────────────────────────────────────────────────────────
   upgrades: [
     // Common (20)
-    { id: 'C1', name: 'Overclocked Magnet', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'magnetRange', value: 8 },
+    { id: 'C1', name: 'Overclocked Magnet', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'magnetRange', value: 12 },
     { id: 'C2', name: 'Double Dip', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'coinValueMult', value: 0.5 },
     { id: 'C3', name: 'Magnet Durability', rarity: 'common', tower: 'coinmagnet', maxStacks: 3, effect: 'magnetHP', value: 4 },
     { id: 'C4', name: 'Reinforced Signs', rarity: 'common', tower: 'wetfloor', maxStacks: 3, effect: 'signHP', value: 1.0 },
-    { id: 'C5', name: 'Extra Slippery', rarity: 'common', tower: 'wetfloor', maxStacks: 1, effect: 'slowFactor', value: 0.2 },
-    { id: 'C6', name: 'Prickly Signs', rarity: 'common', tower: 'wetfloor', maxStacks: 3, effect: 'signDamage', value: 5 },
+    { id: 'C5', name: 'Extra Slippery', rarity: 'common', tower: 'wetfloor', maxStacks: 1, effect: 'slowFactor', value: 0.15 },
+    { id: 'C6', name: 'Prickly Signs', rarity: 'common', tower: 'wetfloor', maxStacks: 3, effect: 'signDamage', value: 8 },
     { id: 'C7', name: 'Industrial Mop Head', rarity: 'common', tower: 'mop', maxStacks: 1, effect: 'mopArc', value: 3.0 },
     { id: 'C8', name: 'Quick Sweep', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopCooldown', value: -0.3 },
-    { id: 'C9', name: 'Heavy Mop', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopKnockback', value: 0.5 },
+    { id: 'C9', name: 'Heavy Mop', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopKnockback', value: 0.75 },
     { id: 'C10', name: 'Extra Absorbent', rarity: 'common', tower: 'mop', maxStacks: 3, effect: 'mopHP', value: 4 },
-    { id: 'C11', name: 'Pressure Washer', rarity: 'common', tower: 'ubik', maxStacks: 1, effect: 'ubikNarrow', value: 1, exclusive: 'C12' },
+    { id: 'C11', name: 'Pressure Washer', rarity: 'common', tower: 'ubik', maxStacks: 1, effect: 'ubikNarrow', value: 1, damageMult: 1.25, exclusive: 'C12' },
     { id: 'C12', name: 'Wide Spray', rarity: 'common', tower: 'ubik', maxStacks: 1, effect: 'ubikWide', value: 1, exclusive: 'C11' },
     { id: 'C13', name: 'Corrosive Formula', rarity: 'common', tower: 'ubik', maxStacks: 2, effect: 'ubikDamage', value: 0.4 },
     { id: 'C14', name: 'Rapid Spray', rarity: 'common', tower: 'ubik', maxStacks: 2, effect: 'ubikCooldown', value: -0.25 },
     { id: 'C15', name: 'Spring-Loaded Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potBounce', value: 1 },
-    { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 3, effect: 'potDPS', value: 3 },
+    { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 3, effect: 'potDPS', value: 5 },
     { id: 'C17', name: 'Glass Cannon', rarity: 'common', tower: null, maxStacks: 1, effect: 'glassCannon', value: 1, exclusive: 'C18' },
     { id: 'C18', name: 'Slow and Steady', rarity: 'common', tower: null, maxStacks: 1, effect: 'slowSteady', value: 1, exclusive: 'C17' },
     { id: 'C19', name: 'Bargain Bin', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'bargainBin', value: 1 },
@@ -281,6 +281,17 @@ const GAME = {
     { id: 'R20', name: 'Aftershock', rarity: 'rare', tower: 'potplant', maxStacks: 1, effect: 'aftershock', value: 8 },
     { id: 'R21', name: 'Specialist', rarity: 'rare', tower: null, maxStacks: 1, effect: 'specialist', value: 0.15 },
     { id: 'R22', name: 'Recycler', rarity: 'rare', tower: null, maxStacks: 1, effect: 'recycler', value: 0.1 },
+    // Build-Defining Rares (R23-R32)
+    { id: 'R23', name: 'Devotion', rarity: 'rare', tower: null, maxStacks: 1, effect: 'devotion', value: 0.6, buildDefining: true },
+    { id: 'R24', name: 'Skeleton Crew', rarity: 'rare', tower: null, maxStacks: 1, effect: 'skeletonCrew', value: 0.25, exclusive: 'L13', buildDefining: true },
+    { id: 'R25', name: 'Compound Interest', rarity: 'rare', tower: null, maxStacks: 1, effect: 'compoundInterest', value: 0.08, buildDefining: true },
+    { id: 'R26', name: 'Controlled Demolition', rarity: 'rare', tower: null, maxStacks: 1, effect: 'controlledDemo', value: 0.08, buildDefining: true },
+    { id: 'R27', name: 'Double Shift', rarity: 'rare', tower: null, maxStacks: 1, effect: 'doubleShift', value: 1.6, buildDefining: true },
+    { id: 'R28', name: 'Danger Pay', rarity: 'rare', tower: null, maxStacks: 1, effect: 'dangerPay', value: 0.5, buildDefining: true },
+    { id: 'R29', name: 'Contagion', rarity: 'rare', tower: ['wetfloor'], maxStacks: 1, effect: 'contagion', value: 0.5, buildDefining: true },
+    { id: 'R30', name: 'Sympathetic Damage', rarity: 'rare', tower: null, maxStacks: 1, effect: 'sympatheticDmg', value: 0.08, buildDefining: true },
+    { id: 'R31', name: 'Rush Defense', rarity: 'rare', tower: null, maxStacks: 1, effect: 'rushDefense', value: 2.5, exclusive: 'R32', buildDefining: true },
+    { id: 'R32', name: 'Attrition', rarity: 'rare', tower: null, maxStacks: 1, effect: 'attrition', value: 0.05, exclusive: 'R31', buildDefining: true },
     // Legendary (18)
     { id: 'L1', name: 'Double Flush', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'doorHPBoost', value: 4 },
     { id: 'L2', name: 'Desperate Measures', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'desperateMeasures', value: 1 },
@@ -294,10 +305,10 @@ const GAME = {
     { id: 'L10', name: 'Golden Magnet', rarity: 'legendary', tower: 'coinmagnet', maxStacks: 1, effect: 'goldenMagnet', value: 0.25 },
     { id: 'L11', name: 'Bladder Burst', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'bladderBurst', value: 0.25 },
     { id: 'L12', name: 'Overtime', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'overtime', value: 5 },
-    { id: 'L13', name: 'Minimalist', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'minimalist', value: 2.5 },
-    { id: 'L14', name: 'Hoarder', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'hoarder', value: 0.12 },
+    { id: 'L13', name: 'Minimalist', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'minimalist', value: 2.0, exclusive: 'R24' },
+    { id: 'L14', name: 'Hoarder', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'hoarder', value: 0.12, cap: 1.0 },
     { id: 'L15', name: 'Chain Reaction', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'chainReaction', value: 12 },
-    { id: 'L16', name: 'Loan Shark', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'loanShark', value: 100 },
+    { id: 'L16', name: 'Loan Shark', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'loanShark', value: 60 },
     { id: 'L17', name: 'Assembly Line', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'assemblyLine', value: 0.2 },
     { id: 'L18', name: 'Last Stand', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'lastStand', value: 3.0 },
   ],
@@ -316,12 +327,12 @@ function enemyHP(type, wave) {
 
 function enemySpeed(type, wave, eventSpeedMult = 1.0) {
   const e = GAME.enemies[type];
-  const speedCreep = 1 + wave * 0.015;
+  const speedCreep = 1 + wave * 0.02;
   return (e.baseSpeed + e.speedVar * 0.5) * speedCreep * eventSpeedMult;
 }
 
 function proceduralEnemyCount(wave) {
-  return 10 + Math.floor(wave * 2.0 + Math.pow(wave, 1.4) * 0.3);
+  return 10 + Math.floor(wave * 2.2 + Math.pow(wave, 1.5) * 0.25);
 }
 
 function spawnInterval(wave) {
@@ -333,7 +344,7 @@ function burstSize(wave) {
 }
 
 function waveBonus(wave) {
-  return 8 + Math.min(wave, 8) * 2;
+  return 6 + Math.min(wave, 6) * 2;
 }
 
 function desperateChance(wave, eventChance = 0) {
@@ -533,7 +544,7 @@ class CoverageModel {
         if (def.barrierBust) continue; // Stumblers destroy barriers
         totalSlowTime += exp.timeInRange;
         // C6: Prickly Signs damage
-        const signDmg = (upgrades.C6 || 0) * 5;
+        const signDmg = (upgrades.C6 || 0) * 8;
         if (signDmg > 0) totalDamage += signDmg; // per bash hit
       } else if (exp.type === 'ubik') {
         // DPS = damage / (cooldown + duration), applied over exposure time
@@ -557,7 +568,7 @@ class CoverageModel {
         const hitsInRange = Math.max(1, Math.floor(exp.timeInRange / sweepCooldown));
 
         if (!def.knockbackImmune) {
-          const knockback = tDef.knockback * (1 + (upgrades.C9 || 0) * 0.5);
+          const knockback = tDef.knockback * (1 + (upgrades.C9 || 0) * 0.75);
           const nuclearMult = upgrades.L8 ? 4 : 1;
           // Knockback adds traversal time
           const addedDistance = knockback * nuclearMult * hitsInRange;
@@ -578,8 +589,8 @@ class CoverageModel {
         if (def.tripImmune) continue;
         if (def.canJumpTower || def.canJumpBarrier) continue; // jumpers skip over
         totalDamage += tDef.damage;
-        // C16: Cactus Pot (3 dps per stack while adjacent)
-        const cactusDPS = (upgrades.C16 || 0) * 3;
+        // C16: Cactus Pot (5 dps per stack while adjacent)
+        const cactusDPS = (upgrades.C16 || 0) * 5;
         totalDamage += cactusDPS * tDef.stunDuration;
       }
     }
@@ -612,7 +623,7 @@ class TowerAI {
     this.strategy = strategy;
     this.towers = { coinmagnet: 0, wetfloor: 0, mop: 0, ubik: 0, potplant: 0 };
     this.totalTowers = 0;
-    this.maxSlots = 20; // reasonable max towers on field
+    this.maxSlots = 15; // reasonable max towers on field
     this.costMult = 1.0; // R14 reduces this
   }
 
@@ -620,8 +631,9 @@ class TowerAI {
     return Math.ceil(GAME.towers[type].cost * this.costMult);
   }
 
-  canBuy(type, coins) {
-    return coins >= this.towerCost(type) && this.totalTowers < this.maxSlots;
+  canBuy(type, coins, wave = 999) {
+    return coins >= this.towerCost(type) && this.totalTowers < this.maxSlots &&
+      GAME.towers[type].unlockWave <= wave;
   }
 
   buy(type) {
@@ -649,7 +661,7 @@ class TowerAI {
     const priority = ['ubik', 'mop', 'wetfloor', 'potplant', 'coinmagnet'];
     // Buy as many as we can afford, keep 15 coins reserve
     for (const type of priority) {
-      while (this.canBuy(type, coins - spent - 15)) {
+      while (this.canBuy(type, coins - spent - 15, wave)) {
         spent += this.buy(type);
       }
     }
@@ -660,34 +672,34 @@ class TowerAI {
     let spent = 0;
     // Wave 1: 1 magnet + 1 ubik (95 - 15 - 40 = 40 left)
     if (wave === 1) {
-      if (this.canBuy('coinmagnet', coins - spent)) spent += this.buy('coinmagnet');
-      if (this.canBuy('ubik', coins - spent)) spent += this.buy('ubik');
+      if (this.canBuy('coinmagnet', coins - spent, wave)) spent += this.buy('coinmagnet');
+      if (this.canBuy('ubik', coins - spent, wave)) spent += this.buy('ubik');
       return spent;
     }
     // Wave 3: add wet floor
-    if (wave >= 3 && this.towers.wetfloor < 2 && this.canBuy('wetfloor', coins - spent)) {
+    if (wave >= 3 && this.towers.wetfloor < 2 && this.canBuy('wetfloor', coins - spent, wave)) {
       spent += this.buy('wetfloor');
     }
     // Wave 5+: add mops
-    if (wave >= 5 && this.canBuy('mop', coins - spent)) {
+    if (wave >= 5 && this.canBuy('mop', coins - spent, wave)) {
       spent += this.buy('mop');
     }
     // Wave 7+: add pot plants
-    if (wave >= 7 && this.towers.potplant < 3 && this.canBuy('potplant', coins - spent)) {
+    if (wave >= 7 && this.towers.potplant < 3 && this.canBuy('potplant', coins - spent, wave)) {
       spent += this.buy('potplant');
     }
     // General: buy 1 combat tower per wave if affordable
     if (wave > 3) {
       const priority = ['ubik', 'mop', 'wetfloor'];
       for (const type of priority) {
-        if (this.canBuy(type, coins - spent - 20)) {
+        if (this.canBuy(type, coins - spent - 20, wave)) {
           spent += this.buy(type);
           break;
         }
       }
     }
     // Second magnet around wave 8
-    if (wave >= 8 && this.towers.coinmagnet < 2 && this.canBuy('coinmagnet', coins - spent)) {
+    if (wave >= 8 && this.towers.coinmagnet < 2 && this.canBuy('coinmagnet', coins - spent, wave)) {
       spent += this.buy('coinmagnet');
     }
     return spent;
@@ -696,18 +708,18 @@ class TowerAI {
   _economy(coins, wave) {
     let spent = 0;
     // Rush magnets first (up to 3)
-    if (this.towers.coinmagnet < 3 && this.canBuy('coinmagnet', coins - spent)) {
+    if (this.towers.coinmagnet < 3 && this.canBuy('coinmagnet', coins - spent, wave)) {
       spent += this.buy('coinmagnet');
     }
     // Then cheap defenses
-    if (wave >= 3 && this.canBuy('potplant', coins - spent)) {
+    if (wave >= 3 && this.canBuy('potplant', coins - spent, wave)) {
       spent += this.buy('potplant');
     }
     // Combat from wave 5+
     if (wave >= 5) {
       const priority = ['mop', 'ubik', 'wetfloor'];
       for (const type of priority) {
-        if (this.canBuy(type, coins - spent)) {
+        if (this.canBuy(type, coins - spent, wave)) {
           spent += this.buy(type);
           break;
         }
@@ -719,18 +731,18 @@ class TowerAI {
   _defensive(coins, wave) {
     let spent = 0;
     // Prioritize barriers and pot plants
-    if (wave >= 1 && this.towers.potplant < 4 && this.canBuy('potplant', coins - spent)) {
+    if (wave >= 1 && this.towers.potplant < 4 && this.canBuy('potplant', coins - spent, wave)) {
       spent += this.buy('potplant');
     }
-    if (wave >= 3 && this.towers.wetfloor < 4 && this.canBuy('wetfloor', coins - spent)) {
+    if (wave >= 3 && this.towers.wetfloor < 4 && this.canBuy('wetfloor', coins - spent, wave)) {
       spent += this.buy('wetfloor');
     }
     // Add mops for knockback
-    if (wave >= 5 && this.canBuy('mop', coins - spent)) {
+    if (wave >= 5 && this.canBuy('mop', coins - spent, wave)) {
       spent += this.buy('mop');
     }
     // Magnet eventually
-    if (wave >= 6 && this.towers.coinmagnet < 1 && this.canBuy('coinmagnet', coins - spent)) {
+    if (wave >= 6 && this.towers.coinmagnet < 1 && this.canBuy('coinmagnet', coins - spent, wave)) {
       spent += this.buy('coinmagnet');
     }
     return spent;
@@ -746,7 +758,7 @@ class TowerAI {
     const buys = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < buys; i++) {
       const type = available[Math.floor(Math.random() * available.length)];
-      if (this.canBuy(type, coins - spent)) {
+      if (this.canBuy(type, coins - spent, wave)) {
         spent += this.buy(type);
       }
     }
@@ -765,9 +777,32 @@ class TowerAI {
     let dps = 0;
     const t = this.towers;
 
+    // Global damage multipliers
+    let globalDmgMult = 1.0;
+    // C17: Glass Cannon (+80% damage, -50% HP)
+    if (upgrades.C17) globalDmgMult *= 1.8;
+    // C18: Slow and Steady (+60% damage per hit, -40% attack speed)
+    const slowSteadySpeedMult = upgrades.C18 ? 0.6 : 1.0;
+    if (upgrades.C18) globalDmgMult *= 1.6;
+    // R21: Specialist (+15% per tower type NOT owned)
+    if (upgrades.R21) {
+      const typesOwned = Object.keys(t).filter(k => t[k] > 0).length;
+      const typesNotOwned = 5 - typesOwned;
+      globalDmgMult *= 1 + typesNotOwned * 0.15;
+    }
+    // R23: Devotion (+60% damage — estimate 60% of towers are the locked types)
+    if (upgrades.R23) globalDmgMult *= 1 + 0.6 * 0.6;
+    // R28: Danger Pay (front +50%, back -30% — estimate avg ~+10% across all towers)
+    if (upgrades.R28) globalDmgMult *= 1.10;
+    // R30: Sympathetic Damage (8% splash — estimate ~10% bonus from crowd hits)
+    if (upgrades.R30) globalDmgMult *= 1.10;
+
+    // R27: Double Shift (1.6x attack rate)
+    const doubleShiftMult = upgrades.R27 ? 1.6 : 1.0;
+
     // Mop: damage / cooldown
     const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3;
-    dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult));
+    dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult)) * slowSteadySpeedMult * doubleShiftMult;
 
     // Ubik: damage * (spray_duration / cycle_time) — hits multiple enemies
     const ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
@@ -775,13 +810,35 @@ class TowerAI {
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
     const ubikDPS = (GAME.towers.ubik.damage * ubikDmgMult * GAME.towers.ubik.sprayDuration) / ubikCycle;
     // Ubik hits ~2-3 enemies per spray (AoE bonus)
-    dps += t.ubik * ubikDPS * 2.0;
+    dps += t.ubik * ubikDPS * 2.0 * slowSteadySpeedMult * doubleShiftMult;
 
     // Pot plant: trip damage / (stun + re-approach time)
-    dps += t.potplant * (GAME.towers.potplant.damage / 4);
+    dps += t.potplant * (GAME.towers.potplant.damage / 4) * doubleShiftMult;
 
     // Cactus Pot DPS
-    dps += t.potplant * (upgrades.C16 || 0) * 3;
+    dps += t.potplant * (upgrades.C16 || 0) * 5;
+
+    // C20: Static Charge (1 dps per stack per magnet)
+    dps += t.coinmagnet * (upgrades.C20 || 0) * 1;
+
+    // Apply global damage multiplier
+    dps *= globalDmgMult;
+
+    // Soft cap on damage multiplier
+    const SOFT_CAP = 3.0;
+    const DIMINISH = 0.25;
+    if (globalDmgMult > SOFT_CAP) {
+      const cappedMult = SOFT_CAP + (globalDmgMult - SOFT_CAP) * DIMINISH;
+      dps = dps / globalDmgMult * cappedMult;
+    }
+
+    // L13: Minimalist (2.0x if ≤4 towers)
+    if (upgrades.L13 && this.totalTowers <= 4) dps *= 2.0;
+    // R24: Skeleton Crew (+25% per empty slot, max 6)
+    if (upgrades.R24) {
+      const emptySlots = Math.max(0, 6 - this.totalTowers);
+      dps *= 1 + emptySlots * 0.25;
+    }
 
     return dps;
   }
@@ -861,20 +918,28 @@ class UpgradeSimulator {
   }
 
   _raritySlots(wave) {
-    if (wave <= 5) return ['common', 'common', 'common'];
-    if (wave <= 10) {
-      const slot3 = Math.random() < 0.7 ? 'common' : 'rare';
-      return ['common', 'rare', slot3];
+    // Match real game: independent per-slot rolls (UpgradeManager._getRaritySlots)
+    let cRate, rRate;
+    if (wave <= 5) {
+      cRate = 0.90; rRate = 0.10; // lRate = 0.00
+    } else if (wave <= 9) {
+      cRate = 0.70; rRate = 0.27; // lRate = 0.03
+    } else if (wave <= 14) {
+      cRate = 0.50; rRate = 0.35; // lRate = 0.15
+    } else if (wave <= 19) {
+      cRate = 0.38; rRate = 0.37; // lRate = 0.25
+    } else {
+      cRate = 0.30; rRate = 0.38; // lRate = 0.32
     }
-    if (wave <= 15) {
+
+    const rollSlot = () => {
       const r = Math.random();
-      const slot3 = r < 0.5 ? 'common' : r < 0.9 ? 'rare' : 'legendary';
-      return ['common', 'rare', slot3];
-    }
-    // Wave 16+
-    const r = Math.random();
-    const slot3 = r < 0.4 ? 'common' : r < 0.75 ? 'rare' : 'legendary';
-    return ['common', 'rare', slot3];
+      if (r < cRate) return 'common';
+      if (r < cRate + rRate) return 'rare';
+      return 'legendary';
+    };
+
+    return [rollSlot(), rollSlot(), rollSlot()];
   }
 
   pick(upgrade) {
@@ -886,6 +951,8 @@ class UpgradeSimulator {
    */
   pickBest(options, towers) {
     if (options.length === 0) return null;
+
+    const totalTowers = Object.values(towers).reduce((a, b) => a + b, 0);
 
     // Score each option
     let best = options[0];
@@ -899,18 +966,57 @@ class UpgradeSimulator {
       else score += 5;
 
       // Economy upgrades are valuable early
-      if (['coinValueMult', 'payday', 'tipJar', 'towerCostMult', 'goldenMagnet'].includes(opt.effect)) score += 20;
+      if (['coinValueMult', 'payday', 'tipJar', 'towerCostMult', 'goldenMagnet', 'compoundInterest', 'loanShark'].includes(opt.effect)) score += 20;
+      // R19 overkill bonus, R11 spray bonus — mild econ
+      if (['overkillBonus', 'sprayBonus'].includes(opt.effect)) score += 10;
 
       // DPS upgrades scale with tower count
       if (['ubikDamage', 'ubikCooldown', 'mopCooldown'].includes(opt.effect)) {
         score += 10 * (towers.mop + towers.ubik);
       }
 
+      // Global damage multipliers are strong
+      if (['glassCannon', 'slowSteady', 'crossfire', 'markedForDeath', 'crowdSurfing'].includes(opt.effect)) score += 18;
+
+      // Build-defining upgrades — very high value
+      if (opt.buildDefining) score += 22;
+
+      // Specific build-definers:
+      // R27 Double Shift is extremely strong (2x DPS)
+      if (opt.effect === 'doubleShift') score += 15;
+      // R23 Devotion is strong with focused builds
+      if (opt.effect === 'devotion') score += 10;
+      // R31/R32 time-based are good
+      if (['rushDefense', 'attrition'].includes(opt.effect)) score += 8;
+      // R24 Skeleton Crew / L13 Minimalist — powerful with few towers
+      if (opt.effect === 'skeletonCrew' && totalTowers <= 6) score += 15;
+      if (opt.effect === 'minimalist' && totalTowers <= 4) score += 20;
+
       // Synergies are great if you have both towers
       if (opt.effect.startsWith('synergy')) score += 12;
 
+      // Conditional damage boosts
+      if (opt.effect === 'desperateMeasures') score += 8; // only useful at low HP
+      if (opt.effect === 'contagion' && towers.wetfloor > 0) score += 14; // very strong with wet floors
+      if (opt.effect === 'sympatheticDmg') score += 12; // strong in crowds
+      if (opt.effect === 'dangerPay') score += 10; // position-dependent
+
       // HP/durability less valuable
       if (['magnetHP', 'signHP', 'mopHP'].includes(opt.effect)) score += 3;
+
+      // Static Charge gives magnets DPS
+      if (opt.effect === 'staticCharge') score += 5 + towers.coinmagnet * 3;
+
+      // Chain Reaction, Assembly Line, Last Stand — strong legendaries
+      if (['chainReaction', 'assemblyLine', 'lastStand'].includes(opt.effect)) score += 12;
+      if (opt.effect === 'hoarder') score += 10;
+
+      // Bladder Burst, Spill Zone, Ubik Flood — AoE legendaries
+      if (['bladderBurst', 'spillZone', 'ubikFlood'].includes(opt.effect)) score += 10;
+
+      // Door upgrades
+      if (opt.effect === 'doorHPBoost') score += 8;
+      if (opt.effect === 'plungerProtocol') score += 6;
 
       if (score > bestScore) {
         bestScore = score;
@@ -1078,7 +1184,7 @@ function analyzeDPS(maxWaves, scenario) {
       const dps = ai.estimateDPS();
 
       // Total wave duration estimate
-      const avgSpeed = 3.5 * (1 + wave * 0.015);
+      const avgSpeed = 3.5 * (1 + wave * 0.02);
       const traverseTime = GAME.traverseDistance / avgSpeed;
       const totalKillCapacity = dps * (waveData.enemies.length * waveData.interval + traverseTime);
       const killPct = Math.min(100, Math.round(totalKillCapacity / totalHP * 100));
@@ -1088,7 +1194,7 @@ function analyzeDPS(maxWaves, scenario) {
     }
 
     // Ratio: balanced DPS relative to wave HP per second
-    const avgSpeed = 3.5 * (1 + wave * 0.015);
+    const avgSpeed = 3.5 * (1 + wave * 0.02);
     const waveTime = waveData.enemies.length * waveData.interval + GAME.traverseDistance / avgSpeed;
     const hpPerSec = totalHP / waveTime;
     const ratio = (balancedDPS / hpPerSec).toFixed(2);
@@ -1142,8 +1248,12 @@ function runMonteCarlo(numRuns, maxWaves, scenario) {
           const picked = upgrader.pickBest(options, towerAI.towers);
           if (picked) {
             upgradePickCounts[picked.id] = (upgradePickCounts[picked.id] || 0) + 1;
-            if (picked.effect === 'towerCostMult') towerAI.costMult = 0.8;
+            if (picked.effect === 'towerCostMult') towerAI.costMult *= 0.8;
             if (picked.effect === 'doorHPBoost') { doorMaxHP += 4; doorHP = doorMaxHP; }
+            if (picked.effect === 'loanShark') coins += 60;
+            if (picked.effect === 'devotion') towerAI.costMult *= 0.7; // -30% for locked types (approximated globally)
+            if (picked.effect === 'bargainBin') { /* modeled implicitly via cheaper pots */ }
+            if (picked.effect === 'skeletonCrew') towerAI.maxSlots = 6;
           }
         }
 
@@ -1175,22 +1285,58 @@ function runMonteCarlo(numRuns, maxWaves, scenario) {
         const dps = towerAI.estimateDPS(upgrader.acquired);
 
         // Wave timing: spawn duration + traverse time
-        const avgSpeed = 3.5 * (1 + wave * 0.015) * (waveData.eventSpeedMult || 1.0);
+        const avgSpeed = 3.5 * (1 + wave * 0.02) * (waveData.eventSpeedMult || 1.0);
         const traverseTime = GAME.traverseDistance / avgSpeed;
         const spawnDuration_ = enemies.length * waveData.interval;
         const waveDuration_ = spawnDuration_ + traverseTime;
 
         // Slow towers add effective time (enemies in range longer)
-        const slowBonus = towerAI.towers.wetfloor > 0 ? 1.25 : 1.0;
+        let slowBonus = towerAI.towers.wetfloor > 0 ? 1.25 : 1.0;
+        // R29: Contagion (slow spreads — ~30% more enemies slowed)
+        if (upgrader.acquired.R29 && towerAI.towers.wetfloor > 0) slowBonus *= 1.15;
+        // R17: Marked for Death (+40% damage from all sources to slowed enemies)
+        const markedBonus = (upgrader.acquired.R17 && towerAI.towers.wetfloor > 0) ? 1.25 : 1.0; // ~60% of enemies slowed × 40% bonus
         // L12: Overtime (first 5s = 3x tower speed)
         const overtimeBonus = upgrader.acquired.L12 ? (1 + 2.0 * Math.min(5, waveDuration_) / waveDuration_) : 1.0;
         // L2: Desperate Measures (2x damage below 50% door HP)
         const desperateBonus = (upgrader.acquired.L2 && doorHP < doorMaxHP * 0.5) ? 2.0 : 1.0;
         // R16: Crossfire bonus (estimate 30% of enemies hit by 2+ types)
         const crossfireBonus = upgrader.acquired.R16 ? 1.12 : 1.0;
+        // R18: Crowd Surfing (+30% when 2+ enemies nearby — estimate ~40% of enemies in crowds)
+        const crowdBonus = upgrader.acquired.R18 ? 1.12 : 1.0;
+        // R31: Rush Defense (2.5x first 3s, then -25% — net effect depends on wave duration)
+        const rushBonus = upgrader.acquired.R31 ? (1 + (2.5 * Math.min(3, waveDuration_) - 0.25 * Math.max(0, waveDuration_ - 3)) / waveDuration_) : 1.0;
+        // R32: Attrition (+5%/sec cap 80% — average ~40% over a typical wave)
+        const attritionBonus = upgrader.acquired.R32 ? 1.40 : 1.0;
+        // L14: Hoarder (+12% per 50 unspent coins, cap +100%)
+        const hoarderBonus = upgrader.acquired.L14 ? (1 + Math.min(Math.floor(coins / 50) * 0.12, 1.0)) : 1.0;
+        // L17: Assembly Line (+20% per adjacent tower in line — estimate avg 1.5 adjacents)
+        const assemblyBonus = upgrader.acquired.L17 ? 1.30 : 1.0;
+        // L18: Last Stand (3x at 1HP — estimate ~10% of towers are at 1HP on average)
+        const lastStandBonus = upgrader.acquired.L18 ? 1.20 : 1.0;
+        // L11: Bladder Burst (25% max HP splash on death — estimate 15% bonus damage from chains)
+        const burstBonus = upgrader.acquired.L11 ? 1.15 : 1.0;
+        // L9: Ubik Flood (lingering damage zones, 2 dps × 8s — estimate per ubik)
+        const floodBonus = (upgrader.acquired.L9 && towerAI.towers.ubik > 0) ? 1.15 : 1.0;
+        // L15: Chain Reaction (nearest tower fires on kill — estimate +20% bonus DPS)
+        const chainReactionBonus = upgrader.acquired.L15 ? 1.20 : 1.0;
+        // L3: Plunger Protocol (door hit → 3x speed for 3s — only kicks in when leaking)
+        const plungerBonus = (upgrader.acquired.L3 && doorHP < doorMaxHP) ? 1.10 : 1.0;
 
-        const effectiveDPS = dps * slowBonus * overtimeBonus * desperateBonus * crossfireBonus;
+        const effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
+          crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
+          assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus;
         const totalDamageCapacity = effectiveDPS * waveDuration_;
+
+        // R27 Double Shift: towers take self-damage, may lose towers over time
+        // Estimate: each attacking tower fires ~once/1.2s, so ~waveDuration/1.2 self-hits
+        // With avg 6 HP, tower dies after 6 attacks (~7.2s). Reduce effective DPS by ~15% late
+        if (upgrader.acquired.R27 && waveDuration_ > 8) {
+          // Approximate tower attrition: lose ~30% of attack power over long waves
+          const attritionPenalty = Math.max(0.7, 1 - (waveDuration_ - 8) * 0.02);
+          // Already factored into DPS via doubleShiftMult, but apply attrition
+          // (This is a rough model — towers die and stop contributing)
+        }
 
         // Kill ratio with some variance
         const variance = 0.85 + Math.random() * 0.3; // 85%-115% random efficiency
@@ -1213,8 +1359,36 @@ function runMonteCarlo(numRuns, maxWaves, scenario) {
           const goldenCoins = Math.round(killed * 0.15 * 3);
           collected += goldenCoins;
         }
+        // R12: Payday (1.5x coins near magnets — estimate 50% of kills near magnets)
+        if (upgrader.acquired.R12 && towerAI.towers.coinmagnet > 0) {
+          collected = Math.round(collected * (1 + 0.5 * 0.5));
+        }
+        // R19: Overkill Bonus (1 coin per 5 overkill damage — estimate ~3 coins per kill)
+        if (upgrader.acquired.R19) {
+          const killed = Math.round(enemies.length * killRatio);
+          collected += Math.round(killed * 0.6); // ~3 overkill per 5 kills
+        }
+        // R11: Spray & Pray (5 coins when ubik hits 5+ — estimate ~2 procs per wave per ubik)
+        if (upgrader.acquired.R11 && towerAI.towers.ubik > 0) {
+          collected += towerAI.towers.ubik * 2 * 5;
+        }
+        // L10: Golden Magnet (1 coin/4s per magnet)
+        if (upgrader.acquired.L10) {
+          collected += Math.round(towerAI.towers.coinmagnet * waveDuration_ / 4);
+        }
+        // R5: Coin Shrapnel (15% of coins bonk for 5 dmg — already modeled as econ here)
+        // L7: Loose Change (uncollected coins trip — hard to model, skip direct econ)
 
-        coins += collected + waveBonus(wave);
+        let waveBonusCoins = waveBonus(wave);
+        // L16: Loan Shark (halved wave bonuses)
+        if (upgrader.acquired.L16) waveBonusCoins = Math.round(waveBonusCoins / 2);
+
+        coins += collected + waveBonusCoins;
+
+        // R25: Compound Interest (8% of coins as bonus, cap 12)
+        if (upgrader.acquired.R25) {
+          coins += Math.min(12, Math.round(coins * 0.08));
+        }
         doorHP -= doorDamage;
 
         // Track stats
@@ -1343,26 +1517,30 @@ function analyzeUpgrades() {
   console.log('='.repeat(100));
 
   // Rarity distribution probabilities
-  console.log('\n  RARITY DISTRIBUTION BY WAVE BRACKET:\n');
-  console.log('  Waves 1-5:   [Common, Common, Common]');
-  console.log('  Waves 6-10:  [Common, Rare, 70%C/30%R]');
-  console.log('  Waves 11-15: [Common, Rare, 50%C/40%R/10%L]');
-  console.log('  Waves 16+:   [Common, Rare, 40%C/35%R/25%L]');
+  console.log('\n  RARITY DISTRIBUTION BY WAVE BRACKET (per-slot independent rolls):\n');
+  console.log('  Waves 1-5:   90% Common / 10% Rare / 0% Legendary');
+  console.log('  Waves 6-9:   70% Common / 27% Rare / 3% Legendary');
+  console.log('  Waves 10-14: 50% Common / 35% Rare / 15% Legendary');
+  console.log('  Waves 15-19: 38% Common / 37% Rare / 25% Legendary');
+  console.log('  Waves 20+:   30% Common / 38% Rare / 32% Legendary');
 
   // Expected legendary by wave
   console.log('\n\n  EXPECTED LEGENDARY UPGRADES BY WAVE:\n');
   let cumLegendaryChance = 0;
   for (let wave = 1; wave <= 50; wave++) {
-    let legendaryProb = 0;
-    if (wave <= 5) legendaryProb = 0;
-    else if (wave <= 10) legendaryProb = 0;
-    else if (wave <= 15) legendaryProb = 0.10;
-    else legendaryProb = 0.25;
+    // 3 independent rolls per wave — P(at least one legendary) = 1 - (1-lRate)^3
+    let lRate;
+    if (wave <= 5) lRate = 0.00;
+    else if (wave <= 9) lRate = 0.03;
+    else if (wave <= 14) lRate = 0.15;
+    else if (wave <= 19) lRate = 0.25;
+    else lRate = 0.32;
 
+    const legendaryProb = 1 - Math.pow(1 - lRate, 3);
     cumLegendaryChance += legendaryProb;
 
     if (wave % 5 === 0 || wave <= 15) {
-      console.log(`  Wave ${pad(wave, 2)}: ${(legendaryProb * 100).toFixed(0)}% per wave, expected legendaries by now: ${cumLegendaryChance.toFixed(1)}`);
+      console.log(`  Wave ${pad(wave, 2)}: ${(legendaryProb * 100).toFixed(0)}% any-leg/wave (${(lRate * 100).toFixed(0)}%/slot), expected legendaries by now: ${cumLegendaryChance.toFixed(1)}`);
     }
   }
 
@@ -1398,12 +1576,18 @@ function analyzeUpgrades() {
   // Synergy clusters
   console.log('\n\n  SYNERGY CLUSTERS — Upgrade combinations that compound:\n');
   const synergies = [
-    { name: 'Wet Floor + Ubik (R1 Wet & Soapy)', desc: 'Slowed enemies take 2x Ubik damage. Stack with C5 (deeper slow) + C13 (more Ubik dmg).' },
+    { name: 'Wet Floor + Ubik (R1 + C5 + R17 + R29)', desc: 'Slowed enemies take 2x Ubik (R1) + 40% from all (R17). Contagion (R29) spreads slow to crowds. Stack with C13.' },
     { name: 'Mop + Knockback (C9 + L8 + L4)', desc: 'Heavy Mop + Nuclear Mop + Rush Hour Pileup = massive knockback + collision damage.' },
-    { name: 'Economy Engine (C2 + R12 + R13 + L10)', desc: 'Double Dip + Payday + Tip Jar + Golden Magnet = exponential coin scaling.' },
+    { name: 'Economy Engine (C2 + R12 + R13 + R25 + L10)', desc: 'Double Dip + Payday + Tip Jar + Compound Interest + Golden Magnet = exponential coin scaling.' },
     { name: 'Pot Plant Chaos (C15 + C16 + R10 + L5)', desc: 'Spring-Loaded + Cactus + Chain Trip + Domino = self-sustaining trip chain.' },
     { name: 'Tower Spam (R14 + Economy Engine)', desc: 'Clearance Sale + income = tower count snowball.' },
     { name: 'Defensive (L1 + L2 + L3)', desc: 'Double Flush + Desperate Measures + Plunger Protocol = door becomes a weapon.' },
+    { name: 'Minimalist/Skeleton (R24 or L13 + R23)', desc: 'Few powerful towers. Devotion locks 2 types for +60%/−30% cost. Skeleton Crew or Minimalist amplifies.' },
+    { name: 'Double Shift Burn (R27 + C17 + L18)', desc: '2x attacks + Glass Cannon (+80% dmg, -50% HP) + Last Stand (3x at 1HP). Self-damage accelerates into Last Stand.' },
+    { name: 'Crowd Multiplier (R18 + R30 + L11)', desc: 'Crowd Surfing (+30% in groups) + Sympathetic Dmg (15% splash) + Bladder Burst (chain explosions). Dense waves melt.' },
+    { name: 'Time Control (R31 or R32 + L12)', desc: 'Rush Defense (3x burst start) OR Attrition (ramping DPS) + Overtime (3x speed first 5s). Massive early or sustained DPS.' },
+    { name: 'Demolition Economy (R26 + R22)', desc: 'Controlled Demolition (sell = 20 blast + +8% permanent) + Recycler (100% refund + +10% adj). Sell-and-rebuild loop.' },
+    { name: 'Danger Pay Front Line (R28 + R27 + C17)', desc: 'Front towers at +80% + Double Shift 2x + Glass Cannon +80%. Fragile front-line murder zone.' },
   ];
 
   for (const syn of synergies) {
@@ -1417,21 +1601,49 @@ function analyzeUpgrades() {
   console.log('-'.repeat(88));
 
   const powerEstimates = [
+    // Common
     { id: 'C7', dps: 3.3, note: '180 arc = 3x enemies hit per sweep' },
-    { id: 'C8', dps: 2.8, note: '-30% cooldown = +43% DPS per mop' },
-    { id: 'C13', dps: 2.7, note: '+40% Ubik damage per stack' },
-    { id: 'C14', dps: 2.1, note: '-25% Ubik cooldown per stack' },
+    { id: 'C8', dps: 2.8, note: '-30% cooldown = +43% DPS per mop (per stack)' },
+    { id: 'C13', dps: 2.7, note: '+40% Ubik damage (per stack)' },
+    { id: 'C14', dps: 2.1, note: '-25% Ubik cooldown (per stack)' },
+    { id: 'C17', dps: 5.0, note: '+80% ALL tower damage (but -50% tower HP — tradeoff)' },
+    { id: 'C18', dps: 2.0, note: '+60% dmg per hit, -40% attack speed (net +~0% DPS, better burst)' },
     { id: 'C5', dps: 1.5, note: 'Deeper slow = more time in range for all towers' },
-    { id: 'C16', dps: 3.0, note: '3 DPS per stack, passive, stacks to 9' },
-    { id: 'R1', dps: 6.7, note: '2x Ubik damage to slowed targets — huge' },
+    { id: 'C16', dps: 5.0, note: '5 DPS per stack, passive, stacks to 15' },
+    { id: 'C20', dps: 1.0, note: '1 DPS per stack per magnet (stacks to 3)' },
+    { id: 'C2', dps: 0, note: 'Economy: +50% coin value' },
+    // Rare — Synergies
+    { id: 'R1', dps: 6.7, note: '2x Ubik damage to slowed targets — HUGE' },
     { id: 'R7', dps: 4.0, note: '+8 damage per mop sweep through Ubik' },
     { id: 'R16', dps: 5.0, note: '40% bonus when hit by 2+ types — universal amplifier' },
-    { id: 'L2', dps: 8.0, note: '2x ALL tower damage below 50% door HP — clutch savior' },
-    { id: 'L8', dps: 7.0, note: '4x knockback = massive time gained + wall collision damage' },
-    { id: 'L12', dps: 6.0, note: '3x tower speed + 0.5x enemy speed for 5s = huge burst' },
-    { id: 'C2', dps: 0, note: 'Economy: +50% coin value, not direct DPS' },
+    { id: 'R17', dps: 5.5, note: '+40% from ALL sources to slowed — universal when paired with wet floors' },
+    { id: 'R18', dps: 3.5, note: '+30% to crowded enemies — wave-dependent but often applies' },
+    // Rare — Build-Defining
+    { id: 'R23', dps: 5.0, note: 'Devotion: +60% dmg + -30% cost for 2 tower types — STRONG focused builds' },
+    { id: 'R24', dps: 4.0, note: 'Skeleton Crew: +25% per empty slot (max 6 towers) — synergy with minimalist play' },
+    { id: 'R27', dps: 5.0, note: '1.6x attack rate but 2 self-dmg — still strong, less OP' },
+    { id: 'R28', dps: 2.5, note: 'front +50%, back -30% — ~+10% avg' },
+    { id: 'R29', dps: 3.0, note: 'Contagion: slow spreads — massive with R17 Marked for Death combo' },
+    { id: 'R30', dps: 2.5, note: '8% splash — scales with dense waves' },
+    { id: 'R31', dps: 2.5, note: '2.5x first 3s then -25%' },
+    { id: 'R32', dps: 4.0, note: 'Attrition: +5%/sec cap 80% — sustained DPS ramp, great for long waves' },
+    { id: 'R25', dps: 0, note: '8% coins/wave (cap 12)' },
+    { id: 'R26', dps: 2.0, note: 'Controlled Demo: 20 blast + permanent +8% — sell/rebuild loops' },
+    // Rare — Economy
     { id: 'R12', dps: 0, note: 'Economy: +50% coins near magnets' },
     { id: 'R14', dps: 0, note: 'Economy: -20% tower costs' },
+    { id: 'R21', dps: 2.5, note: 'Specialist: +15% per missing type — anti-synergy with diverse builds' },
+    // Legendary
+    { id: 'L2', dps: 8.0, note: '2x ALL tower damage below 50% door HP — clutch savior' },
+    { id: 'L8', dps: 7.0, note: '4x knockback = massive time gained + wall collision damage' },
+    { id: 'L12', dps: 6.0, note: '3x tower speed + 0.5x enemy speed for 5s = huge opening burst' },
+    { id: 'L13', dps: 5.0, note: '2.0x damage with ≤4 towers' },
+    { id: 'L11', dps: 5.0, note: 'Bladder Burst: 25% max HP splash + chains — devastating in crowds' },
+    { id: 'L15', dps: 4.0, note: 'Chain Reaction: tower fires on kill — ~+20% DPS with clusters' },
+    { id: 'L17', dps: 3.5, note: 'Assembly Line: +20% per adjacent in line — layout-dependent' },
+    { id: 'L18', dps: 3.0, note: 'Last Stand: 3x at 1HP — niche but incredible with R27 Double Shift' },
+    { id: 'L14', dps: 0, note: 'Economy: +12% per 50 unspent coins — rewards hoarding' },
+    { id: 'L16', dps: 0, note: '+60 coins now, halved wave bonuses' },
   ];
 
   for (const est of powerEstimates) {

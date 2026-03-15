@@ -12,7 +12,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C1',
         name: 'Overclocked Magnet',
-        description: 'Coin Magnet collection range doubled (8 → 16 units)',
+        description: 'Coin Magnet collection range +12 (8 → 20 units)',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -58,7 +58,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C5',
         name: 'Extra Slippery',
-        description: 'Wet Floor Signs slow enemies to 20% speed (from 40%)',
+        description: 'Wet Floor Signs slow enemies to 15% speed (from 40%)',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -69,7 +69,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C6',
         name: 'Prickly Signs',
-        description: 'Enemies take 5 damage per bash hit against Wet Floor Signs',
+        description: 'Enemies take 8 damage per bash hit against Wet Floor Signs',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -82,7 +82,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C7',
         name: 'Industrial Mop Head',
-        description: 'Mop sweep arc 60° → 180° (hits everything in front)',
+        description: 'Mop sweep arc 60° → 180° (hits everything in front) and +15% mop damage',
         rarity: 'common',
         icon: 'mop',
         towerRequirement: ['mop'],
@@ -104,7 +104,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C9',
         name: 'Heavy Mop',
-        description: 'Mop knockback distance +50%',
+        description: 'Mop knockback distance +75%',
         rarity: 'common',
         icon: 'mop',
         towerRequirement: ['mop'],
@@ -128,7 +128,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C11',
         name: 'Pressure Washer',
-        description: 'Ubik cone halves in width, range doubles. Precision beam.',
+        description: 'Ubik cone halves in width, range doubles, +25% damage. Precision beam.',
         rarity: 'common',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -140,7 +140,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C12',
         name: 'Wide Spray',
-        description: 'Ubik cone 60% wider, damage reduced 30%. Crowd control mode.',
+        description: 'Ubik cone 60% wider. Crowd control mode.',
         rarity: 'common',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -176,7 +176,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C15',
         name: 'Spring-Loaded Pot',
-        description: 'Pot Plants bounce back to original position after being kicked',
+        description: 'Pot Plants bounce back to original position after being kicked and stun +0.5s longer',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -187,7 +187,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C16',
         name: 'Cactus Pot',
-        description: 'Pot Plants deal 3 damage/sec to adjacent enemies',
+        description: 'Pot Plants deal 5 damage/sec to adjacent enemies',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -224,7 +224,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C19',
         name: 'Bargain Bin',
-        description: 'Pot Plants cost 0 coins but start with only 1 HP',
+        description: 'Pot Plants cost 0 coins but start with only 2 HP',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -528,7 +528,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R25',
         name: 'Compound Interest',
-        description: 'End of each wave: gain 10% of your coins as bonus (max 20 per wave).',
+        description: 'End of each wave: gain 8% of your coins as bonus (max 12 per wave).',
         rarity: 'rare',
         icon: 'coin',
         towerRequirement: null,  // general
@@ -552,7 +552,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R27',
         name: 'Double Shift',
-        description: 'All towers attack TWICE per cycle, but take 1 self-damage per attack.',
+        description: 'All towers attack 60% faster (cooldown ×0.625), but take 2 self-damage per attack.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -564,7 +564,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R28',
         name: 'Danger Pay',
-        description: 'Towers in the front 3 rows deal +80% damage. Towers in the back rows deal −20%.',
+        description: 'Towers in the front 3 rows deal +50% damage. Towers in the back rows deal −30%.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -588,7 +588,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R30',
         name: 'Sympathetic Damage',
-        description: 'When an enemy takes damage, all enemies within 4 units take 15% of that damage.',
+        description: 'When an enemy takes damage, all enemies within 4 units take 8% of that damage.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -600,7 +600,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R31',
         name: 'Rush Defense',
-        description: 'First 3s of each wave: all towers deal 3× damage. After that: −15% for the rest.',
+        description: 'First 3s of each wave: all towers deal 2.5× damage. After that: −25% for the rest.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -765,7 +765,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L13',
         name: 'Minimalist',
-        description: 'If you have 4 or fewer towers, each deals 2.5× damage',
+        description: 'If you have 4 or fewer towers, each deals 2× damage',
         rarity: 'legendary',
         icon: 'star',
         towerRequirement: null,  // general
@@ -777,7 +777,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L14',
         name: 'Hoarder',
-        description: 'Every unspent 50 coins gives all towers +12% damage',
+        description: 'Every unspent 50 coins gives all towers +12% damage (max +100%)',
         rarity: 'legendary',
         icon: 'coin',
         towerRequirement: null,  // general
@@ -799,7 +799,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L16',
         name: 'Loan Shark',
-        description: 'Gain 100 coins immediately, but wave bonuses are halved for the rest of the run',
+        description: 'Gain 60 coins immediately, but wave bonuses are halved for the rest of the run',
         rarity: 'legendary',
         icon: 'coin',
         towerRequirement: null,  // general

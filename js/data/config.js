@@ -22,7 +22,8 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 60,          // Starting currency — tighter economy, every tower placement counts
+    startingCoins: 50,          // Starting currency — tighter economy, every tower placement counts
+    MAX_TOWERS: 15,             // Global tower cap (before upgrades that reduce it)
 
     // Spawn
     spawnZoneZ: 69,             // Where enemies appear (behind the exit doors at z=68)
