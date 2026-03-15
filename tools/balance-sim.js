@@ -23,7 +23,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 const GAME = {
-  startingCoins: 55,
+  startingCoins: 60,
   doorMaxHP: 100,
   gridCell: 2,
   laneWidth: 30,
@@ -45,31 +45,31 @@ const GAME = {
   // ── ENEMIES ─────────────────────────────────────────────────────────────
   enemies: {
     // Office
-    polite:      { name: 'Polite Knocker',   baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'basic' },
-    dancer:      { name: 'Pee Dancer',       baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'office', archetype: 'fast', canJumpBarrier: true },
+    polite:      { name: 'Polite Knocker',   baseSpeed: 3.0, speedVar: 0.5, baseHP: 14, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'office', archetype: 'basic' },
+    dancer:      { name: 'Pee Dancer',       baseSpeed: 5.5, speedVar: 1.0, baseHP: 7, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'office', archetype: 'fast', canJumpBarrier: true },
     waddle:      { name: 'Waddle Tank',      baseSpeed: 2.0, speedVar: 0.3, baseHP: 60, hpPerWave: 14, coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'office', archetype: 'tank', panicThreshold: 0.5 },
     panicker:    { name: 'Panicker',         baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 9,  coins: 10, doorDmg: 2, flankChance: 0.40, scenario: 'office', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
     powerwalker: { name: 'Power Walker',     baseSpeed: 3.5, speedVar: 0.3, baseHP: 30, hpPerWave: 8,  coins: 7,  doorDmg: 2, flankChance: 0.70, scenario: 'office', archetype: 'immune', slowImmune: true },
     girls:       { name: 'The Girls',        baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'office', archetype: 'swarm' },
     // Forest
-    deer:        { name: 'Deer',             baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'forest', archetype: 'basic' },
-    squirrel:    { name: 'Squirrel',         baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.55, scenario: 'forest', archetype: 'fast', canJumpBarrier: true },
+    deer:        { name: 'Deer',             baseSpeed: 3.0, speedVar: 0.5, baseHP: 14, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'forest', archetype: 'basic' },
+    squirrel:    { name: 'Squirrel',         baseSpeed: 5.5, speedVar: 1.0, baseHP: 7, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.55, scenario: 'forest', archetype: 'fast', canJumpBarrier: true },
     bear:        { name: 'Bear',             baseSpeed: 2.0, speedVar: 0.3, baseHP: 65, hpPerWave: 15, coins: 14, doorDmg: 5, flankChance: 0.08, scenario: 'forest', archetype: 'tank', panicThreshold: 0.5 },
     fox:         { name: 'Fox',              baseSpeed: 4.0, speedVar: 0.5, baseHP: 40, hpPerWave: 9,  coins: 10, doorDmg: 2, flankChance: 0.45, scenario: 'forest', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
     moose:       { name: 'Moose',            baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 9,  coins: 8,  doorDmg: 3, flankChance: 0.60, scenario: 'forest', archetype: 'immune', slowImmune: true },
     raccoon:     { name: 'Raccoon',          baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'forest', archetype: 'swarm' },
     // Ocean
-    dolphin:     { name: 'Dolphin',          baseSpeed: 3.0, speedVar: 0.5, baseHP: 22, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'ocean', archetype: 'basic' },
-    flyfish:     { name: 'Flying Fish',      baseSpeed: 5.5, speedVar: 1.0, baseHP: 10, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'ocean', archetype: 'fast', canJumpBarrier: true },
+    dolphin:     { name: 'Dolphin',          baseSpeed: 3.0, speedVar: 0.5, baseHP: 15, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.20, scenario: 'ocean', archetype: 'basic' },
+    flyfish:     { name: 'Flying Fish',      baseSpeed: 5.5, speedVar: 1.0, baseHP: 7, hpPerWave: 3,  coins: 3,  doorDmg: 1, flankChance: 0.60, scenario: 'ocean', archetype: 'fast', canJumpBarrier: true },
     shark:       { name: 'Shark',            baseSpeed: 2.0, speedVar: 0.3, baseHP: 70, hpPerWave: 17, coins: 15, doorDmg: 5, flankChance: 0.08, scenario: 'ocean', archetype: 'tank', panicThreshold: 0.5 },
     pirate:      { name: 'Pirate',           baseSpeed: 4.0, speedVar: 0.5, baseHP: 42, hpPerWave: 10, coins: 11, doorDmg: 3, flankChance: 0.40, scenario: 'ocean', archetype: 'support', speedAuraRange: 8, speedAuraBonus: 0.5 },
     seaturtle:   { name: 'Sea Turtle',       baseSpeed: 3.5, speedVar: 0.3, baseHP: 38, hpPerWave: 9,  coins: 8,  doorDmg: 2, flankChance: 0.55, scenario: 'ocean', archetype: 'immune', slowImmune: true },
     jellyfish:   { name: 'Jellyfish',        baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'ocean', archetype: 'swarm' },
     // Airplane
-    nervous:     { name: 'Nervous Flyer',    baseSpeed: 3.0, speedVar: 0.5, baseHP: 20, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'airplane', archetype: 'basic' },
+    nervous:     { name: 'Nervous Flyer',    baseSpeed: 3.0, speedVar: 0.5, baseHP: 14, hpPerWave: 8,  coins: 5,  doorDmg: 2, flankChance: 0.15, scenario: 'airplane', archetype: 'basic' },
     business:    { name: 'Business Class',   baseSpeed: 3.5, speedVar: 0.3, baseHP: 35, hpPerWave: 9,  coins: 8,  doorDmg: 2, flankChance: 0.60, scenario: 'airplane', archetype: 'immune', knockbackImmune: true },
     stumbler:    { name: 'Turb. Stumbler',   baseSpeed: 2.0, speedVar: 0.3, baseHP: 55, hpPerWave: 12, coins: 12, doorDmg: 4, flankChance: 0.10, scenario: 'airplane', archetype: 'tank', panicThreshold: 0.5, barrierBust: true },
-    attendant:   { name: 'Flight Attendant', baseSpeed: 5.0, speedVar: 1.0, baseHP: 15, hpPerWave: 4,  coins: 4,  doorDmg: 1, flankChance: 0.50, scenario: 'airplane', archetype: 'fast', canJumpBarrier: true, sprayResist: 0.5 },
+    attendant:   { name: 'Flight Attendant', baseSpeed: 5.0, speedVar: 1.0, baseHP: 10, hpPerWave: 4,  coins: 4,  doorDmg: 1, flankChance: 0.50, scenario: 'airplane', archetype: 'fast', canJumpBarrier: true, sprayResist: 0.5 },
     marshal:     { name: 'Air Marshal',      baseSpeed: 3.5, speedVar: 0.3, baseHP: 40, hpPerWave: 10, coins: 10, doorDmg: 3, flankChance: 0.50, scenario: 'airplane', archetype: 'support', slowImmune: true, magnetDisableRange: 6, speedAuraRange: 6, speedAuraBonus: 0.3 },
     unruly:      { name: 'Unruly Passengers',baseSpeed: 3.0, speedVar: 0.3, baseHP: 8,  hpPerWave: 2,  coins: 2,  doorDmg: 1, flankChance: 0.30, scenario: 'airplane', archetype: 'swarm', tripImmune: true },
     // Jumpers (all scenarios)
