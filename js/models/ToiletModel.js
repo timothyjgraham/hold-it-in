@@ -23,9 +23,9 @@ export function createToilet() {
     base.receiveShadow = true;
     group.add(base);
 
-    // === BOWL (outer — oval, tapers down) ===
+    // === BOWL (outer — oval, wider so porcelain sides visible past player) ===
     const bowl = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.95, 0.75, 1.1, 16),
+        new THREE.CylinderGeometry(1.1, 0.85, 1.1, 16),
         porcelain
     );
     bowl.position.set(0, 0.95, 0.1);
@@ -35,7 +35,7 @@ export function createToilet() {
 
     // === BOWL RIM (visible lip at top of bowl) ===
     const rim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.88, 0.06, 8, 24),
+        new THREE.TorusGeometry(1.0, 0.07, 8, 24),
         porcelain
     );
     rim.rotation.x = -Math.PI / 2;
@@ -44,12 +44,12 @@ export function createToilet() {
     rim.castShadow = true;
     group.add(rim);
 
-    // === BOWL (inner hollow — darker for contrast from above) ===
+    // === BOWL (inner hollow — dark for visible "hole" from above) ===
     const bowlInner = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.7, 0.4, 0.55, 16),
-        porcelainInner
+        new THREE.CylinderGeometry(0.8, 0.4, 0.6, 16),
+        toonMat(PALETTE.ink) // dark ink color for clear hole visibility
     );
-    bowlInner.position.set(0, 1.3, 0.1);
+    bowlInner.position.set(0, 1.25, 0.1);
     bowlInner.scale.z = 1.3;
     group.add(bowlInner);
 
@@ -64,7 +64,7 @@ export function createToilet() {
     group.add(water);
 
     // === SEAT (horseshoe / U-shape — open at the front so player is "sitting on it") ===
-    const seatGeo = new THREE.TorusGeometry(0.8, 0.15, 10, 20, Math.PI * 5 / 3); // 300° arc, 60° gap
+    const seatGeo = new THREE.TorusGeometry(0.95, 0.15, 10, 20, Math.PI * 5 / 3); // 300° arc, 60° gap
     seatGeo.rotateZ(Math.PI * 2 / 3); // rotate geometry so gap faces +Y (becomes +Z front when laid flat)
     const seat = new THREE.Mesh(seatGeo, porcelain);
     seat.rotation.x = -Math.PI / 2;
@@ -73,15 +73,15 @@ export function createToilet() {
     seat.castShadow = true;
     group.add(seat);
 
-    // === LID (propped up against the tank — shows it's been lifted) ===
-    const lidGeo = new THREE.BoxGeometry(1.4, 0.06, 0.9);
+    // === LID (standing upright behind tank — clearly shows "lid is up") ===
+    const lidGeo = new THREE.BoxGeometry(1.5, 1.3, 0.07);
     const lid = new THREE.Mesh(lidGeo, porcelain);
-    lid.rotation.x = -0.25; // leaning slightly back against tank
-    lid.position.set(0, 2.0, -0.65);
+    lid.rotation.x = 0.2; // leaning slightly back against tank
+    lid.position.set(0, 2.95, -0.65);
     lid.castShadow = true;
     group.add(lid);
 
-    // === TANK (box behind the bowl) ===
+    // === TANK (box behind the bowl, with outline edges for definition) ===
     const tank = new THREE.Mesh(
         new THREE.BoxGeometry(1.6, 1.8, 0.7),
         porcelain
@@ -90,7 +90,46 @@ export function createToilet() {
     tank.castShadow = true;
     group.add(tank);
 
-    // === TANK LID ===
+    // Tank outline edges (dark lines along top/side edges so it reads clearly)
+    const inkEdgeMat = toonMat(PALETTE.ink);
+    const edgeW = 0.03; // edge line thickness
+
+    // Top edge — front horizontal line across top of tank face
+    const tankTopEdge = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, edgeW, edgeW), inkEdgeMat
+    );
+    tankTopEdge.position.set(0, 2.2, -0.5);
+    group.add(tankTopEdge);
+
+    // Bottom edge — front horizontal line across bottom of tank face
+    const tankBotEdge = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, edgeW, edgeW), inkEdgeMat
+    );
+    tankBotEdge.position.set(0, 0.4, -0.5);
+    group.add(tankBotEdge);
+
+    // Left vertical edge on front face of tank
+    const tankLeftEdge = new THREE.Mesh(
+        new THREE.BoxGeometry(edgeW, 1.8, edgeW), inkEdgeMat
+    );
+    tankLeftEdge.position.set(-0.8, 1.3, -0.5);
+    group.add(tankLeftEdge);
+
+    // Right vertical edge on front face of tank
+    const tankRightEdge = new THREE.Mesh(
+        new THREE.BoxGeometry(edgeW, 1.8, edgeW), inkEdgeMat
+    );
+    tankRightEdge.position.set(0.8, 1.3, -0.5);
+    group.add(tankRightEdge);
+
+    // Seam line between tank body and tank lid
+    const tankSeam = new THREE.Mesh(
+        new THREE.BoxGeometry(1.65, 0.025, 0.75), inkEdgeMat
+    );
+    tankSeam.position.set(0, 2.21, -0.85);
+    group.add(tankSeam);
+
+    // === TANK LID (slightly rounded top) ===
     const tankLid = new THREE.Mesh(
         new THREE.BoxGeometry(1.7, 0.15, 0.8),
         porcelain
@@ -99,21 +138,20 @@ export function createToilet() {
     tankLid.castShadow = true;
     group.add(tankLid);
 
-    // === FLUSH HANDLE (gold!) ===
-    const handle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 0.4, 8),
-        gold
+    // === FLUSH BUTTON (large gold oval on top of tank lid — clearly visible) ===
+    const flushBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.08, 12),
+        toonMat(PALETTE.charcoal)
     );
-    handle.rotation.z = Math.PI / 2;
-    handle.position.set(0.95, 2.0, -0.85);
-    group.add(handle);
+    flushBase.position.set(0, 2.37, -0.85);
+    group.add(flushBase);
 
-    const handleKnob = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 8, 8),
+    const flushButton = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.15, 0.1, 12),
         gold
     );
-    handleKnob.position.set(1.15, 2.0, -0.85);
-    group.add(handleKnob);
+    flushButton.position.set(0, 2.41, -0.85);
+    group.add(flushButton);
 
     // === HOLY SPOTLIGHT FROM UPPER-RIGHT (angled, dramatic) ===
     const lightOrigin = { x: -5, y: 12, z: 3 };
