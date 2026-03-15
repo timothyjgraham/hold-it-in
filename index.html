@@ -1740,31 +1740,30 @@
         _updateForestEffects(time, dt) {
             if (!this._forestAnimData) return;
 
-            // Animate sunbeams — subtle opacity pulse
+            // Animate sunbeams — slow, dreamy intensity pulse
             const beams = this._forestAnimData.sunbeams;
             for (let i = 0; i < beams.length; i++) {
                 const b = beams[i];
-                if (b && b.material) {
-                    b.material.opacity = 0.08 + 0.04 * Math.sin(time * 0.5 + i * 1.7);
-                }
+                if (!b || !b.material || !b.material.uniforms) continue;
+                const base = 0.04 + (i % 3) * 0.015;
+                b.material.uniforms.uOpacity.value =
+                    base + 0.025 * Math.sin(time * 0.3 + i * 2.1)
+                         + 0.01  * Math.sin(time * 0.7 + i * 0.9);
             }
 
-            // Animate grass tufts — gentle wind sway with spatial wave
+            // Animate grass tufts — gentle breeze with spatial wave
             const tufts = this._forestAnimData.grassTufts;
-            const windSpeed = 1.8;
-            const windStrength = 0.08; // max rotation in radians
-            const gustStrength = 0.04;
             for (let i = 0; i < tufts.length; i++) {
                 const t = tufts[i];
                 if (!t || !t.mesh) continue;
-                // Primary sway — slow wave across the field
-                const sway = Math.sin(time * windSpeed + t.phase) * windStrength;
-                // Secondary gust — faster, smaller, different frequency
-                const gust = Math.sin(time * 3.2 + t.phase * 1.7) * gustStrength;
-                // Larger tufts sway more
-                const scale = 0.6 + t.baseHeight * 0.6;
-                t.mesh.rotation.z = (sway + gust) * scale;
-                t.mesh.rotation.x = Math.sin(time * 1.4 + t.phase * 0.8) * windStrength * 0.4 * scale;
+                // Slow primary sway — wave ripples across the field
+                const sway = Math.sin(time * 0.8 + t.phase) * 0.035;
+                // Subtle gust on different frequency
+                const gust = Math.sin(time * 1.9 + t.phase * 1.3) * 0.015;
+                // Bigger tufts sway a touch more
+                const f = 0.6 + (t.scale - 2.0) * 0.15;
+                t.mesh.rotation.z = (sway + gust) * f;
+                t.mesh.rotation.x = Math.sin(time * 0.5 + t.phase * 0.4) * 0.02 * f;
             }
 
             // Animate butterflies — lazy orbiting + wing flap

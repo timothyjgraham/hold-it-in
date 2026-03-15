@@ -22,9 +22,60 @@ export function createForestGround() {
     const group = new THREE.Group();
     group.name = 'forestGround';
 
-    // --- Large grass ground plane extending well past viewport edges ---
     const grassGeo = new THREE.PlaneGeometry(160, 160);
     const grassMat = toonMat(PALETTE.forestGrass);
+
+    // Inject procedural simplex noise into the toon shader for organic,
+    // seamless ground variation — no canvas texture, no tiling artifacts.
+    grassMat.onBeforeCompile = (shader) => {
+        // Pass world position from vertex → fragment shader
+        shader.vertexShader = shader.vertexShader.replace(
+            'void main() {',
+            'varying vec3 vWorldPos;\nvoid main() {'
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <project_vertex>',
+            '#include <project_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+        );
+
+        // Inject simplex noise function before main()
+        shader.fragmentShader = shader.fragmentShader.replace(
+            'void main() {',
+            `varying vec3 vWorldPos;
+vec3 mod289v(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec2 mod289v2(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec3 permutev(vec3 x){return mod289v(((x*34.0)+1.0)*x);}
+float snoise(vec2 v){
+  const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
+  vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);
+  vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);
+  vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289v2(i);
+  vec3 p=permutev(permutev(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));
+  vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);
+  m=m*m;m=m*m;
+  vec3 xn=2.0*fract(p*C.www)-1.0;vec3 h=abs(xn)-0.5;
+  vec3 ox=floor(xn+0.5);vec3 a0=xn-ox;
+  m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);
+  vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;
+  return 130.0*dot(m,g);
+}
+void main() {`
+        );
+
+        // Modulate diffuse color with multi-octave noise
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <color_fragment>',
+            `#include <color_fragment>
+vec2 nc=vWorldPos.xz*0.1;
+float n1=snoise(nc)*0.5+0.5;
+float n2=snoise(nc*2.8+42.0)*0.5+0.5;
+float n3=snoise(nc*7.5+100.0)*0.5+0.5;
+float blend=n1*0.55+n2*0.3+n3*0.15;
+diffuseColor.rgb*=0.93+blend*0.14;
+diffuseColor.g+=blend*0.01;`
+        );
+    };
+
     const grassPlane = new THREE.Mesh(grassGeo, grassMat);
     grassPlane.rotation.x = -Math.PI / 2;
     grassPlane.position.set(0, -0.05, 35);
@@ -34,108 +85,151 @@ export function createForestGround() {
     return group;
 }
 
-// ─── 1b. Zelda-style Grass Tufts ────────────────────────────────────────────
+// ─── 1b. Cross-Billboard Grass Tufts ────────────────────────────────────────
 
-/** Create a single grass blade (triangle pointing up, slightly curved) */
-function _createBladeGeometry(height, width) {
-    const shape = new THREE.Shape();
-    // Tapered blade — wide base, pointed tip with slight asymmetry
-    shape.moveTo(-width / 2, 0);
-    shape.quadraticCurveTo(-width * 0.15, height * 0.6, width * 0.05, height);
-    shape.quadraticCurveTo(width * 0.2, height * 0.55, width / 2, 0);
-    shape.closePath();
-    return new THREE.ShapeGeometry(shape, 3);
+/** Paint a grass-tuft silhouette onto a canvas — soft, rounded blade shapes */
+function _createGrassTuftTexture() {
+    const S = 128;
+    const cvs = document.createElement('canvas');
+    cvs.width = S;
+    cvs.height = S;
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0, 0, S, S);
+
+    const hex = (c) => '#' + c.toString(16).padStart(6, '0');
+    const darkCol  = hex(PALETTE.forestLeafDark);
+    const midCol   = hex(PALETTE.forestGrass);
+    const tipCol   = hex(PALETTE.forestBush);
+
+    // 5 blades fanning from bottom center — rounded, soft shapes
+    const blades = [
+        { cx: 0.35, angle: -0.32, h: 0.65, w: 0.11 },
+        { cx: 0.43, angle: -0.12, h: 0.78, w: 0.13 },
+        { cx: 0.50, angle:  0.02, h: 0.85, w: 0.14 },
+        { cx: 0.57, angle:  0.14, h: 0.75, w: 0.12 },
+        { cx: 0.65, angle:  0.30, h: 0.60, w: 0.10 },
+    ];
+
+    for (const b of blades) {
+        ctx.save();
+        ctx.translate(b.cx * S, S);
+        ctx.rotate(b.angle);
+
+        const h = b.h * S;
+        const w = b.w * S;
+
+        // Gradient: dark base → mid → bright tip
+        const grad = ctx.createLinearGradient(0, 0, 0, -h);
+        grad.addColorStop(0, darkCol);
+        grad.addColorStop(0.4, midCol);
+        grad.addColorStop(1.0, tipCol);
+        ctx.fillStyle = grad;
+
+        // Soft rounded blade with bezier curves — no sharp points
+        ctx.beginPath();
+        ctx.moveTo(-w / 2, 0);
+        ctx.bezierCurveTo(-w * 0.45, -h * 0.35, -w * 0.2, -h * 0.75, 0, -h + 2);
+        ctx.bezierCurveTo( w * 0.2, -h * 0.75,  w * 0.45, -h * 0.35, w / 2, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    return new THREE.CanvasTexture(cvs);
 }
 
 export function createForestGrassTufts() {
     const group = new THREE.Group();
     group.name = 'forestGrassTufts';
 
-    // Material variants for natural color variation
-    const grassMats = [
-        toonMat(PALETTE.forestGrass),                      // base green
-        toonMat(PALETTE.forestBush),                       // brighter green
-        toonMat(PALETTE.forestMoss),                       // light mossy green
-        toonMat(PALETTE.forestLeafDark, { side: THREE.DoubleSide }), // dark accent
-    ];
-    // All double-sided so blades visible from any angle
-    grassMats.forEach(m => { m.side = THREE.DoubleSide; });
+    const grassTex = _createGrassTuftTexture();
 
-    const tufts = []; // for wind animation
+    // Toon gradient ramp (same values as toonMaterials.js)
+    const gradData = new Uint8Array([89, 217, 255]);
+    const gradTex = new THREE.DataTexture(gradData, 3, 1, THREE.LuminanceFormat);
+    gradTex.minFilter = THREE.NearestFilter;
+    gradTex.magFilter = THREE.NearestFilter;
+    gradTex.needsUpdate = true;
 
-    // --- Placement config ---
-    // Avoid outhouse area (roughly x: -3..3, z: 0..8)
-    // Play area is roughly x: -30..30, z: -5..75
-    const turfCount = 220;
+    // Toon material with alpha cutout for crisp toon edges
+    const turfMat = new THREE.MeshToonMaterial({
+        map: grassTex,
+        alphaTest: 0.4,
+        side: THREE.DoubleSide,
+        gradientMap: gradTex,
+    });
 
-    for (let i = 0; i < turfCount; i++) {
+    // Plane geometry with bottom-pivot (shift vertices up so y=0 is the base)
+    const planeGeo = new THREE.PlaneGeometry(1, 1);
+    const posArr = planeGeo.attributes.position;
+    for (let i = 0; i < posArr.count; i++) {
+        posArr.setY(i, posArr.getY(i) + 0.5);
+    }
+    posArr.needsUpdate = true;
+
+    const tufts = [];
+
+    // Helper: place a single tuft at (tx, tz) with scale s
+    function placeTuft(tx, tz, s) {
         const tuft = new THREE.Group();
 
-        // Pick a random position, biased toward visible play area
-        let tx, tz;
-        do {
-            tx = rand(-35, 35);
-            tz = rand(-5, 75);
-        } while (Math.abs(tx) < 3.5 && tz < 9 && tz > -1); // skip outhouse zone
+        const p1 = new THREE.Mesh(planeGeo, turfMat);
+        p1.scale.set(s, s, 1);
+        p1.receiveShadow = true;
+        tuft.add(p1);
 
-        // Size category: small (40%), medium (40%), large (20%)
-        const sizeRoll = Math.random();
-        let bladeCount, baseHeight, baseWidth;
-        if (sizeRoll < 0.4) {
-            // Small tuft
-            bladeCount = 2 + Math.floor(Math.random() * 2); // 2-3
-            baseHeight = rand(0.2, 0.4);
-            baseWidth = rand(0.08, 0.14);
-        } else if (sizeRoll < 0.8) {
-            // Medium tuft
-            bladeCount = 3 + Math.floor(Math.random() * 2); // 3-4
-            baseHeight = rand(0.4, 0.7);
-            baseWidth = rand(0.12, 0.2);
-        } else {
-            // Large tuft
-            bladeCount = 4 + Math.floor(Math.random() * 2); // 4-5
-            baseHeight = rand(0.65, 1.0);
-            baseWidth = rand(0.16, 0.25);
-        }
-
-        for (let b = 0; b < bladeCount; b++) {
-            const h = baseHeight * rand(0.7, 1.0);
-            const w = baseWidth * rand(0.7, 1.0);
-            const bladeGeo = _createBladeGeometry(h, w);
-            const mat = grassMats[Math.floor(Math.random() * grassMats.length)];
-            const blade = new THREE.Mesh(bladeGeo, mat);
-
-            // Spread blades slightly and rotate around Y for a fan shape
-            const angle = ((b / bladeCount) * Math.PI * 2) + rand(-0.3, 0.3);
-            blade.rotation.y = angle;
-            // Slight outward lean
-            blade.rotation.x = rand(-0.15, 0.15);
-            blade.rotation.z = rand(-0.1, 0.1);
-
-            // Small positional offset at base
-            blade.position.set(
-                Math.cos(angle) * rand(0.02, 0.06),
-                0,
-                Math.sin(angle) * rand(0.02, 0.06)
-            );
-
-            tuft.add(blade);
-        }
+        const p2 = new THREE.Mesh(planeGeo, turfMat);
+        p2.rotation.y = Math.PI / 2;
+        p2.scale.set(s, s, 1);
+        p2.receiveShadow = true;
+        tuft.add(p2);
 
         tuft.position.set(tx, 0, tz);
-        // Slight random Y rotation for variety
-        tuft.rotation.y = Math.random() * Math.PI * 2;
+        tuft.rotation.y = Math.random() * Math.PI;
         group.add(tuft);
 
         tufts.push({
             mesh: tuft,
-            phase: tx * 0.5 + tz * 0.3 + Math.random() * Math.PI, // spatial phase for wave effect
-            baseHeight: baseHeight,
+            phase: tx * 0.5 + tz * 0.3 + Math.random() * Math.PI,
+            scale: s,
         });
     }
 
-    group.userData.tufts = tufts;
+    // --- Open clearing grass (central play area) ---
+    for (let i = 0; i < 90; i++) {
+        let tx, tz;
+        do {
+            tx = rand(-16, 16);
+            tz = rand(-3, 72);
+        } while (Math.abs(tx) < 3.5 && tz < 9 && tz > -1); // skip outhouse
 
+        const r = Math.random();
+        let s;
+        if (r < 0.35)      s = rand(2.0, 2.8);
+        else if (r < 0.75)  s = rand(2.8, 3.8);
+        else                s = rand(3.6, 4.5);
+
+        placeTuft(tx, tz, s);
+    }
+
+    // --- Under-tree / forest interior grass (extends into tree bands) ---
+    for (let i = 0; i < 80; i++) {
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const tx = side * rand(14, 45);
+        const tz = rand(-5, 75);
+
+        // Smaller & sparser under dense canopy
+        const r = Math.random();
+        let s;
+        if (r < 0.5)       s = rand(1.4, 2.2);
+        else if (r < 0.85)  s = rand(2.2, 3.0);
+        else                s = rand(2.8, 3.5);
+
+        placeTuft(tx, tz, s);
+    }
+
+    group.userData.tufts = tufts;
     return group;
 }
 
@@ -319,17 +413,17 @@ export function createForestBushes() {
             bush.add(mesh);
         }
 
-        // Chance of tiny flowers
+        // Chance of flowers
         if (Math.random() > 0.5) {
             const flowerCount = 2 + Math.floor(Math.random() * 4);
             const flowerMat = Math.random() > 0.5 ? flowerPinkMat : flowerYellowMat;
             for (let i = 0; i < flowerCount; i++) {
-                const fGeo = new THREE.SphereGeometry(0.08, 4, 4);
+                const fGeo = new THREE.SphereGeometry(0.2, 5, 4);
                 const flower = new THREE.Mesh(fGeo, flowerMat);
                 flower.position.set(
-                    rand(-1.0, 1.0),
-                    rand(0.5, 1.5),
-                    rand(-1.0, 1.0)
+                    rand(-1.2, 1.2),
+                    rand(0.5, 1.6),
+                    rand(-1.2, 1.2)
                 );
                 bush.add(flower);
             }
@@ -340,29 +434,75 @@ export function createForestBushes() {
     }
 
     // --- Helper: create a mushroom ---
-    function createMushroom(x, z) {
+    function createMushroom(x, z, sizeScale) {
         const shroom = new THREE.Group();
         shroom.name = 'mushroom';
+        const sc = sizeScale || 1;
 
         // Stem
-        const stemGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.3, 6);
+        const stemGeo = new THREE.CylinderGeometry(0.18 * sc, 0.28 * sc, 1.0 * sc, 6);
         const stemMat = toonMat(PALETTE.cream);
         const stem = new THREE.Mesh(stemGeo, stemMat);
-        stem.position.y = 0.15;
+        stem.position.y = 0.5 * sc;
+        stem.castShadow = true;
         shroom.add(stem);
 
         // Cap (half-sphere)
-        const capGeo = new THREE.SphereGeometry(0.15, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2);
+        const capR = 0.55 * sc;
+        const capGeo = new THREE.SphereGeometry(capR, 7, 5, 0, Math.PI * 2, 0, Math.PI / 2);
         const capColor = Math.random() > 0.5 ? PALETTE.forestFlower : PALETTE.forestBark;
         const capMat = toonMat(capColor);
         const cap = new THREE.Mesh(capGeo, capMat);
-        cap.position.y = 0.3;
+        cap.position.y = 1.0 * sc;
+        cap.castShadow = true;
         shroom.add(cap);
 
+        // White spots on red/pink caps
+        if (capColor === PALETTE.forestFlower && Math.random() > 0.3) {
+            const spotMat = toonMat(PALETTE.cream);
+            const spotCount = 3 + Math.floor(Math.random() * 4);
+            for (let sp = 0; sp < spotCount; sp++) {
+                const spotGeo = new THREE.CircleGeometry((0.06 + Math.random() * 0.05) * sc, 5);
+                const spot = new THREE.Mesh(spotGeo, spotMat);
+                const theta = rand(0, Math.PI * 2);
+                const phi = rand(0.2, 1.1);
+                const r = capR + 0.01;
+                spot.position.set(
+                    Math.sin(phi) * Math.cos(theta) * r,
+                    1.0 * sc + Math.cos(phi) * r,
+                    Math.sin(phi) * Math.sin(theta) * r
+                );
+                spot.lookAt(spot.position.x * 2, spot.position.y * 2, spot.position.z * 2);
+                shroom.add(spot);
+            }
+        }
+
         shroom.position.set(x, 0, z);
-        const s = rand(0.8, 1.5);
-        shroom.scale.set(s, s, s);
+        shroom.rotation.y = Math.random() * Math.PI * 2;
         return shroom;
+    }
+
+    // --- Helper: create a mushroom patch (cluster of 3-7 shrooms) ---
+    function createMushroomPatch(cx, cz) {
+        const patch = new THREE.Group();
+        patch.name = 'mushroomPatch';
+        const count = 3 + Math.floor(Math.random() * 5); // 3-7
+
+        for (let i = 0; i < count; i++) {
+            // Cluster within ~2 unit radius
+            const angle = Math.random() * Math.PI * 2;
+            const dist = rand(0.3, 2.5);
+            const mx = Math.cos(angle) * dist;
+            const mz = Math.sin(angle) * dist;
+
+            // Size variety — one big "hero" shroom per patch, rest are smaller
+            const sizeScale = (i === 0) ? rand(1.5, 2.2) : rand(0.6, 1.4);
+
+            patch.add(createMushroom(mx, mz, sizeScale));
+        }
+
+        patch.position.set(cx, 0, cz);
+        return patch;
     }
 
     // Place bushes along path edges and scattered in the forest
@@ -374,13 +514,23 @@ export function createForestBushes() {
         group.add(createBush(x, z));
     }
 
-    // Place mushrooms scattered wider
-    const shroomCount = 12 + Math.floor(Math.random() * 6);
-    for (let i = 0; i < shroomCount; i++) {
+    // --- Mushroom patches — clusters dotted around the forest floor ---
+    // Large patches deep in the forest
+    const patchPositions = [];
+    for (let i = 0; i < 8; i++) {
         const side = Math.random() > 0.5 ? 1 : -1;
-        const x = side * rand(6, 25);
-        const z = rand(3, 68);
-        group.add(createMushroom(x, z));
+        const px = side * rand(10, 35);
+        const pz = rand(5, 68);
+        patchPositions.push([px, pz]);
+        group.add(createMushroomPatch(px, pz));
+    }
+
+    // Smaller scattered individual mushrooms along the path edges
+    for (let i = 0; i < 10; i++) {
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const x = side * rand(5, 18);
+        const z = rand(8, 68);
+        group.add(createMushroom(x, z, rand(0.8, 1.4)));
     }
 
     return group;
@@ -756,42 +906,92 @@ export function createOuthouseDoor() {
     return group;
 }
 
-// ─── 7. Sunbeams ────────────────────────────────────────────────────────────
+// ─── 7. Sunbeams — Volumetric Light Shafts ──────────────────────────────────
 
 export function createSunbeams() {
     const group = new THREE.Group();
     group.name = 'forestSunbeams';
 
     const beams = [];
+    const beamCount = 8 + Math.floor(Math.random() * 4); // 8-11
 
-    const beamCount = 6 + Math.floor(Math.random() * 5); // 6-10
+    // Custom shader for soft volumetric light shafts:
+    // - Soft vertical gradient (bright center, fading to edges)
+    // - Horizontal fade at edges for smooth blending
+    // - Additive blending for light accumulation
+    const beamVertexShader = `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `;
+
+    const beamFragmentShader = `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        varying vec2 vUv;
+        void main() {
+            // Horizontal fade — strongest in center, transparent at edges
+            float hFade = 1.0 - pow(abs(vUv.x - 0.5) * 2.0, 1.5);
+            // Vertical: slightly brighter toward bottom where beam "hits"
+            float vFade = 0.5 + 0.5 * (1.0 - vUv.y);
+            // Combined soft glow
+            float alpha = hFade * vFade * uOpacity;
+            gl_FragColor = vec4(uColor, alpha);
+        }
+    `;
 
     for (let i = 0; i < beamCount; i++) {
-        const beamLength = rand(10, 20);
-        const beamRadius = rand(0.5, 1.5);
+        // Long shafts stretching from high above down to the ground
+        const beamHeight = rand(35, 55);
+        const beamWidth = rand(2.0, 5.0);
 
-        const beamGeo = new THREE.CylinderGeometry(beamRadius * 0.3, beamRadius, beamLength, 6, 1, true);
-        const beamMat = toonMat(PALETTE.forestSunbeam, {
+        const beamGeo = new THREE.PlaneGeometry(beamWidth, beamHeight, 1, 1);
+
+        // Taper the top — narrow at top, wider at bottom
+        const pos = beamGeo.attributes.position;
+        for (let v = 0; v < pos.count; v++) {
+            const y = pos.getY(v);
+            if (y > 0) {
+                // Top vertices — squeeze inward for cone-of-light look
+                pos.setX(v, pos.getX(v) * rand(0.2, 0.4));
+            }
+        }
+        pos.needsUpdate = true;
+
+        const baseOpacity = rand(0.04, 0.08);
+        const beamColor = new THREE.Color(PALETTE.forestSunbeam);
+
+        const beamMat = new THREE.ShaderMaterial({
+            vertexShader: beamVertexShader,
+            fragmentShader: beamFragmentShader,
+            uniforms: {
+                uColor: { value: beamColor },
+                uOpacity: { value: baseOpacity },
+            },
             transparent: true,
-            opacity: rand(0.08, 0.12),
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
             side: THREE.DoubleSide,
         });
-        beamMat.depthWrite = false;
 
         const beam = new THREE.Mesh(beamGeo, beamMat);
 
-        // Angle from upper-left to lower-right
-        beam.rotation.z = rand(-0.6, -0.3);
-        beam.rotation.x = rand(-0.2, 0.2);
+        // Slight angle — light comes from upper-left
+        beam.rotation.z = rand(-0.15, -0.05);
+        beam.rotation.y = rand(-0.3, 0.3);
 
+        // Position: spread across the forest, very high up so they reach from sky
         beam.position.set(
             rand(-25, 25),
-            rand(6, 14),
-            rand(5, 65)
+            beamHeight / 2 - 2, // base near ground, top far above
+            rand(8, 65)
         );
 
         beam.castShadow = false;
         beam.receiveShadow = false;
+        beam.renderOrder = 999; // render after opaque objects
         group.add(beam);
 
         beams.push(beam);
