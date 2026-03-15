@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hold It In — Vertical / Library Capsule</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Russo+One&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="600" height="900"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 600, H = 900;
+
+const PAL = {
+  ink: '#1a1a2e', charcoal: '#2d2b3d', cream: '#fff4d9', white: '#faf5ef',
+  tileLight: '#ddd2c0', tileDark: '#c4b8a5', wall: '#7e8e96', fixture: '#a8a098',
+  hoodie: '#4a86c8', skin: '#ffccaa', pants: '#3a3a4a',
+  polite: '#d4a574', dancer: '#59c3e8', waddle: '#8b5e3c', panicker: '#f5c842',
+  power: '#20b89a', girls: '#e84888',
+  gold: '#ffd93d', danger: '#ff6b7a', glow: '#fff0c0', holyGold: '#ffd080',
+  sign: '#e8d44a', mop: '#9b59b6', ubik: '#6bcb77', potplant: '#c4663a',
+};
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r); ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath(); ctx.fill(); if (ctx.lineWidth > 0.5) ctx.stroke();
+}
+
+// ─── TILE FLOOR ───
+const ts = 30;
+for (let y = 0; y < H; y += ts) {
+  for (let x = 0; x < W; x += ts) {
+    ctx.fillStyle = ((x/ts|0)+(y/ts|0))%2===0 ? PAL.tileLight : PAL.tileDark;
+    ctx.fillRect(x, y, ts, ts);
+  }
+}
+ctx.strokeStyle = 'rgba(26,26,46,0.12)'; ctx.lineWidth = 1;
+for (let y = 0; y <= H; y += ts) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+for (let x = 0; x <= W; x += ts) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+
+// Dramatic lighting
+const dGrad = ctx.createRadialGradient(W/2, H*0.65, 40, W/2, H*0.5, H*0.6);
+dGrad.addColorStop(0, 'rgba(255,240,192,0.12)');
+dGrad.addColorStop(0.4, 'rgba(26,26,46,0.1)');
+dGrad.addColorStop(1, 'rgba(26,26,46,0.65)');
+ctx.fillStyle = dGrad;
+ctx.fillRect(0, 0, W, H);
+
+// ─── HOLY BEAM ───
+function drawHolyBeam(tx, ty) {
+  ctx.save();
+  const grad = ctx.createLinearGradient(tx - 150, ty - 500, tx + 20, ty + 50);
+  grad.addColorStop(0, 'rgba(255,208,128,0)');
+  grad.addColorStop(0.3, 'rgba(255,208,128,0.05)');
+  grad.addColorStop(0.8, 'rgba(255,240,192,0.15)');
+  grad.addColorStop(1, 'rgba(255,240,192,0.25)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(tx - 200, -20);
+  ctx.lineTo(tx + 80, -20);
+  ctx.lineTo(tx + 80, ty + 100);
+  ctx.lineTo(tx - 80, ty + 100);
+  ctx.closePath();
+  ctx.fill();
+  const g2 = ctx.createRadialGradient(tx, ty, 10, tx, ty, 140);
+  g2.addColorStop(0, 'rgba(255,240,210,0.25)');
+  g2.addColorStop(1, 'rgba(255,240,210,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(tx-150, ty-150, 300, 300);
+  ctx.restore();
+}
+
+const TX = W/2, TY = H*0.68;
+drawHolyBeam(TX, TY);
+
+// ─── TOILET (large, center-bottom) ───
+function drawToilet(cx, cy, s) {
+  ctx.save(); ctx.translate(cx, cy);
+  const ol = PAL.ink, lw = 3;
+  ctx.fillStyle = 'rgba(26,26,46,0.3)';
+  ctx.beginPath(); ctx.ellipse(0, 34*s, 30*s, 9*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = PAL.white; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  roundRect(-24*s, -58*s, 48*s, 44*s, 4*s);
+  ctx.fillStyle = '#eee8dd'; roundRect(-26*s, -62*s, 52*s, 9*s, 3*s);
+  ctx.fillStyle = PAL.gold; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(28*s, -46*s, 4.5*s, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = PAL.white; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.ellipse(0, -2*s, 26*s, 32*s, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#b0c0d0'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 0, 17*s, 21*s, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(100,180,220,0.3)';
+  ctx.beginPath(); ctx.ellipse(0, 2*s, 14*s, 15*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = PAL.white; ctx.lineWidth = 8*s;
+  ctx.beginPath(); ctx.ellipse(0, -2*s, 22*s, 27*s, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle = ol; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, -2*s, 25*s, 30*s, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -2*s, 19*s, 24*s, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = PAL.white; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  roundRect(-22*s, 24*s, 44*s, 13*s, 5*s);
+  ctx.restore();
+}
+
+// ─── PLAYER ───
+function drawPlayer(cx, cy, s) {
+  ctx.save(); ctx.translate(cx, cy);
+  const ol = PAL.ink, lw = 2.5;
+  ctx.fillStyle = PAL.pants; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  roundRect(-14*s, 10*s, 10*s, 22*s, 3*s);
+  roundRect(4*s, 10*s, 10*s, 22*s, 3*s);
+  ctx.fillStyle = '#444';
+  roundRect(-15*s, 29*s, 12*s, 6*s, 2*s);
+  roundRect(3*s, 29*s, 12*s, 6*s, 2*s);
+  ctx.fillStyle = PAL.hoodie; ctx.lineWidth = lw;
+  roundRect(-17*s, -22*s, 34*s, 34*s, 5*s);
+  // Arms
+  roundRect(-24*s, -18*s, 9*s, 26*s, 3*s);
+  roundRect(15*s, -18*s, 9*s, 20*s, 3*s);
+  ctx.fillStyle = PAL.skin;
+  ctx.beginPath(); ctx.arc(-19*s, 10*s, 4.5*s, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(19*s, 4*s, 4.5*s, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  // Phone
+  ctx.fillStyle = '#222'; ctx.lineWidth = 1.5;
+  roundRect(14*s, -2*s, 12*s, 18*s, 2*s);
+  ctx.fillStyle = '#5599bb'; ctx.strokeStyle = 'rgba(100,200,255,0.3)'; ctx.lineWidth = 1;
+  roundRect(15.5*s, 0*s, 9*s, 13*s, 1*s);
+  // Head
+  ctx.fillStyle = PAL.skin; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.arc(0, -33*s, 13*s, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-4*s, -33*s, 3.5*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(5*s, -33*s, 3.5*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = PAL.ink;
+  ctx.beginPath(); ctx.arc(-3*s, -32*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6*s, -32*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = PAL.ink; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(0.5*s, -28*s, 3*s, 0.1, Math.PI-0.1); ctx.stroke();
+  // Hood
+  ctx.fillStyle = PAL.hoodie; ctx.lineWidth = 8*s; ctx.strokeStyle = PAL.hoodie;
+  ctx.beginPath(); ctx.arc(0, -33*s, 14.5*s, Math.PI*0.78, Math.PI*1.22+Math.PI); ctx.stroke();
+  ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.arc(0, -33*s, 16.5*s, Math.PI*0.78, Math.PI*1.22+Math.PI); ctx.stroke();
+  ctx.restore();
+}
+
+// ─── ENEMY ───
+function drawEnemy(cx, cy, s, bodyColor, opts) {
+  const { armAngle=0, legSpread=0, sweat=false, mouth='worried' } = opts||{};
+  ctx.save(); ctx.translate(cx, cy);
+  const ol = PAL.ink, lw = Math.max(1.5, 2*Math.min(s,1.3));
+  ctx.fillStyle = 'rgba(26,26,46,0.2)';
+  ctx.beginPath(); ctx.ellipse(0, 30*s, 12*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = PAL.pants; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  ctx.save(); ctx.translate(-5*s, 12*s); ctx.rotate(-legSpread);
+  roundRect(-4*s, 0, 8*s, 16*s, 2*s);
+  ctx.fillStyle = '#444'; roundRect(-5*s, 14*s, 10*s, 5*s, 2*s);
+  ctx.restore();
+  ctx.save(); ctx.translate(5*s, 12*s); ctx.rotate(legSpread);
+  ctx.fillStyle = PAL.pants; roundRect(-4*s, 0, 8*s, 16*s, 2*s);
+  ctx.fillStyle = '#444'; roundRect(-5*s, 14*s, 10*s, 5*s, 2*s);
+  ctx.restore();
+  ctx.fillStyle = bodyColor; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  roundRect(-12*s, -15*s, 24*s, 28*s, 4*s);
+  ctx.save(); ctx.translate(-14*s, -11*s); ctx.rotate(-armAngle);
+  ctx.fillStyle = bodyColor; roundRect(-3*s, 0, 6*s, 18*s, 2*s);
+  ctx.fillStyle = PAL.skin; ctx.beginPath(); ctx.arc(0, 19*s, 3*s, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=1; ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.translate(14*s, -11*s); ctx.rotate(armAngle);
+  ctx.fillStyle = bodyColor; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  roundRect(-3*s, 0, 6*s, 18*s, 2*s);
+  ctx.fillStyle = PAL.skin; ctx.beginPath(); ctx.arc(0, 19*s, 3*s, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=1; ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = PAL.skin; ctx.strokeStyle = ol; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.arc(0, -23*s, 9*s, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-3*s, -24*s, 3.2*s, 3.8*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(3.5*s, -24*s, 3.2*s, 3.8*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = PAL.ink;
+  ctx.beginPath(); ctx.arc(-2.5*s, -23*s, 1.7*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4*s, -23*s, 1.7*s, 0, Math.PI*2); ctx.fill();
+  if (mouth === 'open') {
+    ctx.fillStyle = '#8b2020';
+    ctx.beginPath(); ctx.ellipse(0.5*s, -17*s, 3*s, 3.5*s, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = ol; ctx.lineWidth = 1; ctx.stroke();
+  } else {
+    ctx.strokeStyle = PAL.ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0.5*s, -17*s, 3*s, 0.3, Math.PI-0.3); ctx.stroke();
+  }
+  if (sweat) {
+    ctx.fillStyle = 'rgba(120,190,255,0.7)';
+    ctx.beginPath();
+    ctx.moveTo(10*s, -28*s); ctx.quadraticCurveTo(12.5*s, -24*s, 10*s, -21*s);
+    ctx.quadraticCurveTo(7.5*s, -24*s, 10*s, -28*s); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ─── SPARKLES ───
+function sparkle(x, y, s, color) {
+  ctx.save(); ctx.globalAlpha = 0.5 + Math.random()*0.5;
+  ctx.fillStyle = color || PAL.gold;
+  ctx.beginPath();
+  ctx.moveTo(x, y-s); ctx.lineTo(x+s*0.25, y); ctx.lineTo(x, y+s); ctx.lineTo(x-s*0.25, y);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x-s*0.7, y); ctx.lineTo(x, y+s*0.2); ctx.lineTo(x+s*0.7, y); ctx.lineTo(x, y-s*0.2);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// ─── COMPOSE ───
+
+// Enemies at top — the approaching horde
+const enemies = [
+  // Far rows
+  { x: 300, y: 80, s: 0.55, c: PAL.polite, o: {} },
+  { x: 180, y: 90, s: 0.5, c: PAL.panicker, o: { armAngle: 0.4, sweat: true } },
+  { x: 420, y: 95, s: 0.5, c: PAL.girls, o: { armAngle: 0.2 } },
+  { x: 100, y: 100, s: 0.45, c: PAL.power, o: { legSpread: 0.1 } },
+  { x: 500, y: 85, s: 0.45, c: PAL.dancer, o: { legSpread: 0.2 } },
+
+  // Mid rows
+  { x: 140, y: 160, s: 0.7, c: PAL.dancer, o: { legSpread: 0.25, sweat: true } },
+  { x: 300, y: 150, s: 0.65, c: PAL.waddle, o: { sweat: true } },
+  { x: 460, y: 155, s: 0.65, c: PAL.panicker, o: { armAngle: 0.5, sweat: true, mouth: 'open' } },
+  { x: 70, y: 170, s: 0.6, c: PAL.girls, o: { armAngle: 0.3 } },
+  { x: 530, y: 165, s: 0.55, c: PAL.polite, o: {} },
+
+  // Closer rows
+  { x: 200, y: 230, s: 0.85, c: PAL.panicker, o: { armAngle: 0.6, sweat: true, mouth: 'open' } },
+  { x: 400, y: 235, s: 0.9, c: PAL.waddle, o: { sweat: true, mouth: 'open' } },
+  { x: 100, y: 250, s: 0.75, c: PAL.power, o: { legSpread: 0.15 } },
+  { x: 500, y: 245, s: 0.8, c: PAL.dancer, o: { legSpread: 0.3, sweat: true } },
+
+  // Front row
+  { x: 130, y: 330, s: 1.15, c: PAL.girls, o: { armAngle: 0.4, sweat: true, mouth: 'open' } },
+  { x: 300, y: 340, s: 1.2, c: PAL.panicker, o: { armAngle: 0.7, sweat: true, mouth: 'open' } },
+  { x: 470, y: 335, s: 1.1, c: PAL.waddle, o: { sweat: true, mouth: 'open' } },
+];
+
+enemies.sort((a, b) => a.y - b.y);
+for (const e of enemies) {
+  drawEnemy(e.x, e.y, e.s, e.c, e.o);
+}
+
+// Towers in the gap between enemies and toilet
+function drawWetFloorSign(cx, cy, s) {
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.fillStyle = 'rgba(26,26,46,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 14*s, 10*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = PAL.sign; ctx.strokeStyle = PAL.ink; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -22*s); ctx.lineTo(14*s, 12*s); ctx.lineTo(-14*s, 12*s); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = PAL.ink; ctx.font = `bold ${12*s}px sans-serif`; ctx.textAlign = 'center';
+  ctx.fillText('!', 0, 6*s);
+  ctx.restore();
+}
+
+function drawMop(cx, cy, s) {
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.strokeStyle = '#8b6e4e'; ctx.lineWidth = 3*s;
+  ctx.beginPath(); ctx.moveTo(0, -24*s); ctx.lineTo(0, 6*s); ctx.stroke();
+  ctx.fillStyle = PAL.mop; ctx.strokeStyle = PAL.ink; ctx.lineWidth = 2;
+  roundRect(-10*s, 6*s, 20*s, 5*s, 2*s);
+  for (let i = -2; i <= 2; i++) {
+    ctx.fillStyle = i%2===0 ? PAL.mop : '#8a4aaa';
+    ctx.fillRect(i*4*s - 2*s, 10*s, 4*s, 10*s);
+  }
+  ctx.restore();
+}
+
+drawWetFloorSign(180, 430, 1.2);
+drawMop(420, 420, 1.1);
+drawWetFloorSign(350, 450, 1.0);
+
+// Toilet
+drawToilet(TX, TY, 2.8);
+
+// Player on toilet
+drawPlayer(TX, TY - 75, 2.0);
+
+// Sparkles
+const sparklePositions = [
+  [TX-60, TY-40, 5], [TX+50, TY-60, 4], [TX-40, TY-90, 3.5],
+  [TX+30, TY-20, 4.5], [TX-20, TY+10, 3], [TX+60, TY-30, 3],
+  [TX-70, TY-70, 3], [TX+45, TY+15, 4], [TX-10, TY-110, 3],
+  [TX+70, TY-80, 2.5], [TX-55, TY+20, 3], [TX+20, TY-50, 4],
+  [TX, TY-130, 2.5], [TX-80, TY-10, 3.5], [TX+80, TY-50, 3],
+];
+for (const [x, y, s] of sparklePositions) sparkle(x, y, s, PAL.gold);
+for (const [x, y, s] of [[TX-30, TY-80, 2], [TX+25, TY-100, 2.5], [TX, TY-60, 2]]) sparkle(x, y, s, '#fff');
+
+// ─── TITLE at top ───
+ctx.save();
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+const titleX = W/2, titleY = H * 0.06;
+
+// "HOLD IT IN"
+ctx.font = 'bold 64px "Russo One", "Arial Black", "Impact", sans-serif';
+ctx.fillStyle = 'rgba(26,26,46,0.6)';
+ctx.fillText('HOLD IT IN', titleX + 3, titleY + 3);
+ctx.strokeStyle = PAL.ink; ctx.lineWidth = 8; ctx.lineJoin = 'round';
+ctx.strokeText('HOLD IT IN', titleX, titleY);
+const tGrad = ctx.createLinearGradient(titleX-180, titleY-30, titleX+180, titleY+30);
+tGrad.addColorStop(0, '#ffd93d'); tGrad.addColorStop(0.35, '#fff4d9');
+tGrad.addColorStop(0.65, '#ffe870'); tGrad.addColorStop(1, '#ffd93d');
+ctx.fillStyle = tGrad;
+ctx.fillText('HOLD IT IN', titleX, titleY);
+
+ctx.restore();
+
+// ─── VIGNETTE ───
+const vGrad = ctx.createRadialGradient(W/2, H*0.6, H*0.15, W/2, H*0.5, H*0.6);
+vGrad.addColorStop(0, 'rgba(26,26,46,0)');
+vGrad.addColorStop(1, 'rgba(26,26,46,0.55)');
+ctx.fillStyle = vGrad;
+ctx.fillRect(0, 0, W, H);
+
+// Edge darken
+const eT = ctx.createLinearGradient(0, 0, 0, 50);
+eT.addColorStop(0, 'rgba(26,26,46,0.5)'); eT.addColorStop(1, 'rgba(26,26,46,0)');
+ctx.fillStyle = eT; ctx.fillRect(0, 0, W, 50);
+const eB = ctx.createLinearGradient(0, H-50, 0, H);
+eB.addColorStop(0, 'rgba(26,26,46,0)'); eB.addColorStop(1, 'rgba(26,26,46,0.5)');
+ctx.fillStyle = eB; ctx.fillRect(0, H-50, W, 50);
+const eL = ctx.createLinearGradient(0, 0, 40, 0);
+eL.addColorStop(0, 'rgba(26,26,46,0.4)'); eL.addColorStop(1, 'rgba(26,26,46,0)');
+ctx.fillStyle = eL; ctx.fillRect(0, 0, 40, H);
+const eR = ctx.createLinearGradient(W-40, 0, W, 0);
+eR.addColorStop(0, 'rgba(26,26,46,0)'); eR.addColorStop(1, 'rgba(26,26,46,0.4)');
+ctx.fillStyle = eR; ctx.fillRect(W-40, 0, 40, H);
+</script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hold It In — Steam Capsule Renderer</title>
+<style>
+  /* Bangers font loaded locally or from CDN fallback */
+  * { margin: 0; padding: 0; }
+  body { background: #000; overflow: hidden; }
+  canvas { display: block; }
+  /* Preload Bangers font so canvas has it immediately */
+  .font-preload { font-family: 'Bangers', cursive; position: absolute; left: -9999px; visibility: hidden; }
+</style>
+</head>
+<body>
+<span class="font-preload">HOLD IT IN</span>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./node_modules/three/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ═══════════════════════════════════════════════════════
+// PALETTE (exact from game)
+// ═══════════════════════════════════════════════════════
+const P = {
+  ink: 0x1a1a2e, charcoal: 0x2d2b3d, cream: 0xfff4d9, white: 0xfaf5ef,
+  tileLight: 0xddd2c0, tileDark: 0xc4b8a5, wall: 0x7e8e96, fixture: 0xa8a098,
+  wood: 0x8b6e4e, carpet: 0x5a6658,
+  hoodie: 0x4a86c8, skin: 0xffccaa, pants: 0x3a3a4a,
+  polite: 0xd4a574, dancer: 0x59c3e8, waddle: 0x8b5e3c, panicker: 0xf5c842,
+  power: 0x20b89a, girls: 0xe84888,
+  gold: 0xffd93d, danger: 0xff6b7a, glow: 0xfff0c0, holyGold: 0xffd080,
+  rimCool: 0x6688aa, fillWarm: 0xfff0d0, ambient: 0x505060,
+  sign: 0xe8d44a, mop: 0x9b59b6, ubik: 0x6bcb77, potplant: 0xc4663a,
+};
+
+const TOON_RAMP = { shadow: 0.35, mid: 0.85, highlight: 1.0 };
+
+// ═══════════════════════════════════════════════════════
+// TOON MATERIAL SYSTEM (exact from game)
+// ═══════════════════════════════════════════════════════
+let _gradientMap = null;
+function getGradientMap() {
+  if (_gradientMap) return _gradientMap;
+  const data = new Uint8Array([
+    Math.round(TOON_RAMP.shadow * 255),
+    Math.round(TOON_RAMP.mid * 255),
+    Math.round(TOON_RAMP.highlight * 255),
+  ]);
+  _gradientMap = new THREE.DataTexture(data, 3, 1, THREE.LuminanceFormat);
+  _gradientMap.minFilter = THREE.NearestFilter;
+  _gradientMap.magFilter = THREE.NearestFilter;
+  _gradientMap.needsUpdate = true;
+  return _gradientMap;
+}
+
+function toonMat(color, opts = {}) {
+  const mat = new THREE.MeshToonMaterial({
+    color, gradientMap: getGradientMap(),
+    transparent: opts.transparent || false,
+    opacity: opts.opacity !== undefined ? opts.opacity : 1.0,
+    side: opts.side || THREE.FrontSide,
+  });
+  if (opts.emissive !== undefined) {
+    mat.emissive.setHex(opts.emissive);
+    mat.emissiveIntensity = opts.emissiveIntensity !== undefined ? opts.emissiveIntensity : 0.3;
+  }
+  return mat;
+}
+
+// Outline material (inverted hull)
+function outlineMat(width = 0.03) {
+  return new THREE.ShaderMaterial({
+    vertexShader: `
+      uniform float uOutlineWidth;
+      void main() {
+        vec3 pos = position + normal * uOutlineWidth;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      void main() {
+        gl_FragColor = vec4(0.102, 0.102, 0.180, 1.0); // ink #1a1a2e
+      }
+    `,
+    uniforms: { uOutlineWidth: { value: width } },
+    side: THREE.BackSide,
+  });
+}
+
+// Named material factories
+const matPorcelain = () => toonMat(P.white, { emissive: P.rimCool, emissiveIntensity: 0.08 });
+const matGold = () => toonMat(P.gold, { emissive: P.gold, emissiveIntensity: 0.3 });
+const matWall = () => toonMat(P.wall);
+const matSign = () => toonMat(P.sign);
+const matMop = () => toonMat(P.mop);
+
+// ═══════════════════════════════════════════════════════
+// MODEL FACTORIES
+// ═══════════════════════════════════════════════════════
+
+function addOutline(mesh, width = 0.03) {
+  const ol = new THREE.Mesh(mesh.geometry.clone(), outlineMat(width));
+  ol.position.copy(mesh.position);
+  ol.rotation.copy(mesh.rotation);
+  ol.scale.copy(mesh.scale);
+  return ol;
+}
+
+function createToilet() {
+  const group = new THREE.Group();
+  const porc = matPorcelain();
+  const gold = matGold();
+  const porcelainInner = toonMat(P.rimCool);
+
+  // Base
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.4, 12), porc);
+  base.position.y = 0.2; base.castShadow = true; base.receiveShadow = true;
+  group.add(base); group.add(addOutline(base, 0.025));
+
+  // Bowl outer
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.8, 1.2, 12), porc);
+  bowl.position.y = 1.0; bowl.castShadow = true;
+  group.add(bowl); group.add(addOutline(bowl, 0.025));
+
+  // Bowl inner
+  const bowlInner = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.5, 0.5, 12), porcelainInner);
+  bowlInner.position.y = 1.45;
+  group.add(bowlInner);
+
+  // Seat
+  const seat = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.12, 8, 16), porc);
+  seat.rotation.x = -Math.PI / 2; seat.position.y = 1.65; seat.castShadow = true;
+  group.add(seat);
+
+  // Tank
+  const tank = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 0.7), porc);
+  tank.position.set(0, 1.3, -0.85); tank.castShadow = true;
+  group.add(tank); group.add(addOutline(tank, 0.025));
+
+  // Tank lid
+  const tankLid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.15, 0.8), porc);
+  tankLid.position.set(0, 2.25, -0.85);
+  group.add(tankLid);
+
+  // Flush handle
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 8), gold);
+  handle.rotation.z = Math.PI / 2; handle.position.set(0.95, 2.0, -0.85);
+  group.add(handle);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), gold);
+  knob.position.set(1.15, 2.0, -0.85);
+  group.add(knob);
+
+  // Holy spotlight
+  const holySpot = new THREE.SpotLight(P.holyGold, 1.5, 25, Math.PI / 7, 0.6, 1.5);
+  holySpot.position.set(-5, 12, 3);
+  holySpot.castShadow = true;
+  holySpot.shadow.mapSize.width = 2048;
+  holySpot.shadow.mapSize.height = 2048;
+  group.add(holySpot);
+  const spotTarget = new THREE.Object3D();
+  spotTarget.position.set(0, 0.5, 0);
+  group.add(spotTarget);
+  holySpot.target = spotTarget;
+
+  // Fill/rim lights
+  const fillLight = new THREE.PointLight(P.fillWarm, 0.3, 8, 2);
+  fillLight.position.set(2, 5, -1);
+  group.add(fillLight);
+  const rim = new THREE.PointLight(P.rimCool, 0.6, 8, 2);
+  rim.position.set(0, 3, 3);
+  group.add(rim);
+
+  // Light beam
+  const lo = { x: -5, y: 12, z: 3 };
+  const dx = -lo.x, dy = -lo.y + 0.5, dz = -lo.z;
+  const beamLen = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.5, 0.2, beamLen, 16, 1, true),
+    new THREE.MeshBasicMaterial({ color: P.glow, transparent: true, opacity: 0.04, side: THREE.DoubleSide, depthWrite: false })
+  );
+  beam.position.set(lo.x/2, (lo.y+0.5)/2, lo.z/2);
+  const lightDir = new THREE.Vector3(dx, dy, dz).normalize();
+  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), lightDir);
+  group.add(beam);
+
+  // Sparkles
+  const sparkCount = 40;
+  const sparkGeo = new THREE.BufferGeometry();
+  const sparkPos = new Float32Array(sparkCount * 3);
+  for (let i = 0; i < sparkCount; i++) {
+    const t = Math.random();
+    sparkPos[i*3] = lo.x * t + (Math.random()-0.5) * 3 * (1-t);
+    sparkPos[i*3+1] = lo.y * t + (Math.random()-0.5) * 2;
+    sparkPos[i*3+2] = lo.z * t + (Math.random()-0.5) * 3 * (1-t);
+  }
+  sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+  group.add(new THREE.Points(sparkGeo, new THREE.PointsMaterial({
+    color: P.gold, size: 0.25, transparent: true, opacity: 0.85, depthWrite: false
+  })));
+
+  // Clean sparkles
+  const cCount = 30;
+  const cGeo = new THREE.BufferGeometry();
+  const cPos = new Float32Array(cCount * 3);
+  for (let i = 0; i < cCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 0.3 + Math.random() * 1.2;
+    cPos[i*3] = Math.cos(angle) * radius;
+    cPos[i*3+1] = Math.random() * 2.5;
+    cPos[i*3+2] = Math.sin(angle) * radius - 0.3;
+  }
+  cGeo.setAttribute('position', new THREE.BufferAttribute(cPos, 3));
+  group.add(new THREE.Points(cGeo, new THREE.PointsMaterial({
+    color: P.white, size: 0.18, transparent: true, opacity: 0.9, depthWrite: false
+  })));
+
+  group.scale.set(0.85, 0.85, 0.85);
+  return group;
+}
+
+// Simple enemy figure (no skeleton, just geometry in T-pose-ish)
+function createEnemy(bodyColor, size = 1.5, opts = {}) {
+  const group = new THREE.Group();
+  const s = size;
+  const bodyMat = toonMat(bodyColor);
+  const skinMat = toonMat(P.skin);
+  const pantsMat = toonMat(P.pants);
+  const olw = 0.03 * s;
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8*s, 0.56*s, 0.5*s, 3, 3, 3), bodyMat);
+  torso.position.y = s * 1.2;
+  group.add(torso); group.add(addOutline(torso, olw));
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35*s, 12, 10), skinMat);
+  head.position.y = s * 1.8;
+  group.add(head); group.add(addOutline(head, olw));
+
+  // Eyes (white spheres + dark pupils)
+  const eyeWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const eyePupil = new THREE.MeshBasicMaterial({ color: P.ink });
+  [-1, 1].forEach(side => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08*s, 8, 6), eyeWhite);
+    eye.position.set(side * 0.12*s, s*1.82, 0.28*s);
+    eye.scale.set(1, 1.2, 0.6);
+    group.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.045*s, 6, 4), eyePupil);
+    pupil.position.set(side * 0.12*s, s*1.80, 0.32*s);
+    group.add(pupil);
+  });
+
+  // Arms
+  [-1, 1].forEach(side => {
+    const arm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1*s, 0.09*s, 0.55*s, 6),
+      bodyMat
+    );
+    const armAngle = opts.armAngle || 0;
+    arm.position.set(side * 0.52*s, s * 1.05, 0);
+    arm.rotation.z = side * (0.15 + armAngle);
+    group.add(arm); group.add(addOutline(arm, olw * 0.7));
+
+    // Hand
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07*s, 6, 6), skinMat);
+    hand.position.set(
+      side * (0.52*s + Math.sin(0.15 + armAngle) * 0.3*s),
+      s * 0.78 - Math.cos(0.15 + armAngle) * 0.05*s,
+      0
+    );
+    group.add(hand);
+  });
+
+  // Legs
+  [-1, 1].forEach(side => {
+    const leg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12*s, 0.1*s, 0.8*s, 6),
+      pantsMat
+    );
+    const spread = opts.legSpread || 0;
+    leg.position.set(side * 0.15*s, s * 0.4, 0);
+    leg.rotation.z = side * spread;
+    group.add(leg); group.add(addOutline(leg, olw * 0.7));
+
+    // Shoe
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.18*s, 0.1*s, 0.25*s, 2, 2, 2), toonMat(0x444444));
+    shoe.position.set(side * (0.15*s + Math.sin(spread)*0.35*s), s * 0.02, 0.04*s);
+    group.add(shoe);
+  });
+
+  // Sweat drop
+  if (opts.sweat) {
+    const sweatGeo = new THREE.SphereGeometry(0.06*s, 6, 6);
+    const sweatMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.8 });
+    const sweat = new THREE.Mesh(sweatGeo, sweatMat);
+    sweat.position.set(0.3*s, s*1.9, 0.1*s);
+    sweat.scale.set(0.6, 1.2, 0.6);
+    group.add(sweat);
+  }
+
+  return group;
+}
+
+// Player sitting on toilet (hoodie, phone)
+function createPlayer(size = 1.8) {
+  const group = new THREE.Group();
+  const s = size;
+  const hoodieMat = toonMat(P.hoodie);
+  const skinMat = toonMat(P.skin);
+  const pantsMat = toonMat(P.pants);
+  const olw = 0.035 * s;
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5*s, 0.65*s, 0.32*s, 3, 3, 3), hoodieMat);
+  torso.position.y = s * 0.55;
+  group.add(torso); group.add(addOutline(torso, olw));
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.26*s, 12, 10), skinMat);
+  head.position.y = s * 1.1;
+  group.add(head); group.add(addOutline(head, olw));
+
+  // Hood
+  const hood = new THREE.Mesh(
+    new THREE.SphereGeometry(0.29*s, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    hoodieMat
+  );
+  hood.position.y = s * 1.12;
+  hood.rotation.x = -0.15;
+  group.add(hood);
+
+  // Eyes
+  const eyeWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const eyePupil = new THREE.MeshBasicMaterial({ color: P.ink });
+  [-1, 1].forEach(side => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06*s, 8, 6), eyeWhite);
+    eye.position.set(side * 0.09*s, s*1.1, 0.22*s);
+    eye.scale.set(1, 1.1, 0.5);
+    group.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.035*s, 6, 4), eyePupil);
+    pupil.position.set(side * 0.09*s + 0.01*s, s*1.08, 0.25*s);
+    group.add(pupil);
+  });
+
+  // Arms
+  // Left arm (resting)
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.09*s, 0.08*s, 0.45*s, 6), hoodieMat);
+  armL.position.set(-0.38*s, s * 0.45, 0);
+  armL.rotation.z = 0.3;
+  group.add(armL); group.add(addOutline(armL, olw*0.7));
+
+  // Right arm (holding phone)
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.09*s, 0.08*s, 0.35*s, 6), hoodieMat);
+  armR.position.set(0.35*s, s * 0.5, 0.1*s);
+  armR.rotation.z = -0.4; armR.rotation.x = -0.5;
+  group.add(armR); group.add(addOutline(armR, olw*0.7));
+
+  // Phone
+  const phone = new THREE.Mesh(new THREE.BoxGeometry(0.1*s, 0.16*s, 0.02*s), toonMat(0x222222));
+  phone.position.set(0.42*s, s * 0.42, 0.22*s);
+  phone.rotation.x = -0.3;
+  group.add(phone);
+  // Screen glow
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.08*s, 0.12*s),
+    new THREE.MeshBasicMaterial({ color: 0x6eaacc, transparent: true, opacity: 0.9 })
+  );
+  screen.position.set(0.42*s, s * 0.42, 0.235*s);
+  screen.rotation.x = -0.3;
+  group.add(screen);
+  // Screen glow light
+  const screenGlow = new THREE.PointLight(0x6eaacc, 0.3, 2);
+  screenGlow.position.set(0.42*s, s * 0.45, 0.3*s);
+  group.add(screenGlow);
+
+  // Hands
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.06*s, 6, 6), skinMat);
+  handL.position.set(-0.5*s, s*0.25, 0);
+  group.add(handL);
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.06*s, 6, 6), skinMat);
+  handR.position.set(0.42*s, s*0.35, 0.2*s);
+  group.add(handR);
+
+  // Legs (seated, forward)
+  [-1, 1].forEach(side => {
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1*s, 0.09*s, 0.4*s, 6), pantsMat);
+    thigh.position.set(side * 0.13*s, s * 0.15, 0.15*s);
+    thigh.rotation.x = -Math.PI / 2.5;
+    group.add(thigh);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.09*s, 0.08*s, 0.35*s, 6), pantsMat);
+    shin.position.set(side * 0.13*s, s * -0.05, 0.35*s);
+    shin.rotation.x = -0.2;
+    group.add(shin);
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.14*s, 0.08*s, 0.2*s), toonMat(0x444444));
+    shoe.position.set(side * 0.13*s, s * -0.22, 0.42*s);
+    group.add(shoe);
+  });
+
+  return group;
+}
+
+// Wet floor sign tower
+function createWetFloorSign() {
+  const group = new THREE.Group();
+  const signMat = matSign();
+  // A-frame sign
+  const geo = new THREE.CylinderGeometry(0, 0.5, 1.2, 4);
+  const sign = new THREE.Mesh(geo, signMat);
+  sign.position.y = 0.6; sign.rotation.y = Math.PI / 4;
+  group.add(sign); group.add(addOutline(sign, 0.02));
+  // Exclamation mark (tiny sphere)
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), toonMat(P.ink));
+  dot.position.y = 0.6;
+  group.add(dot);
+  return group;
+}
+
+// Mop turret
+function createMopTurret() {
+  const group = new THREE.Group();
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 6), toonMat(P.wood));
+  handle.position.y = 0.9;
+  group.add(handle);
+  // Mop head
+  const mopHead = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.3), matMop());
+  mopHead.position.y = 0.08;
+  group.add(mopHead); group.add(addOutline(mopHead, 0.02));
+  // Mop strands
+  for (let i = -2; i <= 2; i++) {
+    const strand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.025, 0.3, 4),
+      toonMat(i % 2 === 0 ? P.mop : 0x8a4aaa)
+    );
+    strand.position.set(i * 0.12, -0.1, 0);
+    group.add(strand);
+  }
+  return group;
+}
+
+// Floor tiles
+function createFloor() {
+  const group = new THREE.Group();
+  const tileSize = 2;
+  for (let x = -20; x <= 20; x += tileSize) {
+    for (let z = -5; z <= 75; z += tileSize) {
+      const isAlt = ((x / tileSize + 100) % 2 + (z / tileSize + 100) % 2) % 2 === 0;
+      const tile = new THREE.Mesh(
+        new THREE.PlaneGeometry(tileSize - 0.02, tileSize - 0.02),
+        toonMat(isAlt ? P.tileLight : P.tileDark)
+      );
+      tile.rotation.x = -Math.PI / 2;
+      tile.position.set(x, -0.01, z);
+      tile.receiveShadow = true;
+      group.add(tile);
+    }
+  }
+  return group;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCENE SETUP
+// ═══════════════════════════════════════════════════════
+
+// Query param: ?mode=header|small|vertical
+const params = new URLSearchParams(window.location.search);
+const mode = params.get('mode') || 'header';
+const SIZES = {
+  header:   { w: 920, h: 430 },
+  small:    { w: 462, h: 174 },
+  vertical: { w: 600, h: 900 },
+};
+const SIZE = SIZES[mode];
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(SIZE.w, SIZE.h);
+renderer.setPixelRatio(2); // 2x for crisp output
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.4;
+renderer.outputEncoding = THREE.sRGBEncoding;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+// Light fog for depth — much lighter than in-game for capsule clarity
+scene.fog = new THREE.FogExp2(P.charcoal, 0.004);
+// Dark background that blends with Steam's UI
+scene.background = new THREE.Color(P.charcoal);
+
+// Camera — cinematic angle per mode
+const camera = new THREE.PerspectiveCamera(
+  mode === 'small' ? 42 : mode === 'vertical' ? 48 : 45,
+  SIZE.w / SIZE.h, 0.1, 200
+);
+
+if (mode === 'header') {
+  // Key composition: toilet/player prominent lower-left, horde stretching to upper-right
+  // Low-ish angle to see character faces, slight tilt for drama
+  camera.position.set(-6, 8, -1);
+  camera.lookAt(4, 1.5, 16);
+} else if (mode === 'small') {
+  // Tight on toilet + closest enemies — must read at 120x45px
+  camera.position.set(-3, 7, 0);
+  camera.lookAt(2, 1.5, 12);
+} else { // vertical
+  // Looking down the lane — classic tower defense perspective
+  camera.position.set(0, 30, 2);
+  camera.lookAt(0, 0, 30);
+}
+
+// ─── LIGHTING — brighter for capsule art ───
+// Stronger ambient for readability
+const ambient = new THREE.AmbientLight(0x7a7a90, 0.9);
+scene.add(ambient);
+
+// Warm hemisphere light for better color rendering
+const hemi = new THREE.HemisphereLight(0xfff0d0, 0x303040, 0.5);
+scene.add(hemi);
+
+// Key directional light (matches toon shader uLightDir: 0.5, 1.0, 0.3)
+const dirLight = new THREE.DirectionalLight(0xffeedd, 0.7);
+dirLight.position.set(10, 20, 6);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 80;
+dirLight.shadow.camera.left = -30;
+dirLight.shadow.camera.right = 30;
+dirLight.shadow.camera.top = 30;
+dirLight.shadow.camera.bottom = -10;
+scene.add(dirLight);
+
+// Warm fill from the opposite side
+const fillDir = new THREE.DirectionalLight(0xffd080, 0.3);
+fillDir.position.set(-8, 10, -5);
+scene.add(fillDir);
+
+// Cool rim light from behind (for character silhouette pop)
+const rimDir = new THREE.DirectionalLight(0x6688aa, 0.25);
+rimDir.position.set(0, 5, 50);
+scene.add(rimDir);
+
+// ─── FLOOR ───
+scene.add(createFloor());
+
+// ─── TOILET (the sacred throne) ───
+const toilet = createToilet();
+toilet.position.set(0, 0, 3);
+scene.add(toilet);
+
+// ─── PLAYER ON TOILET ───
+const player = createPlayer(1.8);
+const toiletScale = 0.85;
+player.position.set(0, (1.65 + 0.05) * toiletScale, 3.1);
+scene.add(player);
+
+// ─── TOWERS (scattered in the defense zone) ───
+const towerPositions = [
+  { type: 'sign', pos: [-4, 0, 12], scale: 1.3 },
+  { type: 'mop', pos: [3.5, 0, 10], scale: 1.2 },
+  { type: 'sign', pos: [-1.5, 0, 18], scale: 1.1 },
+  { type: 'mop', pos: [5, 0, 16], scale: 1.0 },
+  { type: 'sign', pos: [1, 0, 24], scale: 0.95 },
+  { type: 'mop', pos: [-3, 0, 22], scale: 1.0 },
+  { type: 'sign', pos: [4, 0, 28], scale: 0.9 },
+];
+for (const t of towerPositions) {
+  const tower = t.type === 'sign' ? createWetFloorSign() : createMopTurret();
+  tower.position.set(...t.pos);
+  tower.scale.setScalar(t.scale);
+  scene.add(tower);
+}
+
+// ─── ENEMY HORDE ───
+const enemyTypes = [
+  { color: P.polite, opts: { armAngle: 0.15 } },
+  { color: P.dancer, opts: { legSpread: 0.2 } },
+  { color: P.waddle, opts: { sweat: true }, size: 2.0 },
+  { color: P.panicker, opts: { armAngle: 0.6, sweat: true } },
+  { color: P.power, opts: { legSpread: 0.15 } },
+  { color: P.girls, opts: { armAngle: 0.35, sweat: true } },
+];
+
+// Deterministic horde positions (no Math.random — consistent renders)
+const hordeLayout = mode === 'header' ? [
+  // Header: wide spread, denser on right side of frame
+  // Front wave (closest to toilet — big, desperate)
+  { x: -2, z: 14, s: 1.5, t: 3 }, { x: 3, z: 15, s: 1.6, t: 2 }, { x: 7, z: 13, s: 1.4, t: 5 },
+  // Second wave
+  { x: -4, z: 20, s: 1.3, t: 0 }, { x: 1, z: 21, s: 1.4, t: 1 }, { x: 5, z: 19, s: 1.3, t: 4 },
+  { x: 9, z: 20, s: 1.2, t: 3 },
+  // Third wave
+  { x: -3, z: 26, s: 1.2, t: 1 }, { x: 2, z: 27, s: 1.1, t: 5 }, { x: 6, z: 25, s: 1.15, t: 0 },
+  { x: 10, z: 27, s: 1.0, t: 2 }, { x: -6, z: 28, s: 1.0, t: 4 },
+  // Back waves (smaller, fading into distance)
+  { x: -2, z: 33, s: 1.0, t: 0 }, { x: 3, z: 34, s: 0.95, t: 3 }, { x: 7, z: 32, s: 0.9, t: 1 },
+  { x: 11, z: 34, s: 0.85, t: 5 }, { x: -5, z: 35, s: 0.9, t: 2 },
+  { x: 0, z: 40, s: 0.8, t: 4 }, { x: 5, z: 41, s: 0.75, t: 0 }, { x: 9, z: 39, s: 0.8, t: 3 },
+  { x: -4, z: 42, s: 0.7, t: 1 }, { x: 3, z: 46, s: 0.65, t: 5 },
+] : mode === 'small' ? [
+  // Small: fewer, bigger, more visible
+  { x: -1, z: 14, s: 1.5, t: 3 }, { x: 4, z: 15, s: 1.4, t: 5 },
+  { x: -3, z: 20, s: 1.3, t: 0 }, { x: 2, z: 21, s: 1.3, t: 1 }, { x: 6, z: 19, s: 1.2, t: 4 },
+  { x: 0, z: 27, s: 1.1, t: 2 }, { x: 4, z: 26, s: 1.0, t: 5 }, { x: -4, z: 28, s: 1.0, t: 3 },
+  { x: 2, z: 33, s: 0.9, t: 0 }, { x: -2, z: 34, s: 0.85, t: 1 },
+] : [
+  // Vertical: full lane, many rows, symmetric spread
+  { x: -3, z: 16, s: 1.4, t: 3 }, { x: 3, z: 15, s: 1.5, t: 2 }, { x: 0, z: 17, s: 1.3, t: 5 },
+  { x: -5, z: 22, s: 1.3, t: 0 }, { x: 0, z: 21, s: 1.3, t: 1 }, { x: 5, z: 23, s: 1.2, t: 4 },
+  { x: -2, z: 28, s: 1.2, t: 5 }, { x: 3, z: 27, s: 1.15, t: 3 }, { x: -5, z: 29, s: 1.1, t: 1 },
+  { x: 5, z: 28, s: 1.1, t: 0 },
+  { x: -3, z: 34, s: 1.1, t: 2 }, { x: 2, z: 33, s: 1.05, t: 4 }, { x: 6, z: 35, s: 1.0, t: 5 },
+  { x: -6, z: 35, s: 0.95, t: 0 },
+  { x: 0, z: 40, s: 1.0, t: 3 }, { x: -4, z: 41, s: 0.95, t: 1 }, { x: 4, z: 39, s: 0.95, t: 2 },
+  { x: -2, z: 46, s: 0.9, t: 5 }, { x: 3, z: 47, s: 0.85, t: 4 }, { x: -5, z: 48, s: 0.8, t: 0 },
+  { x: 5, z: 46, s: 0.85, t: 1 },
+  { x: 0, z: 53, s: 0.8, t: 3 }, { x: -3, z: 54, s: 0.75, t: 2 }, { x: 4, z: 52, s: 0.75, t: 5 },
+];
+
+const enemies = [];
+for (const h of hordeLayout) {
+  const type = enemyTypes[h.t];
+  const sz = type.size ? type.size * (h.s / 1.5) : h.s;
+  const enemy = createEnemy(type.color, sz, {
+    ...type.opts,
+    sweat: h.z < 25 && type.opts?.sweat,
+  });
+  enemy.position.set(h.x, 0, h.z);
+  enemy.rotation.y = Math.PI; // Face toward toilet
+  scene.add(enemy);
+  enemies.push(enemy);
+}
+
+// ─── CORRIDOR WALLS (shorter, less obstructive) ───
+const wallMat = matWall();
+const wallGeo = new THREE.BoxGeometry(0.3, 3, 12);
+const wallL = new THREE.Mesh(wallGeo, wallMat);
+wallL.position.set(-7, 1.5, 6); wallL.castShadow = true;
+scene.add(wallL); scene.add(addOutline(wallL, 0.025));
+const wallR = new THREE.Mesh(wallGeo.clone(), wallMat);
+wallR.position.set(7, 1.5, 6); wallR.castShadow = true;
+scene.add(wallR); scene.add(addOutline(wallR, 0.025));
+
+// ═══════════════════════════════════════════════════════
+// POST-PROCESSING: Depth-based outlines + vignette
+// ═══════════════════════════════════════════════════════
+
+const renderTarget = new THREE.WebGLRenderTarget(SIZE.w * 2, SIZE.h * 2, {
+  minFilter: THREE.LinearFilter,
+  magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat,
+});
+renderTarget.depthTexture = new THREE.DepthTexture(SIZE.w * 2, SIZE.h * 2);
+renderTarget.depthTexture.type = THREE.UnsignedIntType;
+
+const inkColor = new THREE.Color(P.ink);
+const postMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    tDiffuse: { value: renderTarget.texture },
+    tDepth: { value: renderTarget.depthTexture },
+    uResolution: { value: new THREE.Vector2(SIZE.w * 2, SIZE.h * 2) },
+    uEdgeStrength: { value: 0.8 },
+    uEdgeWidth: { value: 1.2 },
+    uEdgeColor: { value: new THREE.Vector3(inkColor.r, inkColor.g, inkColor.b) },
+    uEdgeThreshold: { value: 0.15 },
+    uPosterizeLevels: { value: 0.0 },
+    uVignetteStrength: { value: 0.5 },
+    uCameraNear: { value: camera.near },
+    uCameraFar: { value: camera.far },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
+    uniform vec2 uResolution;
+    uniform float uEdgeStrength;
+    uniform float uEdgeWidth;
+    uniform vec3 uEdgeColor;
+    uniform float uEdgeThreshold;
+    uniform float uPosterizeLevels;
+    uniform float uVignetteStrength;
+    uniform float uCameraNear;
+    uniform float uCameraFar;
+    varying vec2 vUv;
+
+    float sampleDepth(vec2 uv) {
+      float d = texture2D(tDepth, uv).r;
+      float z = d * 2.0 - 1.0;
+      float linear = (2.0 * uCameraNear * uCameraFar) / (uCameraFar + uCameraNear - z * (uCameraFar - uCameraNear));
+      return log2(linear + 1.0);
+    }
+
+    void main() {
+      vec2 texel = uEdgeWidth / uResolution;
+      vec4 color = texture2D(tDiffuse, vUv);
+
+      float d00 = sampleDepth(vUv + vec2(-texel.x, -texel.y));
+      float d10 = sampleDepth(vUv + vec2(0.0, -texel.y));
+      float d20 = sampleDepth(vUv + vec2(texel.x, -texel.y));
+      float d01 = sampleDepth(vUv + vec2(-texel.x, 0.0));
+      float d21 = sampleDepth(vUv + vec2(texel.x, 0.0));
+      float d02 = sampleDepth(vUv + vec2(-texel.x, texel.y));
+      float d12 = sampleDepth(vUv + vec2(0.0, texel.y));
+      float d22 = sampleDepth(vUv + vec2(texel.x, texel.y));
+
+      float gx = -d00 - 2.0*d01 - d02 + d20 + 2.0*d21 + d22;
+      float gy = -d00 - 2.0*d10 - d20 + d02 + 2.0*d12 + d22;
+      float edge = sqrt(gx*gx + gy*gy);
+      edge = smoothstep(uEdgeThreshold * 0.5, uEdgeThreshold, edge) * uEdgeStrength;
+      color.rgb = mix(color.rgb, uEdgeColor, edge);
+
+      if (uPosterizeLevels > 1.0) {
+        color.rgb = floor(color.rgb * uPosterizeLevels + 0.5) / uPosterizeLevels;
+      }
+
+      if (uVignetteStrength > 0.0) {
+        float dist = length(vUv - 0.5) * 1.4;
+        float vig = 1.0 - smoothstep(0.4, 1.2, dist);
+        color.rgb *= mix(1.0, vig, uVignetteStrength);
+      }
+
+      gl_FragColor = color;
+    }
+  `,
+  depthWrite: false,
+  depthTest: false,
+});
+
+const postScene = new THREE.Scene();
+const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
+
+// ═══════════════════════════════════════════════════════
+// RENDER + OVERLAY TITLE
+// ═══════════════════════════════════════════════════════
+
+function render() {
+  // Pass 1: render scene to offscreen target
+  renderer.setRenderTarget(renderTarget);
+  renderer.render(scene, camera);
+  // Pass 2: post-processing fullscreen quad
+  renderer.setRenderTarget(null);
+  renderer.render(postScene, postCamera);
+}
+
+// Render immediately (title will be composited in Python with proper font)
+setTimeout(() => {
+  render();
+  window.__CAPSULE_READY = true;
+}, 800);
+</script>
+</body>
+</html>

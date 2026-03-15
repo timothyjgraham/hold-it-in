@@ -17,6 +17,7 @@
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
+    "fbx2gltf": "^0.9.7-p1",
     "vite": "^5.0.0"
   },
   "dependencies": {
