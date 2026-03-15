@@ -22,7 +22,7 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 100,         // Starting currency — enough for economy + first defense
+    startingCoins: 75,          // Starting currency — forces a real opening choice
 
     // Spawn
     spawnZoneZ: 69,             // Where enemies appear (behind the exit doors at z=68)

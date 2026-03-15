@@ -158,7 +158,7 @@
     <!-- Tower Build Panel -->
     <div id="tower-panel">
         <div class="tower-btn" data-tower="coinmagnet"
-             data-tip-name="Coin Magnet" data-tip-cost="10"
+             data-tip-name="Coin Magnet" data-tip-cost="15"
              data-tip-desc="Auto-collects dropped coins in range. Fragile!">
             <span class="hotkey">1</span>
             <div class="tower-icon">
@@ -173,10 +173,10 @@
                     <ellipse cx="24" cy="35" rx="5" ry="2" fill="#ffd93d" stroke="#1a1a2e" stroke-width="0.8"/>
                 </svg>
             </div>
-            <span class="cost">10</span>
+            <span class="cost">15</span>
         </div>
         <div class="tower-btn" data-tower="wetfloor"
-             data-tip-name="Wet Floor Sign" data-tip-cost="15"
+             data-tip-name="Wet Floor Sign" data-tip-cost="20"
              data-tip-desc="Slows enemies to 40% speed. Tough plastic!">
             <span class="hotkey">2</span>
             <div class="tower-icon">
@@ -187,10 +187,10 @@
                     <circle cx="24" cy="35" r="2.5" fill="#1a1a2e"/>
                 </svg>
             </div>
-            <span class="cost">15</span>
+            <span class="cost">20</span>
         </div>
         <div class="tower-btn" data-tower="mop"
-             data-tip-name="Mop Turret" data-tip-cost="25"
+             data-tip-name="Mop Turret" data-tip-cost="30"
              data-tip-desc="Sweeping crowd control. Low damage, big knockback!">
             <span class="hotkey">3</span>
             <div class="tower-icon">
@@ -205,10 +205,10 @@
                     <rect x="27" y="9" width="3" height="4" rx="0.5" fill="#9b59b6"/>
                 </svg>
             </div>
-            <span class="cost">25</span>
+            <span class="cost">30</span>
         </div>
         <div class="tower-btn" data-tower="ubik"
-             data-tip-name="Ubik Spray" data-tip-cost="35"
+             data-tip-name="Ubik Spray" data-tip-cost="40"
              data-tip-desc="Long-range spray hits all enemies in cone. Area damage!">
             <span class="hotkey">4</span>
             <div class="tower-icon">
@@ -222,7 +222,7 @@
                     <ellipse cx="24" cy="42" rx="9" ry="2" fill="#1a1a2e" fill-opacity="0.15"/>
                 </svg>
             </div>
-            <span class="cost">35</span>
+            <span class="cost">40</span>
         </div>
         <div class="tower-btn" data-tower="potplant"
              data-tip-name="Pot Plant" data-tip-cost="10"
@@ -581,7 +581,7 @@
         TOWERS: {
             coinmagnet: {
                 name: 'Coin Magnet',
-                cost: 10,
+                cost: 15,
                 range: 8,
                 hp: 4,              // Takes a few hits before breaking
                 color: 0xf0a030,    // PALETTE.magnet
@@ -591,7 +591,7 @@
             },
             wetfloor: {
                 name: 'Wet Floor Sign',
-                cost: 25,
+                cost: 20,
                 range: 0,
                 hp: 20,             // Light barrier — disposable but meaningful delay
                 color: 0xe8d44a,    // PALETTE.sign
@@ -601,7 +601,7 @@
             },
             mop: {
                 name: 'Mop Turret',
-                cost: 25,
+                cost: 30,
                 range: 4.5,
                 hp: 6,              // Sturdy — actively fighting back
                 color: 0x9b59b6,    // PALETTE.mop
@@ -615,7 +615,7 @@
             },
             ubik: {
                 name: 'Ubik',
-                cost: 35,
+                cost: 40,
                 range: 18,             // Spray travels 18 units forward
                 hp: 6,                 // Sturdy canister — shows progressive damage
                 color: 0x6bcb77,    // PALETTE.ubik
@@ -1184,33 +1184,33 @@
         // Coin drop table — physical coins scattered on enemy death
         // Values are ~30% higher than old instant rewards (skill bonus for collection)
         COIN_DROPS: {
-            polite:      { value: 6,  count: 2 },
-            dancer:      { value: 4,  count: 1 },
-            waddle:      { value: 16, count: 4 },
-            panicker:    { value: 13, count: 3 },
-            powerwalker: { value: 9,  count: 2 },
-            girls:       { value: 3,  count: 1 },
+            polite:      { value: 4,  count: 2 },
+            dancer:      { value: 3,  count: 1 },
+            waddle:      { value: 10, count: 3 },
+            panicker:    { value: 8,  count: 2 },
+            powerwalker: { value: 6,  count: 2 },
+            girls:       { value: 2,  count: 1 },
             // Forest
-            deer:        { value: 6,  count: 2 },
-            squirrel:    { value: 4,  count: 1 },
-            bear:        { value: 18, count: 4 },
-            fox:         { value: 13, count: 3 },
-            moose:       { value: 10, count: 2 },
-            raccoon:     { value: 3,  count: 1 },
+            deer:        { value: 4,  count: 2 },
+            squirrel:    { value: 3,  count: 1 },
+            bear:        { value: 11, count: 3 },
+            fox:         { value: 8,  count: 2 },
+            moose:       { value: 6,  count: 2 },
+            raccoon:     { value: 2,  count: 1 },
             // Ocean
-            dolphin:     { value: 6,  count: 2 },
-            flyfish:     { value: 4,  count: 1 },
-            shark:       { value: 20, count: 4 },
-            pirate:      { value: 14, count: 3 },
-            seaturtle:   { value: 10, count: 2 },
-            jellyfish:   { value: 3,  count: 1 },
+            dolphin:     { value: 4,  count: 2 },
+            flyfish:     { value: 3,  count: 1 },
+            shark:       { value: 12, count: 3 },
+            pirate:      { value: 9,  count: 2 },
+            seaturtle:   { value: 6,  count: 2 },
+            jellyfish:   { value: 2,  count: 1 },
             // Airplane
-            nervous:     { value: 6,  count: 2 },
-            business:    { value: 10, count: 3 },
-            stumbler:    { value: 16, count: 4 },
-            attendant:   { value: 5,  count: 1 },
-            marshal:     { value: 13, count: 3 },
-            unruly:      { value: 3,  count: 1 },
+            nervous:     { value: 4,  count: 2 },
+            business:    { value: 7,  count: 2 },
+            stumbler:    { value: 10, count: 3 },
+            attendant:   { value: 3,  count: 1 },
+            marshal:     { value: 8,  count: 2 },
+            unruly:      { value: 2,  count: 1 },
         },
 
         coinPool: null,
@@ -5935,7 +5935,7 @@
             const queue = [];
 
             // Quadratic enemy count — accelerating growth
-            let total = 10 + Math.floor(wave * 2.5 + Math.pow(wave, 1.5) * 0.3);
+            let total = 8 + Math.floor(wave * 1.8 + Math.pow(wave, 1.3) * 0.25);
             if (event && event.enemyMult) total = Math.floor(total * event.enemyMult);
 
             // Enemy type weights — scenario-specific
@@ -6330,7 +6330,7 @@
 
                     this.waveActive = false;
                     // Bonus coins — caps at wave 10 to pressure late-game economy
-                    const waveBonus = 15 + Math.min(this.wave, 10) * 5;
+                    const waveBonus = 10 + Math.min(this.wave, 8) * 3;
                     this.coins += waveBonus;
                     this._animateCoinGain(waveBonus);
                     this.updateHUD();
@@ -7331,7 +7331,7 @@
                                 const mdx = e.x - t.gridX;
                                 const mdz = e.z - t.gridZ;
                                 if (mdx * mdx + mdz * mdz < mRange * mRange) {
-                                    coinMult = 2;
+                                    coinMult = 1.5;
                                     break;
                                 }
                             }
@@ -7340,9 +7340,9 @@
                         this.coinPool.spawnCoins(e.x, e.z, drop.value * coinMult, drop.count, this.scene);
                         if (window.SFX) SFX.play('coin_drop');
 
-                        // R13: The Tip Jar — 20% chance to drop golden coin worth 5x
-                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.2) {
-                            this.coinPool.spawnCoins(e.x, e.z, drop.value * 5, 1, this.scene);
+                        // R13: The Tip Jar — 15% chance to drop golden coin worth 3x
+                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.15) {
+                            this.coinPool.spawnCoins(e.x, e.z, drop.value * 3, 1, this.scene);
                         }
                     } else {
                         // Fallback: instant reward if CoinPool not loaded

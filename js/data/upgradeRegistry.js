@@ -28,7 +28,7 @@ export const COMMON_UPGRADES = [
         icon: 'coin',
         towerRequirement: ['coinmagnet'],
         stackable: true,
-        maxStacks: 2,  // cap 3x total (base 1x + 2 stacks × 1x)
+        maxStacks: 1,  // cap 1.5x total (base 1x + 1 stack × 0.5x)
         effectFn: null,
     },
     {
@@ -327,7 +327,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R12',
         name: 'Payday',
-        description: 'Enemies killed within Coin Magnet range drop 2× coins',
+        description: 'Enemies killed within Coin Magnet range drop 1.5× coins',
         rarity: 'rare',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -340,7 +340,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R13',
         name: 'The Tip Jar',
-        description: 'Enemy kills have 20% chance to drop a golden coin worth 5×',
+        description: 'Enemy kills have 15% chance to drop a golden coin worth 3×',
         rarity: 'rare',
         icon: 'coin',
         towerRequirement: null,  // general
