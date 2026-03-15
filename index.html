@@ -552,6 +552,9 @@
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
         _wallGroupCounter: 0,   // Coordinated wall formation ID counter
+        _swarmGroupCounter: 0,  // Swarm group (girls/raccoons/etc.) ID counter
+        _titleWaterActive: false,
+        _titleWaterMesh: null,
         _cinematicTimer: 0,
         _cinematicEffects: [],
         _flyingPhone: null,
@@ -1363,11 +1366,11 @@
                 }) : Promise.resolve(),
             ]);
 
-            // Build the scene — default to office scenario
+            // Build the scene — title screen water background
             this._environmentGroup = new THREE.Group();
             this._environmentGroup.name = 'environment';
             this.scene.add(this._environmentGroup);
-            this._setupScenario('office');
+            this._setupTitleWater();
 
             // Input
             this._setupInput();
@@ -1610,8 +1613,11 @@
         // ============================
 
         _setupScenario(scenario) {
-            // Tear down previous environment
+            // Tear down previous environment (including title water)
             this._teardownEnvironment();
+            this._titleWaterActive = false;
+            this._titleWaterMesh = null;
+            this.renderer.setClearColor(PALETTE.ink);
             this._currentScenario = scenario;
             this._forestAnimData = null;
             this._oceanAnimData = null;
@@ -1673,6 +1679,79 @@
                 }
                 this.playerCharacter = null;
             }
+        },
+
+        _setupTitleWater() {
+            if (this._titleWaterActive) return;
+
+            // Clean up any lingering game objects from scene
+            if (this.enemyPool && this.enemies && this.enemies.length > 0) {
+                this.enemyPool.releaseAll(this.enemies);
+            } else if (this.enemies) {
+                for (const e of this.enemies) {
+                    if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh);
+                }
+            }
+            if (this.towers) {
+                for (const t of this.towers) {
+                    if (t.mesh && t.mesh.parent) t.mesh.parent.remove(t.mesh);
+                }
+            }
+            if (this.projectiles) {
+                for (const p of this.projectiles) {
+                    if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh);
+                }
+            }
+            this.enemies = [];
+            this.towers = [];
+            this.projectiles = [];
+
+            // Clean up floating texts, door particles, etc.
+            if (this._floatingTexts) {
+                this._floatingTexts.forEach(ft => {
+                    if (ft.sprite) {
+                        this.scene.remove(ft.sprite);
+                        if (ft.sprite.material) {
+                            if (ft.sprite.material.map) ft.sprite.material.map.dispose();
+                            ft.sprite.material.dispose();
+                        }
+                    }
+                });
+                this._floatingTexts = [];
+            }
+
+            // Teardown environment (lights, env group contents)
+            this._teardownEnvironment();
+            this._currentScenario = null;
+            this._oceanAnimData = null;
+            this._forestAnimData = null;
+            this._airplaneAnimData = null;
+
+            // Ocean lighting — slightly brighter for title screen
+            const ambient = new THREE.AmbientLight(PALETTE.oceanAmbient, 0.85);
+            ambient.name = 'sceneLight';
+            this.scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(PALETTE.oceanSun, 0.9);
+            sunLight.name = 'sceneLight';
+            sunLight.position.set(10, 45, 20);
+            this.scene.add(sunLight);
+
+            const rimLight = new THREE.DirectionalLight(PALETTE.oceanRim, 0.3);
+            rimLight.name = 'sceneLight';
+            rimLight.position.set(-12, 20, 10);
+            this.scene.add(rimLight);
+
+            // Lighter fog for title screen — less dark
+            this.scene.fog = new THREE.Fog(PALETTE.oceanFog, 35, 85);
+            this.renderer.setClearColor(PALETTE.oceanFog);
+
+            // Just the water — no raft, no props, no UI
+            const water = createOceanWater();
+            this._environmentGroup.add(water);
+
+            this._titleWaterMesh = water.userData.waterMesh;
+            this._titleWaterActive = true;
         },
 
         _setupOfficeScenario() {
@@ -2382,6 +2461,10 @@
                     clearTimeout(this._tutorialAutoTimeout);
                 }
                 this._hideTutorialBubble();
+                // Restore ocean water background when returning to menu screens
+                if (!this._titleWaterActive) {
+                    this._setupTitleWater();
+                }
                 if (window.SFX) SFX.play('menu_transition');
             };
 
@@ -3304,6 +3387,7 @@
             this.towers = [];
             this.projectiles = [];
             this._wallGroupCounter = 0;
+            this._swarmGroupCounter = 0;
             // Clean up active sprays
             if (this.sprays) {
                 for (const s of this.sprays) {
@@ -6251,22 +6335,35 @@
                 return;
             }
 
-            // The Girls / Raccoons / Jellyfish — spawn as a tight cluster picking a lane
+            // The Girls / Raccoons / Jellyfish / Unruly — spawn as a cohesive swarm
             if (enemyType === 'girls_group' || enemyType === 'raccoon_group' || enemyType === 'jellyfish_group' || enemyType === 'unruly_group') {
                 const actualType = enemyType === 'girls_group' ? 'girls' : enemyType === 'raccoon_group' ? 'raccoon' : enemyType === 'unruly_group' ? 'unruly' : 'jellyfish';
                 const def = this.ENEMY_TYPES[actualType];
                 if (!def) return;
-                const laneOptions = [-4, 0, 4];
+                const groupId = ++this._swarmGroupCounter;
+                const scale = this._layout ? this._layout.laneWidth / 30 : 1;
+                const laneOptions = [-4 * scale, 0, 4 * scale];
                 const targetLane = laneOptions[Math.floor(Math.random() * 3)];
                 const groupSize = 5 + Math.floor(Math.random() * 3); // 5-7
+
+                // Unified speed — everyone moves at the same pace so they stay together
+                const speedCreep = 1 + this.wave * 0.015;
+                const eventSpeedMult = this._eventSpeedMult || 1.0;
+                const groupSpeed = (def.baseSpeed + def.speedVar * 0.3) * speedCreep * eventSpeedMult;
+
                 for (let g = 0; g < groupSize; g++) {
                     this._createEnemy(actualType, def, {
-                        xOverride: targetLane + (Math.random() - 0.5) * 1.5,
-                        zOffset: Math.random() * 2,
-                        targetLane: targetLane,
+                        xOverride: targetLane + (Math.random() - 0.5) * 3.0,
+                        zOffset: Math.random() * 4,
+                        targetLane: targetLane + (Math.random() - 0.5) * 2.0,
                     });
+                    // Tag with swarm group and sync speed
+                    const enemy = this.enemies[this.enemies.length - 1];
+                    enemy._swarmGroupId = groupId;
+                    enemy.speed = groupSpeed;
                 }
                 this.enemiesSpawned++;
+                if (window.SFX) SFX.play('enemy_spawn');
                 return;
             }
 
@@ -7822,6 +7919,45 @@
                 }
             }
 
+            // --- Sync swarm groups (girls/raccoons/jellyfish/unruly) ---
+            // Swarm members maintain loose cohesion — pull stragglers toward the pack
+            if (this._swarmGroupCounter > 0) {
+                const swarmGroups = {};
+                for (const e of this.enemies) {
+                    if (e._swarmGroupId && !e.dying && e.stunTimer <= 0) {
+                        if (!swarmGroups[e._swarmGroupId]) swarmGroups[e._swarmGroupId] = [];
+                        swarmGroups[e._swarmGroupId].push(e);
+                    }
+                }
+                for (const gid in swarmGroups) {
+                    const members = swarmGroups[gid];
+                    if (members.length < 2) continue;
+
+                    // Calculate group center
+                    let avgZ = 0, avgX = 0;
+                    for (const m of members) {
+                        avgZ += m.z;
+                        avgX += m.x;
+                    }
+                    avgZ /= members.length;
+                    avgX /= members.length;
+
+                    // Pull stragglers toward the pack center (organic clustering)
+                    for (const m of members) {
+                        const dz = avgZ - m.z;
+                        if (Math.abs(dz) > 1.5) {
+                            m.z += dz * 0.04;
+                            m.mesh.position.z = m.z;
+                        }
+                        const dx = avgX - m.x;
+                        if (Math.abs(dx) > 2.5) {
+                            m.x += dx * 0.02;
+                            m.mesh.position.x = m.x;
+                        }
+                    }
+                }
+            }
+
             // --- Update towers (attack + damage feedback) ---
             // L2/L3/L12: compute combined tower speed divisor once
             const _overtimeActive = this._overtimeTimer > 0;
@@ -8780,6 +8916,9 @@
         // GRID HOVER
         // ============================
         _updateGridHover() {
+            // Guard: grid not yet created (title screen)
+            if (!this.gridHighlight) return;
+
             const active = this.selectedTower && (this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase;
 
             // Show/hide grid lines based on whether we're placing
@@ -9685,6 +9824,11 @@
                 this._updateOceanEffects(this.clock.elapsedTime, rawDt);
             } else if (this._currentScenario === 'airplane') {
                 this._updateAirplaneEffects(this.clock.elapsedTime, rawDt);
+            }
+
+            // Title screen water animation
+            if (this._titleWaterMesh && this._titleWaterMesh.material && this._titleWaterMesh.material.uniforms) {
+                this._titleWaterMesh.material.uniforms.uTime.value = this.clock.elapsedTime;
             }
 
             // Update player character animation
