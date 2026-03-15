@@ -310,6 +310,55 @@ export const ENEMY_VISUAL_CONFIG = {
         restPose: {},
     },
 
+    // ─── DRUNKEN WORKER ─── wave 8, train spawn (single-file conga line), 11 bones
+    drunk: {
+        size: 2.6,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.65,  z: 0 },
+            spine:       { x: 0,     y: 0.18,  z: 0 },
+            chest:       { x: 0,     y: 0.22,  z: 0 },
+            neck:        { x: 0,     y: 0.15,  z: 0 },
+            head:        { x: 0,     y: 0.18,  z: 0 },
+            upperArm_L:  { x: -0.35, y: 0.0,   z: 0 },
+            upperArm_R:  { x: 0.35,  y: 0.0,   z: 0 },
+            upperLeg_L:  { x: -0.10, y: 0.0,   z: 0 },
+            upperLeg_R:  { x: 0.10,  y: 0.0,   z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.28, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.28, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.82,
+            torsoHeight: 1.35,
+            torsoDepth: 0.50,
+            headRadius: 0.34,
+            limbThickness: 0.25,
+            legHeight: 0.78,
+            legSpacing: 0.15,
+        },
+        materialColors: {
+            body: PALETTE.drunk,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.9,
+            bobHeight: 0.10,
+            legSwing: 0.30,
+            armSwing: 0.50,
+            spineForwardLean: 0.12,
+            bodyRock: 0.35,       // exaggerated drunken sway
+        },
+        restPose: {},
+    },
+
     // ═══════════════════════════════════════════════════════════════════════════
     // FOREST SCENARIO — true quadruped animals
     // Horizontal spine, 4 legs, species-appropriate gaits
@@ -709,6 +758,61 @@ export const ENEMY_VISUAL_CONFIG = {
         restPose: {},
     },
 
+    // ─── GIANT ANT ─── wave 8, train spawn (marching column), quadruped skeleton
+    ant: {
+        size: 3.5,
+        skeletonType: 'quadruped',
+        bones: {
+            neck_02: false,
+            scapulae: false,
+            frontFeet: false,
+            hindFeet: false,
+            belly: false,
+            tailCount: 1,
+        },
+        bonePositions: {
+            root:              { x: 0,      y: 0.40,   z: 0 },
+            pelvis:            { x: 0,      y: -0.04,  z: 0.20 },
+            spine_mid:         { x: 0,      y: 0.04,   z: -0.16 },
+            chest:             { x: 0,      y: 0.04,   z: -0.16 },
+            neck_01:           { x: 0,      y: 0.06,   z: -0.10 },
+            head:              { x: 0,      y: 0.04,   z: -0.10 },
+            frontUpperLeg_L:   { x: -0.10,  y: -0.14,  z: 0.02 },
+            frontLowerLeg_L:   { x: 0,      y: -0.20,  z: 0 },
+            frontUpperLeg_R:   { x: 0.10,   y: -0.14,  z: 0.02 },
+            frontLowerLeg_R:   { x: 0,      y: -0.20,  z: 0 },
+            hindUpperLeg_L:    { x: -0.10,  y: -0.14,  z: 0 },
+            hindLowerLeg_L:    { x: 0,      y: -0.20,  z: 0 },
+            hindUpperLeg_R:    { x: 0.10,   y: -0.14,  z: 0 },
+            hindLowerLeg_R:    { x: 0,      y: -0.20,  z: 0 },
+            tail_01:           { x: 0,      y: -0.02,  z: 0.10 },
+        },
+        bodyDimensions: {
+            bodyLength: 0.45,
+            bodyWidth: 0.18,
+            bodyHeight: 0.16,
+            headRadius: 0.10,
+            legThickness: 0.03,
+            antennaLength: 0.20,
+            mandibleSize: 0.05,
+        },
+        materialColors: {
+            body: PALETTE.forestAnt,
+            skin: PALETTE.forestAnt,
+            legs: PALETTE.forestAnt,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.6,
+            bobHeight: 0.02,
+            frontLegSwing: 0.50,
+            hindLegSwing: 0.55,
+            spineUndulate: 0.02,
+            tailWave: 0.08,
+        },
+        restPose: {},
+    },
+
     // ═══════════════════════════════════════════════════════════════════════════
     // OCEAN SCENARIO — marine creatures + pirate
     // Dolphins, sharks, flying fish, sea turtles, jellyfish, and pirates
@@ -1060,6 +1164,62 @@ export const ENEMY_VISUAL_CONFIG = {
         restPose: {},
     },
 
+    // ─── SEAHORSE ─── wave 8, train spawn (drifting chain), marine skeleton
+    seahorse: {
+        size: 2.5,
+        skeletonType: 'marine',
+        bones: {
+            snout: true,
+            dorsal: true,
+            flippers: true,
+            tailCount: 3,
+            tailFlukes: false,
+            tentacleCount: 0,
+            shell: false,
+            turtleFlippers: false,
+        },
+        bonePositions: {
+            root:         { x: 0,      y: 0.50,   z: 0 },
+            body_front:   { x: 0,      y: 0.06,   z: -0.08 },
+            snout:        { x: 0,      y: -0.04,  z: -0.12 },
+            head:         { x: 0,      y: 0.06,   z: -0.06 },
+            dorsal:       { x: 0,      y: 0.08,   z: 0.04 },
+            flipper_L:    { x: -0.08,  y: -0.04,  z: -0.02 },
+            flipper_R:    { x: 0.08,   y: -0.04,  z: -0.02 },
+            body_rear:    { x: 0,      y: -0.06,  z: 0.10 },
+            tail_01:      { x: 0,      y: -0.06,  z: 0.08 },
+            tail_02:      { x: 0,      y: -0.06,  z: 0.08 },
+            tail_03:      { x: 0,      y: -0.04,  z: 0.06 },
+        },
+        bodyDimensions: {
+            bodyLength: 0.40,
+            bodyWidth: 0.12,
+            bodyHeight: 0.18,
+            headRadius: 0.10,
+            snoutLength: 0.16,
+            dorsalHeight: 0.06,
+            dorsalLength: 0.12,
+            flipperLength: 0.08,
+            flipperWidth: 0.02,
+            tailWidth: 0.06,
+        },
+        materialColors: {
+            body: PALETTE.oceanSeahorse,
+            skin: PALETTE.oceanFoam,
+            legs: PALETTE.oceanSeahorse,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 1.0,
+            bobHeight: 0.15,
+            bodyUndulate: 0.10,
+            tailSwing: 0.35,
+            flipperPaddle: 0.20,
+            dorsalSway: 0.08,
+        },
+        restPose: {},
+    },
+
     // ═══════════════════════════════════════════════════════════════════════
     // AIRPLANE ENEMIES — air travelers, all biped humanoids
     // ═══════════════════════════════════════════════════════════════════════
@@ -1357,6 +1517,54 @@ export const ENEMY_VISUAL_CONFIG = {
             armSwing: 0,
             spineForwardLean: 0.10,
             bodyRock: 0.22,        // swaying, unsteady
+        },
+        restPose: {},
+    },
+
+    // ─── DRINKS TROLLEY ─── wave 8, train spawn (attendant pushing cart), 11 bones
+    trolley: {
+        size: 2.0,
+        bones: {
+            neck: true,
+            upperArms: true,
+            forearms: false,
+            feet: false,
+            belly: false,
+        },
+        bonePositions: {
+            root:        { x: 0,     y: 0.75,  z: 0 },
+            spine:       { x: 0,     y: 0.25,  z: 0 },
+            chest:       { x: 0,     y: 0.30,  z: 0 },
+            neck:        { x: 0,     y: 0.20,  z: 0 },
+            head:        { x: 0,     y: 0.23,  z: 0 },
+            upperArm_L:  { x: -0.38, y: 0.05,  z: 0 },
+            upperArm_R:  { x: 0.38,  y: 0.05,  z: 0 },
+            upperLeg_L:  { x: -0.12, y: 0,     z: 0 },
+            upperLeg_R:  { x: 0.12,  y: 0,     z: 0 },
+            lowerLeg_L:  { x: 0,     y: -0.38, z: 0 },
+            lowerLeg_R:  { x: 0,     y: -0.38, z: 0 },
+        },
+        bodyDimensions: {
+            torsoWidth: 0.70,
+            torsoHeight: 1.45,
+            torsoDepth: 0.40,
+            headRadius: 0.30,
+            limbThickness: 0.20,
+            legHeight: 0.75,
+            legSpacing: 0.12,
+        },
+        materialColors: {
+            body: PALETTE.airplaneAttendant,
+            skin: PALETTE.skin,
+            legs: PALETTE.pants,
+            outline: PALETTE.ink,
+        },
+        animationParams: {
+            walkDuration: 0.8,
+            bobHeight: 0.03,
+            legSwing: 0.40,
+            armSwing: 0.10,         // arms extended pushing cart, minimal swing
+            spineForwardLean: 0.08, // slight forward lean from pushing
         },
         restPose: {},
     },

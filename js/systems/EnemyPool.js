@@ -33,6 +33,11 @@ const PRE_ALLOC = {
     attendant: 5,
     marshal: 5,
     unruly: 7,
+    // Train enemies
+    drunk: 8,
+    ant: 10,
+    seahorse: 8,
+    trolley: 4,
 };
 
 /**
@@ -285,6 +290,11 @@ export class EnemyPool {
             attendant: 0xc03040,
             marshal: 0x4a4a5a,
             unruly: 0xe87830,
+            // Train enemies
+            drunk: 0xd47070,
+            ant: 0x6b3030,
+            seahorse: 0xf0a870,
+            trolley: 0x9a9aa8,
         };
         return colors[type] || 0xcccccc;
     }

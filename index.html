@@ -856,6 +856,41 @@
                 coins: 2, doorDmg: 1,
                 tripImmune: true, // Anti-potplant: too drunk to trip
             },
+
+            // ─── TRAIN ENEMIES (single-file column spawns) ──────────────
+            drunk: {
+                name: 'Drunken Worker',
+                baseSpeed: 2.5, speedVar: 0.4,
+                baseHP: 20, hpPerWave: 8,
+                size: 1.5, color: 0xd47070, // PALETTE.drunk — flushed rosy red
+                coins: 3, doorDmg: 2,
+                flankChance: 0.15,
+            },
+            ant: {
+                name: 'Giant Ant',
+                baseSpeed: 4.0, speedVar: 0.3,
+                baseHP: 12, hpPerWave: 5,
+                size: 1.8, color: 0x6b3030, // PALETTE.forestAnt — dark reddish-brown
+                coins: 2, doorDmg: 1,
+                flankChance: 0.1,
+            },
+            seahorse: {
+                name: 'Sea Horse',
+                baseSpeed: 2.8, speedVar: 0.2,
+                baseHP: 10, hpPerWave: 4,
+                size: 1.2, color: 0xf0a870, // PALETTE.oceanSeahorse — warm coral
+                coins: 2, doorDmg: 1,
+                flankChance: 0.0,
+            },
+            trolley: {
+                name: 'Drinks Trolley',
+                baseSpeed: 1.8, speedVar: 0.2,
+                baseHP: 80, hpPerWave: 25,
+                size: 2.0, color: 0x9a9aa8, // PALETTE.airplaneTrolley — metallic silver
+                coins: 12, doorDmg: 5,
+                knockbackImmune: true,
+                flankChance: 0.0,
+            },
         },
 
         // Curated wave compositions — one new enemy per introduction wave
@@ -875,8 +910,8 @@
             { enemies: [['polite', 5], ['dancer', 5], ['waddle', 3]], interval: 1.2, delay: 3 },
             // Wave 7: PANICKER — speed aura, priority target
             { enemies: [['polite', 4], ['dancer', 4], ['waddle', 2], ['panicker', 1]], interval: 1.0, delay: 3 },
-            // Wave 8: More panickers
-            { enemies: [['polite', 5], ['dancer', 5], ['waddle', 3], ['panicker', 2]], interval: 0.9, delay: 3 },
+            // Wave 8: DRUNKEN WORKERS — single-file conga line
+            { enemies: [['polite', 4], ['dancer', 4], ['waddle', 2], ['panicker', 2], ['drunk_train', 1]], interval: 0.9, delay: 3 },
             // Wave 9: POWER WALKER — immune to slow
             { enemies: [['polite', 4], ['dancer', 4], ['waddle', 2], ['panicker', 1], ['powerwalker', 3]], interval: 0.8, delay: 3 },
             // Wave 10: THE GIRLS — lane-testing swarm cluster
@@ -890,14 +925,14 @@
                 announcement: "IT'S TACO TUESDAY!",
                 enemyMult: 2.5,
                 spawnMult: 0.5,
-                weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.10, girls_group: 0.05 },
+                weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.06, girls_group: 0.05, drunk_train: 0.04 },
             },
             20: {
                 name: 'THE LUNCH RUSH',
                 announcement: 'THE LUNCH RUSH!',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
-                weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.20, panicker: 0.10, waddle: 0.05, girls_group: 0.05 },
+                weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.16, panicker: 0.10, waddle: 0.05, girls_group: 0.05, drunk_train: 0.04 },
             },
             25: {
                 name: 'COFFEE KICKED IN',
@@ -964,8 +999,8 @@
             { enemies: [['deer', 5], ['squirrel', 5], ['bear', 3]], interval: 1.2, delay: 3 },
             // Wave 7: FOX — speed aura, priority
             { enemies: [['deer', 4], ['squirrel', 4], ['bear', 2], ['fox', 1]], interval: 1.0, delay: 3 },
-            // Wave 8: More foxes
-            { enemies: [['deer', 5], ['squirrel', 5], ['bear', 3], ['fox', 2]], interval: 0.9, delay: 3 },
+            // Wave 8: GIANT ANTS — marching column
+            { enemies: [['deer', 4], ['squirrel', 4], ['bear', 2], ['fox', 2], ['ant_train', 1]], interval: 0.9, delay: 3 },
             // Wave 9: MOOSE — slow immune
             { enemies: [['deer', 4], ['squirrel', 4], ['bear', 2], ['fox', 1], ['moose', 3]], interval: 0.8, delay: 3 },
             // Wave 10: RACCOONS — cluster swarm
@@ -978,14 +1013,14 @@
                 announcement: "IT'S BERRY SEASON!",
                 enemyMult: 2.5,
                 spawnMult: 0.5,
-                weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.10, moose: 0.10, raccoon_group: 0.05 },
+                weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.06, moose: 0.10, raccoon_group: 0.05, ant_train: 0.04 },
             },
             20: {
                 name: 'MIGRATION',
                 announcement: 'THE GREAT MIGRATION!',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
-                weights: { deer: 0.35, moose: 0.25, squirrel: 0.20, fox: 0.10, bear: 0.05, raccoon_group: 0.05 },
+                weights: { deer: 0.35, moose: 0.25, squirrel: 0.16, fox: 0.10, bear: 0.05, raccoon_group: 0.05, ant_train: 0.04 },
             },
             25: {
                 name: 'FULL MOON',
@@ -1037,8 +1072,8 @@
             { enemies: [['dolphin', 5], ['flyfish', 5], ['shark', 3]], interval: 1.2, delay: 3 },
             // Wave 7: PIRATE — speed aura, priority target
             { enemies: [['dolphin', 4], ['flyfish', 4], ['shark', 2], ['pirate', 1]], interval: 1.0, delay: 3 },
-            // Wave 8: More pirates
-            { enemies: [['dolphin', 5], ['flyfish', 5], ['shark', 3], ['pirate', 2]], interval: 0.9, delay: 3 },
+            // Wave 8: SEA HORSES — drifting chain
+            { enemies: [['dolphin', 4], ['flyfish', 4], ['shark', 2], ['pirate', 2], ['seahorse_train', 1]], interval: 0.9, delay: 3 },
             // Wave 9: SEA TURTLE — slow immune
             { enemies: [['dolphin', 4], ['flyfish', 4], ['shark', 2], ['pirate', 1], ['seaturtle', 3]], interval: 0.8, delay: 3 },
             // Wave 10: JELLYFISH — cluster swarm
@@ -1051,14 +1086,14 @@
                 announcement: "IT'S A FEEDING FRENZY!",
                 enemyMult: 2.5,
                 spawnMult: 0.5,
-                weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.20, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05 },
+                weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.16, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             20: {
                 name: 'TIDAL WAVE',
                 announcement: 'TIDAL WAVE INCOMING!',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
-                weights: { dolphin: 0.30, seaturtle: 0.25, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05 },
+                weights: { dolphin: 0.30, seaturtle: 0.21, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             25: {
                 name: 'BLOOD MOON',
@@ -1110,8 +1145,8 @@
             { enemies: [['nervous', 5], ['business', 5], ['stumbler', 3]], interval: 1.2, delay: 3 },
             // Wave 7: FLIGHT ATTENDANT — spray resistant, fast, jumps barriers
             { enemies: [['nervous', 4], ['business', 4], ['stumbler', 2], ['attendant', 2]], interval: 1.0, delay: 3 },
-            // Wave 8: More attendants
-            { enemies: [['nervous', 5], ['business', 5], ['stumbler', 3], ['attendant', 3]], interval: 0.9, delay: 3 },
+            // Wave 8: DRINKS TROLLEY — unstoppable cart
+            { enemies: [['nervous', 4], ['business', 4], ['stumbler', 2], ['attendant', 2], ['trolley_train', 1]], interval: 0.9, delay: 3 },
             // Wave 9: AIR MARSHAL — slow immune, disables magnets, speed aura
             { enemies: [['nervous', 4], ['business', 4], ['stumbler', 2], ['attendant', 1], ['marshal', 3]], interval: 0.8, delay: 3 },
             // Wave 10: UNRULY PASSENGERS — swarm cluster, trip immune
@@ -1124,14 +1159,14 @@
                 announcement: "WE'RE HITTING TURBULENCE!",
                 enemyMult: 2.5,
                 spawnMult: 0.5,
-                weights: { stumbler: 0.35, nervous: 0.20, business: 0.20, attendant: 0.10, marshal: 0.10, unruly_group: 0.05 },
+                weights: { stumbler: 0.35, nervous: 0.20, business: 0.16, attendant: 0.10, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             20: {
                 name: 'MEAL SERVICE',
                 announcement: 'MEAL SERVICE IS OVER!',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
-                weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.15, marshal: 0.10, unruly_group: 0.05 },
+                weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.11, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             25: {
                 name: 'SEATBELT SIGN OFF',
@@ -1211,6 +1246,11 @@
             attendant:   { value: 3,  count: 1 },
             marshal:     { value: 8,  count: 2 },
             unruly:      { value: 2,  count: 1 },
+            // Train enemies
+            drunk:       { value: 3,  count: 1 },
+            ant:         { value: 2,  count: 1 },
+            seahorse:    { value: 2,  count: 1 },
+            trolley:     { value: 12, count: 3 },
         },
 
         coinPool: null,
@@ -5941,8 +5981,18 @@
             // Enemy type weights — scenario-specific
             const isForest = this._currentScenario === 'forest';
             const isOcean = this._currentScenario === 'ocean';
-            const defaultWeights = isOcean ? [
+            const isAirplane = this._currentScenario === 'airplane';
+            const defaultWeights = isAirplane ? [
+                ['unruly_group', 0.06],
+                ['trolley_train', 0.04],
+                ['marshal', Math.min(0.14, 0.08 + wave * 0.002)],
+                ['stumbler', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['attendant', Math.min(0.14, 0.10 + wave * 0.001)],
+                ['business', 0.25],
+                // remainder = nervous (fallback)
+            ] : isOcean ? [
                 ['jellyfish_group', 0.06],
+                ['seahorse_train', 0.04],
                 ['pirate', Math.min(0.14, 0.08 + wave * 0.002)],
                 ['shark', Math.min(0.18, 0.12 + wave * 0.002)],
                 ['seaturtle', Math.min(0.18, 0.14 + wave * 0.001)],
@@ -5950,6 +6000,7 @@
                 // remainder = dolphin (fallback)
             ] : isForest ? [
                 ['raccoon_group', 0.06],
+                ['ant_train', 0.04],
                 ['fox', Math.min(0.14, 0.08 + wave * 0.002)],
                 ['bear', Math.min(0.18, 0.12 + wave * 0.002)],
                 ['moose', Math.min(0.18, 0.14 + wave * 0.001)],
@@ -5957,13 +6008,14 @@
                 // remainder = deer (fallback)
             ] : [
                 ['girls_group', 0.06],
+                ['drunk_train', 0.04],
                 ['panicker', Math.min(0.14, 0.08 + wave * 0.002)],
                 ['waddle', Math.min(0.18, 0.12 + wave * 0.002)],
                 ['powerwalker', Math.min(0.18, 0.14 + wave * 0.001)],
                 ['dancer', 0.25],
                 // remainder = polite (fallback)
             ];
-            const fallbackType = isOcean ? 'dolphin' : isForest ? 'deer' : 'polite';
+            const fallbackType = isAirplane ? 'nervous' : isOcean ? 'dolphin' : isForest ? 'deer' : 'polite';
 
             for (let i = 0; i < total; i++) {
                 const roll = Math.random();
@@ -5997,6 +6049,44 @@
             }
 
             const enemyType = this._spawnQueue.shift();
+
+            // Train enemies — spawn as a single-file column in one exact lane
+            if (enemyType.endsWith('_train')) {
+                const actualType = enemyType.replace('_train', '');
+                const def = this.ENEMY_TYPES[actualType];
+                if (!def) return;
+
+                const trainSizes = { drunk: [6,8], ant: [8,10], seahorse: [6,8], trolley: [3,4] };
+                const [min, max] = trainSizes[actualType] || [6,8];
+                const trainSize = min + Math.floor(Math.random() * (max - min + 1));
+                const spacing = 3.0;
+
+                // Lane selection per scenario rules
+                let targetLane;
+                if (actualType === 'seahorse') {
+                    // Seahorses always take far-left or far-right
+                    targetLane = Math.random() < 0.5 ? -9 : 9;
+                } else if (actualType === 'trolley' && this._layout && this._layout.dualDoor) {
+                    // Trolley follows aisle center
+                    const isLeft = Math.random() < 0.5;
+                    targetLane = isLeft ? this._layout.leftAisleCenter : this._layout.rightAisleCenter;
+                } else {
+                    // Standard lane selection
+                    const scale = this._layout ? this._layout.laneWidth / 30 : 1;
+                    const lanes = [-6*scale, -3*scale, -1.5*scale, 0, 1.5*scale, 3*scale, 6*scale];
+                    targetLane = lanes[Math.floor(Math.random() * lanes.length)];
+                }
+
+                for (let i = 0; i < trainSize; i++) {
+                    this._createEnemy(actualType, def, {
+                        xOverride: targetLane,
+                        zOverride: CONFIG.spawnZoneZ + i * spacing,
+                        targetLane: targetLane,
+                    });
+                }
+                this.enemiesSpawned++;
+                return;
+            }
 
             // The Girls / Raccoons / Jellyfish — spawn as a tight cluster picking a lane
             if (enemyType === 'girls_group' || enemyType === 'raccoon_group' || enemyType === 'jellyfish_group' || enemyType === 'unruly_group') {
@@ -6080,7 +6170,9 @@
         _createEnemy(enemyType, def, opts) {
             const spread = this._layout ? this._layout.spawnWidth : CONFIG.spawnWidth;
             const x = opts.xOverride !== undefined ? opts.xOverride : (Math.random() - 0.5) * spread;
-            const z = CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
+            const z = opts.zOverride !== undefined
+                ? opts.zOverride
+                : CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
 
             // Polynomial HP scaling — linear base with exponential multiplier (hockey stick)
             const linearHP = def.baseHP + this.wave * def.hpPerWave;
@@ -6210,12 +6302,18 @@
                 attendant: 'walk',
                 marshal: 'power_walk',
                 unruly: 'walk',
+                // Train enemies
+                drunk: 'wobble_walk',
+                ant: 'march',
+                seahorse: 'drift',
+                trolley: 'push_walk',
             };
             enemy.walkState = initialStates[enemyType] || 'walk';
             ac.setState(enemy.walkState);
 
-            // Girls/Raccoons/Jellyfish: random phase offset for visual variety in clusters
-            if (enemyType === 'girls' || enemyType === 'raccoon' || enemyType === 'jellyfish' || enemyType === 'unruly') {
+            // Girls/Raccoons/Jellyfish/Train enemies: random phase offset for visual variety
+            if (enemyType === 'girls' || enemyType === 'raccoon' || enemyType === 'jellyfish' || enemyType === 'unruly'
+                || enemyType === 'drunk' || enemyType === 'ant' || enemyType === 'seahorse' || enemyType === 'trolley') {
                 ac.mixer.time = Math.random() * 2.0;
             }
 
@@ -6762,6 +6860,15 @@
                     // Panicker/Fox/Pirate/Marshal zig-zag — slight lateral wobble
                     if (e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate' || e.type === 'marshal') {
                         e.x += Math.sin(e.walkPhase * 0.5) * dt * 0.5;
+                    }
+
+                    // Drunk wobble — visual sway while walking
+                    if (e.type === 'drunk') {
+                        e.x += Math.sin(e.walkPhase * 0.3 + e.z * 0.5) * dt * 0.8;
+                    }
+                    // Seahorse gentle lateral drift
+                    if (e.type === 'seahorse') {
+                        e.x += Math.sin(e.walkPhase * 0.2) * dt * 0.3;
                     }
 
                     e.mesh.position.z = e.z;

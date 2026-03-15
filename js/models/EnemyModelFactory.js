@@ -11,7 +11,7 @@ import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } fr
 import { GLBModelCache } from '../loaders/GLBModelCache.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly', 'drunk', 'ant', 'seahorse', 'trolley']);
 
 /**
  * Create a fully rigged enemy model.
@@ -116,7 +116,7 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 }
 
 function _outlineWidthForRigidType(type) {
-    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03, nervous: 0.03, business: 0.03, stumbler: 0.04, attendant: 0.03, marshal: 0.03, unruly: 0.02 };
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03, nervous: 0.03, business: 0.03, stumbler: 0.04, attendant: 0.03, marshal: 0.03, unruly: 0.02, drunk: 0.03, ant: 0.02, seahorse: 0.03, trolley: 0.03 };
     return map[type] || 0.03;
 }
 
@@ -4025,6 +4025,718 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
 }
 
 
+// ═══════════════════════════════════════
+// DRUNK — Office biped, party-goer with hat and loosened tie
+// ═══════════════════════════════════════
+
+function _buildRigidDrunk(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+
+    // ═══ TORSO: same proportions as polite knocker ═══
+    const spineToRoot = 0.25 * s;
+    const spineToChest = 0.30 * s;
+    const torsoW = 0.42 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.15;
+    const torsoD = 0.32 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.07 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ LOOSENED TIE: thin box hanging from chest, angled askew ═══
+    const tieW = 0.06 * s;
+    const tieH = torsoH * 0.55;
+    const tieD = 0.015 * s;
+    const tieGeo = new THREE.BoxGeometry(tieW, tieH, tieD);
+    const tie = new THREE.Mesh(tieGeo, materials.legs);
+    tie.name = 'tie';
+    tie.position.set(0.03 * s, torsoH * 0.05, -torsoD * 0.52);
+    tie.rotation.set(0.08, 0.12, 0.18); // disheveled angle
+    boneMap.spine.add(tie);
+    parts.tie = tie;
+
+    // Tie knot — small box at top of tie, pulled loose
+    const knotGeo = new THREE.BoxGeometry(tieW * 1.6, tieW * 0.8, tieD * 1.2);
+    const knot = new THREE.Mesh(knotGeo, materials.legs);
+    knot.name = 'tieKnot';
+    knot.position.set(0.02 * s, torsoH * 0.32, -torsoD * 0.53);
+    knot.rotation.set(0, 0, 0.15);
+    boneMap.spine.add(knot);
+    parts.tieKnot = knot;
+
+    // ═══ HEAD: slightly ruddy (skin tinted red) ═══
+    const headR = 0.28 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const ruddyMat = materials.skin.clone();
+    ruddyMat.uniforms.uBaseColor = { value: new THREE.Color(0xf0b898) }; // flushed skin tone
+    const head = new THREE.Mesh(headGeo, ruddyMat);
+    head.name = 'head';
+    head.scale.set(1.0, 0.92, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // ═══ FACE: unfocused eyes, red nose, dopey grin ═══
+
+    // Eyes — slightly unfocused, rotated outward
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.28;
+    const eyeY = headR * 0.05;
+    const eyeZ = -headR * 0.90;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
+    eyeL.scale.set(1.0, 1.1, 0.5);
+    eyeL.rotation.set(0, 0, 0.15); // rotated outward — unfocused
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR_mesh = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR_mesh.name = 'eyeR';
+    eyeR_mesh.position.set(eyeSpacing, eyeY, eyeZ);
+    eyeR_mesh.scale.set(1.0, 1.1, 0.5);
+    eyeR_mesh.rotation.set(0, 0, -0.15); // rotated outward — unfocused
+    boneMap.head.add(eyeR_mesh);
+    parts.eyeR = eyeR_mesh;
+
+    // Red nose — small red sphere on nose
+    const redNoseGeo = new THREE.SphereGeometry(headR * 0.10, 6, 5);
+    const redNoseMat = new THREE.MeshBasicMaterial({ color: 0xdd3333 });
+    const redNose = new THREE.Mesh(redNoseGeo, redNoseMat);
+    redNose.name = 'redNose';
+    redNose.position.set(0, -headR * 0.08, -headR * 0.95);
+    boneMap.head.add(redNose);
+    parts.redNose = redNose;
+
+    // Dopey grin — wider mouth box
+    const mouthGeo = new THREE.BoxGeometry(headR * 0.36, headR * 0.05, headR * 0.05);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.26, eyeZ - headR * 0.02);
+    mouth.rotation.set(0, 0, 0.05); // slight lopsided grin
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // Eyebrows — relaxed, slightly droopy
+    const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.045, headR * 0.05);
+    const browL = new THREE.Mesh(browGeo, faceMat);
+    browL.name = 'browL';
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browL.rotation.set(0, 0, -0.15); // droopy
+    boneMap.head.add(browL);
+    parts.browL = browL;
+
+    const browR = new THREE.Mesh(browGeo, faceMat);
+    browR.name = 'browR';
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
+    browR.rotation.set(0, 0, 0.15); // droopy
+    boneMap.head.add(browR);
+    parts.browR = browR;
+
+    // ═══ PARTY HAT: small cone, tilted on head ═══
+    const hatH = headR * 0.55;
+    const hatR = headR * 0.28;
+    const hatGeo = new THREE.ConeGeometry(hatR, hatH, 8);
+    const hatMat = materials.body.clone();
+    hatMat.uniforms.uBaseColor = { value: new THREE.Color(0xe84888) }; // festive pink
+    const hat = new THREE.Mesh(hatGeo, hatMat);
+    hat.name = 'partyHat';
+    hat.position.set(headR * 0.15, headR * 0.72, -headR * 0.05);
+    hat.rotation.set(0.10, 0, 0.25); // tilted jauntily
+    boneMap.head.add(hat);
+    parts.partyHat = hat;
+
+    // Hat brim — small torus at hat base
+    const brimGeo = new THREE.TorusGeometry(hatR * 0.95, hatR * 0.12, 4, 8);
+    const brim = new THREE.Mesh(brimGeo, hatMat);
+    brim.name = 'hatBrim';
+    brim.position.set(headR * 0.15, headR * 0.47, -headR * 0.05);
+    brim.rotation.set(Math.PI / 2 + 0.10, 0, 0.25);
+    boneMap.head.add(brim);
+    parts.hatBrim = brim;
+
+    // ═══ ARMS: standard capsules ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.065, armLength: 0.50 });
+
+    // ═══ LEGS: standard bipedal legs ═══
+    _addLegs(parts, boneMap, s, materials, { ulRadius: 0.095, ulHeight: 0.34, llRadius: 0.08, llHeight: 0.32 });
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// ANT — Forest quadruped (insect), 3 body segments, 6 legs, antennae, mandibles
+// ═══════════════════════════════════════
+
+function _buildRigidAnt(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+
+    // ═══ HEAD SEGMENT: sphere on head bone ═══
+    const headR = (d.headRadius || 0.10) * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.95, 0.90, 1.05); // slightly elongated forward
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // ═══ EYES: compound-eye look, spheres on sides of head ═══
+    const eyeSize = headR * 0.25;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.65;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.30);
+    eyeL.scale.set(0.80, 1.0, 0.70);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.30);
+    eyeR.scale.set(0.80, 1.0, 0.70);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // ═══ ANTENNAE: 2 thin capsules extending forward from head, angled outward ═══
+    const antLen = 0.15 * s;
+    const antR = 0.012 * s;
+    const antGeo = createCapsule(antR, antLen, 6, 3);
+
+    const antL = new THREE.Mesh(antGeo, materials.body);
+    antL.name = 'antennaL';
+    antL.position.set(-headR * 0.30, headR * 0.55, -headR * 0.40);
+    antL.rotation.set(-0.80, -0.25, 0.20); // angled forward and outward
+    boneMap.head.add(antL);
+    parts.antennaL = antL;
+
+    const antennR = new THREE.Mesh(antGeo, materials.body);
+    antennR.name = 'antennaR';
+    antennR.position.set(headR * 0.30, headR * 0.55, -headR * 0.40);
+    antennR.rotation.set(-0.80, 0.25, -0.20); // mirror
+    boneMap.head.add(antennR);
+    parts.antennaR = antennR;
+
+    // Antenna tips — small spheres at ends
+    const tipGeo = new THREE.SphereGeometry(antR * 2.2, 5, 4);
+    const tipL = new THREE.Mesh(tipGeo, materials.body);
+    tipL.name = 'antennaTipL';
+    tipL.position.set(-headR * 0.30 - antLen * 0.15, headR * 0.55 + antLen * 0.55, -headR * 0.40 - antLen * 0.60);
+    boneMap.head.add(tipL);
+    parts.antennaTipL = tipL;
+
+    const tipR = new THREE.Mesh(tipGeo, materials.body);
+    tipR.name = 'antennaTipR';
+    tipR.position.set(headR * 0.30 + antLen * 0.15, headR * 0.55 + antLen * 0.55, -headR * 0.40 - antLen * 0.60);
+    boneMap.head.add(tipR);
+    parts.antennaTipR = tipR;
+
+    // ═══ MANDIBLES: 2 small capsules below head, angled toward center ═══
+    const mandLen = headR * 0.55;
+    const mandR = 0.015 * s;
+    const mandGeo = createCapsule(mandR, mandLen, 6, 3);
+
+    const mandL = new THREE.Mesh(mandGeo, materials.body);
+    mandL.name = 'mandibleL';
+    mandL.position.set(-headR * 0.22, -headR * 0.35, -headR * 0.65);
+    mandL.rotation.set(-0.50, 0.35, 0); // angle inward
+    boneMap.head.add(mandL);
+    parts.mandibleL = mandL;
+
+    const mandibleR = new THREE.Mesh(mandGeo, materials.body);
+    mandibleR.name = 'mandibleR';
+    mandibleR.position.set(headR * 0.22, -headR * 0.35, -headR * 0.65);
+    mandibleR.rotation.set(-0.50, -0.35, 0); // mirror inward
+    boneMap.head.add(mandibleR);
+    parts.mandibleR = mandibleR;
+
+    // ═══ THORAX: slightly smaller segment on spine_mid ═══
+    const thoraxW = (d.bodyWidth || 0.12) * s;
+    const thoraxH = (d.bodyHeight || 0.10) * s;
+    const thoraxLen = (d.bodyLength || 0.18) * s * 0.45;
+    const thoraxGeo = new THREE.SphereGeometry(thoraxW, 10, 8);
+    const thorax = new THREE.Mesh(thoraxGeo, materials.body);
+    thorax.name = 'thorax';
+    thorax.scale.set(1.0, thoraxH / thoraxW, thoraxLen / thoraxW); // oval cross-section
+    boneMap.spine_mid.add(thorax);
+    parts.thorax = thorax;
+
+    // ═══ ABDOMEN: larger egg-shaped segment on pelvis ═══
+    const abdW = thoraxW * 1.35;
+    const abdLen = thoraxLen * 1.5;
+    const abdGeo = new THREE.SphereGeometry(abdW, 10, 8);
+    const abdomen = new THREE.Mesh(abdGeo, materials.body);
+    abdomen.name = 'abdomen';
+    abdomen.scale.set(1.0, 0.85, abdLen / abdW); // elongated egg shape
+    abdomen.position.set(0, -abdW * 0.08, 0);
+    boneMap.pelvis.add(abdomen);
+    parts.abdomen = abdomen;
+
+    // ═══ ANIMATED LEGS: 4 on quadruped bone chains (thin capsules) ═══
+    const legThick = (d.legThickness || 0.03) * s;
+    const fUpperH = 0.18 * s;
+    const fUpperGeo = createCapsule(legThick, fUpperH, 6, 3);
+
+    const fUpperL = new THREE.Mesh(fUpperGeo, materials.legs);
+    fUpperL.name = 'frontUpperLegL';
+    fUpperL.position.set(0, -fUpperH * 0.38, 0);
+    boneMap.frontUpperLeg_L.add(fUpperL);
+    parts.frontUpperLegL = fUpperL;
+
+    const fUpperR = new THREE.Mesh(fUpperGeo, materials.legs);
+    fUpperR.name = 'frontUpperLegR';
+    fUpperR.position.set(0, -fUpperH * 0.38, 0);
+    boneMap.frontUpperLeg_R.add(fUpperR);
+    parts.frontUpperLegR = fUpperR;
+
+    const fLowerH = 0.20 * s;
+    const fLowerGeo = createCapsule(legThick * 0.75, fLowerH, 6, 3);
+
+    const fLowerL = new THREE.Mesh(fLowerGeo, materials.legs);
+    fLowerL.name = 'frontLowerLegL';
+    fLowerL.position.set(0, -fLowerH * 0.38, 0);
+    boneMap.frontLowerLeg_L.add(fLowerL);
+    parts.frontLowerLegL = fLowerL;
+
+    const fLowerR = new THREE.Mesh(fLowerGeo, materials.legs);
+    fLowerR.name = 'frontLowerLegR';
+    fLowerR.position.set(0, -fLowerH * 0.38, 0);
+    boneMap.frontLowerLeg_R.add(fLowerR);
+    parts.frontLowerLegR = fLowerR;
+
+    const hUpperH = 0.18 * s;
+    const hUpperGeo = createCapsule(legThick, hUpperH, 6, 3);
+
+    const hUpperL = new THREE.Mesh(hUpperGeo, materials.legs);
+    hUpperL.name = 'hindUpperLegL';
+    hUpperL.position.set(0, -hUpperH * 0.38, 0);
+    boneMap.hindUpperLeg_L.add(hUpperL);
+    parts.hindUpperLegL = hUpperL;
+
+    const hUpperR = new THREE.Mesh(hUpperGeo, materials.legs);
+    hUpperR.name = 'hindUpperLegR';
+    hUpperR.position.set(0, -hUpperH * 0.38, 0);
+    boneMap.hindUpperLeg_R.add(hUpperR);
+    parts.hindUpperLegR = hUpperR;
+
+    const hLowerH = 0.20 * s;
+    const hLowerGeo = createCapsule(legThick * 0.75, hLowerH, 6, 3);
+
+    const hLowerL = new THREE.Mesh(hLowerGeo, materials.legs);
+    hLowerL.name = 'hindLowerLegL';
+    hLowerL.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_L.add(hLowerL);
+    parts.hindLowerLegL = hLowerL;
+
+    const hLowerR = new THREE.Mesh(hLowerGeo, materials.legs);
+    hLowerR.name = 'hindLowerLegR';
+    hLowerR.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_R.add(hLowerR);
+    parts.hindLowerLegR = hLowerR;
+
+    // ═══ 2 DECORATIVE MIDDLE LEGS: static on spine_mid, between front and hind ═══
+    const midLegLen = 0.20 * s;
+    const midLegGeo = createCapsule(legThick * 0.85, midLegLen, 6, 3);
+
+    const midLegL = new THREE.Mesh(midLegGeo, materials.legs);
+    midLegL.name = 'midLegL';
+    midLegL.position.set(-thoraxW * 0.75, -midLegLen * 0.30, 0);
+    midLegL.rotation.set(0, 0, 0.45); // angled outward
+    boneMap.spine_mid.add(midLegL);
+    parts.midLegL = midLegL;
+
+    const midLegR = new THREE.Mesh(midLegGeo, materials.legs);
+    midLegR.name = 'midLegR';
+    midLegR.position.set(thoraxW * 0.75, -midLegLen * 0.30, 0);
+    midLegR.rotation.set(0, 0, -0.45); // mirror outward
+    boneMap.spine_mid.add(midLegR);
+    parts.midLegR = midLegR;
+
+    // ═══ TAIL SEGMENT: small sphere on tail_01 for abdomen tip ═══
+    const tailR = abdW * 0.35;
+    const tailGeo = new THREE.SphereGeometry(tailR, 6, 5);
+    const tail = new THREE.Mesh(tailGeo, materials.body);
+    tail.name = 'tail';
+    tail.scale.set(0.80, 0.80, 1.10);
+    boneMap.tail_01.add(tail);
+    parts.tail = tail;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// SEAHORSE — Ocean marine, vertical posture, curled tail, snout tube
+// ═══════════════════════════════════════
+
+function _buildRigidSeahorse(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+
+    // ═══ UPPER BODY: wider at chest, narrowing upward (body_front) ═══
+    // Seahorse has VERTICAL orientation — unique among marine types
+    const bodyW = (d.bodyWidth || 0.10) * s;
+    const bodyH = (d.bodyHeight || 0.10) * s;
+    const bodyLen = (d.bodyLength || 0.25) * s;
+
+    const upperLen = bodyLen * 0.50;
+    const upperGeo = createOrganicTorso(bodyW * 0.55, bodyW * 0.90, upperLen, 0.06, 8, 8);
+    const upperBody = new THREE.Mesh(upperGeo, materials.body);
+    upperBody.name = 'upperBody';
+    // Keep vertical — no 90° rotation like horizontal marine creatures
+    upperBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    upperBody.position.set(0, upperLen * 0.10, 0);
+    boneMap.body_front.add(upperBody);
+    parts.upperBody = upperBody;
+
+    // ═══ LOWER BODY: narrowing downward (body_rear) ═══
+    const lowerLen = bodyLen * 0.50;
+    const lowerGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.65, lowerLen, 0.04, 8, 8);
+    const lowerBody = new THREE.Mesh(lowerGeo, materials.body);
+    lowerBody.name = 'lowerBody';
+    lowerBody.scale.set(1.0, 1.0, bodyH / bodyW);
+    lowerBody.position.set(0, -lowerLen * 0.10, 0);
+    boneMap.body_rear.add(lowerBody);
+    parts.lowerBody = lowerBody;
+
+    // Bridging midsection on root
+    const midR = bodyW * 0.80;
+    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    const mid = new THREE.Mesh(midGeo, materials.body);
+    mid.name = 'bodyMid';
+    mid.scale.set(1.0, 1.15, bodyH / bodyW);
+    boneMap.root.add(mid);
+    parts.bodyMid = mid;
+
+    // ═══ HEAD: small elongated sphere ═══
+    const headR = (d.headRadius || 0.08) * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.85, 0.95, 1.05); // slightly elongated
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // ═══ SNOUT: long thin tube extending forward (capsule on snout bone) ═══
+    const snoutLen = (d.snoutLength || 0.12) * s;
+    const snoutR = headR * 0.18;
+    const snoutGeo = createCapsule(snoutR, snoutLen, 8, 4);
+    const snout = new THREE.Mesh(snoutGeo, materials.body);
+    snout.name = 'snout';
+    snout.rotation.x = Math.PI * 0.52; // angled slightly downward
+    snout.position.set(0, -headR * 0.15, -headR * 0.35);
+    boneMap.snout.add(snout);
+    parts.snout = snout;
+
+    // Snout tip — tiny sphere
+    const snoutTipGeo = new THREE.SphereGeometry(snoutR * 1.2, 5, 4);
+    const snoutTip = new THREE.Mesh(snoutTipGeo, materials.body);
+    snoutTip.name = 'snoutTip';
+    snoutTip.position.set(0, -headR * 0.15 - snoutLen * 0.45, -headR * 0.35 - snoutLen * 0.35);
+    boneMap.snout.add(snoutTip);
+    parts.snoutTip = snoutTip;
+
+    // ═══ EYES: small spheres on sides of head ═══
+    const eyeSize = headR * 0.14;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.52;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.35);
+    eyeL.scale.set(0.65, 1.10, 0.50);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.35);
+    eyeR.scale.set(0.65, 1.10, 0.50);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // ═══ CROWN/CREST: small triangular shapes on top of head ═══
+    const crownH = headR * 0.45;
+    const crownGeo = new THREE.ConeGeometry(headR * 0.12, crownH, 4);
+    const crownMat = materials.body.clone();
+    crownMat.uniforms.uBaseColor = { value: new THREE.Color(0xe8a050) }; // slightly lighter crown
+
+    for (let i = 0; i < 3; i++) {
+        const spike = new THREE.Mesh(crownGeo, crownMat);
+        spike.name = 'crownSpike' + i;
+        const angle = (i - 1) * 0.25; // fan across top
+        spike.position.set(
+            Math.sin(angle) * headR * 0.15,
+            headR * 0.65 + (i === 1 ? crownH * 0.15 : 0), // center spike taller
+            Math.cos(angle) * headR * 0.10
+        );
+        spike.rotation.set(-0.10, 0, angle * 0.30);
+        spike.scale.set(1.0, i === 1 ? 1.2 : 0.85, 1.0); // center taller
+        boneMap.head.add(spike);
+        parts['crownSpike' + i] = spike;
+    }
+
+    // ═══ DORSAL FIN RIDGE: thin box along the back (on dorsal bone) ═══
+    const dorsalH = (d.dorsalHeight || 0.06) * s;
+    const dorsalLen = (d.dorsalLength || 0.10) * s;
+    const dorsalGeo = new THREE.BoxGeometry(0.008 * s, dorsalH, dorsalLen);
+    const dorsalMat = materials.body.clone();
+    dorsalMat.uniforms.uBaseColor = { value: new THREE.Color(0xf0c070) }; // slightly translucent-looking lighter
+    const dorsal = new THREE.Mesh(dorsalGeo, dorsalMat);
+    dorsal.name = 'dorsal';
+    dorsal.position.set(0, dorsalH * 0.30, 0);
+    boneMap.dorsal.add(dorsal);
+    parts.dorsal = dorsal;
+
+    // ═══ SMALL SIDE FINS: tiny flattened capsules on flipper bones (flutter) ═══
+    const finLen = (d.flipperLength || 0.04) * s;
+    const finW = (d.flipperWidth || 0.02) * s;
+    const finGeo = createCapsule(finW, finLen, 6, 3);
+
+    const finL = new THREE.Mesh(finGeo, materials.body);
+    finL.name = 'finL';
+    finL.scale.set(0.30, 1.0, 0.80); // tiny and flat
+    finL.rotation.set(0, 0, 0.50); // angled outward
+    finL.position.set(0, -finLen * 0.20, 0);
+    boneMap.flipper_L.add(finL);
+    parts.finL = finL;
+
+    const finR = new THREE.Mesh(finGeo, materials.body);
+    finR.name = 'finR';
+    finR.scale.set(0.30, 1.0, 0.80);
+    finR.rotation.set(0, 0, -0.50);
+    finR.position.set(0, -finLen * 0.20, 0);
+    boneMap.flipper_R.add(finR);
+    parts.finR = finR;
+
+    // ═══ CURLED TAIL: chain of small spheres/capsules on tail bones ═══
+    // The tail curls inward — each segment positioned to create a curve
+    const tailW = (d.tailWidth || 0.04) * s;
+
+    const tail1Len = 0.08 * s;
+    const tail1Geo = createCapsule(tailW * 0.35, tail1Len, 6, 3);
+    const tail1 = new THREE.Mesh(tail1Geo, materials.body);
+    tail1.name = 'tail1';
+    tail1.position.set(0, -tail1Len * 0.20, 0);
+    boneMap.tail_01.add(tail1);
+    parts.tail1 = tail1;
+
+    const tail2Len = 0.07 * s;
+    const tail2Geo = createCapsule(tailW * 0.25, tail2Len, 6, 3);
+    const tail2 = new THREE.Mesh(tail2Geo, materials.body);
+    tail2.name = 'tail2';
+    tail2.position.set(0, -tail2Len * 0.20, tail2Len * 0.15); // start curling toward front
+    boneMap.tail_02.add(tail2);
+    parts.tail2 = tail2;
+
+    const tail3Len = 0.05 * s;
+    const tail3Geo = createCapsule(tailW * 0.18, tail3Len, 6, 3);
+    const tail3 = new THREE.Mesh(tail3Geo, materials.body);
+    tail3.name = 'tail3';
+    tail3.position.set(0, -tail3Len * 0.10, tail3Len * 0.25); // more curl
+    boneMap.tail_03.add(tail3);
+    parts.tail3 = tail3;
+
+    // Tail tip — small sphere
+    const tailTipGeo = new THREE.SphereGeometry(tailW * 0.15, 5, 4);
+    const tailTip = new THREE.Mesh(tailTipGeo, materials.body);
+    tailTip.name = 'tailTip';
+    tailTip.position.set(0, -tail3Len * 0.30, tail3Len * 0.30);
+    boneMap.tail_03.add(tailTip);
+    parts.tailTip = tailTip;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// TROLLEY — Airplane biped + beverage cart, attendant pushing cart
+// ═══════════════════════════════════════
+
+function _buildRigidTrolley(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+
+    // ═══ TORSO: narrow, tall, professional — similar to attendant ═══
+    const spineToRoot = 0.25 * s;
+    const spineToChest = 0.30 * s;
+    const torsoW = 0.32 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.20;
+    const torsoD = 0.26 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // ═══ HEAD: small sphere with face ═══
+    const headR = 0.26 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(0.95, 0.95, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Face — professional forced smile
+    _addFace(parts, boneMap, headR, faceMat, {
+        browAngle: 0.08,
+        eyeScaleY: 1.15,
+        mouthShape: 'smile',
+    });
+
+    // Pillbox hat
+    const hatGeo = createFlatCap(headR * 0.48, headR * 0.20, 8);
+    const hat = new THREE.Mesh(hatGeo, materials.body);
+    hat.name = 'hat';
+    hat.position.set(0, headR * 0.72, headR * 0.10);
+    hat.rotation.set(-0.08, 0, 0);
+    boneMap.head.add(hat);
+    parts.hat = hat;
+
+    // Dark hair — neat bob under hat
+    const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x3a2a1a) };
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.10, headR * 0.05);
+    hair.scale.set(1.05, 0.55, 1.08);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // ═══ ARMS: positioned EXTENDED FORWARD to simulate pushing the cart ═══
+    // Use standard arm capsules but on bones that will be posed forward
+    const armRadius = 0.075 * s;
+    const armLength = 0.40 * s;
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+
+    const armL = new THREE.Mesh(armGeo, materials.body);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.body);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // Hands
+    const handGeo = new THREE.SphereGeometry(armRadius * 1.1, 6, 5);
+
+    const handL = new THREE.Mesh(handGeo, materials.skin);
+    handL.name = 'handL';
+    handL.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_L.add(handL);
+    parts.handL = handL;
+
+    const handR = new THREE.Mesh(handGeo, materials.skin);
+    handR.name = 'handR';
+    handR.position.set(0, -armLength * 0.88, 0);
+    boneMap.upperArm_R.add(handR);
+    parts.handR = handR;
+
+    // ═══ LEGS: standard biped ═══
+    _addLegs(parts, boneMap, s, materials, {
+        ulRadius: 0.10, ulHeight: 0.30,
+        llRadius: 0.08, llHeight: 0.28,
+    });
+
+    // ═══ THE CART: built as child of root bone, positioned in FRONT ═══
+    const cartW = 0.40 * s;
+    const cartH = 0.30 * s;
+    const cartD = 0.25 * s;
+
+    // Cart body — metallic silver rounded box
+    const cartMat = materials.body.clone();
+    cartMat.uniforms.uBaseColor = { value: new THREE.Color(0x9a9aa8) };
+    const cartGeo = createRoundedBox(cartW, cartH, cartD, 0.02 * s, 3);
+    const cart = new THREE.Mesh(cartGeo, cartMat);
+    cart.name = 'cartBody';
+    cart.position.set(0, -0.30 * s, -0.50 * s); // in front of attendant
+    boneMap.root.add(cart);
+    parts.cartBody = cart;
+
+    // 4 wheels — small cylinders at corners
+    const wheelR = 0.03 * s;
+    const wheelH = 0.02 * s;
+    const wheelGeo = new THREE.CylinderGeometry(wheelR, wheelR, wheelH, 8);
+    const wheelMat = materials.outline; // dark wheels
+    const wheelPositions = [
+        [-cartW * 0.42, -cartH * 0.50, -cartD * 0.38],
+        [ cartW * 0.42, -cartH * 0.50, -cartD * 0.38],
+        [-cartW * 0.42, -cartH * 0.50,  cartD * 0.38],
+        [ cartW * 0.42, -cartH * 0.50,  cartD * 0.38],
+    ];
+    for (let i = 0; i < 4; i++) {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.name = 'wheel' + i;
+        wheel.position.set(
+            wheelPositions[i][0],
+            wheelPositions[i][1] + (-0.30 * s), // offset by cart Y position
+            wheelPositions[i][2] + (-0.50 * s),  // offset by cart Z position
+        );
+        wheel.rotation.x = Math.PI / 2; // rotate 90° so cylinder axis is horizontal
+        boneMap.root.add(wheel);
+        parts['wheel' + i] = wheel;
+    }
+
+    // Handle bar — thin capsule going up from cart, toward attendant hands
+    const handleH = 0.25 * s;
+    const handleGeo = createCapsule(0.012 * s, handleH, 6, 3);
+    const handle = new THREE.Mesh(handleGeo, cartMat);
+    handle.name = 'cartHandle';
+    handle.position.set(0, -0.18 * s, -0.28 * s); // between cart and attendant
+    handle.rotation.set(-0.35, 0, 0); // angled toward attendant
+    boneMap.root.add(handle);
+    parts.cartHandle = handle;
+
+    // Horizontal handle bar across the top
+    const handleBarGeo = createCapsule(0.010 * s, cartW * 0.70, 6, 3);
+    const handleBar = new THREE.Mesh(handleBarGeo, cartMat);
+    handleBar.name = 'cartHandleBar';
+    handleBar.position.set(0, -0.08 * s, -0.32 * s);
+    handleBar.rotation.set(0, 0, Math.PI / 2); // horizontal
+    boneMap.root.add(handleBar);
+    parts.cartHandleBar = handleBar;
+
+    // Shelf items — 2-3 small cylinders on top (bottles/cups)
+    const itemGeo = new THREE.CylinderGeometry(0.020 * s, 0.016 * s, 0.06 * s, 6);
+    const itemColors = [0xf5f0e0, 0xffccaa, 0xc8d8e8]; // cream, warm, cool
+    for (let i = 0; i < 3; i++) {
+        const itemMat = materials.body.clone();
+        itemMat.uniforms.uBaseColor = { value: new THREE.Color(itemColors[i]) };
+        const item = new THREE.Mesh(itemGeo, itemMat);
+        item.name = 'cartItem' + i;
+        item.position.set(
+            (i - 1) * 0.08 * s,           // spread across cart top
+            -0.30 * s + cartH * 0.55,     // on top of cart
+            -0.50 * s + (i % 2) * 0.04 * s // slight Z variation
+        );
+        boneMap.root.add(item);
+        parts['cartItem' + i] = item;
+    }
+
+    return parts;
+}
+
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
@@ -4047,6 +4759,11 @@ const _rigidBuilders = {
     attendant: _buildRigidAttendant,
     marshal: _buildRigidMarshal,
     unruly: _buildRigidUnrulyPassengers,
+    // New types
+    drunk: _buildRigidDrunk,
+    ant: _buildRigidAnt,
+    seahorse: _buildRigidSeahorse,
+    trolley: _buildRigidTrolley,
 };
 
 
