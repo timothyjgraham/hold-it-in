@@ -237,7 +237,7 @@ const GAME = {
 
   // ── UPGRADES ────────────────────────────────────────────────────────────
   upgrades: [
-    // Common (16)
+    // Common (20)
     { id: 'C1', name: 'Overclocked Magnet', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'magnetRange', value: 8 },
     { id: 'C2', name: 'Double Dip', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'coinValueMult', value: 0.5 },
     { id: 'C3', name: 'Magnet Durability', rarity: 'common', tower: 'coinmagnet', maxStacks: 3, effect: 'magnetHP', value: 4 },
@@ -254,7 +254,11 @@ const GAME = {
     { id: 'C14', name: 'Rapid Spray', rarity: 'common', tower: 'ubik', maxStacks: 2, effect: 'ubikCooldown', value: -0.25 },
     { id: 'C15', name: 'Spring-Loaded Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potBounce', value: 1 },
     { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 3, effect: 'potDPS', value: 3 },
-    // Rare (16)
+    { id: 'C17', name: 'Glass Cannon', rarity: 'common', tower: null, maxStacks: 1, effect: 'glassCannon', value: 1, exclusive: 'C18' },
+    { id: 'C18', name: 'Slow and Steady', rarity: 'common', tower: null, maxStacks: 1, effect: 'slowSteady', value: 1, exclusive: 'C17' },
+    { id: 'C19', name: 'Bargain Bin', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'bargainBin', value: 1 },
+    { id: 'C20', name: 'Static Charge', rarity: 'common', tower: 'coinmagnet', maxStacks: 3, effect: 'staticCharge', value: 1 },
+    // Rare (22)
     { id: 'R1', name: 'Wet & Soapy', rarity: 'rare', tower: ['wetfloor','ubik'], maxStacks: 1, effect: 'synergyWetUbik', value: 2.0 },
     { id: 'R2', name: 'Mop Splash', rarity: 'rare', tower: ['mop','wetfloor'], maxStacks: 1, effect: 'synergyMopWet', value: 1.2 },
     { id: 'R3', name: 'Magnetic Mops', rarity: 'rare', tower: ['coinmagnet','mop'], maxStacks: 1, effect: 'synergyMagMop', value: 0.15 },
@@ -271,7 +275,13 @@ const GAME = {
     { id: 'R14', name: 'Clearance Sale', rarity: 'rare', tower: null, maxStacks: 1, effect: 'towerCostMult', value: 0.8 },
     { id: 'R15', name: 'Insurance Policy', rarity: 'rare', tower: null, maxStacks: 1, effect: 'insurance', value: 0.5 },
     { id: 'R16', name: 'Crossfire', rarity: 'rare', tower: null, maxStacks: 1, effect: 'crossfire', value: 0.4 },
-    // Legendary (12)
+    { id: 'R17', name: 'Marked for Death', rarity: 'rare', tower: 'wetfloor', maxStacks: 1, effect: 'markedForDeath', value: 0.4 },
+    { id: 'R18', name: 'Crowd Surfing', rarity: 'rare', tower: null, maxStacks: 1, effect: 'crowdSurfing', value: 0.3 },
+    { id: 'R19', name: 'Overkill Bonus', rarity: 'rare', tower: null, maxStacks: 1, effect: 'overkillBonus', value: 5 },
+    { id: 'R20', name: 'Aftershock', rarity: 'rare', tower: 'potplant', maxStacks: 1, effect: 'aftershock', value: 8 },
+    { id: 'R21', name: 'Specialist', rarity: 'rare', tower: null, maxStacks: 1, effect: 'specialist', value: 0.15 },
+    { id: 'R22', name: 'Recycler', rarity: 'rare', tower: null, maxStacks: 1, effect: 'recycler', value: 0.1 },
+    // Legendary (18)
     { id: 'L1', name: 'Double Flush', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'doorHPBoost', value: 4 },
     { id: 'L2', name: 'Desperate Measures', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'desperateMeasures', value: 1 },
     { id: 'L3', name: 'Plunger Protocol', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'plungerProtocol', value: 3.0 },
@@ -284,6 +294,12 @@ const GAME = {
     { id: 'L10', name: 'Golden Magnet', rarity: 'legendary', tower: 'coinmagnet', maxStacks: 1, effect: 'goldenMagnet', value: 0.25 },
     { id: 'L11', name: 'False Alarm', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'falseAlarm', value: 0.3 },
     { id: 'L12', name: 'Overtime', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'overtime', value: 5 },
+    { id: 'L13', name: 'Minimalist', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'minimalist', value: 2.5 },
+    { id: 'L14', name: 'Hoarder', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'hoarder', value: 0.12 },
+    { id: 'L15', name: 'Chain Reaction', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'chainReaction', value: 12 },
+    { id: 'L16', name: 'Loan Shark', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'loanShark', value: 100 },
+    { id: 'L17', name: 'Assembly Line', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'assemblyLine', value: 0.2 },
+    { id: 'L18', name: 'Last Stand', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'lastStand', value: 3.0 },
   ],
 };
 

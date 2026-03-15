@@ -1,11 +1,11 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — Upgrade Registry                                            ║
-// ║  Master list of all 44 upgrades. Pure data — no game logic here.          ║
+// ║  Master list of all 60 upgrades. Pure data — no game logic here.          ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 // Tower type keys match Game.TOWERS: coinmagnet, wetfloor, mop, ubik, potplant
 
-// ─── COMMON TIER — Tower Modifications (16) ─────────────────────────────────
+// ─── COMMON TIER — Tower Modifications & Tradeoffs (20) ─────────────────────
 
 export const COMMON_UPGRADES = [
     // Coin Magnet
@@ -195,9 +195,57 @@ export const COMMON_UPGRADES = [
         maxStacks: 3,  // cap 9 dps
         effectFn: null,
     },
+
+    // Tradeoff Upgrades — meaningful build decisions
+    {
+        id: 'C17',
+        name: 'Glass Cannon',
+        description: 'All towers deal +80% damage but lose 50% max HP',
+        rarity: 'common',
+        icon: 'star',
+        towerRequirement: null,
+        stackable: false,
+        maxStacks: 1,
+        exclusive: 'C18',  // mutually exclusive with Slow and Steady
+        effectFn: null,
+    },
+    {
+        id: 'C18',
+        name: 'Slow and Steady',
+        description: 'All towers attack 40% slower but deal +60% damage per hit',
+        rarity: 'common',
+        icon: 'star',
+        towerRequirement: null,
+        stackable: false,
+        maxStacks: 1,
+        exclusive: 'C17',  // mutually exclusive with Glass Cannon
+        effectFn: null,
+    },
+    {
+        id: 'C19',
+        name: 'Bargain Bin',
+        description: 'Pot Plants cost 0 coins but start with only 1 HP',
+        rarity: 'common',
+        icon: 'pot',
+        towerRequirement: ['potplant'],
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'C20',
+        name: 'Static Charge',
+        description: 'Coin Magnets zap all enemies in range for 1 damage/sec',
+        rarity: 'common',
+        icon: 'magnet',
+        towerRequirement: ['coinmagnet'],
+        stackable: true,
+        maxStacks: 3,  // cap 3 dps
+        effectFn: null,
+    },
 ];
 
-// ─── RARE TIER — Synergies & Strong Effects (16) ────────────────────────────
+// ─── RARE TIER — Synergies & Strong Effects (22) ────────────────────────────
 
 export const RARE_UPGRADES = [
     // Tower-Tower Synergies
@@ -381,9 +429,77 @@ export const RARE_UPGRADES = [
         maxStacks: 1,
         effectFn: null,
     },
+
+    // Build-enabling synergies
+    {
+        id: 'R17',
+        name: 'Marked for Death',
+        description: 'Slowed enemies take +40% damage from ALL sources',
+        rarity: 'rare',
+        icon: 'sign',
+        towerRequirement: ['wetfloor'],
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'R18',
+        name: 'Crowd Surfing',
+        description: 'Enemies within 3 units of 2+ other enemies take +30% damage from all towers',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'R19',
+        name: 'Overkill Bonus',
+        description: 'Excess damage on a kill converts to coins (1 coin per 5 overkill damage)',
+        rarity: 'rare',
+        icon: 'coin',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'R20',
+        name: 'Aftershock',
+        description: 'Pot Plant trips create an 8-damage shockwave in a 3-unit radius',
+        rarity: 'rare',
+        icon: 'pot',
+        towerRequirement: ['potplant'],
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'R21',
+        name: 'Specialist',
+        description: 'For each tower type you DON\'T own, all towers deal +15% damage',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'R22',
+        name: 'Recycler',
+        description: 'Selling a tower refunds 100% of cost and permanently buffs adjacent towers +10% damage',
+        rarity: 'rare',
+        icon: 'coin',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
 ];
 
-// ─── LEGENDARY TIER — Weird Rules (12) ──────────────────────────────────────
+// ─── LEGENDARY TIER — Weird Rules & Build Definers (18) ─────────────────────
 
 export const LEGENDARY_UPGRADES = [
     {
@@ -513,6 +629,74 @@ export const LEGENDARY_UPGRADES = [
         description: 'First 5s of each wave: all towers 3× speed, enemies 0.5× speed',
         rarity: 'legendary',
         icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+
+    // Build-defining game-changers
+    {
+        id: 'L13',
+        name: 'Minimalist',
+        description: 'If you have 4 or fewer towers, each deals 2.5× damage',
+        rarity: 'legendary',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'L14',
+        name: 'Hoarder',
+        description: 'Every unspent 50 coins gives all towers +12% damage',
+        rarity: 'legendary',
+        icon: 'coin',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'L15',
+        name: 'Chain Reaction',
+        description: 'When a tower kills an enemy, the nearest tower within 12 units fires immediately (2s cooldown per tower)',
+        rarity: 'legendary',
+        icon: 'chain',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'L16',
+        name: 'Loan Shark',
+        description: 'Gain 100 coins immediately, but wave bonuses are halved for the rest of the run',
+        rarity: 'legendary',
+        icon: 'coin',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'L17',
+        name: 'Assembly Line',
+        description: 'Towers in a straight row get +20% damage per adjacent tower in the line',
+        rarity: 'legendary',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        effectFn: null,
+    },
+    {
+        id: 'L18',
+        name: 'Last Stand',
+        description: 'Towers at 1 HP deal 3× damage and attack 50% faster',
+        rarity: 'legendary',
+        icon: 'door',
         towerRequirement: null,  // general
         stackable: false,
         maxStacks: 1,

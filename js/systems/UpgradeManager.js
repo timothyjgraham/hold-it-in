@@ -97,6 +97,56 @@ export class UpgradeManager {
             case 'doorMaxHP':
                 return this.hasUpgrade('L1') ? 4 : 0;         // L1: Double Flush +4
 
+            // ─── Tradeoff upgrades ───
+            case 'glassCannon':
+                return this.hasUpgrade('C17') ? 1 : 0;        // C17: +80% dmg, -50% HP
+            case 'glassCannonDamageMult':
+                return this.hasUpgrade('C17') ? 1.8 : 1.0;
+            case 'glassCannonHPMult':
+                return this.hasUpgrade('C17') ? 0.5 : 1.0;
+            case 'slowSteady':
+                return this.hasUpgrade('C18') ? 1 : 0;        // C18: -40% speed, +60% dmg
+            case 'slowSteadyDamageMult':
+                return this.hasUpgrade('C18') ? 1.6 : 1.0;
+            case 'slowSteadyCooldownMult':
+                return this.hasUpgrade('C18') ? 1.4 : 1.0;    // 40% slower = 1.4× cooldown
+            case 'bargainBinCost':
+                return this.hasUpgrade('C19') ? 1 : 0;        // C19: Pot Plants cost 0, 1 HP
+            case 'staticChargeDPS':
+                return this.getStacks('C20') * 1;              // C20: +1 dps per stack
+            case 'markedForDeathMult':
+                return this.hasUpgrade('R17') ? 1.4 : 1.0;    // R17: slowed enemies +40% dmg
+            case 'crowdSurfingMult':
+                return this.hasUpgrade('R18') ? 1.3 : 1.0;    // R18: clustered enemies +30% dmg
+            case 'overkillCoinRate':
+                return this.hasUpgrade('R19') ? 5 : 0;        // R19: 1 coin per 5 overkill
+            case 'aftershockDamage':
+                return this.hasUpgrade('R20') ? 8 : 0;        // R20: 8 AoE on trip
+            case 'specialistDamagePer':
+                return this.hasUpgrade('R21') ? 0.15 : 0;     // R21: +15% per missing type
+            case 'recyclerRefund':
+                return this.hasUpgrade('R22') ? 1.0 : 0.5;    // R22: 100% refund (base 50%)
+            case 'recyclerBuff':
+                return this.hasUpgrade('R22') ? 0.1 : 0;      // R22: +10% dmg to adjacent
+            case 'minimalistMult':
+                return this.hasUpgrade('L13') ? 2.5 : 1.0;    // L13: 2.5× if ≤4 towers
+            case 'minimalistThreshold':
+                return this.hasUpgrade('L13') ? 4 : 0;        // L13: tower count cap
+            case 'hoarderPer50':
+                return this.hasUpgrade('L14') ? 0.12 : 0;     // L14: +12% per 50 coins
+            case 'chainReactionRange':
+                return this.hasUpgrade('L15') ? 12 : 0;       // L15: 12 unit trigger range
+            case 'loanSharkBonus':
+                return this.hasUpgrade('L16') ? 100 : 0;      // L16: instant 100 coins
+            case 'loanSharkPenalty':
+                return this.hasUpgrade('L16') ? 0.5 : 1.0;    // L16: wave bonus halved
+            case 'assemblyLinePer':
+                return this.hasUpgrade('L17') ? 0.2 : 0;      // L17: +20% per neighbor
+            case 'lastStandMult':
+                return this.hasUpgrade('L18') ? 3.0 : 1.0;    // L18: 3× dmg at 1 HP
+            case 'lastStandSpeedMult':
+                return this.hasUpgrade('L18') ? 1.5 : 1.0;    // L18: +50% attack speed
+
             // ─── Boolean-like stats ───
             case 'potReturnToOrigin':
                 return this.hasUpgrade('C15') ? 1 : 0;        // C15: Spring-Loaded Pot
