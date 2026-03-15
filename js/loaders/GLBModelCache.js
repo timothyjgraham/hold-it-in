@@ -86,17 +86,19 @@ export const GLBModelCache = {
             const entries = Object.entries(MANIFEST);
             const results = await Promise.allSettled(
                 entries.map(([key, path]) =>
-                    _loadOne(path).then(gltf => ({ key, gltf }))
+                    _loadOne(path).then(gltf => ({ key, path, gltf }))
                 )
             );
 
-            for (const result of results) {
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
+                const [key, path] = entries[i];
                 if (result.status === 'fulfilled') {
-                    const { key, gltf } = result.value;
+                    const { gltf } = result.value;
                     const data = _extractMeshData(gltf, key);
                     _cache.set(key, data);
                 } else {
-                    console.warn('GLBModelCache: failed to load a model:', result.reason);
+                    console.warn(`GLBModelCache: failed to load "${key}" (${path}):`, result.reason);
                 }
             }
 

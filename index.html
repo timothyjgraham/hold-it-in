@@ -4995,19 +4995,22 @@
         // ============================
 
         _spawnUpgradeDrones() {
-            if (!this.upgradeManager || !window.createUpgradeDrone) return;
+            if (!this.upgradeManager || !window.createUpgradeDrone) return false;
 
             // Tutorial: wait for medic drone to carry away the corpse before showing bubble
             if (this._tutorialActive && this._tutorialStep === 7) {
                 this._tutorialWaitForMedic = true;
-                return; // Drones spawn later via _doSpawnUpgradeDrones after click
+                return true; // Drones spawn later via _doSpawnUpgradeDrones after click
             }
 
-            this._doSpawnUpgradeDrones();
+            return this._doSpawnUpgradeDrones();
         },
 
         _doSpawnUpgradeDrones() {
-            if (!this.upgradeManager || !window.createUpgradeDrone) return;
+            if (!this.upgradeManager || !window.createUpgradeDrone) {
+                console.warn('Upgrade drones: missing upgradeManager or createUpgradeDrone');
+                return false;
+            }
 
             // Clean up any existing upgrade drones
             this._cleanupUpgradeDrones();
@@ -5017,7 +5020,10 @@
 
             // Roll 3 upgrade options
             const options = this.upgradeManager.rollUpgrades(this.wave, ownedTypes);
-            if (options.length === 0) return;
+            if (options.length === 0) {
+                console.warn('Upgrade drones: rollUpgrades returned no options');
+                return false;
+            }
 
             this._upgradePhase = true;
             this._upgradeOptions = options;
@@ -5030,14 +5036,22 @@
             const hoverZ = 2;     // Between camera Z=-7 and play field
             const startX = -(options.length - 1) * spacing / 2;
 
+            // Fallback entry positions when no window positions exist (non-office scenarios)
+            const windows = this.windowPositions;
+            const fallbackWindows = [
+                { x: -20, y: 20, z: 35 },
+                { x: 20, y: 20, z: 35 },
+                { x: -15, y: 25, z: 25 },
+                { x: 15, y: 25, z: 25 },
+            ];
+            const entryPoints = windows.length > 0 ? windows : fallbackWindows;
+
             for (let i = 0; i < options.length; i++) {
                 const upgrade = options[i];
                 const drone = createUpgradeDrone(upgrade, i);
 
-                // Pick a random entry window
-                const windows = this.windowPositions;
-                if (windows.length === 0) continue;
-                const win = windows[Math.floor(Math.random() * windows.length)];
+                // Pick a random entry point
+                const win = entryPoints[Math.floor(Math.random() * entryPoints.length)];
 
                 // Target position
                 const targetX = startX + i * spacing;
@@ -5069,6 +5083,7 @@
                 this.upgradeDrones.push(drone);
             }
 
+            return this.upgradeDrones.length > 0;
         },
 
         _updateUpgradeDrones(dt) {
@@ -5195,9 +5210,22 @@
 
             // Check if all drones are hovering/settling and selection UI not yet active
             if (this._upgradePhase && this.upgradeSelectionUI && !this.upgradeSelectionUI.active) {
+                // Safety timeout: if drones never reach ready state, skip upgrade phase
+                this._upgradeDroneWaitTimer = (this._upgradeDroneWaitTimer || 0) + dt;
+                if (this._upgradeDroneWaitTimer > 10) {
+                    console.warn('Upgrade drones timed out — skipping upgrade phase');
+                    this._upgradePhase = false;
+                    if (window.Music) Music.unduck();
+                    this._cleanupUpgradeDrones();
+                    this._setInterWaveTimer();
+                    this._upgradeDroneWaitTimer = 0;
+                    return;
+                }
+
                 const allReady = this.upgradeDrones.length > 0 &&
                     this.upgradeDrones.every(d => d.userData.state === 'hovering' || d.userData.state === 'settling');
                 if (allReady) {
+                    this._upgradeDroneWaitTimer = 0;
                     this.upgradeSelectionUI.activate(
                         this.upgradeDrones,
                         this._upgradeOptions,
@@ -6784,9 +6812,14 @@
 
                     // Enter upgrade selection phase (after wave 1+), or go straight to next wave timer
                     if (this.upgradeManager && this.wave >= 1) {
-                        this._spawnUpgradeDrones();
-                        // Block next wave from starting while drones fly in + player selects
-                        this.waveTimer = 9999;
+                        const dronesSpawned = this._spawnUpgradeDrones();
+                        if (dronesSpawned) {
+                            // Block next wave from starting while drones fly in + player selects
+                            this.waveTimer = 9999;
+                        } else {
+                            // Drone spawning failed — skip upgrade phase, proceed normally
+                            this._setInterWaveTimer();
+                        }
                     } else {
                         // Wave 0 (shouldn't happen) — go directly to next wave
                         this._setInterWaveTimer();
