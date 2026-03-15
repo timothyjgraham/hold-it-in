@@ -297,13 +297,13 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
 
     const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
     shoeL.name = 'shoeL';
-    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeL.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_L.add(shoeL);
     parts.shoeL = shoeL;
 
     const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
     shoeR.name = 'shoeR';
-    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeR.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_R.add(shoeR);
     parts.shoeR = shoeR;
 
@@ -462,13 +462,13 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
 
     const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
     shoeL.name = 'shoeL';
-    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeL.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_L.add(shoeL);
     parts.shoeL = shoeL;
 
     const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
     shoeR.name = 'shoeR';
-    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeR.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_R.add(shoeR);
     parts.shoeR = shoeR;
 
@@ -663,13 +663,13 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
 
     const footL = new THREE.Mesh(footGeo, materials.legs);
     footL.name = 'footL';
-    footL.position.set(0, -lowerLegH * 0.12, 0.03 * s);
+    footL.position.set(0, -lowerLegH * 0.12, -0.04 * s);
     boneMap.foot_L.add(footL);
     parts.footL = footL;
 
     const footR = new THREE.Mesh(footGeo, materials.legs);
     footR.name = 'footR';
-    footR.position.set(0, -lowerLegH * 0.12, 0.03 * s);
+    footR.position.set(0, -lowerLegH * 0.12, -0.04 * s);
     boneMap.foot_R.add(footR);
     parts.footR = footR;
 
@@ -873,13 +873,13 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
 
     const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
     shoeL.name = 'shoeL';
-    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeL.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_L.add(shoeL);
     parts.shoeL = shoeL;
 
     const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
     shoeR.name = 'shoeR';
-    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeR.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_R.add(shoeR);
     parts.shoeR = shoeR;
 
@@ -1059,13 +1059,13 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
 
     const footL = new THREE.Mesh(footGeo, materials.legs);
     footL.name = 'footL';
-    footL.position.set(0, -lowerLegH * 0.10, 0.02 * s);
+    footL.position.set(0, -lowerLegH * 0.10, -0.04 * s);
     boneMap.foot_L.add(footL);
     parts.footL = footL;
 
     const footR = new THREE.Mesh(footGeo, materials.legs);
     footR.name = 'footR';
-    footR.position.set(0, -lowerLegH * 0.10, 0.02 * s);
+    footR.position.set(0, -lowerLegH * 0.10, -0.04 * s);
     boneMap.foot_R.add(footR);
     parts.footR = footR;
 
@@ -1235,13 +1235,13 @@ function _buildRigidGirls(size, config, materials, boneMap) {
 
     const shoeL = new THREE.Mesh(shoeGeo, materials.body);  // body color shoes — cute
     shoeL.name = 'shoeL';
-    shoeL.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeL.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_L.add(shoeL);
     parts.shoeL = shoeL;
 
     const shoeR = new THREE.Mesh(shoeGeo, materials.body);
     shoeR.name = 'shoeR';
-    shoeR.position.set(0, -lowerLegH * 0.72, 0.02 * s);
+    shoeR.position.set(0, -lowerLegH * 0.72, -0.03 * s);
     boneMap.lowerLeg_R.add(shoeR);
     parts.shoeR = shoeR;
 
@@ -3352,13 +3352,13 @@ function _addLegs(parts, boneMap, s, materials, opts = {}) {
     const shoeGeo = createRoundedBox(shoeW, shoeH, shoeD, 0.02 * s);
     const shoeL = new THREE.Mesh(shoeGeo, materials.legs);
     shoeL.name = 'shoeL';
-    shoeL.position.set(0, -llH * 0.72, 0.02 * s);
+    shoeL.position.set(0, -llH * 0.72, -0.03 * s);
     boneMap.lowerLeg_L.add(shoeL);
     parts.shoeL = shoeL;
 
     const shoeR = new THREE.Mesh(shoeGeo, materials.legs);
     shoeR.name = 'shoeR';
-    shoeR.position.set(0, -llH * 0.72, 0.02 * s);
+    shoeR.position.set(0, -llH * 0.72, -0.03 * s);
     boneMap.lowerLeg_R.add(shoeR);
     parts.shoeR = shoeR;
 }
