@@ -1,5 +1,5 @@
-// AnimationLibrary.js — AAA keyframe clips for 28 enemy types (7 office + 7 forest + 7 ocean + 7 airplane)
-// 128 clips: walk/bash/hit/death per type + waddle/bear panic_sprint + L/R bash variants
+// AnimationLibrary.js — AAA keyframe clips for 32 enemy types (8 office + 8 forest + 8 ocean + 8 airplane)
+// ~150 clips: walk/bash/hit/death per type + jump for jumpers + waddle/bear panic_sprint + L/R bash variants
 // Rich multi-bone animation with proper weight shift, secondary motion,
 // and unique character personality in every movement.
 // Clip cache + lazy construction. Quaternion/keyframe helpers.
@@ -5831,6 +5831,849 @@ function _trolleyDeath() {
 
 
 // ═══════════════════════════════════════════════════════════════════════
+// VAULTER — confident parkour stride, athletic vault jump
+// Personality: fearless traceur, fluid movement, explosive leaps
+// Bones: biped (root, spine, chest, neck, head, upperArm_L/R, upperLeg_L/R, lowerLeg_L/R)
+// ═══════════════════════════════════════════════════════════════════════
+
+function _vaulterWalk() {
+    const c = ENEMY_VISUAL_CONFIG.vaulter;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const lean = -a.spineForwardLean;
+    const lsw = a.legSwing;
+    const asw = a.armSwing;
+    const t = [0, 0.25, 0.5, 0.75, dur];
+
+    return new THREE.AnimationClip('vaulter_walk', dur, [
+        // Root: light athletic bounce — springy, efficient
+        posTrack('root', t, [
+            [0, ry - bob * 0.2, 0], [0, ry + bob, 0], [0, ry - bob * 0.2, 0],
+            [0, ry + bob, 0], [0, ry - bob * 0.2, 0]
+        ]),
+        // Spine: slight forward lean, athletic sway
+        eulerTrack('spine', t, [
+            [lean, 0.04, 0.03], [lean + 0.02, 0, 0], [lean, -0.04, -0.03],
+            [lean + 0.02, 0, 0], [lean, 0.04, 0.03]
+        ]),
+        // Head: looking ahead, scanning for obstacles (parkour awareness)
+        eulerTrack('head', t, [
+            [-0.06, -0.06, 0], [-0.04, 0.04, 0], [-0.06, 0.06, 0],
+            [-0.04, -0.04, 0], [-0.06, -0.06, 0]
+        ]),
+        // Arms: big athletic pumping — opposite to legs
+        eulerTrack('upperArm_L', t, [
+            [-asw, 0, 0.15], [asw, 0, 0.20], [-asw, 0, 0.15],
+            [asw, 0, 0.20], [-asw, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [asw, 0, -0.15], [-asw, 0, -0.20], [asw, 0, -0.15],
+            [-asw, 0, -0.20], [asw, 0, -0.15]
+        ]),
+        // Legs: long confident strides
+        eulerTrack('upperLeg_L', t, [
+            [lsw, 0, 0.05], [0, 0, 0.03], [-lsw, 0, 0.05],
+            [0, 0, 0.03], [lsw, 0, 0.05]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [-lsw, 0, -0.05], [0, 0, -0.03], [lsw, 0, -0.05],
+            [0, 0, -0.03], [-lsw, 0, -0.05]
+        ]),
+        // Lower legs: natural knee bend on stride
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.50, -0.15, -0.10, -0.15], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.10, -0.15, -0.50, -0.15], AXIS_X),
+    ]);
+}
+
+function _vaulterJump() {
+    const c = ENEMY_VISUAL_CONFIG.vaulter;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.6;
+    // Phases: crouch(0-0.1) → launch(0.1-0.2) → tuck(0.2-0.4) → extend(0.4-0.55) → land(0.55-0.6)
+    const t = [0, 0.10, 0.20, 0.35, 0.48, 0.55, dur];
+
+    return new THREE.AnimationClip('vaulter_jump', dur, [
+        // Spine: crouch down → explosive upward lean → tuck → extend → absorb landing
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.25, 0, 0], [0.10, 0, 0],
+            [0.05, 0, 0], [-0.08, 0, 0], [-0.15, 0, 0], [-0.10, 0, 0]
+        ]),
+        // Arms: sweep back for launch → overhead reach → pull down for landing
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [0.80, 0, 0.10], [-1.20, 0, 0.30],
+            [-1.40, 0, 0.25], [-0.60, 0, 0.20], [0.30, 0, 0.15], [0.15, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [0.80, 0, -0.10], [-1.20, 0, -0.30],
+            [-1.40, 0, -0.25], [-0.60, 0, -0.20], [0.30, 0, -0.15], [0.15, 0, -0.15]
+        ]),
+        // Legs: deep crouch → explosive push → tuck up → extend for landing
+        eulerTrack('upperLeg_L', t, [
+            [0, 0, 0.05], [0.50, 0, 0.05], [-0.60, 0, 0.05],
+            [-0.70, 0, 0.05], [-0.30, 0, 0.05], [0.20, 0, 0.05], [0, 0, 0.05]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [0, 0, -0.05], [0.50, 0, -0.05], [-0.60, 0, -0.05],
+            [-0.70, 0, -0.05], [-0.30, 0, -0.05], [0.20, 0, -0.05], [0, 0, -0.05]
+        ]),
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.80, -0.20, -0.90, -0.50, -0.30, -0.15], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.80, -0.20, -0.90, -0.50, -0.30, -0.15], AXIS_X),
+        // Head: looks forward during flight, down on landing
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.15, 0, 0], [0.08, 0, 0],
+            [0.05, 0, 0], [-0.04, 0, 0], [-0.12, 0, 0], [-0.06, 0, 0]
+        ]),
+    ]);
+}
+
+function _vaulterBash() {
+    const c = ENEMY_VISUAL_CONFIG.vaulter;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.7;
+    // Shoulder charge: wind up → sprint in → shoulder slam → recoil
+    const t = [0, 0.12, 0.25, 0.35, 0.48, 0.60, dur];
+
+    return new THREE.AnimationClip('vaulter_bash_door', dur, [
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.03 * s, -0.04 * s], [0, ry - 0.02 * s, 0.12 * s],
+            [0, ry - 0.04 * s, 0.08 * s], [0, ry, 0.04 * s],
+            [0, ry, 0.02 * s], [0, ry, 0]
+        ]),
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.06, 0, 0.15], [-0.30, 0.20, 0.25],
+            [-0.18, 0.12, 0.15], [-0.12, 0.04, 0.06],
+            [-0.10, 0, 0.02], [-0.10, 0, 0]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [0.40, 0, -0.30], [1.20, 0, -0.10],
+            [0.80, 0, -0.20], [0.40, 0, -0.15],
+            [0.20, 0, -0.15], [0.15, 0, -0.15]
+        ]),
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [0.50, 0, 0.40], [0.80, 0, 0.50],
+            [0.50, 0, 0.35], [0.30, 0, 0.20],
+            [0.18, 0, 0.15], [0.15, 0, 0.15]
+        ]),
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.08, 0, 0], [-0.15, 0.10, 0.08],
+            [-0.08, 0.05, 0.04], [-0.06, 0, 0],
+            [-0.06, 0, 0], [-0.06, 0, 0]
+        ]),
+        buildRotationTrack('upperLeg_L', t, [0, 0.08, 0.15, 0.10, 0.04, 0.02, 0], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, -0.08, 0.12, 0.08, 0.03, 0.01, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.20, -0.35, -0.25, -0.18, -0.15, -0.15], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.18, -0.30, -0.22, -0.16, -0.15, -0.15], AXIS_X),
+    ]);
+}
+
+function _vaulterHitReact() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('vaulter_hit_react', dur, [
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.02, -0.06], [0, 0, -0.03], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0.12, 0, 0.06], [0.05, 0, 0.02], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.10, -0.08, 0], [0.04, -0.03, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+    ]);
+}
+
+function _vaulterDeath() {
+    const c = ENEMY_VISUAL_CONFIG.vaulter;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.65;
+    const t = [0, 0.10, 0.22, 0.35, 0.50, dur];
+
+    return new THREE.AnimationClip('vaulter_death', dur, [
+        // Dramatic forward tumble — parkour fail
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry * 0.80, 0.08 * s],
+            [0.06 * s, ry * 0.45, 0.14 * s], [0.10 * s, ry * 0.15, 0.16 * s],
+            [0.10 * s, ry * 0.03, 0.16 * s], [0.10 * s, 0, 0.14 * s]
+        ]),
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.35, 0, -0.10], [-0.70, 0, -0.25],
+            [-1.10, 0, -0.35], [-1.30, 0, -0.30], [-1.40, 0, -0.25]
+        ]),
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [-0.30, 0, 0.50], [-0.60, 0, 0.70],
+            [-0.20, 0, 0.40], [0.10, 0, 0.25], [0.15, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [-0.40, 0, -0.55], [-0.70, 0, -0.75],
+            [-0.30, 0, -0.45], [0.05, 0, -0.30], [0.10, 0, -0.20]
+        ]),
+        eulerTrack('head', t, [
+            [-0.06, 0, 0], [-0.10, 0.06, -0.08], [-0.04, 0.12, -0.15],
+            [0, 0.08, -0.12], [0.02, 0.04, -0.08], [0.02, 0.02, -0.06]
+        ]),
+        buildRotationTrack('upperLeg_L', t, [0, 0.20, 0.50, 0.75, 0.88, 0.92], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.15, 0.40, 0.65, 0.78, 0.82], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.30, -0.60, -0.90, -1.05, -1.10], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.25, -0.50, -0.80, -0.95, -1.00], AXIS_X),
+    ]);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// KANGAROO — bouncing hop gait, powerful spring jump, tail counterbalance
+// Personality: powerful, deliberate hops, massive hind-leg thrust
+// Bones: quadruped (root, pelvis, spine_mid, chest, neck_01, head,
+//   frontUpperLeg_L/R, frontLowerLeg_L/R,
+//   hindUpperLeg_L/R, hindLowerLeg_L/R, hindFoot_L/R,
+//   tail_01, tail_02, tail_03)
+// ═══════════════════════════════════════════════════════════════════════
+
+function _kangarooHop() {
+    const c = ENEMY_VISUAL_CONFIG.kangaroo;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const hsw = a.hindLegSwing;
+    const tw = a.tailWave;
+    const t = [0, dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80, dur];
+
+    // Kangaroo gait: both hind legs together — crouch → launch → airborne → land → absorb
+    return new THREE.AnimationClip('kangaroo_walk', dur, [
+        // Root: big hop arc — crouch low, spring high, land with impact
+        posTrack('root', t, [
+            [0, ry - bob * 0.5, 0], [0, ry - bob, 0], [0, ry + bob * 1.5, 0],
+            [0, ry + bob * 1.2, 0], [0, ry - bob * 0.3, 0], [0, ry - bob * 0.5, 0]
+        ]),
+        // Squash & stretch for cartoon bounce
+        scaleTrack('root', t, [
+            [1.05, 0.90, 1.05], [1.15, 0.78, 1.15], [0.88, 1.18, 0.88],
+            [0.92, 1.12, 0.92], [1.08, 0.88, 1.08], [1.05, 0.90, 1.05]
+        ]),
+        // Pelvis: tilt forward on crouch, level on air, back on land
+        eulerTrack('pelvis', t, [
+            [-0.08, 0, 0], [-0.15, 0, 0], [0.06, 0, 0],
+            [0.04, 0, 0], [-0.06, 0, 0], [-0.08, 0, 0]
+        ]),
+        // Spine_mid: body curves with the hop
+        eulerTrack('spine_mid', t, [
+            [0.06, 0, 0], [0.12, 0, 0], [-0.06, 0, 0],
+            [-0.04, 0, 0], [0.04, 0, 0], [0.06, 0, 0]
+        ]),
+        // Neck_01: bob with the hop
+        buildRotationTrack('neck_01', t, [0.04, 0.08, -0.04, -0.02, 0.02, 0.04], AXIS_X),
+        // Head: stabilize gaze, slight bob
+        eulerTrack('head', t, [
+            [-0.04, 0, 0], [-0.08, 0, 0], [0.04, 0.03, 0],
+            [0.02, -0.03, 0], [-0.02, 0, 0], [-0.04, 0, 0]
+        ]),
+        // Front arms: tiny, held close — bounce with the body
+        buildRotationTrack('frontUpperLeg_L', t, [0.10, 0.20, -0.08, -0.05, 0.05, 0.10], AXIS_X),
+        buildRotationTrack('frontUpperLeg_R', t, [0.10, 0.20, -0.08, -0.05, 0.05, 0.10], AXIS_X),
+        buildRotationTrack('frontLowerLeg_L', t, [-0.20, -0.30, -0.10, -0.12, -0.18, -0.20], AXIS_X),
+        buildRotationTrack('frontLowerLeg_R', t, [-0.20, -0.30, -0.10, -0.12, -0.18, -0.20], AXIS_X),
+        // Hind legs: TOGETHER — deep bend on crouch, explosive extension, tuck in air
+        buildRotationTrack('hindUpperLeg_L', t, [0.30, 0.65, -0.40, -0.30, 0.10, 0.30], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0.30, 0.65, -0.40, -0.30, 0.10, 0.30], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.40, -0.80, -0.10, -0.15, -0.30, -0.40], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.40, -0.80, -0.10, -0.15, -0.30, -0.40], AXIS_X),
+        // Hind feet: flex on push, extend in air, absorb on landing
+        buildRotationTrack('hindFoot_L', t, [-0.15, -0.30, 0.10, 0.08, -0.08, -0.15], AXIS_X),
+        buildRotationTrack('hindFoot_R', t, [-0.15, -0.30, 0.10, 0.08, -0.08, -0.15], AXIS_X),
+        // Tail: sweeps up on launch (counterbalance), down on land — 3 segments with progressive delay
+        buildRotationTrack('tail_01', t, [-tw * 0.3, -tw, tw * 0.8, tw * 0.5, -tw * 0.2, -tw * 0.3], AXIS_X),
+        buildRotationTrack('tail_02', t, [-tw * 0.2, -tw * 0.7, tw * 0.6, tw * 0.8, -tw * 0.1, -tw * 0.2], AXIS_X),
+        buildRotationTrack('tail_03', t, [-tw * 0.1, -tw * 0.4, tw * 0.4, tw * 0.6, tw * 0.1, -tw * 0.1], AXIS_X),
+    ]);
+}
+
+function _kangarooJump() {
+    const c = ENEMY_VISUAL_CONFIG.kangaroo;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.6;
+    // Phases: deep crouch(0-0.12) → explosive launch(0.12-0.22) → full extension(0.22-0.38) → tuck(0.38-0.50) → land(0.50-0.6)
+    const t = [0, 0.12, 0.22, 0.38, 0.50, dur];
+
+    return new THREE.AnimationClip('kangaroo_jump', dur, [
+        // Extra dramatic squash → stretch for the big jump
+        scaleTrack('root', t, [
+            [1.20, 0.70, 1.20], [1.25, 0.65, 1.25], [0.80, 1.30, 0.80],
+            [0.85, 1.22, 0.85], [1.12, 0.82, 1.12], [1.0, 1.0, 1.0]
+        ]),
+        // Pelvis: extreme crouch → full forward drive
+        eulerTrack('pelvis', t, [
+            [-0.25, 0, 0], [-0.35, 0, 0], [0.15, 0, 0],
+            [0.10, 0, 0], [-0.12, 0, 0], [-0.08, 0, 0]
+        ]),
+        // Spine: arches back on crouch, extends forward on launch
+        eulerTrack('spine_mid', t, [
+            [0.20, 0, 0], [0.30, 0, 0], [-0.15, 0, 0],
+            [-0.10, 0, 0], [0.08, 0, 0], [0.06, 0, 0]
+        ]),
+        // Head: looks up on launch, forward in air, down on land
+        eulerTrack('head', t, [
+            [-0.10, 0, 0], [-0.20, 0, 0], [0.10, 0, 0],
+            [0.06, 0, 0], [-0.06, 0, 0], [-0.04, 0, 0]
+        ]),
+        // Front arms: tuck close to body during flight
+        buildRotationTrack('frontUpperLeg_L', t, [0.15, 0.30, -0.15, -0.10, 0.08, 0.10], AXIS_X),
+        buildRotationTrack('frontUpperLeg_R', t, [0.15, 0.30, -0.15, -0.10, 0.08, 0.10], AXIS_X),
+        // Hind legs: massive extension on launch → tuck → extend for landing
+        buildRotationTrack('hindUpperLeg_L', t, [0.70, 0.90, -0.60, -0.50, 0.20, 0.30], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0.70, 0.90, -0.60, -0.50, 0.20, 0.30], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.90, -1.10, -0.08, -0.15, -0.40, -0.40], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.90, -1.10, -0.08, -0.15, -0.40, -0.40], AXIS_X),
+        buildRotationTrack('hindFoot_L', t, [-0.30, -0.45, 0.15, 0.10, -0.10, -0.15], AXIS_X),
+        buildRotationTrack('hindFoot_R', t, [-0.30, -0.45, 0.15, 0.10, -0.10, -0.15], AXIS_X),
+        // Tail: sweeps up dramatically for counterbalance during big jump
+        buildRotationTrack('tail_01', t, [-0.10, -0.30, 0.35, 0.25, -0.05, -0.10], AXIS_X),
+        buildRotationTrack('tail_02', t, [-0.05, -0.20, 0.30, 0.35, 0.05, -0.05], AXIS_X),
+        buildRotationTrack('tail_03', t, [0, -0.10, 0.20, 0.30, 0.10, 0], AXIS_X),
+    ]);
+}
+
+function _kangarooBash() {
+    const c = ENEMY_VISUAL_CONFIG.kangaroo;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.8;
+    // Turn → rear back on tail → double-leg kick → recover
+    const t = [0, 0.15, 0.30, 0.42, 0.55, 0.70, dur];
+
+    return new THREE.AnimationClip('kangaroo_bash_door', dur, [
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.04 * s, -0.04 * s], [0, ry + 0.06 * s, 0],
+            [0, ry - 0.02 * s, 0.14 * s], [0, ry, 0.08 * s],
+            [0, ry, 0.03 * s], [0, ry, 0]
+        ]),
+        // Turn sideways, lean back on tail, then kick
+        eulerTrack('pelvis', t, [
+            [0, 0, 0], [0.10, 0.30, 0], [0.20, 0.50, 0],
+            [-0.15, 0.30, 0], [-0.06, 0.15, 0], [-0.02, 0.05, 0], [0, 0, 0]
+        ]),
+        eulerTrack('spine_mid', t, [
+            [0, 0, 0], [0.08, 0, 0], [0.15, 0, 0],
+            [-0.10, 0, 0], [-0.04, 0, 0], [-0.01, 0, 0], [0, 0, 0]
+        ]),
+        // Hind legs: explosive double-kick at 0.42
+        buildRotationTrack('hindUpperLeg_L', t, [0, -0.20, -0.40, 0.80, 0.40, 0.10, 0], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0, -0.20, -0.40, 0.80, 0.40, 0.10, 0], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [0, 0.10, 0.30, -0.60, -0.30, -0.08, 0], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [0, 0.10, 0.30, -0.60, -0.30, -0.08, 0], AXIS_X),
+        // Tail: braces against ground during kick
+        buildRotationTrack('tail_01', t, [0, -0.15, -0.30, -0.20, -0.10, -0.03, 0], AXIS_X),
+        buildRotationTrack('tail_02', t, [0, -0.10, -0.25, -0.15, -0.06, -0.02, 0], AXIS_X),
+        buildRotationTrack('tail_03', t, [0, -0.06, -0.18, -0.10, -0.04, -0.01, 0], AXIS_X),
+        // Head: watches the kick
+        eulerTrack('head', t, [
+            [0, 0, 0], [0, 0.15, 0], [-0.08, 0.20, 0],
+            [0.06, 0.10, 0], [0.02, 0.05, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+    ]);
+}
+
+function _kangarooHitReact() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('kangaroo_hit_react', dur, [
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.04, -0.10], [0, 0.02, -0.05], [0, 0, -0.02], [0, 0, 0]
+        ]),
+        eulerTrack('spine_mid', t, [
+            [0, 0, 0], [0.12, 0, 0.04], [0.05, 0, 0.02], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.10, -0.10, 0], [0.04, -0.04, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        // Tail flicks up in alarm
+        buildRotationTrack('tail_01', t, [0, -0.25, -0.10, -0.03, 0], AXIS_X),
+    ]);
+}
+
+function _kangarooDeath() {
+    const c = ENEMY_VISUAL_CONFIG.kangaroo;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.7;
+    const t = [0, 0.12, 0.25, 0.38, 0.52, 0.64, dur];
+
+    return new THREE.AnimationClip('kangaroo_death', dur, [
+        // Topples sideways — heavy animal fall
+        posTrack('root', t, [
+            [0, ry, 0], [0.04 * s, ry * 0.82, 0], [0.12 * s, ry * 0.50, 0.03 * s],
+            [0.20 * s, ry * 0.25, 0.05 * s], [0.24 * s, ry * 0.08, 0.04 * s],
+            [0.24 * s, ry * 0.02, 0.03 * s], [0.24 * s, 0, 0.02 * s]
+        ]),
+        buildRotationTrack('root', t, [0, -0.10, -0.35, -0.70, -1.10, -1.40, -1.55], AXIS_Z),
+        eulerTrack('pelvis', t, [
+            [0, 0, 0], [-0.05, 0, 0.02], [-0.12, 0, 0.05],
+            [-0.20, 0, 0.08], [-0.25, 0, 0.06], [-0.27, 0, 0.04], [-0.28, 0, 0.03]
+        ]),
+        eulerTrack('spine_mid', t, [
+            [0, 0, 0], [-0.06, 0, 0.02], [-0.15, 0, 0.04],
+            [-0.25, 0, 0.05], [-0.30, 0, 0.05], [-0.32, 0, 0.04], [-0.34, 0, 0.03]
+        ]),
+        buildRotationTrack('neck_01', t, [0, -0.06, -0.14, -0.22, -0.26, -0.28, -0.30], AXIS_X),
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.04, 0.06, 0], [-0.10, 0.12, 0.08],
+            [-0.06, 0.10, 0.14], [-0.03, 0.06, 0.10], [-0.01, 0.03, 0.08], [0, 0, 0.06]
+        ]),
+        buildRotationTrack('hindUpperLeg_L', t, [0, 0.20, 0.50, 0.75, 0.90, 1.00, 1.05], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0, 0.15, 0.40, 0.62, 0.78, 0.88, 0.92], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [0, -0.18, -0.48, -0.80, -1.10, -1.30, -1.40], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [0, -0.14, -0.40, -0.68, -0.98, -1.18, -1.28], AXIS_X),
+        // Tail goes limp
+        buildRotationTrack('tail_01', t, [0, -0.06, -0.10, -0.08, -0.04, -0.02, 0], AXIS_Y),
+        buildRotationTrack('tail_02', t, [0, -0.04, -0.08, -0.06, -0.03, -0.01, 0], AXIS_Y),
+    ]);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// FROG — crouching hop gait, explosive spring jump, splayed landing
+// Personality: patient crouch → explosive leap, wide-eyed, tongue-out flair
+// Bones: quadruped with no tail (root, pelvis, spine_mid, chest, neck_01, head,
+//   frontUpperLeg_L/R, frontLowerLeg_L/R, frontFoot_L/R,
+//   hindUpperLeg_L/R, hindLowerLeg_L/R, hindFoot_L/R)
+// ═══════════════════════════════════════════════════════════════════════
+
+function _frogHop() {
+    const c = ENEMY_VISUAL_CONFIG.frog;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const fsw = a.frontLegSwing;
+    const hsw = a.hindLegSwing;
+    const t = [0, dur * 0.15, dur * 0.30, dur * 0.50, dur * 0.70, dur * 0.85, dur];
+
+    // Frog gait: sit still → crouch → spring → airborne → splay → land → sit
+    return new THREE.AnimationClip('frog_walk', dur, [
+        // Root: stays low, springs high, lands back low
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry - bob * 0.8, 0], [0, ry - bob, 0],
+            [0, ry + bob * 1.8, 0], [0, ry + bob * 1.0, 0],
+            [0, ry - bob * 0.3, 0], [0, ry, 0]
+        ]),
+        // Dramatic squash → stretch → squash
+        scaleTrack('root', t, [
+            [1.15, 0.80, 1.15], [1.25, 0.68, 1.25], [1.30, 0.62, 1.30],
+            [0.78, 1.35, 0.78], [0.85, 1.20, 0.85],
+            [1.12, 0.82, 1.12], [1.15, 0.80, 1.15]
+        ]),
+        // Pelvis: crouches down then extends
+        eulerTrack('pelvis', t, [
+            [-0.06, 0, 0], [-0.15, 0, 0], [-0.22, 0, 0],
+            [0.12, 0, 0], [0.08, 0, 0], [-0.04, 0, 0], [-0.06, 0, 0]
+        ]),
+        // Spine_mid: compresses on crouch, arches on spring
+        eulerTrack('spine_mid', t, [
+            [0.04, 0, 0], [0.12, 0, 0], [0.18, 0, 0],
+            [-0.10, 0, 0], [-0.06, 0, 0], [0.02, 0, 0], [0.04, 0, 0]
+        ]),
+        // Head: wide flat frog head bobs slightly
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.04, 0.05, 0], [-0.08, 0, 0],
+            [0.06, -0.04, 0], [0.04, 0.03, 0], [0, 0, 0], [0, 0, 0]
+        ]),
+        // Front legs: splay outward on landing, tuck on jump
+        eulerTrack('frontUpperLeg_L', t, [
+            [fsw, 0, 0.25], [fsw * 0.5, 0, 0.30], [fsw * 0.8, 0, 0.35],
+            [-fsw * 0.3, 0, 0.15], [-fsw * 0.2, 0, 0.18],
+            [fsw * 0.6, 0, 0.28], [fsw, 0, 0.25]
+        ]),
+        eulerTrack('frontUpperLeg_R', t, [
+            [fsw, 0, -0.25], [fsw * 0.5, 0, -0.30], [fsw * 0.8, 0, -0.35],
+            [-fsw * 0.3, 0, -0.15], [-fsw * 0.2, 0, -0.18],
+            [fsw * 0.6, 0, -0.28], [fsw, 0, -0.25]
+        ]),
+        buildRotationTrack('frontLowerLeg_L', t, [-0.20, -0.30, -0.35, -0.10, -0.12, -0.22, -0.20], AXIS_X),
+        buildRotationTrack('frontLowerLeg_R', t, [-0.20, -0.30, -0.35, -0.10, -0.12, -0.22, -0.20], AXIS_X),
+        // Front feet: splay on landing
+        buildRotationTrack('frontFoot_L', t, [0, -0.05, -0.10, 0.05, 0.03, -0.02, 0], AXIS_X),
+        buildRotationTrack('frontFoot_R', t, [0, -0.05, -0.10, 0.05, 0.03, -0.02, 0], AXIS_X),
+        // Hind legs: massive — deep Z-bend on crouch, explosive extension, tuck in air
+        eulerTrack('hindUpperLeg_L', t, [
+            [0.25, 0, 0.15], [0.50, 0, 0.20], [0.70, 0, 0.25],
+            [-0.50, 0, 0.10], [-0.35, 0, 0.12],
+            [0.15, 0, 0.15], [0.25, 0, 0.15]
+        ]),
+        eulerTrack('hindUpperLeg_R', t, [
+            [0.25, 0, -0.15], [0.50, 0, -0.20], [0.70, 0, -0.25],
+            [-0.50, 0, -0.10], [-0.35, 0, -0.12],
+            [0.15, 0, -0.15], [0.25, 0, -0.15]
+        ]),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.35, -0.65, -0.85, -0.08, -0.15, -0.28, -0.35], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.35, -0.65, -0.85, -0.08, -0.15, -0.28, -0.35], AXIS_X),
+        // Hind feet: big webbed — splay wide on landing
+        buildRotationTrack('hindFoot_L', t, [-0.10, -0.20, -0.30, 0.12, 0.08, -0.06, -0.10], AXIS_X),
+        buildRotationTrack('hindFoot_R', t, [-0.10, -0.20, -0.30, 0.12, 0.08, -0.06, -0.10], AXIS_X),
+    ]);
+}
+
+function _frogJump() {
+    const c = ENEMY_VISUAL_CONFIG.frog;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.6;
+    // Phases: deep crouch(0-0.15) → EXPLOSIVE spring(0.15-0.25) → full extension(0.25-0.40) → tuck ball(0.40-0.52) → splay land(0.52-0.6)
+    const t = [0, 0.15, 0.25, 0.40, 0.52, dur];
+
+    return new THREE.AnimationClip('frog_jump', dur, [
+        // Extreme squash → stretch for the super-leap
+        scaleTrack('root', t, [
+            [1.35, 0.55, 1.35], [1.40, 0.50, 1.40], [0.70, 1.50, 0.70],
+            [0.85, 1.20, 0.85], [1.15, 0.80, 1.15], [1.0, 1.0, 1.0]
+        ]),
+        // Pelvis: extreme crouch → explosive forward extension
+        eulerTrack('pelvis', t, [
+            [-0.30, 0, 0], [-0.40, 0, 0], [0.18, 0, 0],
+            [0.12, 0, 0], [-0.08, 0, 0], [-0.06, 0, 0]
+        ]),
+        // Spine: compresses into ball, then stretches out
+        eulerTrack('spine_mid', t, [
+            [0.25, 0, 0], [0.35, 0, 0], [-0.15, 0, 0],
+            [-0.10, 0, 0], [0.06, 0, 0], [0.04, 0, 0]
+        ]),
+        // Head: eyes bulge forward on launch (anticipation), level in air
+        eulerTrack('head', t, [
+            [-0.10, 0, 0], [-0.15, 0, 0], [0.08, 0, 0],
+            [0.04, 0, 0], [-0.04, 0, 0], [0, 0, 0]
+        ]),
+        // Front legs: tuck tight on launch, splay wide for landing
+        eulerTrack('frontUpperLeg_L', t, [
+            [0.40, 0, 0.35], [0.50, 0, 0.40], [-0.20, 0, 0.10],
+            [-0.15, 0, 0.12], [0.30, 0, 0.30], [0.25, 0, 0.25]
+        ]),
+        eulerTrack('frontUpperLeg_R', t, [
+            [0.40, 0, -0.35], [0.50, 0, -0.40], [-0.20, 0, -0.10],
+            [-0.15, 0, -0.12], [0.30, 0, -0.30], [0.25, 0, -0.25]
+        ]),
+        buildRotationTrack('frontLowerLeg_L', t, [-0.35, -0.45, -0.08, -0.10, -0.25, -0.20], AXIS_X),
+        buildRotationTrack('frontLowerLeg_R', t, [-0.35, -0.45, -0.08, -0.10, -0.25, -0.20], AXIS_X),
+        // Hind legs: extreme crouch → EXPLOSIVE extension → tuck → splay
+        eulerTrack('hindUpperLeg_L', t, [
+            [0.80, 0, 0.25], [1.00, 0, 0.30], [-0.65, 0, 0.10],
+            [-0.50, 0, 0.12], [0.20, 0, 0.18], [0.25, 0, 0.15]
+        ]),
+        eulerTrack('hindUpperLeg_R', t, [
+            [0.80, 0, -0.25], [1.00, 0, -0.30], [-0.65, 0, -0.10],
+            [-0.50, 0, -0.12], [0.20, 0, -0.18], [0.25, 0, -0.15]
+        ]),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.90, -1.10, -0.05, -0.12, -0.30, -0.35], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.90, -1.10, -0.05, -0.12, -0.30, -0.35], AXIS_X),
+        buildRotationTrack('hindFoot_L', t, [-0.35, -0.50, 0.15, 0.10, -0.08, -0.10], AXIS_X),
+        buildRotationTrack('hindFoot_R', t, [-0.35, -0.50, 0.15, 0.10, -0.08, -0.10], AXIS_X),
+    ]);
+}
+
+function _frogBash() {
+    const c = ENEMY_VISUAL_CONFIG.frog;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.7;
+    // Belly flop slam: crouch → launch → full body slam into door
+    const t = [0, 0.12, 0.25, 0.38, 0.52, 0.62, dur];
+
+    return new THREE.AnimationClip('frog_bash_door', dur, [
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry - 0.04 * s, 0], [0, ry + 0.06 * s, 0.04 * s],
+            [0, ry - 0.02 * s, 0.14 * s], [0, ry - 0.04 * s, 0.10 * s],
+            [0, ry, 0.04 * s], [0, ry, 0]
+        ]),
+        // Body compresses then slams forward
+        eulerTrack('pelvis', t, [
+            [0, 0, 0], [-0.15, 0, 0], [0.08, 0, 0],
+            [-0.20, 0, 0], [-0.10, 0, 0], [-0.03, 0, 0], [0, 0, 0]
+        ]),
+        eulerTrack('spine_mid', t, [
+            [0, 0, 0], [0.12, 0, 0], [-0.06, 0, 0],
+            [-0.18, 0, 0], [-0.08, 0, 0], [-0.02, 0, 0], [0, 0, 0]
+        ]),
+        // Head: smashes forward on impact
+        eulerTrack('head', t, [
+            [0, 0, 0], [-0.08, 0, 0], [0.04, 0, 0],
+            [-0.15, 0, 0.05], [-0.06, 0, 0.02], [-0.02, 0, 0], [0, 0, 0]
+        ]),
+        // All four legs splay out on impact
+        buildRotationTrack('frontUpperLeg_L', t, [0.25, 0.35, -0.10, 0.40, 0.30, 0.25, 0.25], AXIS_X),
+        buildRotationTrack('frontUpperLeg_R', t, [0.25, 0.35, -0.10, 0.40, 0.30, 0.25, 0.25], AXIS_X),
+        buildRotationTrack('hindUpperLeg_L', t, [0.25, 0.55, -0.30, 0.50, 0.35, 0.25, 0.25], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0.25, 0.55, -0.30, 0.50, 0.35, 0.25, 0.25], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.35, -0.60, -0.10, -0.55, -0.40, -0.35, -0.35], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.35, -0.60, -0.10, -0.55, -0.40, -0.35, -0.35], AXIS_X),
+    ]);
+}
+
+function _frogHitReact() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('frog_hit_react', dur, [
+        // Startled hop backward — frog reflex
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.06, -0.10], [0, 0.02, -0.05], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        eulerTrack('spine_mid', t, [
+            [0, 0, 0], [0.14, 0, 0], [0.06, 0, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.10, 0, 0], [0.04, 0, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        // Legs splay in surprise
+        buildRotationTrack('hindUpperLeg_L', t, [0, 0.30, 0.12, 0.03, 0], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0, 0.30, 0.12, 0.03, 0], AXIS_X),
+    ]);
+}
+
+function _frogDeath() {
+    const c = ENEMY_VISUAL_CONFIG.frog;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.7;
+    const t = [0, 0.12, 0.25, 0.38, 0.52, 0.64, dur];
+
+    return new THREE.AnimationClip('frog_death', dur, [
+        // Flops onto back — legs up, classic cartoon frog death
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.03 * s, -0.04 * s], [0.02 * s, ry * 0.70, -0.06 * s],
+            [0.03 * s, ry * 0.40, -0.06 * s], [0.03 * s, ry * 0.15, -0.05 * s],
+            [0.03 * s, ry * 0.04, -0.04 * s], [0.03 * s, 0, -0.03 * s]
+        ]),
+        // Roll onto back
+        buildRotationTrack('root', t, [0, 0.15, 0.50, 1.10, 1.80, 2.50, Math.PI], AXIS_X),
+        eulerTrack('pelvis', t, [
+            [0, 0, 0], [0.06, 0, 0], [0.12, 0, 0],
+            [0.10, 0, 0], [0.06, 0, 0], [0.03, 0, 0], [0, 0, 0]
+        ]),
+        // All legs up — stiff and splayed (cartoon style)
+        buildRotationTrack('frontUpperLeg_L', t, [0.25, 0.15, 0, -0.20, -0.40, -0.50, -0.55], AXIS_X),
+        buildRotationTrack('frontUpperLeg_R', t, [0.25, 0.15, 0, -0.20, -0.40, -0.50, -0.55], AXIS_X),
+        buildRotationTrack('hindUpperLeg_L', t, [0.25, 0.10, -0.10, -0.35, -0.55, -0.65, -0.70], AXIS_X),
+        buildRotationTrack('hindUpperLeg_R', t, [0.25, 0.10, -0.10, -0.35, -0.55, -0.65, -0.70], AXIS_X),
+        buildRotationTrack('hindLowerLeg_L', t, [-0.35, -0.25, -0.15, -0.10, -0.08, -0.06, -0.05], AXIS_X),
+        buildRotationTrack('hindLowerLeg_R', t, [-0.35, -0.25, -0.15, -0.10, -0.08, -0.06, -0.05], AXIS_X),
+        // Head: flops back
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.04, 0.04, 0], [0.08, 0.08, 0],
+            [0.06, 0.06, 0.04], [0.04, 0.03, 0.03], [0.02, 0.01, 0.02], [0, 0, 0]
+        ]),
+    ]);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// HURDLER — high-knees sprint, classic hurdle form jump, competitive intensity
+// Personality: explosive speed, textbook athletic form, relentless pace
+// Bones: biped (root, spine, chest, neck, head, upperArm_L/R, upperLeg_L/R, lowerLeg_L/R)
+// ═══════════════════════════════════════════════════════════════════════
+
+function _hurdlerRun() {
+    const c = ENEMY_VISUAL_CONFIG.hurdler;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const a = c.animationParams;
+    const dur = a.walkDuration;
+    const bob = a.bobHeight;
+    const lean = -a.spineForwardLean;
+    const lsw = a.legSwing;
+    const asw = a.armSwing;
+    const t = [0, 0.25, 0.5, 0.75, dur];
+
+    return new THREE.AnimationClip('hurdler_walk', dur, [
+        // Root: crisp athletic bounce — efficient, powerful
+        posTrack('root', t, [
+            [0, ry - bob * 0.3, 0], [0, ry + bob, 0], [0, ry - bob * 0.3, 0],
+            [0, ry + bob, 0], [0, ry - bob * 0.3, 0]
+        ]),
+        // Spine: forward lean, minimal sway — textbook sprinter form
+        eulerTrack('spine', t, [
+            [lean, 0.03, 0], [lean + 0.02, 0, 0], [lean, -0.03, 0],
+            [lean + 0.02, 0, 0], [lean, 0.03, 0]
+        ]),
+        // Head: locked forward — focused competitor
+        eulerTrack('head', t, [
+            [-0.04, 0, 0], [-0.02, 0, 0], [-0.04, 0, 0],
+            [-0.02, 0, 0], [-0.04, 0, 0]
+        ]),
+        // Arms: powerful pump — elbows drive back and forward, classic sprint form
+        eulerTrack('upperArm_L', t, [
+            [-asw * 0.8, 0, 0.15], [asw, 0, 0.20], [-asw * 0.8, 0, 0.15],
+            [asw, 0, 0.20], [-asw * 0.8, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [asw, 0, -0.15], [-asw * 0.8, 0, -0.20], [asw, 0, -0.15],
+            [-asw * 0.8, 0, -0.20], [asw, 0, -0.15]
+        ]),
+        // Legs: HIGH KNEE LIFT — signature hurdler training stride
+        eulerTrack('upperLeg_L', t, [
+            [lsw * 0.9, 0, 0.05], [-0.08, 0, 0.03], [-lsw * 0.6, 0, 0.05],
+            [-0.08, 0, 0.03], [lsw * 0.9, 0, 0.05]
+        ]),
+        eulerTrack('upperLeg_R', t, [
+            [-lsw * 0.6, 0, -0.05], [-0.08, 0, -0.03], [lsw * 0.9, 0, -0.05],
+            [-0.08, 0, -0.03], [-lsw * 0.6, 0, -0.05]
+        ]),
+        // Lower legs: snap forward from deep bend — powerful knee drive
+        buildRotationTrack('lowerLeg_L', t, [-0.12, -0.65, -0.18, -0.10, -0.12], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.18, -0.10, -0.12, -0.65, -0.18], AXIS_X),
+    ]);
+}
+
+function _hurdlerJump() {
+    const c = ENEMY_VISUAL_CONFIG.hurdler;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.6;
+    // Classic hurdle form: approach(0-0.10) → takeoff(0.10-0.18) → lead leg + trail leg(0.18-0.40) → clearance(0.40-0.50) → landing(0.50-0.6)
+    const t = [0, 0.10, 0.18, 0.32, 0.42, 0.52, dur];
+
+    return new THREE.AnimationClip('hurdler_jump', dur, [
+        // Spine: upright on approach → strong forward lean over hurdle → upright on landing
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.12, 0, 0], [-0.25, 0, 0],
+            [-0.30, 0, 0], [-0.22, 0, 0], [-0.15, 0, 0], [-0.10, 0, 0]
+        ]),
+        // Arms: opposite pump — lead arm forward, trail arm back, then swap
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [-0.30, 0, 0.20], [-0.80, 0, 0.25],
+            [-1.00, 0, 0.20], [-0.50, 0, 0.18], [0.10, 0, 0.15], [0.15, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [0.40, 0, -0.20], [0.80, 0, -0.25],
+            [0.60, 0, -0.22], [0.20, 0, -0.18], [0.10, 0, -0.15], [0.15, 0, -0.15]
+        ]),
+        // Lead leg (L): drives forward and UP — extends over hurdle
+        eulerTrack('upperLeg_L', t, [
+            [0, 0, 0.05], [-0.20, 0, 0.05], [-0.80, 0, 0.05],
+            [-0.90, 0, 0.05], [-0.50, 0, 0.05], [-0.10, 0, 0.05], [0, 0, 0.05]
+        ]),
+        // Lead leg lower: extends forward (almost straight) over hurdle
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.30, -0.10, -0.05, -0.15, -0.25, -0.15], AXIS_X),
+        // Trail leg (R): drives back then snaps sideways over hurdle
+        eulerTrack('upperLeg_R', t, [
+            [0, 0, -0.05], [0.30, 0, -0.05], [0.60, 0, -0.25],
+            [0.40, 0, -0.40], [0.10, 0, -0.20], [-0.05, 0, -0.08], [0, 0, -0.05]
+        ]),
+        // Trail leg lower: tucks tight then snaps through
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.40, -0.80, -0.90, -0.50, -0.20, -0.15], AXIS_X),
+        // Head: eyes locked on landing zone
+        eulerTrack('head', t, [
+            [-0.04, 0, 0], [-0.06, 0, 0], [-0.10, 0, 0],
+            [-0.08, 0, 0], [-0.06, 0, 0], [-0.05, 0, 0], [-0.04, 0, 0]
+        ]),
+    ]);
+}
+
+function _hurdlerBash() {
+    const c = ENEMY_VISUAL_CONFIG.hurdler;
+    const s = c.size;
+    const ry = c.bonePositions.root.y * s;
+    const dur = 0.7;
+    // Running kick: stride in → high knee → snap kick → recoil
+    const t = [0, 0.12, 0.22, 0.35, 0.48, 0.60, dur];
+
+    return new THREE.AnimationClip('hurdler_bash_door', dur, [
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry + 0.04 * s, -0.02 * s], [0, ry + 0.02 * s, 0.06 * s],
+            [0, ry - 0.02 * s, 0.12 * s], [0, ry, 0.06 * s],
+            [0, ry, 0.02 * s], [0, ry, 0]
+        ]),
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.08, 0, 0], [-0.18, 0, 0],
+            [-0.25, 0, 0], [-0.15, 0, 0], [-0.10, 0, 0], [-0.10, 0, 0]
+        ]),
+        // Kicking leg: high knee then snap forward
+        eulerTrack('upperLeg_R', t, [
+            [0, 0, -0.05], [0.10, 0, -0.05], [-0.60, 0, -0.05],
+            [-0.80, 0, -0.05], [-0.30, 0, -0.05],
+            [-0.05, 0, -0.05], [0, 0, -0.05]
+        ]),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.25, -0.70, -0.10, -0.20, -0.15, -0.15], AXIS_X),
+        // Plant leg: stable
+        buildRotationTrack('upperLeg_L', t, [0, -0.05, 0.10, 0.15, 0.08, 0.03, 0], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.20, -0.30, -0.25, -0.18, -0.15, -0.15], AXIS_X),
+        // Arms: opposite motion to kick
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [-0.20, 0, 0.20], [-0.60, 0, 0.25],
+            [-0.40, 0, 0.22], [-0.10, 0, 0.18], [0.08, 0, 0.15], [0.15, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [0.30, 0, -0.20], [0.70, 0, -0.25],
+            [0.50, 0, -0.22], [0.25, 0, -0.18], [0.15, 0, -0.15], [0.15, 0, -0.15]
+        ]),
+        eulerTrack('head', t, [
+            [-0.04, 0, 0], [-0.06, 0, 0], [-0.10, 0, 0],
+            [-0.12, 0, 0.04], [-0.08, 0, 0.02], [-0.05, 0, 0], [-0.04, 0, 0]
+        ]),
+    ]);
+}
+
+function _hurdlerHitReact() {
+    const dur = 0.3;
+    const t = [0, 0.05, 0.12, 0.22, dur];
+    return new THREE.AnimationClip('hurdler_hit_react', dur, [
+        posTrack('root', t, [
+            [0, 0, 0], [0, 0.02, -0.08], [0, 0, -0.04], [0, 0, -0.01], [0, 0, 0]
+        ]),
+        eulerTrack('spine', t, [
+            [0, 0, 0], [0.14, 0, 0.05], [0.06, 0, 0.02], [0.01, 0, 0], [0, 0, 0]
+        ]),
+        eulerTrack('head', t, [
+            [0, 0, 0], [0.08, -0.06, 0], [0.03, -0.02, 0], [0.01, 0, 0], [0, 0, 0]
+        ]),
+    ]);
+}
+
+function _hurdlerDeath() {
+    const c = ENEMY_VISUAL_CONFIG.hurdler;
+    const ry = c.bonePositions.root.y * c.size;
+    const s = c.size;
+    const dur = 0.65;
+    const t = [0, 0.10, 0.22, 0.35, 0.50, dur];
+
+    return new THREE.AnimationClip('hurdler_death', dur, [
+        // Trip and slide forward — race wipeout
+        posTrack('root', t, [
+            [0, ry, 0], [0, ry * 0.75, 0.10 * s],
+            [0.04 * s, ry * 0.35, 0.18 * s], [0.06 * s, ry * 0.10, 0.22 * s],
+            [0.06 * s, ry * 0.02, 0.22 * s], [0.06 * s, 0, 0.20 * s]
+        ]),
+        // Tumble forward
+        eulerTrack('spine', t, [
+            [-0.10, 0, 0], [-0.45, 0, -0.08], [-0.85, 0, -0.20],
+            [-1.20, 0, -0.28], [-1.40, 0, -0.22], [-1.50, 0, -0.18]
+        ]),
+        // Arms fly forward (reaching to catch self)
+        eulerTrack('upperArm_L', t, [
+            [0.15, 0, 0.15], [-0.50, 0, 0.30], [-1.00, 0, 0.45],
+            [-0.60, 0, 0.35], [-0.20, 0, 0.20], [0, 0, 0.15]
+        ]),
+        eulerTrack('upperArm_R', t, [
+            [0.15, 0, -0.15], [-0.60, 0, -0.35], [-1.10, 0, -0.50],
+            [-0.70, 0, -0.40], [-0.25, 0, -0.25], [-0.05, 0, -0.18]
+        ]),
+        eulerTrack('head', t, [
+            [-0.04, 0, 0], [-0.08, 0.08, -0.06], [-0.02, 0.14, -0.12],
+            [0.02, 0.10, -0.10], [0.02, 0.05, -0.06], [0.02, 0.02, -0.04]
+        ]),
+        buildRotationTrack('upperLeg_L', t, [0, 0.25, 0.55, 0.80, 0.92, 0.96], AXIS_X),
+        buildRotationTrack('upperLeg_R', t, [0, 0.20, 0.45, 0.70, 0.82, 0.86], AXIS_X),
+        buildRotationTrack('lowerLeg_L', t, [-0.15, -0.35, -0.65, -0.95, -1.10, -1.15], AXIS_X),
+        buildRotationTrack('lowerLeg_R', t, [-0.15, -0.30, -0.55, -0.85, -1.00, -1.05], AXIS_X),
+    ]);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
 // CLIP REGISTRY & CACHE
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -6018,36 +6861,40 @@ const _clipBuilders = {
     trolley_hit_react:     _trolleyHitReact,
     trolley_death:         _trolleyDeath,
 
-    // Jumper archetypes (placeholder — reuse similar type animations)
-    // Vaulter → Polite (Office biped)
-    vaulter_walk:          _politeWalk,
-    vaulter_bash_door:     _politeBashR,
-    vaulter_bash_door_L:   _politeBashL,
-    vaulter_bash_door_R:   _politeBashR,
-    vaulter_hit_react:     _politeHitReact,
-    vaulter_death:         _politeDeath,
+    // Jumper archetypes — unique animations
+    // Vaulter (Office biped — parkour athlete)
+    vaulter_walk:          _vaulterWalk,
+    vaulter_jump:          _vaulterJump,
+    vaulter_bash_door:     _vaulterBash,
+    vaulter_bash_door_L:   _vaulterBash,
+    vaulter_bash_door_R:   _vaulterBash,
+    vaulter_hit_react:     _vaulterHitReact,
+    vaulter_death:         _vaulterDeath,
 
-    // Kangaroo → Deer (Forest quadruped)
-    kangaroo_walk:         _deerWalk,
-    kangaroo_bash_door:    _deerBash,
-    kangaroo_hit_react:    _deerHitReact,
-    kangaroo_death:        _deerDeath,
+    // Kangaroo (Forest quadruped — bouncing hop)
+    kangaroo_walk:         _kangarooHop,
+    kangaroo_jump:         _kangarooJump,
+    kangaroo_bash_door:    _kangarooBash,
+    kangaroo_hit_react:    _kangarooHitReact,
+    kangaroo_death:        _kangarooDeath,
 
-    // Frog → Dolphin (Ocean marine)
-    frog_walk:             _dolphinWalk,
-    frog_bash_door:        _dolphinBash,
-    frog_bash_door_L:      _dolphinBash,
-    frog_bash_door_R:      _dolphinBash,
-    frog_hit_react:        _dolphinHit,
-    frog_death:            _dolphinDeath,
+    // Frog (Ocean quadruped — crouching spring leap)
+    frog_walk:             _frogHop,
+    frog_jump:             _frogJump,
+    frog_bash_door:        _frogBash,
+    frog_bash_door_L:      _frogBash,
+    frog_bash_door_R:      _frogBash,
+    frog_hit_react:        _frogHitReact,
+    frog_death:            _frogDeath,
 
-    // Hurdler → Nervous Flyer (Airplane biped)
-    hurdler_walk:          _nervousWalk,
-    hurdler_bash_door:     _nervousBashR,
-    hurdler_bash_door_L:   _nervousBashL,
-    hurdler_bash_door_R:   _nervousBashR,
-    hurdler_hit_react:     _nervousHitReact,
-    hurdler_death:         _nervousDeath,
+    // Hurdler (Airplane biped — Olympic sprinter)
+    hurdler_walk:          _hurdlerRun,
+    hurdler_jump:          _hurdlerJump,
+    hurdler_bash_door:     _hurdlerBash,
+    hurdler_bash_door_L:   _hurdlerBash,
+    hurdler_bash_door_R:   _hurdlerBash,
+    hurdler_hit_react:     _hurdlerHitReact,
+    hurdler_death:         _hurdlerDeath,
 };
 
 const _clipCache = new Map();

@@ -7125,7 +7125,7 @@
                                         e.jumpTargetX = landing.x;
                                         e.jumpPeakY = 2.5;
                                         e.z = barrierBashRange;
-                                        if (e.animController) e.animController.playOneShot('bash_door');
+                                        if (e.animController) e.animController.playOneShot('jump');
                                     } else {
                                         // Landing blocked — bash normally
                                         e.z = barrierBashRange;
@@ -7182,7 +7182,7 @@
                                     e.jumpStartX = e.x;
                                     e.jumpTargetX = landing.x;
                                     e.jumpPeakY = 2.5;
-                                    if (e.animController) e.animController.playOneShot('bash_door');
+                                    if (e.animController) e.animController.playOneShot('jump');
                                     break; // Stop checking towers — we're jumping
                                 }
                                 // Landing blocked — fall through to normal trample behavior

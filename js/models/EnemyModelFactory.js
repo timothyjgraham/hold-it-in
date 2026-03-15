@@ -4737,6 +4737,753 @@ function _buildRigidTrolley(size, config, materials, boneMap) {
 }
 
 
+// ═══════════════════════════════════════
+// VAULTER — lean athletic biped, sport headband, fingerless gloves, running shoes
+// Office Parkour jumper — determined V-taper build, confident face
+// ═══════════════════════════════════════
+
+function _buildRigidVaulter(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: lean V-taper — wider shoulders tapering to narrow waist ═══
+    const spineToRoot = 0.20 * s;
+    const spineToChest = 0.24 * s;
+    const torsoW = 0.38 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.12;
+    const torsoD = 0.28 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    torso.scale.set(1.0, 1.0, 0.92); // slightly compressed depth — athletic
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Shoulder pads — wider than torso, gives V-taper silhouette
+    const shoulderGeo = createRoundedBox(torsoW * 1.20, 0.06 * s, torsoD * 0.70, 0.03 * s);
+    const shoulderL = new THREE.Mesh(shoulderGeo, materials.body);
+    shoulderL.name = 'shoulderPad';
+    shoulderL.position.set(0, torsoH * 0.38, 0);
+    boneMap.spine.add(shoulderL);
+    parts.shoulderPad = shoulderL;
+
+    // ═══ HEAD: determined face, sport headband ═══
+    const headR = 0.26 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.94, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — confident, slightly narrowed (focused)
+    _addFace(parts, boneMap, headR, faceMat, {
+        browAngle: -0.15,    // slightly furrowed — determined
+        eyeScaleY: 1.0,     // alert but not panicked
+        mouthShape: 'line',
+        mouthWidth: 0.18,
+    });
+
+    // Sport headband — wraps around forehead
+    const bandGeo = new THREE.TorusGeometry(headR * 0.82, headR * 0.08, 6, 16);
+    const bandMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const band = new THREE.Mesh(bandGeo, bandMat);
+    band.name = 'headband';
+    band.position.set(0, headR * 0.28, 0);
+    band.rotation.set(Math.PI / 2, 0, 0);
+    band.scale.set(1.0, 1.0, 0.65); // flattened torus
+    boneMap.head.add(band);
+    parts.headband = band;
+
+    // Short spiky hair above headband
+    const hairGeo = new THREE.SphereGeometry(headR * 0.55, 8, 6);
+    const hair = new THREE.Mesh(hairGeo, materials.body);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.60, -headR * 0.05);
+    hair.scale.set(1.1, 0.45, 1.0);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // ═══ ARMS: athletic, slightly longer for parkour reach ═══
+    const armRadius = 0.060 * s;
+    const armLength = 0.48 * s;
+    const armGeo = createCapsule(armRadius, armLength, 8, 4);
+
+    const armL = new THREE.Mesh(armGeo, materials.body);
+    armL.name = 'armL';
+    armL.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_L.add(armL);
+    parts.armL = armL;
+
+    const armR = new THREE.Mesh(armGeo, materials.body);
+    armR.name = 'armR';
+    armR.position.set(0, -armLength * 0.42, 0);
+    boneMap.upperArm_R.add(armR);
+    parts.armR = armR;
+
+    // Fingerless gloves — slightly larger hands with knuckle details
+    const gloveGeo = new THREE.SphereGeometry(armRadius * 1.3, 6, 5);
+    const gloveMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
+
+    const gloveL = new THREE.Mesh(gloveGeo, gloveMat);
+    gloveL.name = 'gloveL';
+    gloveL.position.set(0, -armLength * 0.88, 0);
+    gloveL.scale.set(1.0, 0.85, 1.2);
+    boneMap.upperArm_L.add(gloveL);
+    parts.gloveL = gloveL;
+
+    const gloveR = new THREE.Mesh(gloveGeo, gloveMat);
+    gloveR.name = 'gloveR';
+    gloveR.position.set(0, -armLength * 0.88, 0);
+    gloveR.scale.set(1.0, 0.85, 1.2);
+    boneMap.upperArm_R.add(gloveR);
+    parts.gloveR = gloveR;
+
+    // ═══ LEGS: athletic, runner's proportions ═══
+    _addLegs(parts, boneMap, s, materials, {
+        ulRadius: 0.090, ulHeight: 0.32,
+        llRadius: 0.075, llHeight: 0.30,
+    });
+
+    // Running shoes — replace the default chunky shoes with sleek ones
+    // Override the shoe meshes from _addLegs with custom athletic shoes
+    if (parts.shoeL) {
+        parts.shoeL.geometry.dispose();
+        const runShoeGeo = createRoundedBox(0.10 * s, 0.045 * s, 0.17 * s, 0.018 * s);
+        parts.shoeL.geometry = runShoeGeo;
+        parts.shoeL.material = materials.body; // chartreuse running shoes
+    }
+    if (parts.shoeR) {
+        const runShoeGeo = createRoundedBox(0.10 * s, 0.045 * s, 0.17 * s, 0.018 * s);
+        parts.shoeR.geometry = runShoeGeo;
+        parts.shoeR.material = materials.body;
+    }
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// KANGAROO — muscular quadruped, massive hind legs, thick 3-segment tail, tiny arms
+// Forest jumper — sandy tan with pale belly, big pointed ears
+// ═══════════════════════════════════════
+
+function _buildRigidKangaroo(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ BODY: barrel torso, more upright than deer ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Main body: pear-shaped — wider at the bottom (belly/rump area)
+    const bodyGeo = createOrganicTorso(bodyW * 0.75, bodyW * 1.1, bodyLen, 0.15, 10, 10);
+    const body = new THREE.Mesh(bodyGeo, materials.body);
+    body.name = 'body';
+    body.rotation.x = Math.PI / 2;
+    body.scale.set(1.0, 1.0, bodyH / bodyW);
+    boneMap.spine_mid.add(body);
+    parts.body = body;
+
+    // ═══ SHOULDER: smaller than deer — kangaroos are top-light ═══
+    const shoulderR = bodyW * 0.70;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
+    shoulder.name = 'shoulder';
+    shoulder.scale.set(0.90, 0.75, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    boneMap.chest.add(shoulder);
+    parts.shoulder = shoulder;
+
+    // ═══ HAUNCH: very large — muscular rump ═══
+    const haunchR = bodyW * 1.30;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    const haunch = new THREE.Mesh(haunchGeo, materials.body);
+    haunch.name = 'haunch';
+    haunch.scale.set(1.15, 0.90, 0.95 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.05, 0);
+    boneMap.pelvis.add(haunch);
+    parts.haunch = haunch;
+
+    // Belly: lighter underbelly patch
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.80, 8, 6,
+        0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55);
+    const belly = new THREE.Mesh(bellyGeo, materials.skin);
+    belly.name = 'belly';
+    belly.rotation.x = Math.PI / 2;
+    belly.position.set(0, -bodyH * 0.15, 0);
+    belly.scale.set(1.0, 0.90, 1.20);
+    boneMap.spine_mid.add(belly);
+    parts.belly = belly;
+
+    // ═══ NECK: short, thick — kangaroo neck ═══
+    const neckR = bodyW * 0.50;
+    const neckLen = 0.12 * s;
+    const neckGeo = createCapsule(neckR, neckLen, 8, 4);
+    const neck = new THREE.Mesh(neckGeo, materials.body);
+    neck.name = 'neck';
+    neck.position.set(0, neckLen * 0.05, 0);
+    boneMap.neck_01.add(neck);
+    parts.neck = neck;
+
+    // ═══ HEAD: small relative to body, slightly elongated snout ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(0.85, 0.90, 1.15); // elongated snout direction
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Snout: blunt muzzle
+    const snoutR = headR * 0.40;
+    const snoutLen = headR * 0.55;
+    const snoutGeo = createCapsule(snoutR, snoutLen, 8, 4);
+    const snout = new THREE.Mesh(snoutGeo, materials.body);
+    snout.name = 'snout';
+    snout.rotation.x = Math.PI * 0.52;
+    snout.position.set(0, -headR * 0.20, -headR * 0.70);
+    boneMap.head.add(snout);
+    parts.snout = snout;
+
+    // Dark nose
+    const noseGeo = new THREE.SphereGeometry(snoutR * 0.60, 6, 5);
+    const nose = new THREE.Mesh(noseGeo, faceMat);
+    nose.name = 'nose';
+    nose.position.set(0, -headR * 0.35, -headR * 1.05);
+    nose.scale.set(1.3, 0.8, 0.7);
+    boneMap.head.add(nose);
+    parts.nose = nose;
+
+    // Eyes: small, beady — set wider apart
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.40;
+
+    const eyeL = new THREE.Mesh(eyeGeo, faceMat);
+    eyeL.name = 'eyeL';
+    eyeL.position.set(-eyeSpacing, headR * 0.15, -headR * 0.50);
+    eyeL.scale.set(0.7, 1.2, 0.5);
+    boneMap.head.add(eyeL);
+    parts.eyeL = eyeL;
+
+    const eyeR = new THREE.Mesh(eyeGeo, faceMat);
+    eyeR.name = 'eyeR';
+    eyeR.position.set(eyeSpacing, headR * 0.15, -headR * 0.50);
+    eyeR.scale.set(0.7, 1.2, 0.5);
+    boneMap.head.add(eyeR);
+    parts.eyeR = eyeR;
+
+    // ═══ EARS: large pointed — signature kangaroo feature ═══
+    const earH = d.earSize * s;
+    const earGeo = new THREE.ConeGeometry(earH * 0.25, earH, 6);
+
+    const earL = new THREE.Mesh(earGeo, materials.body);
+    earL.name = 'earL';
+    earL.position.set(-headR * 0.35, headR * 0.70, headR * 0.10);
+    earL.rotation.set(-0.15, 0, 0.25);
+    earL.scale.set(0.55, 1.0, 0.45);
+    boneMap.head.add(earL);
+    parts.earL = earL;
+
+    const earR = new THREE.Mesh(earGeo, materials.body);
+    earR.name = 'earR';
+    earR.position.set(headR * 0.35, headR * 0.70, headR * 0.10);
+    earR.rotation.set(-0.15, 0, -0.25);
+    earR.scale.set(0.55, 1.0, 0.45);
+    boneMap.head.add(earR);
+    parts.earR = earR;
+
+    // Inner ears — lighter color
+    const innerEarGeo = new THREE.ConeGeometry(earH * 0.14, earH * 0.70, 5);
+    const innerEarL = new THREE.Mesh(innerEarGeo, materials.skin);
+    innerEarL.name = 'innerEarL';
+    innerEarL.position.set(0, -earH * 0.08, -earH * 0.04);
+    earL.add(innerEarL);
+    parts.innerEarL = innerEarL;
+
+    const innerEarR = new THREE.Mesh(innerEarGeo, materials.skin);
+    innerEarR.name = 'innerEarR';
+    innerEarR.position.set(0, -earH * 0.08, -earH * 0.04);
+    earR.add(innerEarR);
+    parts.innerEarR = innerEarR;
+
+    // ═══ FRONT LEGS: tiny T-rex arms — signature kangaroo proportions ═══
+    const tinyArmR = d.legThickness * s * 0.55;
+    const tinyArmH = 0.10 * s;
+    const tinyArmGeo = createCapsule(tinyArmR, tinyArmH, 6, 3);
+
+    const fArmL = new THREE.Mesh(tinyArmGeo, materials.body);
+    fArmL.name = 'frontArmL';
+    fArmL.position.set(0, -tinyArmH * 0.35, 0);
+    boneMap.frontUpperLeg_L.add(fArmL);
+    parts.frontArmL = fArmL;
+
+    const fArmR = new THREE.Mesh(tinyArmGeo, materials.body);
+    fArmR.name = 'frontArmR';
+    fArmR.position.set(0, -tinyArmH * 0.35, 0);
+    boneMap.frontUpperLeg_R.add(fArmR);
+    parts.frontArmR = fArmR;
+
+    // Tiny paws
+    const pawGeo = new THREE.SphereGeometry(tinyArmR * 1.1, 5, 4);
+    const pawL = new THREE.Mesh(pawGeo, materials.body);
+    pawL.name = 'pawL';
+    pawL.position.set(0, -tinyArmH * 0.65, 0);
+    boneMap.frontLowerLeg_L.add(pawL);
+    parts.pawL = pawL;
+
+    const pawR = new THREE.Mesh(pawGeo, materials.body);
+    pawR.name = 'pawR';
+    pawR.position.set(0, -tinyArmH * 0.65, 0);
+    boneMap.frontLowerLeg_R.add(pawR);
+    parts.pawR = pawR;
+
+    // ═══ HIND LEGS: massive, powerful — signature kangaroo feature ═══
+    const hindThick = d.legThickness * s * 2.2;
+    const hUpperH = 0.28 * s;
+    const hUpperGeo = createCapsule(hindThick, hUpperH, 8, 4);
+
+    const hUpperL = new THREE.Mesh(hUpperGeo, materials.body);
+    hUpperL.name = 'hindUpperLegL';
+    hUpperL.position.set(0, -hUpperH * 0.35, 0);
+    boneMap.hindUpperLeg_L.add(hUpperL);
+    parts.hindUpperLegL = hUpperL;
+
+    const hUpperR = new THREE.Mesh(hUpperGeo, materials.body);
+    hUpperR.name = 'hindUpperLegR';
+    hUpperR.position.set(0, -hUpperH * 0.35, 0);
+    boneMap.hindUpperLeg_R.add(hUpperR);
+    parts.hindUpperLegR = hUpperR;
+
+    const hLowerH = 0.30 * s;
+    const hLowerGeo = createCapsule(hindThick * 0.70, hLowerH, 8, 4);
+
+    const hLowerL = new THREE.Mesh(hLowerGeo, materials.body);
+    hLowerL.name = 'hindLowerLegL';
+    hLowerL.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_L.add(hLowerL);
+    parts.hindLowerLegL = hLowerL;
+
+    const hLowerR = new THREE.Mesh(hLowerGeo, materials.body);
+    hLowerR.name = 'hindLowerLegR';
+    hLowerR.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_R.add(hLowerR);
+    parts.hindLowerLegR = hLowerR;
+
+    // ═══ BIG FEET: large flat kangaroo feet ═══
+    const footS = d.hoofSize * s;
+    const footGeo = createRoundedBox(footS * 1.8, footS * 0.7, footS * 3.5, footS * 0.25);
+
+    const footL = new THREE.Mesh(footGeo, materials.body);
+    footL.name = 'hindFootL';
+    footL.position.set(0, -footS * 0.1, -footS * 0.5);
+    boneMap.hindFoot_L.add(footL);
+    parts.hindFootL = footL;
+
+    const footR = new THREE.Mesh(footGeo, materials.body);
+    footR.name = 'hindFootR';
+    footR.position.set(0, -footS * 0.1, -footS * 0.5);
+    boneMap.hindFoot_R.add(footR);
+    parts.hindFootR = footR;
+
+    // ═══ TAIL: thick 3-segment tail — heavy, used for balance ═══
+    const tailR = d.tailThickness * s;
+    const tail1Len = 0.14 * s;
+    const tail1Geo = createCapsule(tailR, tail1Len, 8, 4);
+    const tail1 = new THREE.Mesh(tail1Geo, materials.body);
+    tail1.name = 'tail1';
+    boneMap.tail_01.add(tail1);
+    parts.tail1 = tail1;
+
+    const tail2Len = 0.12 * s;
+    const tail2Geo = createCapsule(tailR * 0.85, tail2Len, 8, 4);
+    const tail2 = new THREE.Mesh(tail2Geo, materials.body);
+    tail2.name = 'tail2';
+    boneMap.tail_02.add(tail2);
+    parts.tail2 = tail2;
+
+    const tail3Len = 0.10 * s;
+    const tail3Geo = createCapsule(tailR * 0.65, tail3Len, 7, 3);
+    const tail3 = new THREE.Mesh(tail3Geo, materials.body);
+    tail3.name = 'tail3';
+    boneMap.tail_03.add(tail3);
+    parts.tail3 = tail3;
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// FROG — squat wide quadruped, huge bulging eyes, webbed feet, no tail
+// Ocean Tree Frog jumper — vivid green with pale belly, wide flat body
+// ═══════════════════════════════════════
+
+function _buildRigidFrog(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const d = config.bodyDimensions;
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ BODY: wide, squat, rounded — classic frog shape ═══
+    const bodyLen = d.bodyLength * s;
+    const bodyW = d.bodyWidth * s;
+    const bodyH = d.bodyHeight * s;
+
+    // Main body: wide egg shape — much wider than tall
+    const bodyGeo = createOrganicTorso(bodyW * 0.65, bodyW * 1.1, bodyLen, 0.25, 10, 12);
+    const body = new THREE.Mesh(bodyGeo, materials.body);
+    body.name = 'body';
+    body.rotation.x = Math.PI / 2;
+    body.scale.set(1.35, 1.0, bodyH / bodyW * 0.80); // extra wide, squat
+    boneMap.spine_mid.add(body);
+    parts.body = body;
+
+    // Shoulder bridge — smooth transition to head
+    const shoulderR = bodyW * 0.85;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
+    shoulder.name = 'shoulder';
+    shoulder.scale.set(1.30, 0.65, 0.80 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.05, 0);
+    boneMap.chest.add(shoulder);
+    parts.shoulder = shoulder;
+
+    // Haunch — wide rear
+    const haunchR = bodyW * 1.10;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    const haunch = new THREE.Mesh(haunchGeo, materials.body);
+    haunch.name = 'haunch';
+    haunch.scale.set(1.25, 0.70, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.05, 0);
+    boneMap.pelvis.add(haunch);
+    parts.haunch = haunch;
+
+    // Belly: pale yellow-green underbelly
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.90, 8, 6,
+        0, Math.PI * 2, Math.PI * 0.40, Math.PI * 0.60);
+    const bellyMesh = new THREE.Mesh(bellyGeo, materials.skin);
+    bellyMesh.name = 'belly';
+    bellyMesh.rotation.x = Math.PI / 2;
+    bellyMesh.position.set(0, -bodyH * 0.18, 0);
+    bellyMesh.scale.set(1.30, 0.85, 1.10);
+    boneMap.spine_mid.add(bellyMesh);
+    parts.belly = bellyMesh;
+
+    // ═══ HEAD: wide, flat, with bulging eyes on top — very frog ═══
+    const headR = d.headRadius * s;
+    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const head = new THREE.Mesh(headGeo, materials.body);
+    head.name = 'head';
+    head.scale.set(1.40, 0.70, 1.10); // very wide and flat
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // ═══ EYES: huge bulging — signature tree frog feature ═══
+    const eyeBulgeR = headR * 0.38;
+    const eyeBulgeGeo = new THREE.SphereGeometry(eyeBulgeR, 8, 6);
+
+    // Eye bulges (colored, sit on top of head)
+    const eyeBulgeL = new THREE.Mesh(eyeBulgeGeo, materials.body);
+    eyeBulgeL.name = 'eyeBulgeL';
+    eyeBulgeL.position.set(-headR * 0.55, headR * 0.45, -headR * 0.25);
+    eyeBulgeL.scale.set(1.0, 1.1, 0.9);
+    boneMap.head.add(eyeBulgeL);
+    parts.eyeBulgeL = eyeBulgeL;
+
+    const eyeBulgeR_m = new THREE.Mesh(eyeBulgeGeo, materials.body);
+    eyeBulgeR_m.name = 'eyeBulgeR';
+    eyeBulgeR_m.position.set(headR * 0.55, headR * 0.45, -headR * 0.25);
+    eyeBulgeR_m.scale.set(1.0, 1.1, 0.9);
+    boneMap.head.add(eyeBulgeR_m);
+    parts.eyeBulgeR = eyeBulgeR_m;
+
+    // Pupils — dark horizontal ovals on the eye bulges
+    const pupilGeo = new THREE.SphereGeometry(eyeBulgeR * 0.55, 6, 5);
+    const pupilL = new THREE.Mesh(pupilGeo, faceMat);
+    pupilL.name = 'eyeL';
+    pupilL.position.set(-headR * 0.55, headR * 0.48, -headR * 0.52);
+    pupilL.scale.set(1.3, 0.70, 0.40); // wide horizontal slits
+    boneMap.head.add(pupilL);
+    parts.eyeL = pupilL;
+
+    const pupilR = new THREE.Mesh(pupilGeo, faceMat);
+    pupilR.name = 'eyeR';
+    pupilR.position.set(headR * 0.55, headR * 0.48, -headR * 0.52);
+    pupilR.scale.set(1.3, 0.70, 0.40);
+    boneMap.head.add(pupilR);
+    parts.eyeR = pupilR;
+
+    // Wide smiling mouth line
+    const mouthGeo = new THREE.TorusGeometry(headR * 0.50, headR * 0.025, 4, 10, Math.PI);
+    const mouth = new THREE.Mesh(mouthGeo, faceMat);
+    mouth.name = 'mouth';
+    mouth.position.set(0, -headR * 0.20, -headR * 0.80);
+    mouth.rotation.set(0, 0, Math.PI);
+    mouth.scale.set(1.0, 1.0, 0.40);
+    boneMap.head.add(mouth);
+    parts.mouth = mouth;
+
+    // Nostrils — two tiny dots
+    const nostrilGeo = new THREE.SphereGeometry(headR * 0.05, 4, 3);
+    const nostrilL = new THREE.Mesh(nostrilGeo, faceMat);
+    nostrilL.name = 'nostrilL';
+    nostrilL.position.set(-headR * 0.18, headR * 0.02, -headR * 0.95);
+    boneMap.head.add(nostrilL);
+    parts.nostrilL = nostrilL;
+
+    const nostrilR = new THREE.Mesh(nostrilGeo, faceMat);
+    nostrilR.name = 'nostrilR';
+    nostrilR.position.set(headR * 0.18, headR * 0.02, -headR * 0.95);
+    boneMap.head.add(nostrilR);
+    parts.nostrilR = nostrilR;
+
+    // ═══ FRONT LEGS: short, splayed outward — frog pose ═══
+    const fLegR = d.legThickness * s;
+    const fUpperH = 0.10 * s;
+    const fUpperGeo = createCapsule(fLegR, fUpperH, 6, 3);
+
+    const fUpperL = new THREE.Mesh(fUpperGeo, materials.body);
+    fUpperL.name = 'frontUpperLegL';
+    fUpperL.position.set(0, -fUpperH * 0.35, 0);
+    boneMap.frontUpperLeg_L.add(fUpperL);
+    parts.frontUpperLegL = fUpperL;
+
+    const fUpperRm = new THREE.Mesh(fUpperGeo, materials.body);
+    fUpperRm.name = 'frontUpperLegR';
+    fUpperRm.position.set(0, -fUpperH * 0.35, 0);
+    boneMap.frontUpperLeg_R.add(fUpperRm);
+    parts.frontUpperLegR = fUpperRm;
+
+    const fLowerH = 0.08 * s;
+    const fLowerGeo = createCapsule(fLegR * 0.80, fLowerH, 6, 3);
+
+    const fLowerL = new THREE.Mesh(fLowerGeo, materials.body);
+    fLowerL.name = 'frontLowerLegL';
+    fLowerL.position.set(0, -fLowerH * 0.35, 0);
+    boneMap.frontLowerLeg_L.add(fLowerL);
+    parts.frontLowerLegL = fLowerL;
+
+    const fLowerRm = new THREE.Mesh(fLowerGeo, materials.body);
+    fLowerRm.name = 'frontLowerLegR';
+    fLowerRm.position.set(0, -fLowerH * 0.35, 0);
+    boneMap.frontLowerLeg_R.add(fLowerRm);
+    parts.frontLowerLegR = fLowerRm;
+
+    // Front webbed feet — flat splayed toes
+    const fFootS = d.hoofSize * s;
+    const fFootGeo = createRoundedBox(fFootS * 2.0, fFootS * 0.4, fFootS * 2.0, fFootS * 0.15);
+    const fFootL = new THREE.Mesh(fFootGeo, materials.body);
+    fFootL.name = 'frontFootL';
+    fFootL.position.set(0, -fFootS * 0.1, -fFootS * 0.3);
+    boneMap.frontFoot_L.add(fFootL);
+    parts.frontFootL = fFootL;
+
+    const fFootR = new THREE.Mesh(fFootGeo, materials.body);
+    fFootR.name = 'frontFootR';
+    fFootR.position.set(0, -fFootS * 0.1, -fFootS * 0.3);
+    boneMap.frontFoot_R.add(fFootR);
+    parts.frontFootR = fFootR;
+
+    // ═══ HIND LEGS: large, powerful — folded Z-shape for jumping ═══
+    const hLegR = d.legThickness * s * 1.5;
+    const hUpperH = 0.16 * s;
+    const hUpperGeo = createCapsule(hLegR, hUpperH, 8, 4);
+
+    const hUpperL = new THREE.Mesh(hUpperGeo, materials.body);
+    hUpperL.name = 'hindUpperLegL';
+    hUpperL.position.set(0, -hUpperH * 0.35, 0);
+    boneMap.hindUpperLeg_L.add(hUpperL);
+    parts.hindUpperLegL = hUpperL;
+
+    const hUpperRm = new THREE.Mesh(hUpperGeo, materials.body);
+    hUpperRm.name = 'hindUpperLegR';
+    hUpperRm.position.set(0, -hUpperH * 0.35, 0);
+    boneMap.hindUpperLeg_R.add(hUpperRm);
+    parts.hindUpperLegR = hUpperRm;
+
+    const hLowerH = 0.18 * s;
+    const hLowerGeo = createCapsule(hLegR * 0.72, hLowerH, 8, 4);
+
+    const hLowerL = new THREE.Mesh(hLowerGeo, materials.body);
+    hLowerL.name = 'hindLowerLegL';
+    hLowerL.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_L.add(hLowerL);
+    parts.hindLowerLegL = hLowerL;
+
+    const hLowerRm = new THREE.Mesh(hLowerGeo, materials.body);
+    hLowerRm.name = 'hindLowerLegR';
+    hLowerRm.position.set(0, -hLowerH * 0.38, 0);
+    boneMap.hindLowerLeg_R.add(hLowerRm);
+    parts.hindLowerLegR = hLowerRm;
+
+    // Hind webbed feet — BIG, flat, splayed
+    const hFootS = d.hoofSize * s;
+    const hFootGeo = createRoundedBox(hFootS * 2.8, hFootS * 0.45, hFootS * 3.5, hFootS * 0.18);
+    const hFootL = new THREE.Mesh(hFootGeo, materials.body);
+    hFootL.name = 'hindFootL';
+    hFootL.position.set(0, -hFootS * 0.1, -hFootS * 0.6);
+    boneMap.hindFoot_L.add(hFootL);
+    parts.hindFootL = hFootL;
+
+    const hFootR = new THREE.Mesh(hFootGeo, materials.body);
+    hFootR.name = 'hindFootR';
+    hFootR.position.set(0, -hFootS * 0.1, -hFootS * 0.6);
+    boneMap.hindFoot_R.add(hFootR);
+    parts.hindFootR = hFootR;
+
+    // ═══ SPOTS: darker green patches on the back ═══
+    const spotGeo = new THREE.SphereGeometry(bodyW * 0.22, 6, 5);
+    const spotMat = materials.body.clone();
+    spotMat.uniforms.uBaseColor = { value: new THREE.Color(0x508820) };
+    const spotPositions = [
+        { x: bodyW * 0.30, y: bodyH * 0.15, z: 0 },
+        { x: -bodyW * 0.25, y: bodyH * 0.18, z: bodyLen * 0.15 },
+        { x: bodyW * 0.10, y: bodyH * 0.20, z: -bodyLen * 0.10 },
+    ];
+    spotPositions.forEach((pos, i) => {
+        const spot = new THREE.Mesh(spotGeo, spotMat);
+        spot.name = 'spot' + i;
+        spot.position.set(pos.x, pos.y, pos.z);
+        spot.scale.set(1.2, 0.35, 1.0); // flat patches
+        boneMap.spine_mid.add(spot);
+        parts['spot' + i] = spot;
+    });
+
+    return parts;
+}
+
+
+// ═══════════════════════════════════════
+// HURDLER — athletic biped, track spikes, race bib, headband, powerful legs
+// Airplane Olympic Hurdler jumper — determined competitive face
+// ═══════════════════════════════════════
+
+function _buildRigidHurdler(size, config, materials, boneMap) {
+    const s = size;
+    const parts = {};
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+
+    // ═══ TORSO: athletic tank top silhouette — exposed shoulders ═══
+    const spineToRoot = 0.20 * s;
+    const spineToChest = 0.25 * s;
+    const torsoW = 0.40 * s;
+    const torsoH = (spineToRoot + spineToChest) * 1.10;
+    const torsoD = 0.28 * s;
+    const torsoGeo = createRoundedBox(torsoW, torsoH, torsoD, 0.06 * s, 3);
+    const torso = new THREE.Mesh(torsoGeo, materials.body);
+    torso.name = 'torso';
+    torso.position.set(0, (spineToChest - spineToRoot) * 0.35, 0);
+    boneMap.spine.add(torso);
+    parts.torso = torso;
+
+    // Race bib — white rectangle with number on chest
+    const bibW = torsoW * 0.55;
+    const bibH = torsoH * 0.35;
+    const bibGeo = new THREE.PlaneGeometry(bibW, bibH);
+    const bibMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8, side: THREE.DoubleSide });
+    const bib = new THREE.Mesh(bibGeo, bibMat);
+    bib.name = 'raceBib';
+    bib.position.set(0, torsoH * 0.08, -torsoD * 0.52);
+    boneMap.spine.add(bib);
+    parts.raceBib = bib;
+
+    // Bib number stripe — dark horizontal line (implies a number)
+    const numGeo = new THREE.BoxGeometry(bibW * 0.60, bibH * 0.12, 0.005 * s);
+    const numMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const num = new THREE.Mesh(numGeo, numMat);
+    num.name = 'bibNumber';
+    num.position.set(0, torsoH * 0.08, -torsoD * 0.54);
+    boneMap.spine.add(num);
+    parts.bibNumber = num;
+
+    // ═══ HEAD: focused competitor face ═══
+    const headR = 0.27 * s;
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
+    const head = new THREE.Mesh(headGeo, materials.skin);
+    head.name = 'head';
+    head.scale.set(1.0, 0.94, 0.97);
+    boneMap.head.add(head);
+    parts.head = head;
+
+    // Eyes — intense, focused
+    _addFace(parts, boneMap, headR, faceMat, {
+        browAngle: -0.25,    // deeply furrowed — competitive intensity
+        eyeScaleY: 1.1,     // focused but alert
+        mouthWidth: 0.16,   // tight determined mouth
+    });
+
+    // Athletic headband — thinner than vaulter's
+    const hbGeo = new THREE.TorusGeometry(headR * 0.80, headR * 0.06, 6, 14);
+    const hbMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const hb = new THREE.Mesh(hbGeo, hbMat);
+    hb.name = 'headband';
+    hb.position.set(0, headR * 0.30, 0);
+    hb.rotation.set(Math.PI / 2, 0, 0);
+    hb.scale.set(1.0, 1.0, 0.50);
+    boneMap.head.add(hb);
+    parts.headband = hb;
+
+    // Short cropped hair
+    const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
+    const hairMat = materials.body.clone();
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x2a2020) };
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.name = 'hair';
+    hair.position.set(0, headR * 0.18, headR * 0.05);
+    hair.scale.set(1.02, 0.42, 1.06);
+    boneMap.head.add(hair);
+    parts.hair = hair;
+
+    // ═══ ARMS: powerful runner's arms ═══
+    _addArms(parts, boneMap, s, materials, { armRadius: 0.070, armLength: 0.46 });
+
+    // Wristbands — small accent
+    const wbGeo = new THREE.TorusGeometry(0.075 * s, 0.015 * s, 4, 8);
+    const wbMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+
+    const wbL = new THREE.Mesh(wbGeo, wbMat);
+    wbL.name = 'wristbandL';
+    wbL.position.set(0, -0.38 * s, 0);
+    wbL.rotation.set(Math.PI / 2, 0, 0);
+    boneMap.upperArm_L.add(wbL);
+    parts.wristbandL = wbL;
+
+    const wbR = new THREE.Mesh(wbGeo, wbMat);
+    wbR.name = 'wristbandR';
+    wbR.position.set(0, -0.38 * s, 0);
+    wbR.rotation.set(Math.PI / 2, 0, 0);
+    boneMap.upperArm_R.add(wbR);
+    parts.wristbandR = wbR;
+
+    // ═══ LEGS: powerful, long — runner's legs with track spikes ═══
+    _addLegs(parts, boneMap, s, materials, {
+        ulRadius: 0.10, ulHeight: 0.36,
+        llRadius: 0.080, llHeight: 0.34,
+    });
+
+    // Track spikes — sleek pointed shoes
+    if (parts.shoeL) {
+        parts.shoeL.geometry.dispose();
+        const spikeGeo = createRoundedBox(0.09 * s, 0.04 * s, 0.18 * s, 0.015 * s);
+        parts.shoeL.geometry = spikeGeo;
+        parts.shoeL.material = materials.body; // red-orange track spikes
+    }
+    if (parts.shoeR) {
+        const spikeGeo = createRoundedBox(0.09 * s, 0.04 * s, 0.18 * s, 0.015 * s);
+        parts.shoeR.geometry = spikeGeo;
+        parts.shoeR.material = materials.body;
+    }
+
+    return parts;
+}
+
+
 const _rigidBuilders = {
     polite: _buildRigidPoliteKnocker,
     dancer: _buildRigidPeeDancer,
@@ -4759,16 +5506,16 @@ const _rigidBuilders = {
     attendant: _buildRigidAttendant,
     marshal: _buildRigidMarshal,
     unruly: _buildRigidUnrulyPassengers,
-    // New types
+    // Train types
     drunk: _buildRigidDrunk,
     ant: _buildRigidAnt,
     seahorse: _buildRigidSeahorse,
     trolley: _buildRigidTrolley,
-    // Jumper archetypes (placeholder — reuse similar type builders)
-    vaulter: _buildRigidPoliteKnocker,
-    kangaroo: _buildRigidDeer,
-    frog: _buildRigidDolphin,
-    hurdler: _buildRigidNervousFlyer,
+    // Jumper archetypes — unique models
+    vaulter: _buildRigidVaulter,
+    kangaroo: _buildRigidKangaroo,
+    frog: _buildRigidFrog,
+    hurdler: _buildRigidHurdler,
 };
 
 

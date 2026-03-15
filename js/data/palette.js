@@ -122,6 +122,7 @@ export const PALETTE = {
     forestRaccoon:   0x7a7a7a,  // Charcoal gray — sneaky, masked
     forestAnt:       0x6b3030,  // Dark reddish-brown — marching colony (train)
     forestKangaroo:  0xc49060,  // Sandy tan — dusty outback fur (jumper)
+    forestKangarooBelly: 0xe0c8a0, // Pale sandy cream — kangaroo underbelly/inner ear
 
     // ─── FOREST LIGHTING ────────────────────────────────────────────────────
 
@@ -159,6 +160,7 @@ export const PALETTE = {
     oceanJellyGlow:  0xe8a0e0,  // Jellyfish inner glow — brighter pink
     oceanSeahorse:   0xf0a870,  // Warm coral/orange — drifting chain (train)
     oceanFrog:       0x70b830,  // Vivid leaf green — tropical tree frog (jumper)
+    oceanFrogBelly:  0xc8e870,  // Pale yellow-green — frog underbelly
 
     // ─── OCEAN LIGHTING ────────────────────────────────────────────────────
 
