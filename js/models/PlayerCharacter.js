@@ -59,9 +59,6 @@ export class PlayerCharacter {
         // Create phone attached to hand bone
         this._createPhone();
 
-        // Debug: verify bone map
-        console.log('PlayerCharacter boneMap keys:', Object.keys(this.boneMap));
-
         // Animation mixer on the group (traverses hierarchy to find Mixamo bones)
         this.mixer = new THREE.AnimationMixer(this.group);
 

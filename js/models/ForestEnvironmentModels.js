@@ -399,57 +399,63 @@ export function createOuthouse() {
     const plankDarkMat = toonMat(PALETTE.forestBark); // darker shade for bench
     const inkMat = matInk();
 
-    // --- Floor platform ---
-    const floorGeo = new THREE.BoxGeometry(3, 0.15, 3);
+    // --- Floor platform (4 wide x 5 deep, extra depth so player doesn't clip front) ---
+    const floorGeo = new THREE.BoxGeometry(4, 0.15, 5);
     const floorMesh = new THREE.Mesh(floorGeo, plankMat);
     floorMesh.position.set(0, 0.075, 0);
     floorMesh.receiveShadow = true;
     group.add(floorMesh);
 
-    // --- Walls ---
+    // --- Walls (4 wide, 5 deep, 5 tall) ---
     const wallThickness = 0.12;
+    const wallW = 4;
+    const wallD = 5;    // depth (Z)
+    const wallH = 5;
+    const halfW = wallW / 2; // 2.0
+    const halfD = wallD / 2; // 2.5
+    const wallCenterY = 0.15 + wallH / 2; // 2.65
 
     // Back wall (full)
-    const backWallGeo = new THREE.BoxGeometry(3, 4, wallThickness);
+    const backWallGeo = new THREE.BoxGeometry(wallW, wallH, wallThickness);
     const backWall = new THREE.Mesh(backWallGeo, plankMat);
-    backWall.position.set(0, 2.15, -1.5 + wallThickness / 2);
+    backWall.position.set(0, wallCenterY, -halfD + wallThickness / 2);
     backWall.castShadow = true;
     backWall.receiveShadow = true;
     group.add(backWall);
 
     // Left wall (full)
-    const sideWallGeo = new THREE.BoxGeometry(wallThickness, 4, 3);
+    const sideWallGeo = new THREE.BoxGeometry(wallThickness, wallH, wallD);
     const leftWall = new THREE.Mesh(sideWallGeo, plankMat);
-    leftWall.position.set(-1.5 + wallThickness / 2, 2.15, 0);
+    leftWall.position.set(-halfW + wallThickness / 2, wallCenterY, 0);
     leftWall.castShadow = true;
     leftWall.receiveShadow = true;
     group.add(leftWall);
 
     // Right wall (full)
     const rightWall = new THREE.Mesh(sideWallGeo, plankMat);
-    rightWall.position.set(1.5 - wallThickness / 2, 2.15, 0);
+    rightWall.position.set(halfW - wallThickness / 2, wallCenterY, 0);
     rightWall.castShadow = true;
     rightWall.receiveShadow = true;
     group.add(rightWall);
 
-    // Front wall — two narrow panels flanking the door opening (2 unit gap)
-    // Left panel (0.5 wide)
-    const frontPanelGeo = new THREE.BoxGeometry(0.5, 4, wallThickness);
+    // Front wall — two panels flanking the door opening (2.4 unit gap)
+    const doorOpening = 2.4;
+    const panelW = (wallW - doorOpening) / 2; // 0.8
+    const frontPanelGeo = new THREE.BoxGeometry(panelW, wallH, wallThickness);
     const frontLeft = new THREE.Mesh(frontPanelGeo, plankMat);
-    frontLeft.position.set(-1.25, 2.15, 1.5 - wallThickness / 2);
+    frontLeft.position.set(-halfW + panelW / 2, wallCenterY, halfD - wallThickness / 2);
     frontLeft.castShadow = true;
     group.add(frontLeft);
 
-    // Right panel (0.5 wide)
     const frontRight = new THREE.Mesh(frontPanelGeo, plankMat);
-    frontRight.position.set(1.25, 2.15, 1.5 - wallThickness / 2);
+    frontRight.position.set(halfW - panelW / 2, wallCenterY, halfD - wallThickness / 2);
     frontRight.castShadow = true;
     group.add(frontRight);
 
-    // Transom above door (2 wide, 0.5 tall)
-    const transomGeo = new THREE.BoxGeometry(2, 0.5, wallThickness);
+    // Transom above door (2.4 wide, 0.5 tall)
+    const transomGeo = new THREE.BoxGeometry(doorOpening, 0.5, wallThickness);
     const transom = new THREE.Mesh(transomGeo, plankMat);
-    transom.position.set(0, 3.9, 1.5 - wallThickness / 2);
+    transom.position.set(0, 0.15 + wallH - 0.25, halfD - wallThickness / 2);
     transom.castShadow = true;
     group.add(transom);
 
@@ -470,33 +476,33 @@ export function createOuthouse() {
     }
 
     // Horizontal plank lines on back wall
-    for (let i = 1; i <= 3; i++) {
-        const gapGeo = new THREE.BoxGeometry(2.9, 0.02, 0.01);
+    for (let i = 1; i <= 4; i++) {
+        const gapGeo = new THREE.BoxGeometry(wallW - 0.1, 0.02, 0.01);
         const gap = new THREE.Mesh(gapGeo, gapMat);
-        gap.position.set(0, 0.15 + i * 1.0, -1.5 + wallThickness + 0.01);
+        gap.position.set(0, 0.15 + i * 1.0, -halfD + wallThickness + 0.01);
         group.add(gap);
     }
 
     // --- Roof removed — invisible so player can see inside the outhouse ---
 
     // --- Interior: bench/seat ---
-    const benchGeo = new THREE.BoxGeometry(2.4, 0.15, 1.0);
+    const benchGeo = new THREE.BoxGeometry(3.2, 0.15, 1.2);
     const bench = new THREE.Mesh(benchGeo, plankDarkMat);
-    bench.position.set(0, 1.0, -0.8);
+    bench.position.set(0, 1.0, -1.0);
     bench.receiveShadow = true;
     group.add(bench);
 
     // Bench front face
-    const benchFrontGeo = new THREE.BoxGeometry(2.4, 0.85, 0.1);
+    const benchFrontGeo = new THREE.BoxGeometry(3.2, 0.85, 0.1);
     const benchFront = new THREE.Mesh(benchFrontGeo, plankDarkMat);
-    benchFront.position.set(0, 0.575, -0.35);
+    benchFront.position.set(0, 0.575, -0.45);
     group.add(benchFront);
 
     // Hole in bench (dark cylinder going down)
     const holeGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 8);
     const holeMat = matInk();
     const hole = new THREE.Mesh(holeGeo, holeMat);
-    hole.position.set(0, 0.95, -0.8);
+    hole.position.set(0, 0.95, -1.0);
     group.add(hole);
 
     // --- Lantern / candle providing warm light ---
@@ -504,22 +510,22 @@ export function createOuthouse() {
     const lanternGeo = new THREE.BoxGeometry(0.15, 0.25, 0.15);
     const lanternMat = toonMat(PALETTE.forestSunbeam);
     const lantern = new THREE.Mesh(lanternGeo, lanternMat);
-    lantern.position.set(-0.8, 1.3, -1.2);
+    lantern.position.set(-1.2, 1.3, -1.6);
     group.add(lantern);
 
     // Warm point light
-    const lanternLight = new THREE.PointLight(PALETTE.forestSunbeam, 0.5, 8);
-    lanternLight.position.set(-0.8, 1.6, -1.2);
+    const lanternLight = new THREE.PointLight(PALETTE.forestSunbeam, 0.5, 10);
+    lanternLight.position.set(-1.2, 1.6, -1.6);
     group.add(lanternLight);
 
     // --- Moon cutout decoration (small yellow circle on transom area) ---
-    const moonGeo = new THREE.CircleGeometry(0.18, 8);
+    const moonGeo = new THREE.CircleGeometry(0.22, 8);
     const moonMat = toonMat(PALETTE.forestSunbeam, {
         emissive: PALETTE.forestSunbeam,
         emissiveIntensity: 0.4,
     });
     const moon = new THREE.Mesh(moonGeo, moonMat);
-    moon.position.set(0, 3.9, 1.5 - wallThickness / 2 + 0.07);
+    moon.position.set(0, 0.15 + wallH - 0.25, halfD - wallThickness / 2 + 0.07);
     group.add(moon);
 
     // Position the outhouse at the toilet location
@@ -543,31 +549,31 @@ export function createOuthouseDoor() {
     });
     doorMat.depthWrite = false;
 
-    // --- Door panel ---
-    const doorGeo = new THREE.BoxGeometry(2.0, 3.5, 0.1);
+    // --- Door panel (wider + taller to match bigger outhouse) ---
+    const doorGeo = new THREE.BoxGeometry(2.4, 4.5, 0.1);
     const doorPanel = new THREE.Mesh(doorGeo, doorMat);
-    doorPanel.position.set(0, 1.85, 0);
+    doorPanel.position.set(0, 2.4, 0);
     doorPanel.castShadow = false;
     doorPanel.receiveShadow = false;
     group.add(doorPanel);
 
     // --- Horizontal plank lines on door ---
     const plankLineMat = matDark();
-    for (let i = 1; i <= 3; i++) {
-        const lineGeo = new THREE.BoxGeometry(1.9, 0.02, 0.01);
+    for (let i = 1; i <= 4; i++) {
+        const lineGeo = new THREE.BoxGeometry(2.3, 0.02, 0.01);
         const line = new THREE.Mesh(lineGeo, plankLineMat);
-        line.position.set(0, 0.3 + i * 0.85, 0.06);
+        line.position.set(0, 0.3 + i * 1.0, 0.06);
         group.add(line);
     }
 
     // --- Moon cutout circle (yellow circle on upper third of door) ---
-    const moonGeo = new THREE.CircleGeometry(0.2, 8);
+    const moonGeo = new THREE.CircleGeometry(0.22, 8);
     const moonMat = toonMat(PALETTE.forestSunbeam, {
         emissive: PALETTE.forestSunbeam,
         emissiveIntensity: 0.5,
     });
     const moonCutout = new THREE.Mesh(moonGeo, moonMat);
-    moonCutout.position.set(0, 3.0, 0.06);
+    moonCutout.position.set(0, 3.8, 0.06);
     group.add(moonCutout);
 
     // --- Rustic handle (wooden peg) ---
@@ -575,7 +581,7 @@ export function createOuthouseDoor() {
     const handleMat = toonMat(PALETTE.forestBark);
     const handle = new THREE.Mesh(handleGeo, handleMat);
     handle.rotation.x = Math.PI / 2;
-    handle.position.set(0.7, 1.8, 0.15);
+    handle.position.set(0.85, 2.2, 0.15);
     group.add(handle);
 
     // --- Hinges (two small dark cylinders on left side) ---
@@ -583,13 +589,13 @@ export function createOuthouseDoor() {
     for (let i = 0; i < 2; i++) {
         const hingeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6);
         const hinge = new THREE.Mesh(hingeGeo, hingeMat);
-        hinge.position.set(-0.95, 1.0 + i * 2.0, 0.06);
+        hinge.position.set(-1.15, 1.2 + i * 2.4, 0.06);
         group.add(hinge);
 
         // Hinge plate (small dark box)
         const plateGeo = new THREE.BoxGeometry(0.2, 0.1, 0.02);
         const plate = new THREE.Mesh(plateGeo, hingeMat);
-        plate.position.set(-0.85, 1.0 + i * 2.0, 0.055);
+        plate.position.set(-1.05, 1.2 + i * 2.4, 0.055);
         group.add(plate);
     }
 
@@ -694,8 +700,8 @@ export function createOuthouseDoor() {
     group.userData.maxDoorHP = 100;
     group.userData.originalColor = doorColor;
 
-    // Position: flush with the outhouse front wall (outhouse at z=3, front wall at z=4.5)
-    group.position.set(0, 0, 4.5);
+    // Position: flush with the outhouse front wall (outhouse at z=3, front wall at z=5.5)
+    group.position.set(0, 0, 5.5);
 
     return group;
 }

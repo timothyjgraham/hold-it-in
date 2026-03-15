@@ -238,16 +238,16 @@ export function createOceanRaft() {
     const ropeMat = toonMat(PALETTE.oceanRope);
     const gapMat = matDark();
 
-    // ─── Raft base: logs lashed to planks ───────────────────────────────
+    // ─── Raft base: logs lashed to planks (wider + longer for bigger outhouse) ──
 
-    // 5 logs running lengthwise (Z axis), slightly varied radii for organic feel
-    const logLength = 6.5;
+    // 5 logs running lengthwise (Z axis), wider spread for outhouse
+    const logLength = 9.0;
     const logData = [
-        { x: -1.8, r: 0.24 },
-        { x: -0.9, r: 0.20 },
-        { x:  0.0, r: 0.22 },
-        { x:  0.9, r: 0.21 },
-        { x:  1.8, r: 0.23 },
+        { x: -2.2, r: 0.26 },
+        { x: -1.1, r: 0.22 },
+        { x:  0.0, r: 0.24 },
+        { x:  1.1, r: 0.23 },
+        { x:  2.2, r: 0.25 },
     ];
 
     for (const ld of logData) {
@@ -272,9 +272,9 @@ export function createOceanRaft() {
     }
 
     // Cross planks across the top (perpendicular to logs)
-    const plankZPositions = [-2.8, -2.0, -1.2, -0.4, 0.4, 1.2, 2.0, 2.8];
+    const plankZPositions = [-4.0, -3.2, -2.4, -1.6, -0.8, 0.0, 0.8, 1.6, 2.4, 3.2, 4.0];
     for (const pz of plankZPositions) {
-        const pw = 4.2 + (Math.sin(pz * 3.7) * 0.15); // slight width variation
+        const pw = 5.0 + (Math.sin(pz * 3.7) * 0.15); // slight width variation
         const plankGeo = new THREE.BoxGeometry(pw, 0.06, 0.32);
         const plank = new THREE.Mesh(plankGeo, plankMat);
         plank.position.set(0, 0.1, pz);
@@ -291,8 +291,8 @@ export function createOceanRaft() {
 
     // Rope lashings where planks cross outer logs
     const ropeGeo = new THREE.TorusGeometry(0.10, 0.022, 4, 8);
-    const lashXPositions = [-1.8, 0, 1.8];
-    const lashZPositions = [-2.8, -1.2, 1.2, 2.8];
+    const lashXPositions = [-2.2, 0, 2.2];
+    const lashZPositions = [-4.0, -1.6, 1.6, 4.0];
     for (const lx of lashXPositions) {
         for (const lz of lashZPositions) {
             const rope = new THREE.Mesh(ropeGeo, ropeMat);
@@ -303,82 +303,88 @@ export function createOceanRaft() {
     }
 
     // ─── Outhouse structure on the raft ─────────────────────────────────
-    // 3x3 outhouse centered at z=0 local, front (door) faces +Z (north)
+    // 4 wide x 5 deep outhouse, extra depth so player doesn't clip front
 
     const wallThickness = 0.12;
-    const wallHeight = 3.6;
+    const wallHeight = 4.5;
     const yBase = 0.15; // base of walls on deck
+    const wallW = 4.0;
+    const wallD = 5.0;  // depth (Z)
+    const halfW = wallW / 2; // 2.0
+    const halfD = wallD / 2; // 2.5
+    const doorOpening = 2.4;
 
     // Back wall (south side)
-    const backWallGeo = new THREE.BoxGeometry(3.0, wallHeight, wallThickness);
+    const backWallGeo = new THREE.BoxGeometry(wallW, wallHeight, wallThickness);
     const backWall = new THREE.Mesh(backWallGeo, logMat);
-    backWall.position.set(0, yBase + wallHeight / 2, -1.44);
+    backWall.position.set(0, yBase + wallHeight / 2, -halfD + wallThickness / 2);
     backWall.castShadow = true;
     backWall.receiveShadow = true;
     group.add(backWall);
 
     // Left wall (west side)
-    const sideWallGeo = new THREE.BoxGeometry(wallThickness, wallHeight, 3.0);
+    const sideWallGeo = new THREE.BoxGeometry(wallThickness, wallHeight, wallD);
     const leftWall = new THREE.Mesh(sideWallGeo, logMat);
-    leftWall.position.set(-1.44, yBase + wallHeight / 2, 0);
+    leftWall.position.set(-halfW + wallThickness / 2, yBase + wallHeight / 2, 0);
     leftWall.castShadow = true;
     leftWall.receiveShadow = true;
     group.add(leftWall);
 
     // Right wall (east side)
     const rightWall = new THREE.Mesh(sideWallGeo, logMat);
-    rightWall.position.set(1.44, yBase + wallHeight / 2, 0);
+    rightWall.position.set(halfW - wallThickness / 2, yBase + wallHeight / 2, 0);
     rightWall.castShadow = true;
     rightWall.receiveShadow = true;
     group.add(rightWall);
 
-    // Front wall — narrow panels flanking the 2-unit door opening
-    const frontPanelGeo = new THREE.BoxGeometry(0.5, wallHeight, wallThickness);
+    // Front wall — panels flanking the door opening
+    const panelW = (wallW - doorOpening) / 2; // 0.8
+    const frontPanelGeo = new THREE.BoxGeometry(panelW, wallHeight, wallThickness);
     const frontLeft = new THREE.Mesh(frontPanelGeo, logMat);
-    frontLeft.position.set(-1.25, yBase + wallHeight / 2, 1.44);
+    frontLeft.position.set(-halfW + panelW / 2, yBase + wallHeight / 2, halfD - wallThickness / 2);
     frontLeft.castShadow = true;
     group.add(frontLeft);
 
     const frontRight = new THREE.Mesh(frontPanelGeo, logMat);
-    frontRight.position.set(1.25, yBase + wallHeight / 2, 1.44);
+    frontRight.position.set(halfW - panelW / 2, yBase + wallHeight / 2, halfD - wallThickness / 2);
     frontRight.castShadow = true;
     group.add(frontRight);
 
     // Transom above door
-    const transomGeo = new THREE.BoxGeometry(2.0, 0.4, wallThickness);
+    const transomGeo = new THREE.BoxGeometry(doorOpening, 0.4, wallThickness);
     const transomMesh = new THREE.Mesh(transomGeo, logMat);
-    transomMesh.position.set(0, yBase + wallHeight - 0.2, 1.44);
+    transomMesh.position.set(0, yBase + wallHeight - 0.2, halfD - wallThickness / 2);
     transomMesh.castShadow = true;
     group.add(transomMesh);
 
     // Horizontal plank gap lines on back wall
-    for (let i = 1; i <= 3; i++) {
-        const bgGeo = new THREE.BoxGeometry(2.9, 0.02, 0.01);
+    for (let i = 1; i <= 4; i++) {
+        const bgGeo = new THREE.BoxGeometry(wallW - 0.1, 0.02, 0.01);
         const bg = new THREE.Mesh(bgGeo, gapMat);
-        bg.position.set(0, yBase + i * 0.95, -1.44 + wallThickness / 2 + 0.01);
+        bg.position.set(0, yBase + i * 1.0, -halfD + wallThickness + 0.01);
         group.add(bg);
     }
 
     // Moon cutout on back wall (classic outhouse detail)
-    const moonGeo = new THREE.CircleGeometry(0.18, 8);
+    const moonGeo = new THREE.CircleGeometry(0.22, 8);
     const moonMat2 = toonMat(PALETTE.oceanSun, {
         emissive: PALETTE.oceanSun,
         emissiveIntensity: 0.4,
     });
     const moon = new THREE.Mesh(moonGeo, moonMat2);
-    moon.position.set(0, yBase + wallHeight - 0.7, -1.44 + wallThickness / 2 + 0.02);
+    moon.position.set(0, yBase + wallHeight - 0.7, -halfD + wallThickness / 2 + 0.02);
     group.add(moon);
 
     // Warm lantern light inside the outhouse
-    const lanternLight = new THREE.PointLight(PALETTE.oceanSun, 0.35, 6);
-    lanternLight.position.set(-0.7, 1.5, -0.8);
+    const lanternLight = new THREE.PointLight(PALETTE.oceanSun, 0.35, 8);
+    lanternLight.position.set(-1.0, 1.5, -1.2);
     group.add(lanternLight);
 
     // Small lantern body on back wall
     const fixtureMat2 = toonMat(PALETTE.fixture);
     const lanternBodyGeo = new THREE.BoxGeometry(0.12, 0.18, 0.12);
     const lanternBody = new THREE.Mesh(lanternBodyGeo, fixtureMat2);
-    lanternBody.position.set(-0.7, 1.4, -1.3);
+    lanternBody.position.set(-1.0, 1.4, -1.7);
     group.add(lanternBody);
 
     // Position the raft at the toilet location
@@ -403,31 +409,31 @@ export function createOceanOuthouseDoor() {
     });
     doorMat.depthWrite = false;
 
-    // --- Door panel ---
-    const doorGeo = new THREE.BoxGeometry(2.0, 3.2, 0.1);
+    // --- Door panel (wider + taller to match bigger outhouse) ---
+    const doorGeo = new THREE.BoxGeometry(2.4, 4.1, 0.1);
     const doorPanel = new THREE.Mesh(doorGeo, doorMat);
-    doorPanel.position.set(0, 1.75, 0);
+    doorPanel.position.set(0, 2.2, 0);
     doorPanel.castShadow = false;
     doorPanel.receiveShadow = false;
     group.add(doorPanel);
 
     // --- Horizontal plank lines on door ---
     const plankLineMat = matDark();
-    for (let i = 1; i <= 3; i++) {
-        const lineGeo = new THREE.BoxGeometry(1.9, 0.02, 0.01);
+    for (let i = 1; i <= 4; i++) {
+        const lineGeo = new THREE.BoxGeometry(2.3, 0.02, 0.01);
         const line = new THREE.Mesh(lineGeo, plankLineMat);
-        line.position.set(0, 0.3 + i * 0.8, 0.06);
+        line.position.set(0, 0.3 + i * 0.95, 0.06);
         group.add(line);
     }
 
     // --- Moon cutout circle (upper door) ---
-    const moonGeo = new THREE.CircleGeometry(0.18, 8);
+    const moonGeo = new THREE.CircleGeometry(0.22, 8);
     const moonDoorMat = toonMat(PALETTE.oceanSun, {
         emissive: PALETTE.oceanSun,
         emissiveIntensity: 0.5,
     });
     const moonCutout = new THREE.Mesh(moonGeo, moonDoorMat);
-    moonCutout.position.set(0, 2.8, 0.06);
+    moonCutout.position.set(0, 3.5, 0.06);
     group.add(moonCutout);
 
     // --- Rustic handle (wooden peg) ---
@@ -435,7 +441,7 @@ export function createOceanOuthouseDoor() {
     const handleMat2 = toonMat(PALETTE.oceanBoatDark);
     const handle = new THREE.Mesh(handleGeo, handleMat2);
     handle.rotation.x = Math.PI / 2;
-    handle.position.set(0.7, 1.6, 0.12);
+    handle.position.set(0.85, 2.0, 0.12);
     group.add(handle);
 
     // --- Hinges (two dark cylinders on left side) ---
@@ -443,32 +449,32 @@ export function createOceanOuthouseDoor() {
     for (let i = 0; i < 2; i++) {
         const hingeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6);
         const hinge = new THREE.Mesh(hingeGeo, hingeMat);
-        hinge.position.set(-0.95, 0.8 + i * 1.8, 0.06);
+        hinge.position.set(-1.15, 1.0 + i * 2.2, 0.06);
         group.add(hinge);
 
         const plateGeo = new THREE.BoxGeometry(0.2, 0.1, 0.02);
         const plate = new THREE.Mesh(plateGeo, hingeMat);
-        plate.position.set(-0.85, 0.8 + i * 1.8, 0.055);
+        plate.position.set(-1.05, 1.0 + i * 2.2, 0.055);
         group.add(plate);
     }
 
     // --- Metal reinforcement strips ---
     const metalMat = toonMat(PALETTE.fixture);
     for (let i = 0; i < 2; i++) {
-        const stripGeo = new THREE.BoxGeometry(1.9, 0.06, 0.03);
+        const stripGeo = new THREE.BoxGeometry(2.3, 0.06, 0.03);
         const strip = new THREE.Mesh(stripGeo, metalMat);
-        strip.position.set(0, 0.5 + i * 2.0, 0.07);
+        strip.position.set(0, 0.6 + i * 2.4, 0.07);
         group.add(strip);
     }
 
     // --- Bolt heads on strips ---
     const boltMat = matInk();
     for (let i = 0; i < 2; i++) {
-        for (let bx = -0.7; bx <= 0.7; bx += 0.35) {
+        for (let bx = -0.85; bx <= 0.85; bx += 0.34) {
             const boltGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.04, 6);
             const bolt = new THREE.Mesh(boltGeo, boltMat);
             bolt.rotation.x = Math.PI / 2;
-            bolt.position.set(bx, 0.5 + i * 2.0, 0.09);
+            bolt.position.set(bx, 0.6 + i * 2.4, 0.09);
             group.add(bolt);
         }
     }
@@ -575,7 +581,7 @@ export function createOceanOuthouseDoor() {
     group.userData.originalColor = doorColor;
 
     // Position at front of the outhouse (north edge of raft)
-    group.position.set(0, 0, 4.5);
+    group.position.set(0, 0, 5.5);
 
     return group;
 }

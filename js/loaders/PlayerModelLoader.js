@@ -197,18 +197,9 @@ export const PlayerModelLoader = {
         // Remove debug joints mesh
         toRemove.forEach(m => m.parent && m.parent.remove(m));
 
-        // Debug: log model dimensions to determine correct scale
-        skinnedMesh.geometry.computeBoundingBox();
-        const bbox = skinnedMesh.geometry.boundingBox;
-        const size = new THREE.Vector3();
-        bbox.getSize(size);
-        console.log('PlayerModel bbox size:', size, 'min:', bbox.min, 'max:', bbox.max);
 
         const skeleton = skinnedMesh.skeleton;
         const bones = skeleton.bones;
-
-        // Debug: log actual bone names
-        console.log('Skeleton bone names:', bones.map(b => b.name));
 
         // Build bone map: shortName → bone object
         const boneMap = {};
@@ -216,7 +207,6 @@ export const PlayerModelLoader = {
             const shortName = BONE_MAP_MIXAMO_TO_SHORT[bone.name];
             if (shortName) boneMap[shortName] = bone;
         }
-        console.log('boneMap result:', Object.keys(boneMap));
 
         // Clone geometry for outline BEFORE adding vertex colors (avoids unnecessary color data)
         const outlineGeo = skinnedMesh.geometry.clone();

@@ -1615,8 +1615,8 @@
                 corridorWidth: CONFIG.corridorWidth * 2, // 24
                 corridorStart: CONFIG.corridorStart,   // 12
                 spawnWidth: CONFIG.spawnWidth * 2,     // 20
-                doorZ: 4.5,                            // outhouse door flush with front wall
-                doorHalfWidth: 1.0,                    // outhouse door opening is 2 units wide
+                doorZ: 5.5,                            // outhouse door flush with front wall
+                doorHalfWidth: 1.2,                    // outhouse door opening is 2.4 units wide
                 minBuildZ: 8,                          // right up to the outhouse clearing
             };
             // Forest lighting — warmer, more green ambient, strong directional sun
@@ -1658,7 +1658,7 @@
             this.toilet = createToilet();
             this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y, CONFIG.toiletPos.z);
             this.toilet.rotation.y = 0;
-            this.toilet.scale.set(0.7, 0.7, 0.7); // Smaller in the outhouse
+            this.toilet.scale.set(0.75, 0.75, 0.75); // Sized for outhouse
             this._environmentGroup.add(this.toilet);
 
             // Player character on the seat
@@ -1725,7 +1725,7 @@
                 corridorWidth: CONFIG.corridorWidth * 2, // 24
                 corridorStart: CONFIG.corridorStart,   // 12
                 spawnWidth: CONFIG.spawnWidth * 2,     // 20
-                doorZ: 4.5,                            // boat bow position
+                doorZ: 5.5,                            // boat bow position
                 doorHalfWidth: 1.5,                    // boat width
                 minBuildZ: 8,                          // near the boat
             };
@@ -1770,7 +1770,7 @@
             this.toilet = createToilet();
             this.toilet.position.set(CONFIG.toiletPos.x, CONFIG.toiletPos.y + 0.3, CONFIG.toiletPos.z);
             this.toilet.rotation.y = 0;
-            this.toilet.scale.set(0.65, 0.65, 0.65);
+            this.toilet.scale.set(0.7, 0.7, 0.7); // Sized for raft outhouse
             this._environmentGroup.add(this.toilet);
 
             // Player character on the seat

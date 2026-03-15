@@ -12,42 +12,74 @@ export function createToilet() {
     const porcelainInner = toonMat(PALETTE.rimCool);
     const gold = matGold();
 
-    // === BASE / PEDESTAL ===
+    // === BASE / PEDESTAL (oval, wider at bottom) ===
     const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.9, 1.1, 0.4, 12),
+        new THREE.CylinderGeometry(0.8, 1.0, 0.4, 16),
         porcelain
     );
-    base.position.y = 0.2;
+    base.position.set(0, 0.2, 0.1);
+    base.scale.z = 1.3; // oval front-to-back
     base.castShadow = true;
     base.receiveShadow = true;
     group.add(base);
 
-    // === BOWL (outer) ===
+    // === BOWL (outer — oval, tapers down) ===
     const bowl = new THREE.Mesh(
-        new THREE.CylinderGeometry(1.0, 0.8, 1.2, 12),
+        new THREE.CylinderGeometry(0.95, 0.75, 1.1, 16),
         porcelain
     );
-    bowl.position.y = 1.0;
+    bowl.position.set(0, 0.95, 0.1);
+    bowl.scale.z = 1.3; // oval
     bowl.castShadow = true;
     group.add(bowl);
 
-    // === BOWL (inner hollow) ===
-    const bowlInner = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.75, 0.5, 0.5, 12),
-        porcelainInner
-    );
-    bowlInner.position.y = 1.45;
-    group.add(bowlInner);
-
-    // === SEAT (torus ring) ===
-    const seat = new THREE.Mesh(
-        new THREE.TorusGeometry(0.8, 0.12, 8, 16),
+    // === BOWL RIM (visible lip at top of bowl) ===
+    const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.88, 0.06, 8, 24),
         porcelain
     );
+    rim.rotation.x = -Math.PI / 2;
+    rim.position.set(0, 1.52, 0.1);
+    rim.scale.set(1.0, 1.3, 1.0); // oval (Y maps to Z when x-rotated)
+    rim.castShadow = true;
+    group.add(rim);
+
+    // === BOWL (inner hollow — darker for contrast from above) ===
+    const bowlInner = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.7, 0.4, 0.55, 16),
+        porcelainInner
+    );
+    bowlInner.position.set(0, 1.3, 0.1);
+    bowlInner.scale.z = 1.3;
+    group.add(bowlInner);
+
+    // === WATER SURFACE (blue circle visible inside bowl) ===
+    const water = new THREE.Mesh(
+        new THREE.CircleGeometry(0.45, 16),
+        toonMat(PALETTE.rimCool, { transparent: true, opacity: 0.4 })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(0, 1.1, 0.1);
+    water.scale.set(1.0, 1.3, 1.0); // oval
+    group.add(water);
+
+    // === SEAT (horseshoe / U-shape — open at the front so player is "sitting on it") ===
+    const seatGeo = new THREE.TorusGeometry(0.8, 0.15, 10, 20, Math.PI * 5 / 3); // 300° arc, 60° gap
+    seatGeo.rotateZ(Math.PI * 2 / 3); // rotate geometry so gap faces +Y (becomes +Z front when laid flat)
+    const seat = new THREE.Mesh(seatGeo, porcelain);
     seat.rotation.x = -Math.PI / 2;
-    seat.position.y = 1.65;
+    seat.position.set(0, 1.65, 0.1);
+    seat.scale.set(1.0, 1.3, 1.0); // oval (Y→Z after rotation = front-to-back stretch)
     seat.castShadow = true;
     group.add(seat);
+
+    // === LID (propped up against the tank — shows it's been lifted) ===
+    const lidGeo = new THREE.BoxGeometry(1.4, 0.06, 0.9);
+    const lid = new THREE.Mesh(lidGeo, porcelain);
+    lid.rotation.x = -0.25; // leaning slightly back against tank
+    lid.position.set(0, 2.0, -0.65);
+    lid.castShadow = true;
+    group.add(lid);
 
     // === TANK (box behind the bowl) ===
     const tank = new THREE.Mesh(
