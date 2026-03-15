@@ -22,8 +22,8 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 50,          // Starting currency — tighter economy, every tower placement counts
-    MAX_TOWERS: 15,             // Global tower cap (before upgrades that reduce it)
+    startingCoins: 55,          // Starting currency — just enough for Ubik + Magnet on wave 1
+    MAX_TOWERS: Infinity,       // No global tower cap (Skeleton Crew still limits to 6)
 
     // Spawn
     spawnZoneZ: 69,             // Where enemies appear (behind the exit doors at z=68)

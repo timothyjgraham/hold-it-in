@@ -23,7 +23,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 const GAME = {
-  startingCoins: 50,
+  startingCoins: 55,
   doorMaxHP: 100,
   gridCell: 2,
   laneWidth: 30,
@@ -623,7 +623,7 @@ class TowerAI {
     this.strategy = strategy;
     this.towers = { coinmagnet: 0, wetfloor: 0, mop: 0, ubik: 0, potplant: 0 };
     this.totalTowers = 0;
-    this.maxSlots = 15; // reasonable max towers on field
+    this.maxSlots = 999; // no global cap
     this.costMult = 1.0; // R14 reduces this
   }
 
