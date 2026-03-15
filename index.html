@@ -118,6 +118,9 @@
     <!-- Wave Announcement -->
     <div id="wave-announce"></div>
 
+    <!-- Coordinated Wall Popup -->
+    <div id="coordinated-popup"></div>
+
     <!-- Pause Overlay -->
     <div id="pause-overlay">
         <div id="pause-content">
@@ -548,6 +551,7 @@
         _mopImpacts: [],
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
+        _wallGroupCounter: 0,   // Coordinated wall formation ID counter
         _cinematicTimer: 0,
         _cinematicEffects: [],
         _flyingPhone: null,
@@ -2846,6 +2850,60 @@
             setTimeout(() => el.classList.remove('visible'), 2200);
         },
 
+        // Coordinated wall formation — returns the enemy type that forms walls for this scenario
+        _getWallEnemyType() {
+            switch (this._currentScenario) {
+                case 'forest':   return 'deer';
+                case 'ocean':    return 'dolphin';
+                case 'airplane': return 'nervous';
+                default:         return 'polite';
+            }
+        },
+
+        // Coordinated wall popup — brief dialogue when enemies form a wall
+        _showCoordinatedPopup() {
+            const messages = {
+                office: [
+                    "They organized a group bathroom break!",
+                    "Someone sent a calendar invite to the bathroom!",
+                    "Synchronized desperation!",
+                    "They're coordinating their urgent needs!",
+                    "The whole team needs to go... RIGHT NOW!",
+                ],
+                forest: [
+                    "The herd is moving as one!",
+                    "They all ate the same berries!",
+                    "Pack instinct... for the outhouse!",
+                    "Nature calls... the whole forest answers!",
+                    "Coordinated stampede!",
+                ],
+                ocean: [
+                    "The pod is charging in formation!",
+                    "They're swimming in sync!",
+                    "Coordinated bathroom dive!",
+                    "The whole school needs to go!",
+                    "Tidal wave of desperation!",
+                ],
+                airplane: [
+                    "The whole row needs to go... NOW!",
+                    "The seatbelt sign turned off and EVERYONE stood up!",
+                    "Synchronized lavatory rush!",
+                    "All passengers in Row 12 — EMERGENCY!",
+                    "Turbulence hit and now they ALL need to go!",
+                ],
+            };
+            const scenario = this._currentScenario || 'office';
+            const pool = messages[scenario] || messages.office;
+            const msg = pool[Math.floor(Math.random() * pool.length)];
+
+            const el = document.getElementById('coordinated-popup');
+            el.textContent = msg;
+            el.classList.remove('visible');
+            void el.offsetWidth;
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), 3200);
+        },
+
         // ============================
         // TUTORIAL
         // ============================
@@ -3180,6 +3238,7 @@
             this.enemies = [];
             this.towers = [];
             this.projectiles = [];
+            this._wallGroupCounter = 0;
             // Clean up active sprays
             if (this.sprays) {
                 for (const s of this.sprays) {
@@ -5924,6 +5983,18 @@
                 this._eventDesperateChance = 0;
             }
 
+            // Coordinated wall spawns — increasing frequency with wave number
+            if (this.wave >= 5 && !this._tutorialActive) {
+                const wallChance = Math.min(0.8, 0.08 + (this.wave - 5) * 0.03);
+                const maxWalls = Math.min(3, 1 + Math.floor((this.wave - 5) / 10));
+                const wallType = this._getWallEnemyType();
+                for (let w = 0; w < maxWalls; w++) {
+                    if (Math.random() < wallChance) {
+                        this._spawnQueue.push(wallType + '_wall');
+                    }
+                }
+            }
+
             // Shuffle queue for variety within each wave
             for (let i = this._spawnQueue.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -6104,6 +6175,46 @@
                     });
                 }
                 this.enemiesSpawned++;
+                return;
+            }
+
+            // Coordinated wall — full row of enemies moving in sync
+            if (enemyType.endsWith('_wall')) {
+                const actualType = enemyType.replace('_wall', '');
+                const def = this.ENEMY_TYPES[actualType];
+                if (!def) return;
+                const groupId = ++this._wallGroupCounter;
+
+                // Determine lane positions to fill based on scenario
+                let lanePositions;
+                if (this._currentScenario === 'airplane' && this._layout && this._layout.dualDoor) {
+                    // Airplane: fill both aisles
+                    const lc = this._layout.leftAisleCenter;
+                    const rc = this._layout.rightAisleCenter;
+                    const hw = this._layout.aisleHalfWidth * 0.7;
+                    lanePositions = [lc - hw, lc, lc + hw, rc - hw, rc, rc + hw];
+                } else {
+                    const scale = this._layout ? this._layout.laneWidth / 30 : 1;
+                    lanePositions = [-6*scale, -3*scale, -1.5*scale, 0, 1.5*scale, 3*scale, 6*scale];
+                }
+
+                const spawnZ = CONFIG.spawnZoneZ;
+                // Use slowest speed in the row for sync
+                const wallSpeed = def.baseSpeed + def.speedVar * 0.3;
+                for (const lane of lanePositions) {
+                    this._createEnemy(actualType, def, {
+                        xOverride: lane,
+                        zOverride: spawnZ,
+                        targetLane: lane,
+                    });
+                    // Tag with wall group for sync movement
+                    const enemy = this.enemies[this.enemies.length - 1];
+                    enemy._wallGroupId = groupId;
+                    enemy.speed = wallSpeed * (1 + this.wave * 0.015) * (this._eventSpeedMult || 1.0);
+                }
+                this.enemiesSpawned++;
+                this._showCoordinatedPopup();
+                if (window.SFX) SFX.play('enemy_spawn');
                 return;
             }
 
@@ -7535,6 +7646,31 @@
                     this.enemies.splice(i, 1);
                     this.updateHUD();
                     continue;
+                }
+            }
+
+            // --- Sync coordinated wall formations ---
+            // Enemies in the same wall group stay aligned (slowest member sets the pace)
+            if (this._wallGroupCounter > 0) {
+                const wallGroups = {};
+                for (const e of this.enemies) {
+                    if (e._wallGroupId && !e.dying && e.stunTimer <= 0) {
+                        if (!wallGroups[e._wallGroupId]) wallGroups[e._wallGroupId] = [];
+                        wallGroups[e._wallGroupId].push(e);
+                    }
+                }
+                for (const gid in wallGroups) {
+                    const members = wallGroups[gid];
+                    if (members.length < 2) continue;
+                    // Align to the member furthest from toilet (highest Z = slowest)
+                    let maxZ = -Infinity;
+                    for (const m of members) {
+                        if (m.z > maxZ) maxZ = m.z;
+                    }
+                    for (const m of members) {
+                        m.z = maxZ;
+                        m.mesh.position.z = maxZ;
+                    }
                 }
             }
 
