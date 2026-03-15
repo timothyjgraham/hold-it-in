@@ -551,6 +551,10 @@
         _mopImpacts: [],
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
+        _controlledDemolitionBuff: 0,  // R26: cumulative +8% per sell
+        _devotionTypes: null,          // R23: Set of locked tower types (max 2)
+        _attritionTimer: 0,            // R32: seconds enemies have been alive this wave
+        _sellMode: false,              // Sell mode toggle
         _wallGroupCounter: 0,   // Coordinated wall formation ID counter
         _swarmGroupCounter: 0,  // Swarm group (girls/raccoons/etc.) ID counter
         _titleWaterActive: false,
@@ -2396,6 +2400,11 @@
 
                 // Tower hotkeys (work while paused too, not during upgrade/intro selection)
                 if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase) {
+                    // X key: sell tower at cursor
+                    if (e.code === 'KeyX') {
+                        this._trySellTowerAtCursor();
+                        return;
+                    }
                     for (const [key, def] of Object.entries(this.TOWERS)) {
                         if (e.code === def.hotkey) {
                             this.selectTower(key);
@@ -2902,17 +2911,31 @@
             document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
             document.getElementById('score-display').textContent = this.score;
 
-            // R14: Clearance Sale — update tower cost displays
-            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R14')) {
-                const costMult = this.upgradeManager.getModifier('towerCostMult');
+            // Update tower cost displays (R14 Clearance Sale, C19 Bargain Bin, R23 Devotion)
+            if (this.upgradeManager) {
+                const baseCostMult = this.upgradeManager.getModifier('towerCostMult');
                 document.querySelectorAll('.tower-btn').forEach(btn => {
                     const type = btn.dataset.tower;
                     const def = this.TOWERS[type];
                     if (def) {
-                        const discounted = Math.max(5, Math.floor(def.cost * costMult));
+                        let cost;
+                        if (type === 'potplant' && this.upgradeManager.hasUpgrade('C19')) {
+                            cost = 0;
+                        } else {
+                            let mult = baseCostMult;
+                            if (this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.has(type)) {
+                                mult *= 0.7;
+                            }
+                            cost = Math.max(5, Math.floor(def.cost * mult));
+                        }
                         const costEl = btn.querySelector('.cost');
-                        if (costEl) costEl.textContent = discounted;
-                        btn.dataset.tipCost = discounted;
+                        if (costEl) costEl.textContent = cost;
+                        btn.dataset.tipCost = cost;
+                        // R23: Devotion — grey out locked types
+                        if (this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.size >= 2 && !this._devotionTypes.has(type)) {
+                            btn.style.opacity = '0.35';
+                            btn.style.pointerEvents = 'none';
+                        }
                     }
                 });
             }
@@ -4278,9 +4301,37 @@
 
             const def = this.TOWERS[this.selectedTower];
             if (!def) return;
-            // R14: Clearance Sale — tower costs reduced
-            const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
-            const towerCost = Math.max(5, Math.floor(def.cost * costMult));
+
+            // R23: Devotion — block tower types outside the locked 2
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes) {
+                if (this._devotionTypes.size >= 2 && !this._devotionTypes.has(this.selectedTower)) {
+                    if (window.SFX) SFX.play('tower_deny');
+                    return;
+                }
+            }
+
+            // R24: Skeleton Crew — cap at 6 active towers
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R24')) {
+                const active = this.towers.filter(t => !t.dying && !t.delivering).length;
+                if (active >= 6) {
+                    if (window.SFX) SFX.play('tower_deny');
+                    return;
+                }
+            }
+
+            // Cost calculation: R14 Clearance Sale + R23 Devotion discount + C19 Bargain Bin
+            let costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+            // R23: Devotion — locked types cost 30% less
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.has(this.selectedTower)) {
+                costMult *= 0.7;
+            }
+            // C19: Bargain Bin — Pot Plants cost 0
+            let towerCost;
+            if (this.selectedTower === 'potplant' && this.upgradeManager && this.upgradeManager.hasUpgrade('C19')) {
+                towerCost = 0;
+            } else {
+                towerCost = Math.max(5, Math.floor(def.cost * costMult));
+            }
             if (this.coins < towerCost) {
                 if (window.SFX) SFX.play('tower_deny');
                 return;
@@ -4305,6 +4356,12 @@
             }
 
             this.coins -= towerCost;
+
+            // R23: Devotion — register placed tower type
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes) {
+                this._devotionTypes.add(this.selectedTower);
+            }
+
             // SFX: coin spend + tower type-specific placement
             if (window.SFX) {
                 SFX.play('coin_spend');
@@ -4413,6 +4470,91 @@
 
             // Remove from towers array immediately so it can't be interacted with
             this.towers.splice(index, 1);
+        },
+
+        // ============================
+        // SELL TOWER (R22 Recycler, R26 Controlled Demolition)
+        // ============================
+        _sellTower(index) {
+            const t = this.towers[index];
+            if (!t || t.dying || t.delivering) return;
+            const um = this.upgradeManager;
+
+            // Refund: R22 = 100%, default = 50%
+            const refundPct = (um && um.hasUpgrade('R22')) ? 1.0 : 0.5;
+            const costMult = um ? um.getModifier('towerCostMult') : 1.0;
+            const baseCost = Math.max(5, Math.floor(t.def.cost * costMult));
+            const refund = Math.floor(baseCost * refundPct);
+            this.coins += refund;
+            this._spawnCoinText(t.gridX, t.gridZ, refund);
+
+            // R22: Recycler — buff adjacent towers +10% damage
+            if (um && um.hasUpgrade('R22')) {
+                const gs = CONFIG.grid;
+                for (const o of this.towers) {
+                    if (o === t || o.dying || o.delivering) continue;
+                    const dx = Math.abs(o.gridX - t.gridX);
+                    const dz = Math.abs(o.gridZ - t.gridZ);
+                    if (dx <= gs + 0.5 && dz <= gs + 0.5) {
+                        o._recyclerBuff = (o._recyclerBuff || 0) + 0.1;
+                    }
+                }
+            }
+
+            // R26: Controlled Demolition — explosion + permanent global buff
+            if (um && um.hasUpgrade('R26')) {
+                const radius = 5;
+                for (const e of this.enemies) {
+                    if (e.dying) continue;
+                    const dx = e.x - t.gridX, dz = e.z - t.gridZ;
+                    if (dx * dx + dz * dz < radius * radius) {
+                        e.hp -= 20;
+                        e.hitFlash = 0.15;
+                        this._spawnDamageNumber(e.x, e.z, 20, '#ff6b7a');
+                    }
+                }
+                this._controlledDemolitionBuff += 0.08;
+                // Explosion VFX
+                this._spawnMopImpact(t.gridX, t.gridZ);
+                this._cameraShake = 0.2;
+                this._cameraShakeIntensity = 0.3;
+            }
+
+            if (window.SFX) SFX.play('tower_destroy');
+            // Removal animation (same as destroy but lighter)
+            const mesh = t.mesh;
+            const startTime = Date.now();
+            const animSell = () => {
+                const p = Math.min(1, (Date.now() - startTime) / 300);
+                const scale = 1 - p;
+                mesh.scale.set(scale, scale, scale);
+                mesh.position.y = p * 2;
+                mesh.traverse(c => {
+                    if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = 1 - p; }
+                });
+                if (p < 1) requestAnimationFrame(animSell);
+                else this.scene.remove(mesh);
+            };
+            animSell();
+            this.towers.splice(index, 1);
+            this.updateHUD();
+        },
+
+        _trySellTowerAtCursor() {
+            const pos = this._getGridPos();
+            if (!pos) return;
+            for (let i = 0; i < this.towers.length; i++) {
+                const t = this.towers[i];
+                if (t.dying || t.delivering) continue;
+                const tw = t.tileWidth || 1;
+                const gs = CONFIG.grid;
+                const halfSpan = tw * gs * 0.5;
+                if (pos.x >= t.gridX - halfSpan && pos.x <= t.gridX + halfSpan &&
+                    Math.abs(pos.z - t.gridZ) < gs * 0.6) {
+                    this._sellTower(i);
+                    return;
+                }
+            }
         },
 
         // ============================
@@ -5277,6 +5419,24 @@
             if (window.SFX) SFX.play('upgrade_acquire');
             this.upgradeManager.applyUpgrade(upgrade.id);
 
+            // L16: Loan Shark — instant 100 coins
+            if (upgrade.id === 'L16') {
+                this.coins += 100;
+                this._animateCoinGain(100);
+                this._spawnCoinText(0, 25, 100);
+                this.updateHUD();
+            }
+
+            // R23: Devotion — lock current tower types (first 2 types placed)
+            if (upgrade.id === 'R23' && !this._devotionTypes) {
+                const types = new Set();
+                for (const t of this.towers) {
+                    if (!t.dying && !t.delivering) types.add(t.type);
+                    if (types.size >= 2) break;
+                }
+                this._devotionTypes = types.size > 0 ? types : null;
+            }
+
             // L1: Double Flush — +4 max HP and full heal with juicy effect
             if (upgrade.id === 'L1' && this.doorGroup) {
                 const ud = this.doorGroup.userData;
@@ -6133,6 +6293,10 @@
                 if (type === 'coinmagnet') towerHP += this.upgradeManager.getModifier('magnetHP');
                 if (type === 'wetfloor')  towerHP = Math.round(towerHP * (1 + this.upgradeManager.getModifier('signHP')));
                 if (type === 'mop')       towerHP += this.upgradeManager.getModifier('mopHP');
+                // C17: Glass Cannon — all towers -50% HP
+                if (this.upgradeManager.hasUpgrade('C17')) towerHP = Math.max(1, Math.floor(towerHP * 0.5));
+                // C19: Bargain Bin — Pot Plants start with 1 HP
+                if (type === 'potplant' && this.upgradeManager.hasUpgrade('C19')) towerHP = 1;
             }
 
             return {
@@ -6245,6 +6409,12 @@
 
             // L12: Overtime — first 5s speed buffs
             this._overtimeTimer = (this.upgradeManager && this.upgradeManager.hasUpgrade('L12')) ? 5.0 : 0;
+
+            // R31: Rush Defense — 3s burst at wave start
+            this._rushDefenseTimer = (this.upgradeManager && this.upgradeManager.hasUpgrade('R31')) ? 3.0 : 0;
+
+            // R32: Attrition — reset per-wave timer
+            this._attritionTimer = 0;
 
             // L11: False Alarm — reset per-wave panicker inversion flag
             this._falseAlarmUsed = false;
@@ -6764,6 +6934,14 @@
             // L12: Overtime — decrement wave-start buff timer
             if (this._overtimeTimer > 0) this._overtimeTimer -= dt;
 
+            // R31: Rush Defense — decrement burst timer
+            if (this._rushDefenseTimer > 0) this._rushDefenseTimer -= dt;
+
+            // R32: Attrition — accumulate time while enemies are alive
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R32') && this.enemies.length > 0) {
+                this._attritionTimer += dt;
+            }
+
             // L2: Desperate Measures — cache door HP ratio check for this frame
             this._desperateMeasures = false;
             if (this.upgradeManager && this.upgradeManager.hasUpgrade('L2') && this.doorGroup) {
@@ -6800,9 +6978,24 @@
 
                     this.waveActive = false;
                     // Bonus coins — caps at wave 10 to pressure late-game economy
-                    const waveBonus = 8 + Math.min(this.wave, 8) * 2;
+                    let waveBonus = 8 + Math.min(this.wave, 8) * 2;
+                    // L16: Loan Shark — wave bonuses halved
+                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('L16')) {
+                        waveBonus = Math.floor(waveBonus * 0.5);
+                    }
                     this.coins += waveBonus;
                     this._animateCoinGain(waveBonus);
+
+                    // R25: Compound Interest — 10% of coins as bonus (cap 20)
+                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('R25')) {
+                        const interest = Math.min(20, Math.floor(this.coins * 0.1));
+                        if (interest > 0) {
+                            this.coins += interest;
+                            this._animateCoinGain(interest);
+                            this._spawnCoinText(3, 28, interest);
+                        }
+                    }
+
                     this.updateHUD();
                     if (window.SFX) { SFX.play('wave_clear'); SFX.play('coin_bonus'); }
                     if (!this._tutorialActive) {
@@ -6833,6 +7026,8 @@
 
                 let slowMult = 1.0;
                 e._inSlowZone = false; // R1: track per frame for Wet & Soapy
+                // R30: Sympathetic Damage — snapshot HP for delta tracking
+                if (e._hpLastFrame === undefined) e._hpLastFrame = e.hp;
 
                 // L12: Overtime — enemies half speed for first 5s of wave
                 if (this._overtimeTimer > 0) slowMult *= 0.5;
@@ -6919,7 +7114,28 @@
                             }
                         }
                     }
+                    // R29: Contagion — only spread from DIRECTLY slowed enemies (not contagion-slowed)
+                    if (e._inSlowZone && !e._contagionSlowed && this.upgradeManager && this.upgradeManager.hasUpgrade('R29')) {
+                        for (const other of this.enemies) {
+                            if (other === e || other.dying || other.slowImmune || other._inSlowZone) continue;
+                            const cdx = other.x - e.x, cdz = other.z - e.z;
+                            if (cdx * cdx + cdz * cdz < 16) { // 4-unit radius
+                                // 50% effectiveness of the slow applied to this enemy
+                                const contagionSlow = 1.0 - (1.0 - slowMult) * 0.5;
+                                other._contagionSlow = Math.min(other._contagionSlow || 1.0, contagionSlow);
+                            }
+                        }
+                    }
                 }
+
+                // R29: Contagion — apply contagion slow from nearby slowed enemies
+                e._contagionSlowed = false;
+                if (e._contagionSlow && e._contagionSlow < 1.0) {
+                    slowMult = Math.min(slowMult, e._contagionSlow);
+                    e._inSlowZone = true;
+                    e._contagionSlowed = true; // mark as contagion-slowed (won't spread further)
+                }
+                e._contagionSlow = 1.0; // reset for next frame
 
                 // Speed aura — panicker/fox/pirate/marshal make nearby enemies faster
                 // L11: False Alarm — inverted panickers slow nearby enemies instead
@@ -7538,7 +7754,7 @@
                                 const bashDmg = this.upgradeManager.getModifier('signBashDamage');
                                 if (bashDmg > 0) {
                                     // L2: Desperate Measures — 2x damage
-                                    const signDmg = bashDmg * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'wetfloor');
+                                    const signDmg = bashDmg * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'wetfloor') * this._getTowerDamageMult(bt, e);
                                     e.hp -= signDmg;
                                     e.hitFlash = 0.15;
                                     this._spawnDamageNumber(e.x, e.z, signDmg, '#e8d44a');
@@ -7879,11 +8095,37 @@
                         if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.15) {
                             this.coinPool.spawnCoins(e.x, e.z, drop.value * 3, 1, this.scene);
                         }
+
+                        // R19: Overkill Bonus — excess damage → coins
+                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R19') && e.hp < 0) {
+                            const overkill = Math.abs(e.hp);
+                            const bonusCoins = Math.floor(overkill / 5);
+                            if (bonusCoins > 0) {
+                                this.coinPool.spawnCoins(e.x, e.z, bonusCoins, 1, this.scene);
+                            }
+                        }
                     } else {
                         // Fallback: instant reward if CoinPool not loaded
                         this.coins += e.coins;
                         this._animateCoinGain(e.coins);
                         this._spawnCoinText(e.x, e.z, e.coins);
+                    }
+
+                    // L15: Chain Reaction — on kill, nearest tower in 12u fires immediately
+                    if (this.upgradeManager && this.upgradeManager.hasUpgrade('L15')) {
+                        let nearTower = null, nearDist2 = 144; // 12u squared
+                        for (const ct of this.towers) {
+                            if (ct.dying || ct.delivering || ct.type === 'wetfloor' || ct.type === 'potplant') continue;
+                            const dx = ct.gridX - e.x, dz = ct.gridZ - e.z;
+                            const d2 = dx * dx + dz * dz;
+                            if (d2 < nearDist2 && (!ct._chainReactionCooldown || ct._chainReactionCooldown <= 0)) {
+                                nearTower = ct; nearDist2 = d2;
+                            }
+                        }
+                        if (nearTower) {
+                            nearTower.attackTimer = 0; // Fire immediately on next frame
+                            nearTower._chainReactionCooldown = 2.0;
+                        }
                     }
 
                     // Death animation then queue for medic drone pickup
@@ -7966,6 +8208,34 @@
                 }
             }
 
+            // R30: Sympathetic Damage — after all enemy damage is applied, echo 15% to nearby
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R30')) {
+                // Track damage taken this frame via _hpLastFrame snapshots
+                const echos = [];
+                for (const e of this.enemies) {
+                    if (e.dying) continue;
+                    const lastHp = e._hpLastFrame !== undefined ? e._hpLastFrame : e.hp;
+                    const dmgTaken = lastHp - e.hp;
+                    if (dmgTaken > 0) {
+                        echos.push({ x: e.x, z: e.z, dmg: dmgTaken * 0.15, src: e });
+                    }
+                }
+                for (const echo of echos) {
+                    for (const e of this.enemies) {
+                        if (e === echo.src || e.dying) continue;
+                        const dx = e.x - echo.x, dz = e.z - echo.z;
+                        if (dx * dx + dz * dz < 16) { // 4-unit radius
+                            e.hp -= echo.dmg;
+                            e._dotAccum = (e._dotAccum || 0) + echo.dmg;
+                        }
+                    }
+                }
+                // Snapshot HP AFTER echoes — prevents echo-of-echo feedback
+                for (const e of this.enemies) {
+                    if (!e.dying) e._hpLastFrame = e.hp;
+                }
+            }
+
             // --- Sync coordinated wall formations ---
             // Enemies in the same wall group stay aligned (slowest member sets the pace)
             if (this._wallGroupCounter > 0) {
@@ -8038,6 +8308,8 @@
 
                 // L3: Plunger Protocol — decrement per-tower buff timer
                 if (t._plungerProtocolTimer > 0) t._plungerProtocolTimer -= dt;
+                // L15: Chain Reaction — decrement per-tower cooldown
+                if (t._chainReactionCooldown > 0) t._chainReactionCooldown -= dt;
 
                 // Hit shake animation
                 if (t.hitShake > 0) {
@@ -8155,7 +8427,7 @@
                                                 if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
                                             }
                                             if (nearest) {
-                                                const shrapDmg = 5 * this._crossfireMult(nearest, 'coinmagnet');
+                                                const shrapDmg = 5 * this._crossfireMult(nearest, 'coinmagnet') * this._getTowerDamageMult(t, nearest);
                                                 nearest.hp -= shrapDmg;
                                                 nearest.hitFlash = 0.15;
                                                 this._spawnDamageNumber(nearest.x, nearest.z, shrapDmg, '#f0a030');
@@ -8179,6 +8451,25 @@
                         }
                     }
 
+                    // C20: Static Charge — zap all enemies in range for DPS
+                    if (this.upgradeManager) {
+                        const staticDPS = this.upgradeManager.getModifier('staticChargeDPS');
+                        if (staticDPS > 0) {
+                            const magnetRange = t.def.range + (this.upgradeManager.getModifier('magnetRange') || 0);
+                            const mr2 = magnetRange * magnetRange;
+                            for (const e of this.enemies) {
+                                if (e.dying) continue;
+                                const sdx = e.x - t.gridX, sdz = e.z - t.gridZ;
+                                if (sdx * sdx + sdz * sdz < mr2) {
+                                    const zapDmg = staticDPS * dt * (this._desperateMeasures ? 2 : 1) * this._getTowerDamageMult(t, e);
+                                    e.hp -= zapDmg;
+                                    e._dotAccum = (e._dotAccum || 0) + zapDmg;
+                                    if (Math.random() < dt * 2) e.hitFlash = 0.06;
+                                }
+                            }
+                        }
+                    }
+
                     // Animate magnet rotation — juicy spin
                     const magnetHead = t.mesh.getObjectByName('magnetHead');
                     if (magnetHead) magnetHead.rotation.y += dt * 1.8;
@@ -8199,7 +8490,7 @@
                                 const pdz = e.z - t.gridZ;
                                 if (pdx * pdx + pdz * pdz < auraR2) {
                                     // L2: Desperate Measures — 2x damage
-                                    const cactusDmg = contactDPS * dt * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant');
+                                    const cactusDmg = contactDPS * dt * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(t, e);
                                     e.hp -= cactusDmg;
                                     e._dotAccum = (e._dotAccum || 0) + cactusDmg;
                                     if (Math.random() < dt * 2) e.hitFlash = 0.08;
@@ -8246,8 +8537,15 @@
                         const ubikSpeedDiv = (this._desperateMeasures ? 0.7 : 1.0)
                             * (t._plungerProtocolTimer > 0 ? (1/3) : 1.0)
                             * (_overtimeActive ? (1/3) : 1.0);
-                        t.attackTimer = t.def.attackRate * ubikCdMult * ubikSpeedDiv;
+                        let ubikCdFinal = t.def.attackRate * ubikCdMult * ubikSpeedDiv * this._getTowerSpeedMult(t);
                         this._fireSpray(t, ubikTarget);
+                        // R27: Double Shift — fire second spray, self-damage per attack
+                        if (this.upgradeManager && this.upgradeManager.hasUpgrade('R27')) {
+                            this._fireSpray(t, ubikTarget);
+                            t.hp -= 1;
+                            if (t.hp <= 0) { for (let di = 0; di < this.towers.length; di++) { if (this.towers[di] === t) { this._destroyTower(di); break; } } }
+                        }
+                        t.attackTimer = ubikCdFinal;
                     }
                     continue;
                 }
@@ -8284,7 +8582,14 @@
                             const mopSpeedDiv = (this._desperateMeasures ? 0.7 : 1.0)
                                 * (t._plungerProtocolTimer > 0 ? (1/3) : 1.0)
                                 * (_overtimeActive ? (1/3) : 1.0);
-                            t.attackTimer = t.def.attackRate * mopCdMult * mopSpeedDiv / mopMagnetBonus;
+                            let mopCdFinal = t.def.attackRate * mopCdMult * mopSpeedDiv * this._getTowerSpeedMult(t) / mopMagnetBonus;
+                            // R27: Double Shift — halve cooldown (2× attack rate), self-damage per cycle
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R27')) {
+                                mopCdFinal *= 0.5;
+                                t.hp -= 1;
+                                if (t.hp <= 0) { for (let di = 0; di < this.towers.length; di++) { if (this.towers[di] === t) { this._destroyTower(di); break; } } }
+                            }
+                            t.attackTimer = mopCdFinal;
                             t.sweepHitEnemies = null;
                             if (mopArm) mopArm.rotation.y = t.mopAngle;
                         } else {
@@ -8333,7 +8638,7 @@
 
                                     // Low damage — crowd control focus
                                     // L2: Desperate Measures — 2x damage when door HP < 50%
-                                    const mopDmg = (t.def.damage + mopBonusDmg) * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'mop');
+                                    const mopDmg = (t.def.damage + mopBonusDmg) * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'mop') * this._getTowerDamageMult(t, e);
                                     e.hp -= mopDmg;
                                     e.hitFlash = 0.15;
                                     this._spawnDamageNumber(e.x, e.z, mopDmg, '#9b59b6');
@@ -8690,6 +8995,7 @@
                 dirX: ndx,             // Spray direction (unit vector)
                 dirZ: ndz,
                 damage: Math.round(def.damage * ubikDmgMult),
+                sourceTower: tower,    // Reference for damage multipliers
                 life: duration,
                 maxLife: duration,
                 width: (def.sprayWidth || 2.0) * ubikWidthMult,
@@ -8750,7 +9056,7 @@
                             const eDef = this.ENEMY_TYPES[e.type] || {};
                             const sprayMult = 1.0 - (eDef.sprayResist || 0);
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            const ubikDmg = s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'ubik');
+                            const ubikDmg = s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'ubik') * this._getTowerDamageMult(s.sourceTower, e);
                             e.hp -= ubikDmg;
                             e.hitFlash = 0.15;
                             e._impactSquash = 0.18;
@@ -8859,6 +9165,111 @@
             if (!enemy._crossfireTypes) return 1;
             enemy._crossfireTypes[towerType] = 1.0; // 1s window
             return Object.keys(enemy._crossfireTypes).length >= 2 ? 1.4 : 1;
+        },
+
+        // Central damage multiplier for all passive upgrade effects
+        // Called at every damage application point alongside _desperateMeasures and _crossfireMult
+        _getTowerDamageMult(tower, enemy) {
+            const um = this.upgradeManager;
+            if (!um) return 1.0;
+            let mult = 1.0;
+
+            // C17: Glass Cannon — +80% damage
+            if (um.hasUpgrade('C17')) mult *= 1.8;
+            // C18: Slow and Steady — +60% damage
+            if (um.hasUpgrade('C18')) mult *= 1.6;
+            // R17: Marked for Death — slowed enemies take +40% from all sources
+            if (enemy && enemy._inSlowZone && um.hasUpgrade('R17')) mult *= 1.4;
+            // R18: Crowd Surfing — enemies near 2+ others take +30% damage
+            if (enemy && um.hasUpgrade('R18')) {
+                let nearby = 0;
+                for (const o of this.enemies) {
+                    if (o === enemy || o.dying) continue;
+                    const dx = o.x - enemy.x, dz = o.z - enemy.z;
+                    if (dx * dx + dz * dz < 9) { nearby++; if (nearby >= 2) break; }
+                }
+                if (nearby >= 2) mult *= 1.3;
+            }
+            // R21: Specialist — +15% per tower type NOT owned
+            if (um.hasUpgrade('R21')) {
+                const ownedTypes = new Set();
+                for (const t of this.towers) { if (!t.dying && !t.delivering) ownedTypes.add(t.type); }
+                const totalTypes = Object.keys(this.TOWERS).length;
+                const missing = totalTypes - ownedTypes.size;
+                mult *= 1 + missing * 0.15;
+            }
+            // R23: Devotion — locked types get +60% damage
+            if (tower && um.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.has(tower.type)) {
+                mult *= 1.6;
+            }
+            // R24: Skeleton Crew — +25% per empty slot (max 6 towers)
+            if (um.hasUpgrade('R24')) {
+                const active = this.towers.filter(t => !t.dying && !t.delivering).length;
+                const empty = Math.max(0, 6 - active);
+                mult *= 1 + empty * 0.25;
+            }
+            // R28: Danger Pay — front rows +80%, back rows -20%
+            if (tower && um.hasUpgrade('R28')) {
+                const spawnZ = (this._layout && this._layout.spawnZ) || CONFIG.spawnZoneZ || 69;
+                const doorZ = (this._layout && this._layout.doorZ) || 9;
+                const fieldDepth = spawnZ - doorZ;
+                const frontThreshold = spawnZ - fieldDepth * 0.3; // top 30% of field
+                if (tower.gridZ >= frontThreshold) mult *= 1.8;
+                else mult *= 0.8;
+            }
+            // R30: Sympathetic Damage — handled separately (damage echo, not mult)
+            // R31: Rush Defense — burst vs penalty phase
+            if (um.hasUpgrade('R31')) {
+                if (this._rushDefenseTimer > 0) mult *= 3.0;
+                else mult *= 0.85;
+            }
+            // R32: Attrition — +5%/sec enemies alive, cap 80%
+            if (um.hasUpgrade('R32')) {
+                mult *= 1 + Math.min(this._attritionTimer * 0.05, 0.8);
+            }
+            // R26: Controlled Demolition — cumulative permanent buff
+            if (this._controlledDemolitionBuff > 0) mult *= (1 + this._controlledDemolitionBuff);
+            // L13: Minimalist — ≤4 towers = 2.5× damage
+            if (um.hasUpgrade('L13')) {
+                const active = this.towers.filter(t => !t.dying && !t.delivering).length;
+                if (active <= 4) mult *= 2.5;
+            }
+            // L14: Hoarder — +12% per 50 unspent coins
+            if (um.hasUpgrade('L14')) {
+                mult *= 1 + Math.floor(this.coins / 50) * 0.12;
+            }
+            // L17: Assembly Line — +20% per adjacent tower in a straight row
+            if (tower && um.hasUpgrade('L17')) {
+                const gs = CONFIG.grid;
+                let lineCount = 0;
+                for (const o of this.towers) {
+                    if (o === tower || o.dying || o.delivering) continue;
+                    if (Math.abs(o.gridZ - tower.gridZ) < 0.5 && Math.abs(o.gridX - tower.gridX) <= gs + 0.5) {
+                        lineCount++;
+                    }
+                }
+                mult *= 1 + lineCount * 0.2;
+            }
+            // L18: Last Stand — tower at 1 HP = 3× damage
+            if (tower && um.hasUpgrade('L18') && tower.hp <= 1) mult *= 3.0;
+            // R22: Recycler per-tower buff (accumulated from adjacent sells)
+            if (tower && tower._recyclerBuff) mult *= (1 + tower._recyclerBuff);
+
+            return mult;
+        },
+
+        // Central speed multiplier for tower attack cooldowns
+        _getTowerSpeedMult(tower) {
+            const um = this.upgradeManager;
+            if (!um) return 1.0;
+            let cooldownMult = 1.0;
+
+            // C18: Slow and Steady — 40% slower attacks
+            if (um.hasUpgrade('C18')) cooldownMult *= 1.4;
+            // L18: Last Stand — 50% faster at 1 HP (÷1.5 cooldown)
+            if (tower && um.hasUpgrade('L18') && tower.hp <= 1) cooldownMult /= 1.5;
+
+            return cooldownMult;
         },
 
         _createSpillZone(x, z) {
@@ -9026,8 +9437,14 @@
             const gs = CONFIG.grid;
             const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
             const halfW = Math.floor(laneW / gs / 2) * gs;
-            const hoverCostMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
-            let canPlace = this.coins >= Math.max(5, Math.floor(def.cost * hoverCostMult));
+            let hoverCostMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.has(this.selectedTower)) hoverCostMult *= 0.7;
+            let hoverCost = (this.selectedTower === 'potplant' && this.upgradeManager && this.upgradeManager.hasUpgrade('C19')) ? 0 : Math.max(5, Math.floor(def.cost * hoverCostMult));
+            let canPlace = this.coins >= hoverCost;
+            // R23: Devotion — block unlocked types
+            if (canPlace && this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.size >= 2 && !this._devotionTypes.has(this.selectedTower)) canPlace = false;
+            // R24: Skeleton Crew — cap at 6
+            if (canPlace && this.upgradeManager && this.upgradeManager.hasUpgrade('R24') && this.towers.filter(t => !t.dying && !t.delivering).length >= 6) canPlace = false;
             for (let dx = 0; dx < tw && canPlace; dx++) {
                 const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
                 if (cellX < -halfW || cellX > halfW || this._isCellOccupied(cellX, pos.z)) {
@@ -10049,7 +10466,7 @@
                             sp.hitEnemies.add(e);
                             if (window.SFX) { SFX.play('pot_kick'); SFX.play('stun_impact'); }
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            const tripDmg = sp.tripDamage * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant');
+                            const tripDmg = sp.tripDamage * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(null, e);
                             e.hp -= tripDmg;
                             e.hitFlash = 0.15;
                             this._spawnDamageNumber(e.x, e.z, tripDmg, '#c4663a');
@@ -10079,6 +10496,20 @@
                                         other.stunTimer = 0.9; // half-duration stun
                                         // wobble stun, no face-plant (tripFallDuration stays 0)
                                         if (other.bashing) { other.bashing = false; other.bashingBarrier = null; }
+                                    }
+                                }
+                            }
+
+                            // R20: Aftershock — 8-damage AoE on trip in 3-unit radius
+                            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R20')) {
+                                for (const other of this.enemies) {
+                                    if (other === e || other.dying) continue;
+                                    const adx = other.x - e.x, adz = other.z - e.z;
+                                    if (adx * adx + adz * adz < 9) {
+                                        const afterDmg = 8 * (this._desperateMeasures ? 2 : 1);
+                                        other.hp -= afterDmg;
+                                        other.hitFlash = 0.15;
+                                        this._spawnDamageNumber(other.x, other.z, afterDmg, '#c4663a');
                                     }
                                 }
                             }

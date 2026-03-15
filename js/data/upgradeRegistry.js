@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — Upgrade Registry                                            ║
-// ║  Master list of all 60 upgrades. Pure data — no game logic here.          ║
+// ║  Master list of all 70 upgrades. Pure data — no game logic here.          ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 // Tower type keys match Game.TOWERS: coinmagnet, wetfloor, mop, ubik, potplant
@@ -245,7 +245,7 @@ export const COMMON_UPGRADES = [
     },
 ];
 
-// ─── RARE TIER — Synergies & Strong Effects (22) ────────────────────────────
+// ─── RARE TIER — Synergies & Strong Effects (32) ────────────────────────────
 
 export const RARE_UPGRADES = [
     // Tower-Tower Synergies
@@ -497,6 +497,132 @@ export const RARE_UPGRADES = [
         maxStacks: 1,
         effectFn: null,
     },
+
+    // ── Build-Defining Upgrades — Balatro-style "this IS my run now" ──────
+
+    {
+        id: 'R23',
+        name: 'Devotion',
+        description: 'Lock in 2 tower types for the run. Those types deal +60% damage and cost 30% less.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R24',
+        name: 'Skeleton Crew',
+        description: 'Max 6 towers on the field. Each empty slot gives all towers +25% damage.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        exclusive: 'L13',  // mutually exclusive with Minimalist
+        effectFn: null,
+    },
+    {
+        id: 'R25',
+        name: 'Compound Interest',
+        description: 'End of each wave: gain 10% of your coins as bonus (max 20 per wave).',
+        rarity: 'rare',
+        icon: 'coin',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R26',
+        name: 'Controlled Demolition',
+        description: 'Selling a tower detonates it for 20 damage (5-unit blast) and permanently gives all towers +8% damage.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R27',
+        name: 'Double Shift',
+        description: 'All towers attack TWICE per cycle, but take 1 self-damage per attack.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R28',
+        name: 'Danger Pay',
+        description: 'Towers in the front 3 rows deal +80% damage. Towers in the back rows deal −20%.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R29',
+        name: 'Contagion',
+        description: 'Slow effects spread to enemies within 4 units of a slowed enemy (50% effectiveness).',
+        rarity: 'rare',
+        icon: 'sign',
+        towerRequirement: ['wetfloor'],
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R30',
+        name: 'Sympathetic Damage',
+        description: 'When an enemy takes damage, all enemies within 4 units take 15% of that damage.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        effectFn: null,
+    },
+    {
+        id: 'R31',
+        name: 'Rush Defense',
+        description: 'First 3s of each wave: all towers deal 3× damage. After that: −15% for the rest.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        exclusive: 'R32',  // mutually exclusive with Attrition
+        effectFn: null,
+    },
+    {
+        id: 'R32',
+        name: 'Attrition',
+        description: 'Towers gain +5% damage per second enemies are alive (caps at +80%). Resets each wave.',
+        rarity: 'rare',
+        icon: 'star',
+        towerRequirement: null,  // general
+        stackable: false,
+        maxStacks: 1,
+        buildDefining: true,
+        exclusive: 'R31',  // mutually exclusive with Rush Defense
+        effectFn: null,
+    },
 ];
 
 // ─── LEGENDARY TIER — Weird Rules & Build Definers (18) ─────────────────────
@@ -645,6 +771,7 @@ export const LEGENDARY_UPGRADES = [
         towerRequirement: null,  // general
         stackable: false,
         maxStacks: 1,
+        exclusive: 'R24',  // mutually exclusive with Skeleton Crew
         effectFn: null,
     },
     {

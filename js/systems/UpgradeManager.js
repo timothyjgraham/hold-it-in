@@ -151,6 +151,92 @@ export class UpgradeManager {
             case 'potReturnToOrigin':
                 return this.hasUpgrade('C15') ? 1 : 0;        // C15: Spring-Loaded Pot
 
+            // ─── Build-Defining Upgrades (R23-R32) ───
+
+            // R23: Devotion — lock to 2 tower types, +60% dmg, -30% cost
+            case 'devotionActive':
+                return this.hasUpgrade('R23') ? 1 : 0;
+            case 'devotionDamageMult':
+                return this.hasUpgrade('R23') ? 1.6 : 1.0;
+            case 'devotionCostMult':
+                return this.hasUpgrade('R23') ? 0.7 : 1.0;
+
+            // R24: Skeleton Crew — max 6 towers, +25% dmg per empty slot
+            case 'skeletonCrewActive':
+                return this.hasUpgrade('R24') ? 1 : 0;
+            case 'skeletonCrewMaxTowers':
+                return this.hasUpgrade('R24') ? 6 : 0;
+            case 'skeletonCrewDamagePerSlot':
+                return this.hasUpgrade('R24') ? 0.25 : 0;     // +25% per empty slot
+
+            // R25: Compound Interest — 10% of coins as wave-end bonus
+            case 'compoundInterestActive':
+                return this.hasUpgrade('R25') ? 1 : 0;
+            case 'compoundInterestRate':
+                return this.hasUpgrade('R25') ? 0.10 : 0;
+            case 'compoundInterestCap':
+                return this.hasUpgrade('R25') ? 20 : 0;
+
+            // R26: Controlled Demolition — sell = explode + permanent buff
+            case 'controlledDemolitionActive':
+                return this.hasUpgrade('R26') ? 1 : 0;
+            case 'controlledDemolitionDamage':
+                return this.hasUpgrade('R26') ? 20 : 0;
+            case 'controlledDemolitionRadius':
+                return this.hasUpgrade('R26') ? 5 : 0;
+            case 'controlledDemolitionBuff':
+                return this.hasUpgrade('R26') ? 0.08 : 0;     // +8% permanent per sell
+
+            // R27: Double Shift — attack twice, 1 self-damage per attack
+            case 'doubleShiftActive':
+                return this.hasUpgrade('R27') ? 1 : 0;
+            case 'doubleShiftSelfDamage':
+                return this.hasUpgrade('R27') ? 1 : 0;
+
+            // R28: Danger Pay — front rows +80%, back rows -20%
+            case 'dangerPayActive':
+                return this.hasUpgrade('R28') ? 1 : 0;
+            case 'dangerPayFrontMult':
+                return this.hasUpgrade('R28') ? 1.8 : 1.0;
+            case 'dangerPayBackMult':
+                return this.hasUpgrade('R28') ? 0.8 : 1.0;
+            case 'dangerPayFrontRows':
+                return this.hasUpgrade('R28') ? 3 : 0;        // first 3 rows from spawn
+
+            // R29: Contagion — slow spreads to nearby enemies
+            case 'contagionActive':
+                return this.hasUpgrade('R29') ? 1 : 0;
+            case 'contagionRadius':
+                return this.hasUpgrade('R29') ? 4 : 0;
+            case 'contagionEffectiveness':
+                return this.hasUpgrade('R29') ? 0.5 : 0;      // 50% of original slow
+
+            // R30: Sympathetic Damage — damage splashes 15% to nearby
+            case 'sympatheticDamageActive':
+                return this.hasUpgrade('R30') ? 1 : 0;
+            case 'sympatheticDamageRadius':
+                return this.hasUpgrade('R30') ? 4 : 0;
+            case 'sympatheticDamagePct':
+                return this.hasUpgrade('R30') ? 0.15 : 0;     // 15% splash
+
+            // R31: Rush Defense — 3s burst, then -15% penalty
+            case 'rushDefenseActive':
+                return this.hasUpgrade('R31') ? 1 : 0;
+            case 'rushDefenseBurstMult':
+                return this.hasUpgrade('R31') ? 3.0 : 1.0;
+            case 'rushDefenseBurstDuration':
+                return this.hasUpgrade('R31') ? 3 : 0;        // 3 seconds
+            case 'rushDefensePenaltyMult':
+                return this.hasUpgrade('R31') ? 0.85 : 1.0;
+
+            // R32: Attrition — +5%/sec while enemies alive, caps +80%
+            case 'attritionActive':
+                return this.hasUpgrade('R32') ? 1 : 0;
+            case 'attritionPerSecond':
+                return this.hasUpgrade('R32') ? 0.05 : 0;     // +5% per second
+            case 'attritionCap':
+                return this.hasUpgrade('R32') ? 0.80 : 0;     // max +80%
+
             default:
                 return 0;
         }
@@ -170,6 +256,12 @@ export class UpgradeManager {
         // Check if already maxed
         if (current >= upgrade.maxStacks) {
             console.warn(`UpgradeManager: "${id}" already at max stacks (${upgrade.maxStacks})`);
+            return false;
+        }
+
+        // Enforce exclusive pairs
+        if (upgrade.exclusive && this.hasUpgrade(upgrade.exclusive)) {
+            console.warn(`UpgradeManager: "${id}" blocked by exclusive "${upgrade.exclusive}"`);
             return false;
         }
 
