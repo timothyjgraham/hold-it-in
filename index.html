@@ -4577,6 +4577,7 @@
                     const dx = e.x - t.gridX, dz = e.z - t.gridZ;
                     if (dx * dx + dz * dz < radius * radius) {
                         e.hp -= 20;
+                        e._killSource = 'tower';
                         e.hitFlash = 0.15;
                         this._spawnDamageNumber(e.x, e.z, 20, '#ff6b7a');
                     }
@@ -4693,10 +4694,12 @@
             if (kickerDef && kickerDef.tripImmune) {
                 // tripImmune: takes damage but no stun
                 kicker.hp -= def.tripDamage;
+                kicker._killSource = 'trip';
                 kicker.hitFlash = 0.15;
             } else {
                 if (window.SFX) { SFX.play('pot_trip'); SFX.play('stun_impact'); }
                 kicker.hp -= def.tripDamage;
+                kicker._killSource = 'trip';
                 kicker.hitFlash = 0.15;
                 kicker.stunTimer = def.stunDuration;
                 kicker.tripFallDuration = def.stunDuration;
@@ -7170,6 +7173,7 @@
                                 slowMult = Math.min(slowMult, 0.6); // 40% slow
                                 e._inSlowZone = true;
                                 e.hp -= 3 * dt; // 3 dps
+                                e._killSource = 'zone';
                                 e._dotAccum = (e._dotAccum || 0) + 3 * dt;
                                 break;
                             }
@@ -7186,6 +7190,7 @@
                             if (fdx * fdx + fdz * fdz < fz.radius * fz.radius) {
                                 const floodDmg = 2 * floodSprayMult * dt;
                                 e.hp -= floodDmg; // 2 dps (reduced by sprayResist)
+                                e._killSource = 'zone';
                                 e._dotAccum = (e._dotAccum || 0) + floodDmg;
                                 break;
                             }
@@ -7252,7 +7257,9 @@
                                 e.tripFallDuration = 1.5;
                                 other.tripFallDuration = 1.5;
                                 e.hp -= 10;
+                                e._killSource = 'pileup';
                                 other.hp -= 10;
+                                other._killSource = 'pileup';
                                 e.hitFlash = 0.15;
                                 other.hitFlash = 0.15;
                                 this._spawnDamageNumber(e.x, e.z, 10, '#faf5ef');
@@ -7280,6 +7287,7 @@
                             const tdz = e.z - t.gridZ;
                             if (tdx * tdx + tdz * tdz < 2.25) { // 1.5 unit radius
                                 e.hp -= 15;
+                                e._killSource = 'knockback';
                                 e.hitFlash = 0.15;
                                 this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
                                 e._nuclearMop = false;
@@ -7310,6 +7318,7 @@
                     // L8: Nuclear Mop — wall/boundary collision damage
                     if (e._nuclearMop && (e.x !== preClampX || e.z !== preClampZ)) {
                         e.hp -= 15;
+                        e._killSource = 'knockback';
                         e.hitFlash = 0.15;
                         this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
                         e._nuclearMop = false;
@@ -7420,6 +7429,7 @@
                         if (ddx * ddx + ddz * ddz < hitR * hitR) {
                             if (e._dominoHitEnemies) e._dominoHitEnemies.add(other);
                             other.hp -= e._dominoDamage || 1;
+                            other._killSource = 'domino';
                             other.hitFlash = 0.15;
                             other.stunTimer = 1.2;
                             other.tripFallDuration = 1.2;
@@ -7827,6 +7837,7 @@
                                     // L2: Desperate Measures — 2x damage
                                     const signDmg = bashDmg * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'wetfloor') * this._getTowerDamageMult(bt, e);
                                     e.hp -= signDmg;
+                                    e._killSource = 'tower';
                                     e.hitFlash = 0.15;
                                     this._spawnDamageNumber(e.x, e.z, signDmg, '#e8d44a');
                                 }
@@ -8351,6 +8362,7 @@
                         const dx = e.x - echo.x, dz = e.z - echo.z;
                         if (dx * dx + dz * dz < 16) { // 4-unit radius
                             e.hp -= echo.dmg;
+                            e._killSource = 'sympathetic';
                             e._dotAccum = (e._dotAccum || 0) + echo.dmg;
                         }
                     }
@@ -8554,6 +8566,7 @@
                                             if (nearest) {
                                                 const shrapDmg = 5 * this._crossfireMult(nearest, 'coinmagnet') * this._getTowerDamageMult(t, nearest);
                                                 nearest.hp -= shrapDmg;
+                                                nearest._killSource = 'tower';
                                                 nearest.hitFlash = 0.15;
                                                 this._spawnDamageNumber(nearest.x, nearest.z, shrapDmg, '#f0a030');
                                                 if (nearest.animController && !nearest.dying) nearest.animController.playOneShot('hit_react');
@@ -8588,6 +8601,7 @@
                                 if (sdx * sdx + sdz * sdz < mr2) {
                                     const zapDmg = staticDPS * dt * (this._desperateMeasures ? 2 : 1) * this._getTowerDamageMult(t, e);
                                     e.hp -= zapDmg;
+                                    e._killSource = 'tower';
                                     e._dotAccum = (e._dotAccum || 0) + zapDmg;
                                     if (Math.random() < dt * 2) e.hitFlash = 0.06;
                                 }
@@ -8617,6 +8631,7 @@
                                     // L2: Desperate Measures — 2x damage
                                     const cactusDmg = contactDPS * dt * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(t, e);
                                     e.hp -= cactusDmg;
+                                    e._killSource = 'tower';
                                     e._dotAccum = (e._dotAccum || 0) + cactusDmg;
                                     if (Math.random() < dt * 2) e.hitFlash = 0.08;
                                 }
@@ -8765,6 +8780,7 @@
                                     // L2: Desperate Measures — 2x damage when door HP < 50%
                                     const mopDmg = (t.def.damage + mopBonusDmg) * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'mop') * this._getTowerDamageMult(t, e);
                                     e.hp -= mopDmg;
+                                    e._killSource = 'tower';
                                     e.hitFlash = 0.15;
                                     this._spawnDamageNumber(e.x, e.z, mopDmg, '#9b59b6');
 
@@ -8911,6 +8927,7 @@
                     const dist = Math.sqrt(dx * dx + dz * dz);
                     if (dist < e.size + 0.3) {
                         e.hp -= p.damage;
+                        e._killSource = 'tower';
                         e.hitFlash = 0.15;
                         // Hit react animation (additive layer)
                         if (e.animController && !e.dying) {
@@ -9191,6 +9208,7 @@
                             // L2: Desperate Measures — 2x damage when door HP < 50%
                             const ubikDmg = s.damage * dmgMult * sprayMult * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'ubik') * this._getTowerDamageMult(s.sourceTower, e);
                             e.hp -= ubikDmg;
+                            e._killSource = 'tower';
                             e.hitFlash = 0.15;
                             e._impactSquash = 0.18;
                             this._spawnDamageNumber(e.x, e.z, ubikDmg, '#6bcb77');
@@ -9479,6 +9497,7 @@
                 const dz = target.z - z;
                 if (dx * dx + dz * dz < burstRadiusSq) {
                     target.hp -= burstDmg;
+                    target._killSource = 'burst';
                     target.hitFlash = 0.15;
                     // Spawn damage number
                     this._spawnDamageNumber(target.x, target.z, Math.round(burstDmg), '#f0e040');
@@ -10843,6 +10862,7 @@
                             // L2: Desperate Measures — 2x damage when door HP < 50%
                             const tripDmg = sp.tripDamage * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(null, e);
                             e.hp -= tripDmg;
+                            e._killSource = 'trip';
                             e.hitFlash = 0.15;
                             this._spawnDamageNumber(e.x, e.z, tripDmg, '#c4663a');
                             e.stunTimer = sp.stunDuration;
@@ -10883,6 +10903,7 @@
                                     if (adx * adx + adz * adz < 9) {
                                         const afterDmg = 8 * (this._desperateMeasures ? 2 : 1);
                                         other.hp -= afterDmg;
+                                        other._killSource = 'trip';
                                         other.hitFlash = 0.15;
                                         this._spawnDamageNumber(other.x, other.z, afterDmg, '#c4663a');
                                     }
