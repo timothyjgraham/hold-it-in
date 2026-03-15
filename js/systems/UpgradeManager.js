@@ -270,23 +270,37 @@ export class UpgradeManager {
 
     /**
      * Determine rarity for each of the 3 slots based on wave number.
-     * Returns array of 3 rarity strings.
+     * Every slot is independently rolled — any rarity can appear at any wave.
+     * Legendary is always possible (Balatro-style lottery tension).
+     * Rates shift toward rarer pulls as waves progress.
      */
     _getRaritySlots(wave) {
-        if (wave <= 5) {
-            // Waves 1-5: 3 Common
-            return ['common', 'common', 'common'];
-        } else if (wave <= 10) {
-            // Waves 6-10: guaranteed 2C + 1R, slot 3 rolls 70%C/30%R
-            const slot3 = Math.random() < 0.3 ? 'rare' : 'common';
-            return ['common', 'rare', slot3];
-        } else if (wave <= 15) {
-            // Waves 11-15: 1C + 1R guaranteed, slot 3: 50%C / 40%R / 10%L
-            return ['common', 'rare', this._rollSlot(0.50, 0.40, 0.10)];
+        // Base rates that shift with wave progression
+        // Early: mostly common, small rare/legendary chance
+        // Late: common still anchors, but rare/legendary become frequent
+        let cRate, rRate, lRate;
+        if (wave <= 3) {
+            // Waves 1-3: heavy common, but legendary is possible
+            cRate = 0.82; rRate = 0.15; lRate = 0.03;
+        } else if (wave <= 7) {
+            // Waves 4-7: rares become noticeable
+            cRate = 0.65; rRate = 0.28; lRate = 0.07;
+        } else if (wave <= 12) {
+            // Waves 8-12: solid rare presence, legendary creeping up
+            cRate = 0.50; rRate = 0.35; lRate = 0.15;
+        } else if (wave <= 18) {
+            // Waves 13-18: late-game ramp
+            cRate = 0.38; rRate = 0.37; lRate = 0.25;
         } else {
-            // Waves 16+: 1C + 1R guaranteed, slot 3: 40%C / 35%R / 25%L
-            return ['common', 'rare', this._rollSlot(0.40, 0.35, 0.25)];
+            // Waves 19+: endgame — legendaries are common treats
+            cRate = 0.30; rRate = 0.38; lRate = 0.32;
         }
+
+        return [
+            this._rollSlot(cRate, rRate, lRate),
+            this._rollSlot(cRate, rRate, lRate),
+            this._rollSlot(cRate, rRate, lRate),
+        ];
     }
 
     _rollSlot(commonChance, rareChance, _legendaryChance) {

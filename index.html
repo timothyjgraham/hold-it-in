@@ -5431,6 +5431,24 @@
             );
         },
 
+        /** Inject CSS keyframes for rarity glow animations (once) */
+        _ensureUpgradeGlowCSS() {
+            if (document.getElementById('upgrade-glow-css')) return;
+            const style = document.createElement('style');
+            style.id = 'upgrade-glow-css';
+            style.textContent = `
+                @keyframes upgrade-legendary-pulse {
+                    0%, 100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 10px rgba(255,217,61,0.45), inset 0 0 6px rgba(255,217,61,0.1); }
+                    50%      { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 18px rgba(255,217,61,0.75), inset 0 0 10px rgba(255,217,61,0.2); }
+                }
+                @keyframes upgrade-rare-glow {
+                    0%, 100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 8px rgba(155,142,196,0.35), inset 0 0 4px rgba(155,142,196,0.1); }
+                    50%      { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 14px rgba(155,142,196,0.6), inset 0 0 8px rgba(155,142,196,0.18); }
+                }
+            `;
+            document.head.appendChild(style);
+        },
+
         /** Ensure the persistent upgrade HUD bar exists in bottom-left */
         _ensureUpgradeHUD() {
             if (this._upgradeHUD) return this._upgradeHUD;
@@ -5478,6 +5496,7 @@
 
         /** Add a card to the upgrade HUD bar for an acquired upgrade */
         _addUpgradeCard(upgrade) {
+            this._ensureUpgradeGlowCSS();
             const hud = this._ensureUpgradeHUD();
             const tip = this._upgradeHUDTip;
 
@@ -5491,22 +5510,38 @@
                 rare: '#ede8f5',
                 legendary: '#fff5d0',
             };
+            const rarityBorderWidth = {
+                common: '3px',
+                rare: '3.5px',
+                legendary: '4px',
+            };
+            const rarityShadow = {
+                common: '2px 3px 0px rgba(0,0,0,0.2)',
+                rare: '2px 3px 0px rgba(0,0,0,0.2), 0 0 10px rgba(155,142,196,0.5), inset 0 0 6px rgba(155,142,196,0.15)',
+                legendary: '2px 3px 0px rgba(0,0,0,0.2), 0 0 14px rgba(255,217,61,0.6), inset 0 0 8px rgba(255,217,61,0.15)',
+            };
 
             // Create icon data URL using canvas icon system
             const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 96) : '';
 
+            const rarity = upgrade.rarity || 'common';
             const card = document.createElement('div');
             card.className = 'upgrade-hud-card';
             card.style.cssText = `
                 width: 72px; height: 72px;
-                border: 3px solid ${rarityBorders[upgrade.rarity] || rarityBorders.common};
+                border: ${rarityBorderWidth[rarity]} solid ${rarityBorders[rarity] || rarityBorders.common};
                 border-radius: 10px;
-                background: ${rarityBg[upgrade.rarity] || rarityBg.common};
+                background: ${rarityBg[rarity] || rarityBg.common};
                 display: flex; align-items: center; justify-content: center;
                 cursor: pointer;
                 transition: transform 0.15s, box-shadow 0.15s;
-                box-shadow: 2px 3px 0px rgba(0,0,0,0.2);
+                box-shadow: ${rarityShadow[rarity] || rarityShadow.common};
             `;
+            if (rarity === 'legendary') {
+                card.style.animation = 'upgrade-legendary-pulse 2.2s ease-in-out infinite';
+            } else if (rarity === 'rare') {
+                card.style.animation = 'upgrade-rare-glow 3s ease-in-out infinite';
+            }
             // Pop-in animation
             card.style.transform = 'scale(0)';
             void card.offsetWidth;
@@ -5522,9 +5557,13 @@
             }
 
             // Hover: show tooltip to the right of card
+            const baseBoxShadow = rarityShadow[rarity] || rarityShadow.common;
+            const hoverGlowExtra = rarity === 'legendary' ? ', 0 0 22px rgba(255,217,61,0.7)'
+                                 : rarity === 'rare' ? ', 0 0 16px rgba(155,142,196,0.6)'
+                                 : '';
             card.addEventListener('mouseenter', () => {
                 card.style.transform = 'scale(1.15)';
-                card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)' + hoverGlowExtra;
                 tip.innerHTML = `<b>${upgrade.name}</b><br>${upgrade.description}`;
                 const rect = card.getBoundingClientRect();
                 tip.style.left = (rect.right + 8) + 'px';
@@ -5534,7 +5573,7 @@
             });
             card.addEventListener('mouseleave', () => {
                 card.style.transform = '';
-                card.style.boxShadow = '2px 3px 0px rgba(0,0,0,0.2)';
+                card.style.boxShadow = baseBoxShadow;
                 tip.style.opacity = '0';
             });
 
