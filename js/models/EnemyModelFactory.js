@@ -9,6 +9,7 @@ import { createEnemyMaterials, createRigidEnemyMaterials } from './EnemyMaterial
 import { mergeGeometries } from '../utils/geometryUtils.js';
 import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } from '../utils/characterGeometry.js';
 import { GLBModelCache } from '../loaders/GLBModelCache.js';
+import { PALETTE } from '../data/palette.js';
 
 // Types that use the new rigid body parts pipeline
 const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly', 'drunk', 'ant', 'seahorse', 'trolley', 'vaulter', 'kangaroo', 'frog', 'hurdler']);
@@ -61,11 +62,33 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
     const outlineWidth = _outlineWidthForRigidType(enemyType);
     const outlineParts = [];
     const _outlinePartNames = new Set([
+        // Biped parts
         'torso', 'head', 'belly',
         'armL', 'armR', 'handL', 'handR',
+        'forearmL', 'forearmR',
         'upperLegL', 'upperLegR', 'lowerLegL', 'lowerLegR',
-        'shoeL', 'shoeR',
-        // GLB body parts (ocean)
+        'shoeL', 'shoeR', 'footL', 'footR',
+        'legL', 'legR',
+        // Quadruped parts
+        'body', 'shoulder', 'haunch',
+        'neck', 'neck1', 'neck2',
+        'frontUpperLegL', 'frontUpperLegR',
+        'frontLowerLegL', 'frontLowerLegR',
+        'hindUpperLegL', 'hindUpperLegR',
+        'hindLowerLegL', 'hindLowerLegR',
+        'frontHoofL', 'frontHoofR',
+        'hindHoofL', 'hindHoofR',
+        'tail1', 'tail2', 'tail3',
+        // Marine parts
+        'bodyFront', 'bodyRear', 'bodyMid',
+        'dorsal', 'flipperL', 'flipperR',
+        'flukeL', 'flukeR', 'jaw', 'snout',
+        'frontFlipperL', 'frontFlipperR',
+        'hindFlipperL', 'hindFlipperR',
+        'shell', 'plastron',
+        // Jellyfish
+        'bell', 'bellRim',
+        // GLB body parts
         'glbBody',
     ]);
     for (const [partName, mesh] of Object.entries(parts)) {
@@ -177,7 +200,7 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
 
     // ═══ FACE: Mii-style — dot eyes, worried brows, grimace mouth ═══
     // Use simple MeshBasicMaterial (outline shader won't render front faces correctly)
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });  // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });  // PALETTE.ink
 
     // Eyes — dark spheres on the front of the head, big enough to read from top-down
     const eyeSize = headR * 0.10;
@@ -349,7 +372,7 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     parts.tuft = tuft;
 
     // ═══ FACE: Mii-style — panicked wide eyes, open mouth ═══
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Eyes — big wide panicked circles
     const eyeSize = headR * 0.13;
@@ -373,7 +396,7 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     parts.eyeR = eyeR_mesh;
 
     // Pupils — tiny white dots for wide-eyed panic look
-    const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.35, 4, 3);
 
     const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
@@ -414,7 +437,7 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     parts.mouth = mouth;
 
     // ═══ SWEAT DROPLET — floating above head ═══
-    const sweatMat = new THREE.MeshBasicMaterial({ color: 0x59c3e8, transparent: true, opacity: 0.8 });
+    const sweatMat = new THREE.MeshBasicMaterial({ color: PALETTE.dancer, transparent: true, opacity: 0.8 });
     const sweatGeo = new THREE.SphereGeometry(headR * 0.12, 5, 4);
     const sweat = new THREE.Mesh(sweatGeo, sweatMat);
     sweat.name = 'sweat';
@@ -514,7 +537,7 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
 
     // ═══ HARD HAT: flat cap on top ═══
     const hatGeo = createFlatCap(headR * 0.85, headR * 0.22, 8);
-    const hatMat = new THREE.MeshBasicMaterial({ color: 0xf0c030 });  // safety yellow
+    const hatMat = new THREE.MeshBasicMaterial({ color: PALETTE.safetyYellow });  // safety yellow
     const hat = new THREE.Mesh(hatGeo, hatMat);
     hat.name = 'hat';
     hat.position.set(0, headR * 0.72, 0);
@@ -530,7 +553,7 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
     parts.hatBrim = brim;
 
     // ═══ FACE: Mii-style — determined grimace, thick brows ═══
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
     const eyeSize = headR * 0.10;
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.26;
@@ -721,7 +744,7 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
     }
 
     // ═══ FACE: Mii-style — wide terrified eyes, screaming O mouth ═══
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Eyes — HUGE terrified circles
     const eyeSize = headR * 0.14;
@@ -745,7 +768,7 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
     parts.eyeR = eyeR_mesh;
 
     // Tiny pupils — wild-eyed terror
-    const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.30, 4, 3);
 
     const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
@@ -916,7 +939,7 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
 
     // ═══ SWEATBAND: wrapped around forehead ═══
     const bandGeo = new THREE.CylinderGeometry(headR * 0.92, headR * 0.92, headR * 0.14, 10);
-    const bandMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const bandMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const band = new THREE.Mesh(bandGeo, bandMat);
     band.name = 'sweatband';
     band.position.set(0, headR * 0.30, 0);
@@ -924,7 +947,7 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
     parts.sweatband = band;
 
     // ═══ FACE: Mii-style — focused stern expression ═══
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Eyes — narrow focused
     const eyeSize = headR * 0.10;
@@ -1118,7 +1141,7 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     parts.ponytailTie = tie;
 
     // ═══ FACE: Mii-style — happy/mischievous ═══
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Eyes — big bright happy eyes
     const eyeSize = headR * 0.12;
@@ -1142,7 +1165,7 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     parts.eyeR = eyeR_mesh;
 
     // Eye highlights — sparkly happy eyes
-    const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const highlightMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const highlightGeo = new THREE.SphereGeometry(eyeSize * 0.35, 4, 3);
 
     const hlL = new THREE.Mesh(highlightGeo, highlightMat);
@@ -1257,7 +1280,7 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ BODY: horizontal organic barrel on spine_mid ═══
     // Bridges from pelvis area (rear/+Z) to chest area (front/-Z).
@@ -1556,7 +1579,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ BODY: small compact barrel on spine_mid ═══
     const bodyLen = d.bodyLength * s;
@@ -1669,7 +1692,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 
     // Eye highlights: tiny white sparkles for chibi cuteness
     const highlightGeo = new THREE.SphereGeometry(eyeSize * 0.30, 4, 3);
-    const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const highlightMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
 
     const hlL = new THREE.Mesh(highlightGeo, highlightMat);
     hlL.name = 'hlL';
@@ -1705,7 +1728,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 
     // Buck teeth: two tiny white rectangles under snout
     const toothGeo = new THREE.BoxGeometry(snoutR * 0.28, snoutR * 0.40, snoutR * 0.15);
-    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef }); // PALETTE.white
+    const toothMat = new THREE.MeshBasicMaterial({ color: PALETTE.white }); // PALETTE.white
 
     const toothL = new THREE.Mesh(toothGeo, toothMat);
     toothL.name = 'toothL';
@@ -1819,7 +1842,7 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ BODY: split torpedo into front half (body_front) and rear half (body_rear) ═══
     // This allows undulation animations to flex the body visually
@@ -2003,7 +2026,7 @@ function _buildRigidFlyfish(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ BODY: sleek streamlined torpedo, split front/rear ═══
     const bodyLen = d.bodyLength * s;
@@ -2154,7 +2177,7 @@ function _buildRigidShark(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ BODY: massive torpedo, split front/rear ═══
     const bodyLen = d.bodyLength * s;
@@ -2252,7 +2275,7 @@ function _buildRigidShark(size, config, materials, boneMap) {
     parts.jaw = jaw;
 
     // Teeth: small white triangles in jaw
-    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    const toothMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const toothGeo = new THREE.ConeGeometry(headR * 0.03, headR * 0.08, 3);
     for (let i = 0; i < 5; i++) {
         const tx = (i - 2) * jawW * 0.18;
@@ -2341,7 +2364,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Try GLB boat — replace procedural rowboat with imported model
     const hasGLBBoat = GLBModelCache.isLoaded('boat') && _buildGLBPirateBoat(s, boneMap, parts);
@@ -2354,7 +2377,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     // Hull: rounded box (skip if GLB boat loaded)
     if (!hasGLBBoat) {
         const hullGeo = createRoundedBox(boatW, boatH, boatL, boatH * 0.20);
-        const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 }); // PALETTE.oceanBoatWood
+        const boatMat = new THREE.MeshBasicMaterial({ color: PALETTE.oceanBoatWood }); // PALETTE.oceanBoatWood
         const hull = new THREE.Mesh(hullGeo, boatMat);
         hull.name = 'hull';
         hull.position.set(0, -boatH * 0.80, 0);
@@ -2363,7 +2386,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
 
         // Boat rim / gunwale: slightly wider
         const rimGeo = createRoundedBox(boatW * 1.08, boatH * 0.15, boatL * 1.02, boatH * 0.06);
-        const rimMat = new THREE.MeshBasicMaterial({ color: 0x6b5030 }); // PALETTE.oceanBoatDark
+        const rimMat = new THREE.MeshBasicMaterial({ color: PALETTE.oceanBoatDark }); // PALETTE.oceanBoatDark
         const rim = new THREE.Mesh(rimGeo, rimMat);
         rim.name = 'boatRim';
         rim.position.set(0, -boatH * 0.55, 0);
@@ -2442,7 +2465,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
 
     // Hat crown
     const crownGeo = createRoundedBox(headR * 0.65, hatH, headR * 0.55, hatH * 0.15);
-    const hatMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // dark hat
+    const hatMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // dark hat
     const crown = new THREE.Mesh(crownGeo, hatMat);
     crown.name = 'hatCrown';
     crown.position.set(0, headR * 0.70, 0);
@@ -2538,7 +2561,7 @@ function _buildRigidSeaturtle(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ SHELL: dominant visual — dome on top, flat on bottom ═══
     const shellW = d.shellWidth * s;
@@ -2898,7 +2921,7 @@ function _buildGLBDolphin(size, config, materials, boneMap) {
     parts.belly = belly;
 
     // Eyes on head bone
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
     const headR = d.headRadius * s;
     const eyeGeo = new THREE.SphereGeometry(headR * 0.14, 6, 5);
     const eyeSpacing = headR * 0.48;
@@ -2927,7 +2950,7 @@ function _buildGLBFlyfish(size, config, materials, boneMap) {
     const parts = {};
     const s = size;
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
     const targetLen = d.bodyLength * s * 1.4;
 
     const result = _glbMeshFromCache('flyfish', materials.body, targetLen, boneMap.root, {
@@ -2991,7 +3014,7 @@ function _buildGLBShark(size, config, materials, boneMap) {
     const parts = {};
     const s = size;
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
     const targetLen = d.bodyLength * s * 1.3;
 
     const result = _glbMeshFromCache('shark', materials.body, targetLen, boneMap.root, {
@@ -3044,7 +3067,7 @@ function _buildGLBShark(size, config, materials, boneMap) {
 
     // Teeth arranged in gentle arc
     const toothGeo = new THREE.ConeGeometry(jawW * 0.04, jawW * 0.12, 3);
-    const toothMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    const toothMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     for (let t = 0; t < 5; t++) {
         const tooth = new THREE.Mesh(toothGeo, toothMat);
         tooth.name = `tooth${t}`;
@@ -3073,7 +3096,7 @@ function _buildGLBSeaturtle(size, config, materials, boneMap) {
     });
     if (!result) return _buildRigidSeaturtle(size, config, materials, boneMap);
 
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // Attach all turtle meshes to root
     for (let i = 0; i < result.parts.length; i++) {
@@ -3183,7 +3206,7 @@ function _buildGLBPirateBoat(size, boneMap, parts) {
     const clones = GLBModelCache.cloneGeometries('boat');
     if (!clones) return false;
 
-    const boatMat = new THREE.MeshBasicMaterial({ color: 0x9b7850 });
+    const boatMat = new THREE.MeshBasicMaterial({ color: PALETTE.oceanBoatWood });
     for (const clone of clones) {
         const geo = clone.geometry;
         geo.translate(-bboxCenter.x, -bboxCenter.y, -bboxCenter.z);
@@ -3367,7 +3390,7 @@ function _addLegs(parts, boneMap, s, materials, opts = {}) {
 function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: slightly hunched, compressed — tense posture ═══
     const spineToRoot = 0.25 * s;
@@ -3399,7 +3422,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const eyeY = headR * 0.06;
     const eyeZ = -headR * 0.90;
     // White eyeball
-    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const whiteMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.2, 6, 5);
     const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
     whiteL.name = 'whiteL';
@@ -3461,7 +3484,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
 
     // ═══ SWEAT DROPS: two floating droplets — stress indicator ═══
     const sweatGeo = new THREE.SphereGeometry(headR * 0.08, 5, 4);
-    const sweatMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.8 });
+    const sweatMat = new THREE.MeshBasicMaterial({ color: PALETTE.nervousSweat, transparent: true, opacity: 0.8 });
     const sweat1 = new THREE.Mesh(sweatGeo, sweatMat);
     sweat1.name = 'sweat1';
     sweat1.position.set(-headR * 0.60, headR * 0.30, -headR * 0.50);
@@ -3495,7 +3518,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
 function _buildRigidBusinessClass(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: wider at shoulders, tapered — power suit silhouette ═══
     const spineToRoot = 0.28 * s;
@@ -3512,7 +3535,7 @@ function _buildRigidBusinessClass(size, config, materials, boneMap) {
 
     // Shirt collar — white V-shape at top of torso
     const collarGeo = new THREE.BoxGeometry(torsoW * 0.50, 0.04 * s, torsoD * 0.30);
-    const collarMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8 });
+    const collarMat = new THREE.MeshBasicMaterial({ color: PALETTE.cream });
     const collar = new THREE.Mesh(collarGeo, collarMat);
     collar.name = 'collar';
     collar.position.set(0, torsoH * 0.42, -torsoD * 0.42);
@@ -3521,7 +3544,7 @@ function _buildRigidBusinessClass(size, config, materials, boneMap) {
 
     // TIE: red stripe down front
     const tieGeo = new THREE.BoxGeometry(0.04 * s, torsoH * 0.65, 0.015 * s);
-    const tieMat = new THREE.MeshBasicMaterial({ color: 0xc03040 });
+    const tieMat = new THREE.MeshBasicMaterial({ color: PALETTE.airplaneAttendant });
     const tie = new THREE.Mesh(tieGeo, tieMat);
     tie.name = 'tie';
     tie.position.set(0, 0, -torsoD * 0.52);
@@ -3560,7 +3583,7 @@ function _buildRigidBusinessClass(size, config, materials, boneMap) {
     const bcH = 0.16 * s;
     const bcD = 0.06 * s;
     const bcGeo = createRoundedBox(bcW, bcH, bcD, 0.012 * s);
-    const bcMat = new THREE.MeshBasicMaterial({ color: 0x4a3a2a });
+    const bcMat = new THREE.MeshBasicMaterial({ color: PALETTE.briefcaseLeather });
     const bc = new THREE.Mesh(bcGeo, bcMat);
     bc.name = 'briefcase';
     bc.position.set(0, -0.46 * s, 0);
@@ -3568,7 +3591,7 @@ function _buildRigidBusinessClass(size, config, materials, boneMap) {
     parts.briefcase = bc;
     // Briefcase clasp
     const claspGeo = new THREE.BoxGeometry(bcW * 0.15, bcH * 0.08, bcD * 0.5);
-    const claspMat = new THREE.MeshBasicMaterial({ color: 0xdaa520 });
+    const claspMat = new THREE.MeshBasicMaterial({ color: PALETTE.briefcaseClasp });
     const clasp = new THREE.Mesh(claspGeo, claspMat);
     clasp.name = 'clasp';
     clasp.position.set(0, -0.46 * s + bcH * 0.35, -bcD * 0.55);
@@ -3587,7 +3610,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: pear-shaped organic — bottom-heavy like the Waddle Tank ═══
     const waistR = 0.32 * s;
@@ -3715,7 +3738,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
 function _buildRigidAttendant(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: narrow, tall, upright — professional stance ═══
     const spineToRoot = 0.25 * s;
@@ -3741,7 +3764,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
 
     // Name badge — small white rectangle
     const badgeGeo = new THREE.BoxGeometry(0.10 * s, 0.04 * s, 0.01 * s);
-    const badgeMat = new THREE.MeshBasicMaterial({ color: 0xfaf5ef });
+    const badgeMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const nameBadge = new THREE.Mesh(badgeGeo, badgeMat);
     nameBadge.name = 'nameBadge';
     nameBadge.position.set(0.10 * s, torsoH * 0.20, -torsoD * 0.52);
@@ -3822,7 +3845,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
 function _buildRigidMarshal(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: V-shaped, broad chest — athletic authority ═══
     const spineToRoot = 0.28 * s;
@@ -3839,7 +3862,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
 
     // Badge — gold star/disc
     const badgeGeo = new THREE.CylinderGeometry(0.055 * s, 0.055 * s, 0.012 * s, 6);
-    const badgeMat = new THREE.MeshBasicMaterial({ color: 0xffd93d });
+    const badgeMat = new THREE.MeshBasicMaterial({ color: PALETTE.gold });
     const badge = new THREE.Mesh(badgeGeo, badgeMat);
     badge.name = 'badge';
     badge.position.set(0.14 * s, torsoH * 0.20, -torsoD * 0.52);
@@ -3919,7 +3942,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
 function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: small compact pill — no arms means torso IS the silhouette ═══
     const spineToRoot = 0.20 * s;
@@ -4032,7 +4055,7 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
 function _buildRigidDrunk(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ TORSO: same proportions as polite knocker ═══
     const spineToRoot = 0.25 * s;
@@ -4178,7 +4201,7 @@ function _buildRigidAnt(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ HEAD SEGMENT: sphere on head bone ═══
     const headR = (d.headRadius || 0.10) * s;
@@ -4383,7 +4406,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ UPPER BODY: wider at chest, narrowing upward (body_front) ═══
     // Seahorse has VERTICAL orientation — unique among marine types
@@ -4568,7 +4591,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
 function _buildRigidTrolley(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e }); // PALETTE.ink
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink }); // PALETTE.ink
 
     // ═══ TORSO: narrow, tall, professional — similar to attendant ═══
     const spineToRoot = 0.25 * s;
@@ -4745,7 +4768,7 @@ function _buildRigidTrolley(size, config, materials, boneMap) {
 function _buildRigidVaulter(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: lean V-taper — wider shoulders tapering to narrow waist ═══
     const spineToRoot = 0.20 * s;
@@ -4874,7 +4897,7 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ BODY: barrel torso, more upright than deer ═══
     const bodyLen = d.bodyLength * s;
@@ -5128,7 +5151,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
     const d = config.bodyDimensions;
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ BODY: wide, squat, rounded — classic frog shape ═══
     const bodyLen = d.bodyLength * s;
@@ -5367,7 +5390,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
 function _buildRigidHurdler(size, config, materials, boneMap) {
     const s = size;
     const parts = {};
-    const faceMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
     // ═══ TORSO: athletic tank top silhouette — exposed shoulders ═══
     const spineToRoot = 0.20 * s;
@@ -5386,7 +5409,7 @@ function _buildRigidHurdler(size, config, materials, boneMap) {
     const bibW = torsoW * 0.55;
     const bibH = torsoH * 0.35;
     const bibGeo = new THREE.PlaneGeometry(bibW, bibH);
-    const bibMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8, side: THREE.DoubleSide });
+    const bibMat = new THREE.MeshBasicMaterial({ color: PALETTE.cream, side: THREE.DoubleSide });
     const bib = new THREE.Mesh(bibGeo, bibMat);
     bib.name = 'raceBib';
     bib.position.set(0, torsoH * 0.08, -torsoD * 0.52);
@@ -5395,7 +5418,7 @@ function _buildRigidHurdler(size, config, materials, boneMap) {
 
     // Bib number stripe — dark horizontal line (implies a number)
     const numGeo = new THREE.BoxGeometry(bibW * 0.60, bibH * 0.12, 0.005 * s);
-    const numMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+    const numMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
     const num = new THREE.Mesh(numGeo, numMat);
     num.name = 'bibNumber';
     num.position.set(0, torsoH * 0.08, -torsoD * 0.54);

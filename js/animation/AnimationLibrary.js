@@ -682,6 +682,9 @@ function _waddleHitReact() {
             [0.03, 0, 0.01], [-0.01, 0, 0], [0, 0, 0]
         ]),
         buildRotationTrack('spine', t, [0, 0.04, 0.01, 0.005, 0, 0], AXIS_X),
+        // Forearm follow-through during flinch
+        buildRotationTrack('forearm_L', t, [0, 0.06, -0.03, 0.02, -0.01, 0], AXIS_X),
+        buildRotationTrack('forearm_R', t, [0, 0.06, -0.03, 0.02, -0.01, 0], AXIS_X),
     ]);
 }
 
@@ -6105,8 +6108,8 @@ function _kangarooJump() {
     return new THREE.AnimationClip('kangaroo_jump', dur, [
         // Extra dramatic squash → stretch for the big jump
         scaleTrack('root', t, [
-            [1.20, 0.70, 1.20], [1.25, 0.65, 1.25], [0.80, 1.30, 0.80],
-            [0.85, 1.22, 0.85], [1.12, 0.82, 1.12], [1.0, 1.0, 1.0]
+            [1.12, 0.78, 1.12], [1.15, 0.75, 1.15], [0.85, 1.25, 0.85],
+            [0.90, 1.18, 0.90], [1.08, 0.88, 1.08], [1.0, 1.0, 1.0]
         ]),
         // Pelvis: extreme crouch → full forward drive
         eulerTrack('pelvis', t, [
@@ -6331,8 +6334,8 @@ function _frogJump() {
     return new THREE.AnimationClip('frog_jump', dur, [
         // Extreme squash → stretch for the super-leap
         scaleTrack('root', t, [
-            [1.35, 0.55, 1.35], [1.40, 0.50, 1.40], [0.70, 1.50, 0.70],
-            [0.85, 1.20, 0.85], [1.15, 0.80, 1.15], [1.0, 1.0, 1.0]
+            [1.20, 0.70, 1.20], [1.22, 0.68, 1.22], [0.80, 1.35, 0.80],
+            [0.88, 1.18, 0.88], [1.10, 0.85, 1.10], [1.0, 1.0, 1.0]
         ]),
         // Pelvis: extreme crouch → explosive forward extension
         eulerTrack('pelvis', t, [
@@ -6875,6 +6878,8 @@ const _clipBuilders = {
     kangaroo_walk:         _kangarooHop,
     kangaroo_jump:         _kangarooJump,
     kangaroo_bash_door:    _kangarooBash,
+    kangaroo_bash_door_L:  _kangarooBash,
+    kangaroo_bash_door_R:  _kangarooBash,
     kangaroo_hit_react:    _kangarooHitReact,
     kangaroo_death:        _kangarooDeath,
 

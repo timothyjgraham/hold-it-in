@@ -17,11 +17,7 @@ const MANIFEST = {
     jellyfish: 'models/ocean/jellyfish.glb',
     flyfish:   'models/ocean/fish_lowpoly.glb',
     boat:      'models/ocean/boat-row-small.glb',
-    // Airplane character base models (KayKit CC0)
-    airplane_slim:   'models/airplane/kaykit_rogue.glb',       // Rogue — slim build
-    airplane_broad:  'models/airplane/kaykit_knight.glb',      // Knight — broad build
-    airplane_stocky: 'models/airplane/kaykit_barbarian.glb',   // Barbarian — stocky build
-    airplane_mage:   'models/airplane/kaykit_mage.glb',        // Mage — slim, flowing
+    // KayKit airplane models removed — all airplane enemies use procedural geometry
 };
 
 function _loadOne(url) {

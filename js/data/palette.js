@@ -216,6 +216,14 @@ export const PALETTE = {
     hatchInk:     0x2a2840, // Slightly warmer than ink — cross-hatch lines in shadow regions
 
     outlineColor: 0x1a1a2e, // Same as ink — unified outline language
+
+    // ─── ACCESSORY COLORS ──────────────────────────────────────────────────────
+    // Small props and details on enemy models — keeps hex out of model factories
+
+    safetyYellow:     0xf0c030,  // Hard hat, safety gear — warm yellow
+    nervousSweat:     0x88ccff,  // Nervous flyer stress sweat — cool blue droplets
+    briefcaseLeather: 0x4a3a2a,  // Business class briefcase — dark warm leather
+    briefcaseClasp:   0xdaa520,  // Briefcase clasp — goldenrod metal
 };
 
 // ─── OUTLINE WIDTHS ───────────────────────────────────────────────────────────

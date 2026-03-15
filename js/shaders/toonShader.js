@@ -1,6 +1,8 @@
 // Toon Shader System — 3-tone ramp, rim lighting, and effect uniforms
 // Includes inverted-hull outline shader. Compatible with Three.js r128 skinning.
 
+import { PALETTE } from '../data/palette.js';
+
 // ─── TOON VERTEX SHADER ───
 export const toonVertexShader = /* glsl */ `
 #include <common>
@@ -220,7 +222,7 @@ export function createToonMaterial(options = {}) {
 export function createOutlineMaterial(options = {}) {
     const uniforms = {
         uOutlineWidth: { value: options.outlineWidth !== undefined ? options.outlineWidth : 0.03 },
-        uOutlineColor: { value: options.outlineColor || new THREE.Color(0x1a1a1a) },
+        uOutlineColor: { value: options.outlineColor || new THREE.Color(PALETTE.outlineColor) },
     };
 
     if (THREE.UniformsLib && THREE.UniformsLib.fog) {
