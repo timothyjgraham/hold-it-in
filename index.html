@@ -551,6 +551,8 @@
         _mopImpacts: [],
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
+        _bladderPuddles: [],    // L11: Bladder Burst ground puddles
+        _bladderRings: [],      // L11: Bladder Burst expanding rings
         _controlledDemolitionBuff: 0,  // R26: cumulative +8% per sell
         _devotionTypes: null,          // R23: Set of locked tower types (max 2)
         _attritionTimer: 0,            // R32: seconds enemies have been alive this wave
@@ -3525,8 +3527,24 @@
 
             // Reset legendary timers
             this._overtimeTimer = 0;
-            this._falseAlarmUsed = false;
             this._desperateMeasures = false;
+
+            // Clear bladder burst VFX (L11)
+            if (this._bladderPuddles) {
+                this._bladderPuddles.forEach(bp => {
+                    this.scene.remove(bp.group);
+                    bp.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+                });
+            }
+            this._bladderPuddles = [];
+            if (this._bladderRings) {
+                this._bladderRings.forEach(br => {
+                    this.scene.remove(br.ring);
+                    br.ring.geometry.dispose();
+                    br.mat.dispose();
+                });
+            }
+            this._bladderRings = [];
 
             // Clear sliding pots
             this._slidingPots.forEach(sp => {
@@ -3812,7 +3830,6 @@
 
                 // Legendary timers
                 overtimeTimer: this._overtimeTimer || 0,
-                falseAlarmUsed: this._falseAlarmUsed || false,
                 desperateMeasures: this._desperateMeasures || false,
 
                 // Enemies — exact positions to prevent save scumming
@@ -3838,7 +3855,10 @@
                     bashing: e.bashing || false,
                     bashingBarrierIdx: e.bashingBarrier
                         ? liveTowers.indexOf(e.bashingBarrier) : -1,
-                    _falseAlarmInverted: e._falseAlarmInverted || false,
+                    _bladderBursting: e._bladderBursting || false,
+                    _bladderBurstTimer: e._bladderBurstTimer || 0,
+                    _bladderBurstMaxHp: e._bladderBurstMaxHp || 0,
+                    _bladderBurstDone: e._bladderBurstDone || false,
                     _pileupCooldown: e._pileupCooldown || 0,
                     _impactSquash: e._impactSquash || 0,
                     walkState: e.walkState || 'walk',
@@ -3970,7 +3990,6 @@
 
                 // 6. Restore legendary timers
                 this._overtimeTimer = data.overtimeTimer || 0;
-                this._falseAlarmUsed = data.falseAlarmUsed || false;
                 this._desperateMeasures = data.desperateMeasures || false;
 
                 // 7. Recreate towers
@@ -4042,7 +4061,10 @@
                         targetLane: ed.targetLane,
                         bashing: ed.bashing || false,
                         bashingBarrier: null,
-                        _falseAlarmInverted: ed._falseAlarmInverted || false,
+                        _bladderBursting: ed._bladderBursting || false,
+                        _bladderBurstTimer: ed._bladderBurstTimer || 0,
+                        _bladderBurstMaxHp: ed._bladderBurstMaxHp || 0,
+                        _bladderBurstDone: ed._bladderBurstDone || false,
                         _pileupCooldown: ed._pileupCooldown || 0,
                         _crossfireTypes: {},
                         _impactSquash: ed._impactSquash || 0,
@@ -6482,9 +6504,6 @@
             // R32: Attrition — reset per-wave timer
             this._attritionTimer = 0;
 
-            // L11: False Alarm — reset per-wave panicker inversion flag
-            this._falseAlarmUsed = false;
-
             // Announce with enemy introduction on key waves
             let msg = `WAVE ${this.wave}`;
             if (event) {
@@ -6946,25 +6965,6 @@
                 enemy._crossfireTypes = {};
             }
 
-            // L11: False Alarm — mark one panicker per wave for inverted aura
-            if ((enemyType === 'panicker' || enemyType === 'fox' || enemyType === 'pirate' || enemyType === 'marshal') && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
-                if (!this._falseAlarmUsed) {
-                    enemy._falseAlarmInverted = true;
-                    this._falseAlarmUsed = true;
-                    // Visual indicator: green tint
-                    if (enemy.skinnedMesh) {
-                        const mats = enemy.skinnedMesh.material;
-                        const greenTint = (m) => {
-                            if (m.uniforms && m.uniforms.uBaseColor) {
-                                m.uniforms.uBaseColor.value.setHex(PALETTE.success);
-                            }
-                        };
-                        if (Array.isArray(mats)) mats.forEach(greenTint);
-                        else greenTint(mats);
-                    }
-                }
-            }
-
             this.enemies.push(enemy);
         },
 
@@ -7215,7 +7215,6 @@
                 e._contagionSlow = 1.0; // reset for next frame
 
                 // Speed aura — panicker/fox/pirate/marshal make nearby enemies faster
-                // L11: False Alarm — inverted panickers slow nearby enemies instead
                 let auraMult = 1.0;
                 const isAuraType = e.type === 'panicker' || e.type === 'fox' || e.type === 'pirate' || e.type === 'marshal';
                 if (!isAuraType) {
@@ -7227,12 +7226,7 @@
                         const adx = e.x - other.x;
                         const adz = e.z - other.z;
                         if (adx * adx + adz * adz < auraRange * auraRange) {
-                            if (other._falseAlarmInverted) {
-                                // L11: Inverted aura — slows 30%
-                                auraMult = Math.min(auraMult, 0.7);
-                            } else {
-                                auraMult = Math.max(auraMult, 1.0 + auraBonus);
-                            }
+                            auraMult = Math.max(auraMult, 1.0 + auraBonus);
                         }
                     }
                 }
@@ -8109,8 +8103,62 @@
                     }
                 }
 
+                // L11: Bladder Burst — tick 2s buildup timer
+                if (e._bladderBursting) {
+                    e._bladderBurstTimer -= dt;
+                    const progress = Math.min(1, 1 - e._bladderBurstTimer / 2.0); // 0→1
+
+                    // Jitter: sinusoidal shake, ramping amplitude + frequency
+                    const amp = 0.03 + progress * progress * 0.35;
+                    const freq = 12 + progress * 35;
+                    const t = performance.now() * 0.001;
+                    e.mesh.position.x = e.x + Math.sin(t * freq) * amp;
+                    e.mesh.position.z = e.z + Math.cos(t * freq * 1.3) * amp * 0.7;
+
+                    // Swell: scale up as pressure builds
+                    const swell = 1 + progress * progress * 0.2;
+                    e.mesh.scale.set(swell, swell, swell);
+
+                    // Yellow tint via shader uniform (ramps 0→1)
+                    const setUniform = (m, name, val) => {
+                        if (m.uniforms && m.uniforms[name]) m.uniforms[name].value = val;
+                    };
+                    const mats = e.skinnedMesh ? e.skinnedMesh.material : null;
+                    if (mats) {
+                        if (Array.isArray(mats)) mats.forEach(m => setUniform(m, 'uBurstTint', progress));
+                        else setUniform(mats, 'uBurstTint', progress);
+                    }
+
+                    // BURST when timer expires
+                    if (e._bladderBurstTimer <= 0) {
+                        e._bladderBursting = false;
+                        e._bladderBurstDone = true;
+                        e.mesh.scale.set(1, 1, 1);
+                        // Reset burst tint
+                        if (mats) {
+                            if (Array.isArray(mats)) mats.forEach(m => setUniform(m, 'uBurstTint', 0));
+                            else setUniform(mats, 'uBurstTint', 0);
+                        }
+                        e.hp = 0;
+                        this._executeBladderBurst(e.x, e.z, e._bladderBurstMaxHp);
+                    }
+                    continue; // skip movement and other processing during buildup
+                }
+
                 // Dead? (5H + 5I)
                 if (e.hp <= 0) {
+                    // L11: Bladder Burst — initiate 2s buildup instead of instant death
+                    if (!e._bladderBurstDone && this.upgradeManager && this.upgradeManager.hasUpgrade('L11')) {
+                        e._bladderBursting = true;
+                        e._bladderBurstTimer = 2.0;
+                        e._bladderBurstMaxHp = e.maxHp;
+                        e.hp = 1; // keep alive during buildup
+                        e._preBurstSpeed = e.speed;
+                        e.speed = 0; // freeze in place
+                        if (window.SFX) SFX.play('enemy_death'); // initial KO sound
+                        continue;
+                    }
+
                     // Last straw — 20% chance of desperate final lunge near the toilet
                     if (!e.lastStrawUsed && e.z < 25 && Math.random() < 0.2) {
                         e.lastStrawUsed = true;
@@ -8888,6 +8936,14 @@
                 this._updateSpillZones(dt);
             }
 
+            // --- Update L11 bladder burst VFX ---
+            if (this._bladderPuddles.length > 0) {
+                this._updateBladderPuddles(dt);
+            }
+            if (this._bladderRings.length > 0) {
+                this._updateBladderRings(dt);
+            }
+
             // --- Update L9 ubik flood zones ---
             if (this._ubikFloodZones.length > 0) {
                 this._updateUbikFloodZones(dt);
@@ -9403,6 +9459,248 @@
                     this.scene.remove(sz.group);
                     sz.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
                     this._spillZones.splice(i, 1);
+                }
+            }
+        },
+
+        // ============================
+        // L11: BLADDER BURST
+        // ============================
+
+        _executeBladderBurst(x, z, maxHp) {
+            const burstDmg = maxHp * 0.25;
+            const burstRadius = 5;
+            const burstRadiusSq = burstRadius * burstRadius;
+
+            // Deal splash damage to all enemies within radius
+            for (const target of this.enemies) {
+                if (target.dying || target._bladderBursting || target._bladderBurstDone) continue;
+                const dx = target.x - x;
+                const dz = target.z - z;
+                if (dx * dx + dz * dz < burstRadiusSq) {
+                    target.hp -= burstDmg;
+                    target.hitFlash = 0.15;
+                    // Spawn damage number
+                    this._spawnDamageNumber(target.x, target.z, Math.round(burstDmg), '#f0e040');
+                }
+            }
+
+            // VFX: splash particles + expanding ring + ground puddles
+            this._spawnBladderSplash(x, z);
+            this._createBladderPuddles(x, z);
+
+            if (window.SFX) SFX.play('splash');
+        },
+
+        _spawnBladderSplash(x, z) {
+            // Expanding shockwave ring (reaches burst radius of 5 units)
+            const ringGeo = new THREE.RingGeometry(0.3, 0.7, 16);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xf0e040,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, 0.15, z);
+            ring.rotation.x = -Math.PI / 2;
+            this.scene.add(ring);
+            this._bladderRings.push({ ring, mat: ringMat, life: 0.5, maxLife: 0.5 });
+
+            // Second ring, slightly delayed (stagger for juiciness)
+            const ring2Geo = new THREE.RingGeometry(0.2, 0.5, 12);
+            const ring2Mat = new THREE.MeshBasicMaterial({
+                color: 0xf5e870,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+            ring2.position.set(x, 0.12, z);
+            ring2.rotation.x = -Math.PI / 2;
+            this.scene.add(ring2);
+            this._bladderRings.push({ ring: ring2, mat: ring2Mat, life: 0.6, maxLife: 0.6 });
+
+            // Splash droplets — low-poly spheres that burst outward and arc down
+            const dropCount = 14 + Math.floor(Math.random() * 8);
+            for (let i = 0; i < dropCount; i++) {
+                const size = 0.1 + Math.random() * 0.18;
+                const geo = Math.random() > 0.4
+                    ? new THREE.SphereGeometry(size, 4, 3) // low-poly sphere
+                    : new THREE.TetrahedronGeometry(size * 0.8, 0); // low-poly shard
+                const mat = new THREE.MeshBasicMaterial({
+                    color: Math.random() > 0.3 ? 0xf0e040 : 0xf5e870,
+                    transparent: true,
+                    opacity: 0.9,
+                });
+                const droplet = new THREE.Mesh(geo, mat);
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 4 + Math.random() * 7;
+                droplet.position.set(x, 1.2 + Math.random() * 0.8, z);
+                droplet.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                this.scene.add(droplet);
+
+                this._doorParticles.push({
+                    mesh: droplet,
+                    vx: Math.cos(angle) * speed,
+                    vy: 3 + Math.random() * 5,
+                    vz: Math.sin(angle) * speed,
+                    rotSpeed: (Math.random() - 0.5) * 10,
+                    life: 0.6 + Math.random() * 0.5,
+                    maxLife: 0.6 + Math.random() * 0.5,
+                    gravity: 14 + Math.random() * 4,
+                });
+            }
+
+            // Upward spray — a few droplets that go high for drama
+            for (let i = 0; i < 5; i++) {
+                const size = 0.08 + Math.random() * 0.12;
+                const geo = new THREE.SphereGeometry(size, 4, 3);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: 0xf5e870,
+                    transparent: true,
+                    opacity: 0.85,
+                });
+                const drop = new THREE.Mesh(geo, mat);
+                drop.position.set(
+                    x + (Math.random() - 0.5) * 0.8,
+                    1.5,
+                    z + (Math.random() - 0.5) * 0.8
+                );
+                this.scene.add(drop);
+                this._doorParticles.push({
+                    mesh: drop,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 8 + Math.random() * 5,
+                    vz: (Math.random() - 0.5) * 2,
+                    rotSpeed: (Math.random() - 0.5) * 8,
+                    life: 0.8 + Math.random() * 0.4,
+                    maxLife: 0.8 + Math.random() * 0.4,
+                    gravity: 12,
+                });
+            }
+        },
+
+        _createBladderPuddles(x, z) {
+            // Cap at 30 puddles
+            while (this._bladderPuddles.length >= 30) {
+                const old = this._bladderPuddles.shift();
+                this.scene.remove(old.group);
+                old.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+            }
+
+            const group = new THREE.Group();
+            group.position.set(x, 0.02, z);
+
+            const blobMats = [];
+
+            // Main puddle — 3-5 overlapping low-poly discs for organic shape
+            const numBlobs = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numBlobs; i++) {
+                const r = 0.8 + Math.random() * 1.2;
+                const segments = 5 + Math.floor(Math.random() * 3); // pentagon to heptagon
+                const blobMat = new THREE.MeshBasicMaterial({
+                    color: Math.random() > 0.4 ? 0xf0e040 : 0xe8d830,
+                    transparent: true,
+                    opacity: 0.35 + Math.random() * 0.1,
+                    depthWrite: false,
+                });
+                const disc = new THREE.Mesh(new THREE.CircleGeometry(r, segments), blobMat);
+                disc.rotation.x = -Math.PI / 2;
+                disc.rotation.z = Math.random() * Math.PI * 2;
+                disc.position.set(
+                    (Math.random() - 0.5) * 1.8,
+                    0.005 * i,
+                    (Math.random() - 0.5) * 1.8
+                );
+                group.add(disc);
+                blobMats.push(blobMat);
+            }
+
+            // Outline ring — thick dark ring for Borderlands-style cel outline
+            const outlineRingMat = new THREE.MeshBasicMaterial({
+                color: 0x1a1a2e, // PALETTE.ink
+                transparent: true,
+                opacity: 0.25,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            });
+            const outlineRing = new THREE.Mesh(
+                new THREE.RingGeometry(1.8, 2.1, 8),
+                outlineRingMat
+            );
+            outlineRing.rotation.x = -Math.PI / 2;
+            outlineRing.rotation.z = Math.random() * Math.PI;
+            outlineRing.position.y = 0.005 * numBlobs;
+            group.add(outlineRing);
+            blobMats.push(outlineRingMat);
+
+            // Specular highlight blob — small bright spot for wet look
+            const specMat = new THREE.MeshBasicMaterial({
+                color: 0xfffff0,
+                transparent: true,
+                opacity: 0.2,
+                depthWrite: false,
+            });
+            const spec = new THREE.Mesh(new THREE.CircleGeometry(0.4, 5), specMat);
+            spec.rotation.x = -Math.PI / 2;
+            spec.position.set(
+                (Math.random() - 0.5) * 0.8,
+                0.005 * (numBlobs + 1),
+                (Math.random() - 0.5) * 0.8
+            );
+            group.add(spec);
+            blobMats.push(specMat);
+
+            this.scene.add(group);
+            this._bladderPuddles.push({ x, z, group, mats: blobMats, life: 5.0, age: 0 });
+        },
+
+        _updateBladderPuddles(dt) {
+            for (let i = this._bladderPuddles.length - 1; i >= 0; i--) {
+                const bp = this._bladderPuddles[i];
+                bp.life -= dt;
+                bp.age += dt;
+                const fade = Math.max(0, bp.life / 5.0); // 1→0 over 5s
+
+                // Fade all materials
+                for (const mat of bp.mats) {
+                    mat.opacity = mat._baseOpacity !== undefined
+                        ? mat._baseOpacity * fade
+                        : (mat.opacity > 0 ? mat.opacity : 0.35) * fade;
+                }
+                // Store base opacity on first frame
+                if (bp.age < dt * 2) {
+                    for (const mat of bp.mats) {
+                        mat._baseOpacity = mat.opacity / Math.max(0.01, fade);
+                    }
+                }
+
+                if (bp.life <= 0) {
+                    this.scene.remove(bp.group);
+                    bp.group.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+                    this._bladderPuddles.splice(i, 1);
+                }
+            }
+        },
+
+        _updateBladderRings(dt) {
+            for (let i = this._bladderRings.length - 1; i >= 0; i--) {
+                const br = this._bladderRings[i];
+                br.life -= dt;
+                const t = 1 - br.life / br.maxLife; // 0→1
+                // Expand to ~5 unit radius (burst damage range)
+                const scale = 1 + t * 12;
+                br.ring.scale.set(scale, scale, 1);
+                br.mat.opacity = 0.9 * (1 - t * t); // quadratic fade
+
+                if (br.life <= 0) {
+                    this.scene.remove(br.ring);
+                    br.ring.geometry.dispose();
+                    br.ring.material.dispose();
+                    this._bladderRings.splice(i, 1);
                 }
             }
         },

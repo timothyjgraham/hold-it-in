@@ -740,8 +740,8 @@ export const LEGENDARY_UPGRADES = [
     },
     {
         id: 'L11',
-        name: 'False Alarm',
-        description: 'Once per wave, a random Panicker\'s aura INVERTS — slows nearby enemies 30%',
+        name: 'Bladder Burst',
+        description: 'KO\'d enemies build pressure for 2s then BURST — 25% max HP splash damage in 5 units, chains',
         rarity: 'legendary',
         icon: 'star',
         towerRequirement: null,  // general

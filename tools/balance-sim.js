@@ -292,7 +292,7 @@ const GAME = {
     { id: 'L8', name: 'Nuclear Mop', rarity: 'legendary', tower: 'mop', maxStacks: 1, effect: 'nuclearMop', value: 4 },
     { id: 'L9', name: 'Ubik Flood', rarity: 'legendary', tower: 'ubik', maxStacks: 1, effect: 'ubikFlood', value: 2 },
     { id: 'L10', name: 'Golden Magnet', rarity: 'legendary', tower: 'coinmagnet', maxStacks: 1, effect: 'goldenMagnet', value: 0.25 },
-    { id: 'L11', name: 'False Alarm', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'falseAlarm', value: 0.3 },
+    { id: 'L11', name: 'Bladder Burst', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'bladderBurst', value: 0.25 },
     { id: 'L12', name: 'Overtime', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'overtime', value: 5 },
     { id: 'L13', name: 'Minimalist', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'minimalist', value: 2.5 },
     { id: 'L14', name: 'Hoarder', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'hoarder', value: 0.12 },

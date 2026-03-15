@@ -51,6 +51,7 @@ uniform vec3 uLightDir;
 uniform float uHitFlash;
 uniform float uDesperateTint;
 uniform float uAuraGlow;
+uniform float uBurstTint;
 uniform float uRimPower;
 uniform float uRimIntensity;
 
@@ -98,6 +99,14 @@ void main() {
 
     // Aura glow — pulsing emissive for Panicker speed aura
     color += vec3(uAuraGlow * 0.3, uAuraGlow * 0.2, 0.0);
+
+    // Bladder Burst tint — shift toward yellow-green as pressure builds
+    vec3 burstColor = vec3(
+        min(1.0, color.r + 0.3),
+        min(1.0, color.g + 0.25),
+        color.b * 0.2
+    );
+    color = mix(color, burstColor, uBurstTint);
 
     gl_FragColor = vec4(color, 1.0);
 
@@ -151,6 +160,7 @@ export const TOON_UNIFORM_DEFAULTS = {
     uHitFlash:      { value: 0.0 },
     uDesperateTint: { value: 0.0 },
     uAuraGlow:      { value: 0.0 },
+    uBurstTint:     { value: 0.0 },
     uRimPower:      { value: 3.0 },
     uRimIntensity:  { value: 0.4 },
 };
@@ -174,6 +184,7 @@ export function createToonMaterial(options = {}) {
         uHitFlash:      { value: 0.0 },
         uDesperateTint: { value: options.desperateTint || 0.0 },
         uAuraGlow:      { value: 0.0 },
+        uBurstTint:     { value: 0.0 },
         uRimPower:      { value: options.rimPower !== undefined ? options.rimPower : 3.0 },
         uRimIntensity:  { value: options.rimIntensity !== undefined ? options.rimIntensity : 0.4 },
     };
