@@ -22,7 +22,7 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 75,          // Starting currency — forces a real opening choice
+    startingCoins: 95,          // Starting currency — enough for 2 Ubik Sprays + 1 Magnet
 
     // Spawn
     spawnZoneZ: 69,             // Where enemies appear (behind the exit doors at z=68)

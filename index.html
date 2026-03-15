@@ -896,8 +896,8 @@
         // Curated wave compositions — one new enemy per introduction wave
         WAVE_COMPOSITIONS: [
             null, // index 0 unused
-            // Wave 1: Tutorial — polite knockers only
-            { enemies: [['polite', 5]], interval: 2.5, delay: 5 },
+            // Wave 1: Tutorial — PvZ pacing, 3 knockers with big gaps to learn the game
+            { enemies: [['polite', 3]], interval: 5.0, delay: 8 },
             // Wave 2: More knockers, Coin Magnet now available
             { enemies: [['polite', 7]], interval: 2.0, delay: 4 },
             // Wave 3: PEE DANCERS — fast, bouncy, come in groups
@@ -985,8 +985,8 @@
         // ─── FOREST WAVE COMPOSITIONS ─────────────────────────────────────
         FOREST_WAVE_COMPOSITIONS: [
             null,
-            // Wave 1: Deer only — gentle intro
-            { enemies: [['deer', 5]], interval: 2.5, delay: 5 },
+            // Wave 1: Deer only — gentle intro (wide spacing so first two come solo)
+            { enemies: [['deer', 5]], interval: 4.0, delay: 6 },
             // Wave 2: More deer
             { enemies: [['deer', 7]], interval: 2.0, delay: 4 },
             // Wave 3: SQUIRRELS — fast, bouncy, swarm
@@ -1058,8 +1058,8 @@
         // ─── OCEAN WAVE COMPOSITIONS ─────────────────────────────────────
         OCEAN_WAVE_COMPOSITIONS: [
             null,
-            // Wave 1: Dolphins only — gentle ocean intro
-            { enemies: [['dolphin', 5]], interval: 2.5, delay: 5 },
+            // Wave 1: Dolphins only — gentle ocean intro (wide spacing)
+            { enemies: [['dolphin', 5]], interval: 4.0, delay: 6 },
             // Wave 2: More dolphins
             { enemies: [['dolphin', 7]], interval: 2.0, delay: 4 },
             // Wave 3: FLYING FISH — fast, darting, swarm
@@ -1131,8 +1131,8 @@
         // ─── AIRPLANE WAVE COMPOSITIONS ─────────────────────────────────────
         AIRPLANE_WAVE_COMPOSITIONS: [
             null,
-            // Wave 1: Nervous Flyers only — welcome aboard
-            { enemies: [['nervous', 5]], interval: 2.5, delay: 5 },
+            // Wave 1: Nervous Flyers only — welcome aboard (wide spacing)
+            { enemies: [['nervous', 5]], interval: 4.0, delay: 6 },
             // Wave 2: More nervous flyers
             { enemies: [['nervous', 7]], interval: 2.0, delay: 4 },
             // Wave 3: BUSINESS CLASS — knockback immune
