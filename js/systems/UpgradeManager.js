@@ -177,6 +177,30 @@ export class UpgradeManager {
             }
         }
 
+        // Guarantee at least one tower-specific option if player owns towers
+        if (ownedTowerTypes.length > 0 && result.length >= 2) {
+            const towerSet = new Set(ownedTowerTypes);
+            const hasTowerSpecific = result.some(u => u.towerRequirement !== null);
+            if (!hasTowerSpecific) {
+                // Find a tower-specific upgrade matching an owned tower
+                const allTowerUpgrades = [...COMMON_UPGRADES, ...RARE_UPGRADES, ...LEGENDARY_UPGRADES].filter(u => {
+                    if (u.towerRequirement === null) return false;
+                    if ((this._stacks[u.id] || 0) >= u.maxStacks) return false;
+                    if (u.exclusive && this.hasUpgrade(u.exclusive)) return false;
+                    for (const req of u.towerRequirement) {
+                        if (!towerSet.has(req)) return false;
+                    }
+                    return !usedIds.has(u.id);
+                });
+                if (allTowerUpgrades.length > 0) {
+                    usedIds.delete(result[1].id);
+                    const pick = allTowerUpgrades[Math.floor(Math.random() * allTowerUpgrades.length)];
+                    result[1] = pick;
+                    usedIds.add(pick.id);
+                }
+            }
+        }
+
         // If we couldn't fill all 3 slots (very unlikely), pad with generals
         while (result.length < 3) {
             const allPool = this._getEligiblePool(ALL_UPGRADES, ownedTowerTypes);
