@@ -42,6 +42,7 @@ import {
 } from './models/EnvironmentModels.js';
 import {
     createForestGround,
+    createForestGrassTufts,
     createForestTrees,
     createForestBushes,
     createForestRocks,
@@ -114,6 +115,7 @@ window.createBathroomDoor = createBathroomDoor;
 
 // Forest environment
 window.createForestGround = createForestGround;
+window.createForestGrassTufts = createForestGrassTufts;
 window.createForestTrees = createForestTrees;
 window.createForestBushes = createForestBushes;
 window.createForestRocks = createForestRocks;

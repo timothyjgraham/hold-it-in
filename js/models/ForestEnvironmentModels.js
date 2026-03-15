@@ -31,60 +31,110 @@ export function createForestGround() {
     grassPlane.receiveShadow = true;
     group.add(grassPlane);
 
-    // --- Dirt path with canvas texture for subtle variation ---
-    const pathCanvas = document.createElement('canvas');
-    pathCanvas.width = 256;
-    pathCanvas.height = 512;
-    const ctx = pathCanvas.getContext('2d');
+    return group;
+}
 
-    // Base dirt color
-    ctx.fillStyle = '#8b7355';
-    ctx.fillRect(0, 0, 256, 512);
+// ─── 1b. Zelda-style Grass Tufts ────────────────────────────────────────────
 
-    // Random darker patches for texture
-    for (let i = 0; i < 80; i++) {
-        const px = Math.random() * 256;
-        const py = Math.random() * 512;
-        const ps = 8 + Math.random() * 20;
-        ctx.fillStyle = `rgba(80, 60, 40, ${0.1 + Math.random() * 0.15})`;
-        ctx.beginPath();
-        ctx.ellipse(px, py, ps, ps * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
+/** Create a single grass blade (triangle pointing up, slightly curved) */
+function _createBladeGeometry(height, width) {
+    const shape = new THREE.Shape();
+    // Tapered blade — wide base, pointed tip with slight asymmetry
+    shape.moveTo(-width / 2, 0);
+    shape.quadraticCurveTo(-width * 0.15, height * 0.6, width * 0.05, height);
+    shape.quadraticCurveTo(width * 0.2, height * 0.55, width / 2, 0);
+    shape.closePath();
+    return new THREE.ShapeGeometry(shape, 3);
+}
+
+export function createForestGrassTufts() {
+    const group = new THREE.Group();
+    group.name = 'forestGrassTufts';
+
+    // Material variants for natural color variation
+    const grassMats = [
+        toonMat(PALETTE.forestGrass),                      // base green
+        toonMat(PALETTE.forestBush),                       // brighter green
+        toonMat(PALETTE.forestMoss),                       // light mossy green
+        toonMat(PALETTE.forestLeafDark, { side: THREE.DoubleSide }), // dark accent
+    ];
+    // All double-sided so blades visible from any angle
+    grassMats.forEach(m => { m.side = THREE.DoubleSide; });
+
+    const tufts = []; // for wind animation
+
+    // --- Placement config ---
+    // Avoid outhouse area (roughly x: -3..3, z: 0..8)
+    // Play area is roughly x: -30..30, z: -5..75
+    const turfCount = 220;
+
+    for (let i = 0; i < turfCount; i++) {
+        const tuft = new THREE.Group();
+
+        // Pick a random position, biased toward visible play area
+        let tx, tz;
+        do {
+            tx = rand(-35, 35);
+            tz = rand(-5, 75);
+        } while (Math.abs(tx) < 3.5 && tz < 9 && tz > -1); // skip outhouse zone
+
+        // Size category: small (40%), medium (40%), large (20%)
+        const sizeRoll = Math.random();
+        let bladeCount, baseHeight, baseWidth;
+        if (sizeRoll < 0.4) {
+            // Small tuft
+            bladeCount = 2 + Math.floor(Math.random() * 2); // 2-3
+            baseHeight = rand(0.2, 0.4);
+            baseWidth = rand(0.08, 0.14);
+        } else if (sizeRoll < 0.8) {
+            // Medium tuft
+            bladeCount = 3 + Math.floor(Math.random() * 2); // 3-4
+            baseHeight = rand(0.4, 0.7);
+            baseWidth = rand(0.12, 0.2);
+        } else {
+            // Large tuft
+            bladeCount = 4 + Math.floor(Math.random() * 2); // 4-5
+            baseHeight = rand(0.65, 1.0);
+            baseWidth = rand(0.16, 0.25);
+        }
+
+        for (let b = 0; b < bladeCount; b++) {
+            const h = baseHeight * rand(0.7, 1.0);
+            const w = baseWidth * rand(0.7, 1.0);
+            const bladeGeo = _createBladeGeometry(h, w);
+            const mat = grassMats[Math.floor(Math.random() * grassMats.length)];
+            const blade = new THREE.Mesh(bladeGeo, mat);
+
+            // Spread blades slightly and rotate around Y for a fan shape
+            const angle = ((b / bladeCount) * Math.PI * 2) + rand(-0.3, 0.3);
+            blade.rotation.y = angle;
+            // Slight outward lean
+            blade.rotation.x = rand(-0.15, 0.15);
+            blade.rotation.z = rand(-0.1, 0.1);
+
+            // Small positional offset at base
+            blade.position.set(
+                Math.cos(angle) * rand(0.02, 0.06),
+                0,
+                Math.sin(angle) * rand(0.02, 0.06)
+            );
+
+            tuft.add(blade);
+        }
+
+        tuft.position.set(tx, 0, tz);
+        // Slight random Y rotation for variety
+        tuft.rotation.y = Math.random() * Math.PI * 2;
+        group.add(tuft);
+
+        tufts.push({
+            mesh: tuft,
+            phase: tx * 0.5 + tz * 0.3 + Math.random() * Math.PI, // spatial phase for wave effect
+            baseHeight: baseHeight,
+        });
     }
 
-    // Small pebble-like dots
-    for (let i = 0; i < 120; i++) {
-        const px = Math.random() * 256;
-        const py = Math.random() * 512;
-        ctx.fillStyle = `rgba(${Math.random() > 0.5 ? '100,90,70' : '160,140,110'}, ${0.15 + Math.random() * 0.1})`;
-        ctx.beginPath();
-        ctx.arc(px, py, 1 + Math.random() * 3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    const pathTexture = new THREE.CanvasTexture(pathCanvas);
-    pathTexture.wrapS = THREE.RepeatWrapping;
-    pathTexture.wrapT = THREE.RepeatWrapping;
-    pathTexture.repeat.set(2, 4);
-
-    const pathMat = new THREE.MeshToonMaterial({
-        map: pathTexture,
-        // toonMat gradient map is private, so we create a quick 3-tone ramp
-    });
-    // Apply gradient map manually for toon look
-    const gradData = new Uint8Array([89, 217, 255]); // matches TOON_RAMP
-    const gradTex = new THREE.DataTexture(gradData, 3, 1, THREE.LuminanceFormat);
-    gradTex.minFilter = THREE.NearestFilter;
-    gradTex.magFilter = THREE.NearestFilter;
-    gradTex.needsUpdate = true;
-    pathMat.gradientMap = gradTex;
-
-    const pathGeo = new THREE.PlaneGeometry(20, 70);
-    const pathMesh = new THREE.Mesh(pathGeo, pathMat);
-    pathMesh.rotation.x = -Math.PI / 2;
-    pathMesh.position.set(0, -0.03, 35);
-    pathMesh.receiveShadow = true;
-    group.add(pathMesh);
+    group.userData.tufts = tufts;
 
     return group;
 }
