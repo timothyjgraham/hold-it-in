@@ -6017,6 +6017,37 @@ const _clipBuilders = {
     trolley_bash_door_R:   _trolleyBash,
     trolley_hit_react:     _trolleyHitReact,
     trolley_death:         _trolleyDeath,
+
+    // Jumper archetypes (placeholder — reuse similar type animations)
+    // Vaulter → Polite (Office biped)
+    vaulter_walk:          _politeWalk,
+    vaulter_bash_door:     _politeBashR,
+    vaulter_bash_door_L:   _politeBashL,
+    vaulter_bash_door_R:   _politeBashR,
+    vaulter_hit_react:     _politeHitReact,
+    vaulter_death:         _politeDeath,
+
+    // Kangaroo → Deer (Forest quadruped)
+    kangaroo_walk:         _deerWalk,
+    kangaroo_bash_door:    _deerBash,
+    kangaroo_hit_react:    _deerHitReact,
+    kangaroo_death:        _deerDeath,
+
+    // Frog → Dolphin (Ocean marine)
+    frog_walk:             _dolphinWalk,
+    frog_bash_door:        _dolphinBash,
+    frog_bash_door_L:      _dolphinBash,
+    frog_bash_door_R:      _dolphinBash,
+    frog_hit_react:        _dolphinHit,
+    frog_death:            _dolphinDeath,
+
+    // Hurdler → Nervous Flyer (Airplane biped)
+    hurdler_walk:          _nervousWalk,
+    hurdler_bash_door:     _nervousBashR,
+    hurdler_bash_door_L:   _nervousBashL,
+    hurdler_bash_door_R:   _nervousBashR,
+    hurdler_hit_react:     _nervousHitReact,
+    hurdler_death:         _nervousDeath,
 };
 
 const _clipCache = new Map();

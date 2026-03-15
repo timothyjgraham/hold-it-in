@@ -11,7 +11,7 @@ import { createCapsule, createRoundedBox, createFlatCap, createOrganicTorso } fr
 import { GLBModelCache } from '../loaders/GLBModelCache.js';
 
 // Types that use the new rigid body parts pipeline
-const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly', 'drunk', 'ant', 'seahorse', 'trolley']);
+const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly', 'drunk', 'ant', 'seahorse', 'trolley', 'vaulter', 'kangaroo', 'frog', 'hurdler']);
 
 /**
  * Create a fully rigged enemy model.
@@ -116,7 +116,7 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 }
 
 function _outlineWidthForRigidType(type) {
-    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03, nervous: 0.03, business: 0.03, stumbler: 0.04, attendant: 0.03, marshal: 0.03, unruly: 0.02, drunk: 0.03, ant: 0.02, seahorse: 0.03, trolley: 0.03 };
+    const map = { polite: 0.03, dancer: 0.025, waddle: 0.04, panicker: 0.03, powerwalker: 0.03, girls: 0.02, deer: 0.03, squirrel: 0.02, dolphin: 0.03, flyfish: 0.03, shark: 0.04, pirate: 0.03, seaturtle: 0.03, jellyfish: 0.03, nervous: 0.03, business: 0.03, stumbler: 0.04, attendant: 0.03, marshal: 0.03, unruly: 0.02, drunk: 0.03, ant: 0.02, seahorse: 0.03, trolley: 0.03, vaulter: 0.03, kangaroo: 0.03, frog: 0.03, hurdler: 0.03 };
     return map[type] || 0.03;
 }
 
@@ -4764,6 +4764,11 @@ const _rigidBuilders = {
     ant: _buildRigidAnt,
     seahorse: _buildRigidSeahorse,
     trolley: _buildRigidTrolley,
+    // Jumper archetypes (placeholder — reuse similar type builders)
+    vaulter: _buildRigidPoliteKnocker,
+    kangaroo: _buildRigidDeer,
+    frog: _buildRigidDolphin,
+    hurdler: _buildRigidNervousFlyer,
 };
 
 

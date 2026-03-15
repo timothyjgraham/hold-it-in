@@ -33,6 +33,11 @@ const PRE_ALLOC = {
     attendant: 5,
     marshal: 5,
     unruly: 7,
+    // Jumper enemies
+    vaulter: 4,
+    kangaroo: 4,
+    frog: 4,
+    hurdler: 4,
     // Train enemies
     drunk: 8,
     ant: 10,

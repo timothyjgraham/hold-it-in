@@ -1569,3 +1569,43 @@ export const ENEMY_VISUAL_CONFIG = {
         restPose: {},
     },
 };
+
+// ─── JUMPER ARCHETYPES (placeholder models — reuse similar type skeletons) ────
+// Each jumper uses the skeleton/proportions of a similar existing type
+// with its own palette color. Unique models can be built later.
+
+ENEMY_VISUAL_CONFIG.vaulter = {
+    ...ENEMY_VISUAL_CONFIG.polite,
+    materialColors: {
+        body: PALETTE.vaulter,
+        skin: PALETTE.skin,
+        legs: PALETTE.pants,
+        outline: PALETTE.ink,
+    },
+};
+
+ENEMY_VISUAL_CONFIG.kangaroo = {
+    ...ENEMY_VISUAL_CONFIG.deer,
+    materialColors: {
+        ...ENEMY_VISUAL_CONFIG.deer.materialColors,
+        body: PALETTE.forestKangaroo,
+    },
+};
+
+ENEMY_VISUAL_CONFIG.frog = {
+    ...ENEMY_VISUAL_CONFIG.dolphin,
+    materialColors: {
+        ...ENEMY_VISUAL_CONFIG.dolphin.materialColors,
+        body: PALETTE.oceanFrog,
+    },
+};
+
+ENEMY_VISUAL_CONFIG.hurdler = {
+    ...ENEMY_VISUAL_CONFIG.nervous,
+    materialColors: {
+        body: PALETTE.airplaneHurdler,
+        skin: PALETTE.skin,
+        legs: PALETTE.pants,
+        outline: PALETTE.ink,
+    },
+};

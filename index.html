@@ -861,6 +861,44 @@
                 tripImmune: true, // Anti-potplant: too drunk to trip
             },
 
+            // ─── JUMPER ENEMIES (can leap over towers) ──────────────────
+            vaulter: {
+                name: 'Office Parkour',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 40, hpPerWave: 12,
+                size: 1.6, color: 0xa8c050, // PALETTE.vaulter — warm chartreuse
+                coins: 9, doorDmg: 3,
+                canJumpTower: true, // Leaps over ANY tower if landing zone is clear
+                flankChance: 0.3,
+            },
+            kangaroo: {
+                name: 'Kangaroo',
+                baseSpeed: 2.2, speedVar: 0.3,
+                baseHP: 45, hpPerWave: 14,
+                size: 4.5, color: 0xc49060, // PALETTE.forestKangaroo — sandy tan
+                coins: 10, doorDmg: 3,
+                canJumpTower: true,
+                flankChance: 0.25,
+            },
+            frog: {
+                name: 'Tree Frog',
+                baseSpeed: 2.0, speedVar: 0.3,
+                baseHP: 42, hpPerWave: 13,
+                size: 3.0, color: 0x70b830, // PALETTE.oceanFrog — vivid green
+                coins: 9, doorDmg: 3,
+                canJumpTower: true,
+                flankChance: 0.3,
+            },
+            hurdler: {
+                name: 'Olympic Hurdler',
+                baseSpeed: 2.2, speedVar: 0.3,
+                baseHP: 40, hpPerWave: 12,
+                size: 1.7, color: 0xe85830, // PALETTE.airplaneHurdler — track red
+                coins: 9, doorDmg: 3,
+                canJumpTower: true,
+                flankChance: 0.35,
+            },
+
             // ─── TRAIN ENEMIES (single-file column spawns) ──────────────
             drunk: {
                 name: 'Drunken Worker',
@@ -951,7 +989,7 @@
                 announcement: 'FOOD POISONING IN THE BREAK ROOM!',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
-                weights: { waddle: 0.30, panicker: 0.25, dancer: 0.20, polite: 0.15, girls_group: 0.10 },
+                weights: { waddle: 0.25, panicker: 0.20, dancer: 0.20, polite: 0.15, vaulter: 0.10, girls_group: 0.10 },
             },
             35: {
                 name: 'WING NIGHT',
@@ -959,7 +997,7 @@
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.3,
-                weights: { waddle: 0.40, polite: 0.20, powerwalker: 0.15, dancer: 0.15, panicker: 0.10 },
+                weights: { waddle: 0.35, polite: 0.18, powerwalker: 0.15, dancer: 0.12, panicker: 0.10, vaulter: 0.10 },
             },
             40: {
                 name: 'FIRE DRILL',
@@ -1039,7 +1077,7 @@
                 announcement: 'FOREST FIRE — EVERYONE FLEE!',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
-                weights: { bear: 0.30, fox: 0.25, squirrel: 0.20, deer: 0.15, raccoon_group: 0.10 },
+                weights: { bear: 0.25, fox: 0.20, squirrel: 0.20, deer: 0.15, kangaroo: 0.10, raccoon_group: 0.10 },
             },
             35: {
                 name: 'HIBERNATION PANIC',
@@ -1047,7 +1085,7 @@
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.3,
-                weights: { bear: 0.40, deer: 0.20, moose: 0.15, squirrel: 0.15, fox: 0.10 },
+                weights: { bear: 0.35, deer: 0.18, moose: 0.15, squirrel: 0.12, fox: 0.10, kangaroo: 0.10 },
             },
             40: {
                 name: 'STAMPEDE',
@@ -1112,7 +1150,7 @@
                 announcement: 'THE PIRATE ARMADA ATTACKS!',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
-                weights: { pirate: 0.40, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, jellyfish_group: 0.05 },
+                weights: { pirate: 0.35, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, frog: 0.05, jellyfish_group: 0.05 },
             },
             35: {
                 name: 'KRAKEN STIRS',
@@ -1120,7 +1158,7 @@
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.3,
-                weights: { shark: 0.35, seaturtle: 0.20, pirate: 0.20, dolphin: 0.15, jellyfish_group: 0.10 },
+                weights: { shark: 0.30, seaturtle: 0.18, pirate: 0.18, dolphin: 0.12, frog: 0.12, jellyfish_group: 0.10 },
             },
             40: {
                 name: 'MAELSTROM',
@@ -1185,7 +1223,7 @@
                 announcement: 'SOMEONE ATE THE FISH!',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
-                weights: { stumbler: 0.35, nervous: 0.25, attendant: 0.15, business: 0.15, unruly_group: 0.10 },
+                weights: { stumbler: 0.30, nervous: 0.20, attendant: 0.15, business: 0.15, hurdler: 0.10, unruly_group: 0.10 },
             },
             35: {
                 name: 'DUTY FREE',
@@ -1193,7 +1231,7 @@
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.3,
-                weights: { business: 0.30, nervous: 0.25, marshal: 0.20, attendant: 0.15, stumbler: 0.10 },
+                weights: { business: 0.25, nervous: 0.22, marshal: 0.18, attendant: 0.13, hurdler: 0.12, stumbler: 0.10 },
             },
             40: {
                 name: 'EMERGENCY LANDING',
@@ -1250,6 +1288,11 @@
             attendant:   { value: 3,  count: 1 },
             marshal:     { value: 8,  count: 2 },
             unruly:      { value: 2,  count: 1 },
+            // Jumper enemies
+            vaulter:     { value: 7,  count: 2 },
+            kangaroo:    { value: 8,  count: 2 },
+            frog:        { value: 7,  count: 2 },
+            hurdler:     { value: 7,  count: 2 },
             // Train enemies
             drunk:       { value: 3,  count: 1 },
             ant:         { value: 2,  count: 1 },
@@ -4122,6 +4165,29 @@
             });
         },
 
+        // Find a free landing tile behind a tower for jumper enemies.
+        // Checks 3 cells: directly behind, behind-left, behind-right.
+        // Returns { x, z } of best landing or null if all blocked.
+        _findJumpLanding(enemyX, tower) {
+            const gs = CONFIG.grid;
+            const landingZ = tower.gridZ - gs;
+            const snapX = Math.round(enemyX / gs) * gs;
+            const laneW = this._layout ? this._layout.laneWidth : CONFIG.laneWidth;
+            const halfW = Math.floor(laneW / gs / 2) * gs;
+            const candidates = [
+                { x: snapX, z: landingZ },
+                { x: snapX - gs, z: landingZ },
+                { x: snapX + gs, z: landingZ },
+            ];
+            const free = candidates.filter(c =>
+                c.x >= -halfW && c.x <= halfW && !this._isCellOccupied(c.x, c.z)
+            );
+            if (free.length === 0) return null;
+            // Pick cell closest to enemy's current X position
+            free.sort((a, b) => Math.abs(a.x - enemyX) - Math.abs(b.x - enemyX));
+            return free[0];
+        },
+
         _tryPlaceTower() {
             const pos = this._getGridPos();
             if (!pos) return;
@@ -6078,34 +6144,38 @@
             const defaultWeights = isAirplane ? [
                 ['unruly_group', 0.06],
                 ['trolley_train', 0.04],
+                ['hurdler', Math.min(0.10, 0.05 + wave * 0.002)],
                 ['marshal', Math.min(0.14, 0.08 + wave * 0.002)],
-                ['stumbler', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['stumbler', Math.min(0.16, 0.10 + wave * 0.002)],
                 ['attendant', Math.min(0.14, 0.10 + wave * 0.001)],
-                ['business', 0.25],
+                ['business', 0.22],
                 // remainder = nervous (fallback)
             ] : isOcean ? [
                 ['jellyfish_group', 0.06],
                 ['seahorse_train', 0.04],
+                ['frog', Math.min(0.10, 0.05 + wave * 0.002)],
                 ['pirate', Math.min(0.14, 0.08 + wave * 0.002)],
-                ['shark', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['shark', Math.min(0.16, 0.10 + wave * 0.002)],
                 ['seaturtle', Math.min(0.18, 0.14 + wave * 0.001)],
-                ['flyfish', 0.25],
+                ['flyfish', 0.22],
                 // remainder = dolphin (fallback)
             ] : isForest ? [
                 ['raccoon_group', 0.06],
                 ['ant_train', 0.04],
+                ['kangaroo', Math.min(0.10, 0.05 + wave * 0.002)],
                 ['fox', Math.min(0.14, 0.08 + wave * 0.002)],
-                ['bear', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['bear', Math.min(0.16, 0.10 + wave * 0.002)],
                 ['moose', Math.min(0.18, 0.14 + wave * 0.001)],
-                ['squirrel', 0.25],
+                ['squirrel', 0.22],
                 // remainder = deer (fallback)
             ] : [
                 ['girls_group', 0.06],
                 ['drunk_train', 0.04],
+                ['vaulter', Math.min(0.10, 0.05 + wave * 0.002)],
                 ['panicker', Math.min(0.14, 0.08 + wave * 0.002)],
-                ['waddle', Math.min(0.18, 0.12 + wave * 0.002)],
+                ['waddle', Math.min(0.16, 0.10 + wave * 0.002)],
                 ['powerwalker', Math.min(0.18, 0.14 + wave * 0.001)],
-                ['dancer', 0.25],
+                ['dancer', 0.22],
                 // remainder = polite (fallback)
             ];
             const fallbackType = isAirplane ? 'nervous' : isOcean ? 'dolphin' : isForest ? 'deer' : 'polite';
@@ -6435,6 +6505,11 @@
                 attendant: 'walk',
                 marshal: 'power_walk',
                 unruly: 'walk',
+                // Jumper enemies
+                vaulter: 'walk',
+                kangaroo: 'walk',
+                frog: 'walk',
+                hurdler: 'walk',
                 // Train enemies
                 drunk: 'wobble_walk',
                 ant: 'march',
@@ -7037,6 +7112,30 @@
                                     e.jumpPeakY = 2.0;
                                     e.z = barrierBashRange;
                                     if (e.animController) e.animController.playOneShot('bash_door');
+                                } else if (eDef && eDef.canJumpTower) {
+                                    // Jumper — leap over barrier if landing zone is clear
+                                    const landing = this._findJumpLanding(e.x, bt);
+                                    if (landing) {
+                                        e.jumping = true;
+                                        e.jumpTimer = 0;
+                                        e.jumpDuration = 0.6;
+                                        e.jumpStartZ = barrierBashRange;
+                                        e.jumpTargetZ = landing.z;
+                                        e.jumpStartX = e.x;
+                                        e.jumpTargetX = landing.x;
+                                        e.jumpPeakY = 2.5;
+                                        e.z = barrierBashRange;
+                                        if (e.animController) e.animController.playOneShot('bash_door');
+                                    } else {
+                                        // Landing blocked — bash normally
+                                        e.z = barrierBashRange;
+                                        e.mesh.position.z = e.z;
+                                        e.bashing = true;
+                                        e.bashingBarrier = bt;
+                                        e.bashTimer = 0.3 + Math.random() * 0.3;
+                                        e.bashCooldown = 1.0;
+                                        if (e.animController) e.animController.setState('bash_door');
+                                    }
                                 } else {
                                     // Stop and bash the barrier
                                     e.z = barrierBashRange;
@@ -7055,6 +7154,7 @@
                     // Trample towers — enemies kick/shove past any tower in their path
                     // Each enemy tracks which towers it already hit to avoid multi-damage
                     if (!e.trampledTowers) e.trampledTowers = new Set();
+                    if (!e.jumping) { // Skip tower interactions while mid-air
                     const trampleRadius = 0.8 + e.size * 0.3; // bigger enemies = wider trample
                     for (let ti = this.towers.length - 1; ti >= 0; ti--) {
                         const t = this.towers[ti];
@@ -7068,6 +7168,25 @@
                         const dist = Math.sqrt(dx * dx + dz * dz);
                         if (dist < trampleRadius) {
                             e.trampledTowers.add(tKey);
+
+                            // Jumper — leap over any tower if landing zone is clear
+                            const eTrampleDefJ = this.ENEMY_TYPES[e.type] || {};
+                            if (eTrampleDefJ.canJumpTower) {
+                                const landing = this._findJumpLanding(e.x, t);
+                                if (landing) {
+                                    e.jumping = true;
+                                    e.jumpTimer = 0;
+                                    e.jumpDuration = 0.6;
+                                    e.jumpStartZ = e.z;
+                                    e.jumpTargetZ = landing.z;
+                                    e.jumpStartX = e.x;
+                                    e.jumpTargetX = landing.x;
+                                    e.jumpPeakY = 2.5;
+                                    if (e.animController) e.animController.playOneShot('bash_door');
+                                    break; // Stop checking towers — we're jumping
+                                }
+                                // Landing blocked — fall through to normal trample behavior
+                            }
 
                             // Pot plant — kick it! Enemy trips, pot slides away
                             if (t.type === 'potplant') {
@@ -7122,6 +7241,7 @@
                             }
                         }
                     }
+                    } // end if (!e.jumping) for trample
 
                     // Walk animation (6B speed sync + 6C secondary motion + 6D effects)
                     // 6B: sync animation speed with movement modifiers
@@ -7178,12 +7298,16 @@
                     e.walkPhase += dt * e.speed * (e.desperate ? 3 : 2);
                 }
 
-                // Jump arc update — dancer leaping over barriers
+                // Jump arc update — leaping over barriers/towers
                 if (e.jumping) {
                     e.jumpTimer += dt;
                     const jt = Math.min(1, e.jumpTimer / e.jumpDuration);
                     // Linear Z interpolation
                     e.z = e.jumpStartZ + (e.jumpTargetZ - e.jumpStartZ) * jt;
+                    // Lateral interpolation for tower jumps (jumpers may land on adjacent tile)
+                    if (e.jumpTargetX !== undefined) {
+                        e.x = e.jumpStartX + (e.jumpTargetX - e.jumpStartX) * jt;
+                    }
                     // Parabolic Y arc
                     e.mesh.position.y = 4 * e.jumpPeakY * jt * (1 - jt);
                     // Forward lean
@@ -7195,6 +7319,8 @@
                         e.jumpTimer = 0;
                         e.mesh.position.y = 0;
                         e.mesh.rotation.x = 0;
+                        e.jumpTargetX = undefined;
+                        e.jumpStartX = undefined;
                     }
                 }
 

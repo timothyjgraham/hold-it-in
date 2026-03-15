@@ -52,6 +52,7 @@ export const PALETTE = {
     power:      0x20b89a,   // Power Walker — jade/teal (athletic, composed)
     girls:      0xe84888,   // The Girls — hot pink (unmistakable cluster)
     drunk:      0xd47070,   // Drunken Workers — flushed rosy red (Office train)
+    vaulter:    0xa8c050,   // Office Parkour — warm chartreuse (sporty, energetic)
 
     // ─── TOWERS ───────────────────────────────────────────────────────────────
     // Defensive structures — slightly cooler/synthetic vs. the warm enemy palette
@@ -120,6 +121,7 @@ export const PALETTE = {
     forestMoose:     0x6a5a4a,  // Gray-brown — massive, stoic
     forestRaccoon:   0x7a7a7a,  // Charcoal gray — sneaky, masked
     forestAnt:       0x6b3030,  // Dark reddish-brown — marching colony (train)
+    forestKangaroo:  0xc49060,  // Sandy tan — dusty outback fur (jumper)
 
     // ─── FOREST LIGHTING ────────────────────────────────────────────────────
 
@@ -156,6 +158,7 @@ export const PALETTE = {
     oceanJelly:      0xd080c0,  // Pink-purple jellyfish bell — ethereal
     oceanJellyGlow:  0xe8a0e0,  // Jellyfish inner glow — brighter pink
     oceanSeahorse:   0xf0a870,  // Warm coral/orange — drifting chain (train)
+    oceanFrog:       0x70b830,  // Vivid leaf green — tropical tree frog (jumper)
 
     // ─── OCEAN LIGHTING ────────────────────────────────────────────────────
 
@@ -190,6 +193,7 @@ export const PALETTE = {
     airplaneMarshal:    0x4a4a5a,  // Dark charcoal — undercover authority
     airplaneUnruly:     0xe87830,  // Party orange — rowdy passenger
     airplaneTrolley:    0x9a9aa8,  // Metallic silver-grey — drinks cart (train)
+    airplaneHurdler:    0xe85830,  // Track red-orange — Olympic athlete (jumper)
 
     // ─── AIRPLANE LIGHTING ────────────────────────────────────────────────
 
