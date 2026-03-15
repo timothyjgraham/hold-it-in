@@ -1265,6 +1265,52 @@
             },
         },
 
+        // ─── ENEMY DRAW POOLS ────────────────────────────────────────
+        // Slay the Spire-style weighted random draw for curated waves (1-10).
+        // Once a type is ungated at its unlocksAt wave, it enters the draw pool.
+        // Each enemy slot is an independent weighted random draw — you might get
+        // an unlucky streak of tanks or a blessed run of easy fodder. That's the fun.
+        // Special types (trains/swarms) have low weights — rare but impactful.
+        // On intro waves, a few of the new type are guaranteed so you see what's new.
+        ENEMY_DRAW_POOL: {
+            office: [
+                { type: 'polite',       weight: 1.0,  unlocksAt: 1 },
+                { type: 'dancer',       weight: 0.8,  unlocksAt: 3 },
+                { type: 'waddle',       weight: 0.4,  unlocksAt: 5 },
+                { type: 'panicker',     weight: 0.3,  unlocksAt: 7 },
+                { type: 'drunk_train',  weight: 0.1,  unlocksAt: 8 },
+                { type: 'powerwalker',  weight: 0.45, unlocksAt: 9 },
+                { type: 'girls_group',  weight: 0.12, unlocksAt: 10 },
+            ],
+            forest: [
+                { type: 'deer',           weight: 1.0,  unlocksAt: 1 },
+                { type: 'squirrel',       weight: 0.8,  unlocksAt: 3 },
+                { type: 'bear',           weight: 0.4,  unlocksAt: 5 },
+                { type: 'fox',            weight: 0.3,  unlocksAt: 7 },
+                { type: 'ant_train',      weight: 0.1,  unlocksAt: 8 },
+                { type: 'moose',          weight: 0.45, unlocksAt: 9 },
+                { type: 'raccoon_group',  weight: 0.12, unlocksAt: 10 },
+            ],
+            ocean: [
+                { type: 'dolphin',          weight: 1.0,  unlocksAt: 1 },
+                { type: 'flyfish',          weight: 0.8,  unlocksAt: 3 },
+                { type: 'shark',            weight: 0.4,  unlocksAt: 5 },
+                { type: 'pirate',           weight: 0.3,  unlocksAt: 7 },
+                { type: 'seahorse_train',   weight: 0.1,  unlocksAt: 8 },
+                { type: 'seaturtle',        weight: 0.45, unlocksAt: 9 },
+                { type: 'jellyfish_group',  weight: 0.12, unlocksAt: 10 },
+            ],
+            airplane: [
+                { type: 'nervous',        weight: 1.0,  unlocksAt: 1 },
+                { type: 'business',       weight: 0.8,  unlocksAt: 3 },
+                { type: 'stumbler',       weight: 0.4,  unlocksAt: 5 },
+                { type: 'attendant',      weight: 0.3,  unlocksAt: 7 },
+                { type: 'trolley_train',  weight: 0.1,  unlocksAt: 8 },
+                { type: 'marshal',        weight: 0.45, unlocksAt: 9 },
+                { type: 'unruly_group',   weight: 0.12, unlocksAt: 10 },
+            ],
+        },
+
         // Coin drop table — physical coins scattered on enemy death
         // Values are ~30% higher than old instant rewards (skill bonus for collection)
         COIN_DROPS: {
@@ -6351,11 +6397,31 @@
             }
 
             if (comp) {
-                for (const [type, count] of comp.enemies) {
+                // Total enemy count from composition (preserves wave pacing)
+                let total = comp.enemies.reduce((sum, [_, count]) => sum + count, 0);
+
+                // Build unlocked pool — only types ungated by this wave
+                const scenario = this._currentScenario || 'office';
+                const fullPool = this.ENEMY_DRAW_POOL[scenario] || this.ENEMY_DRAW_POOL.office;
+                const pool = fullPool.filter(e => e.unlocksAt <= this.wave);
+
+                // On intro waves, guarantee some of the new type so the player sees it
+                const introEntry = fullPool.find(e => e.unlocksAt === this.wave && e.unlocksAt > 1);
+                if (introEntry) {
+                    // Trains/swarms already spawn multiple, so 1 queue slot is enough
+                    const guaranteed = (introEntry.type.endsWith('_train') || introEntry.type.endsWith('_group')) ? 1 : 2;
+                    const count = Math.min(guaranteed, total);
                     for (let i = 0; i < count; i++) {
-                        this._spawnQueue.push(type);
+                        this._spawnQueue.push(introEntry.type);
                     }
+                    total -= count;
                 }
+
+                // Fill remaining slots with weighted random draws from the pool
+                for (let i = 0; i < total; i++) {
+                    this._spawnQueue.push(this._drawFromPool(pool));
+                }
+
                 this.spawnInterval = comp.interval;
                 this._burstSize = 1;
                 this._eventSpeedMult = 1.0;
@@ -6522,6 +6588,17 @@
                 queue.push(type);
             }
             return queue;
+        },
+
+        // Weighted random draw from an array of {type, weight} entries
+        _drawFromPool(pool) {
+            const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+            let roll = Math.random() * totalWeight;
+            for (const entry of pool) {
+                roll -= entry.weight;
+                if (roll <= 0) return entry.type;
+            }
+            return pool[pool.length - 1].type;
         },
 
         _spawnEnemy() {
