@@ -14,12 +14,15 @@ class TowerController {
     this.sellRefundRate = 0.5;  // R22 Recycler sets to 1.0
     this.permanentDmgBonus = 0; // R26 Controlled Demo stacks
     this._hasControlledDemo = false;
+    this._bargainBin = false;   // C19: pot plants cost 0
   }
 
   /**
    * Get the current cost of a tower type, accounting for cost multiplier upgrades.
    */
   towerCost(type) {
+    // C19: Bargain Bin — pot plants cost 0
+    if (type === 'potplant' && this._bargainBin) return 0;
     return Math.ceil(GAME.towers[type].cost * this.costMult);
   }
 
@@ -89,11 +92,13 @@ class TowerController {
       case 'R24': // Skeleton Crew: max 6 tower slots
         this.maxSlots = 6;
         break;
-      case 'R23': // Devotion: 30% cost reduction (approximated globally)
-        this.costMult *= 0.7;
+      case 'R23': // Devotion: 30% cost reduction for locked types only.
+        // In practice player locks ~2 of 5 types, so ~40% of towers get the discount.
+        // Approximate as a smaller global discount: ~12% overall savings.
+        this.costMult *= 0.88;
         break;
-      case 'C19': // Bargain Bin: potplant cost halved (approximated)
-        // In practice only affects potplant; kept as flag for simplicity
+      case 'C19': // Bargain Bin: pot plants cost 0 (but only 2 HP)
+        this._bargainBin = true;
         break;
       case 'R26': // Controlled Demolition: track that we have it
         this._hasControlledDemo = true;

@@ -369,11 +369,11 @@ class TowerAI {
 
     // Global damage multipliers
     let globalDmgMult = 1.0;
-    // C17: Glass Cannon (+80% damage, -50% HP)
-    if (upgrades.C17) globalDmgMult *= 1.8;
-    // C18: Slow and Steady (+60% damage per hit, -40% attack speed)
-    const slowSteadySpeedMult = upgrades.C18 ? 0.6 : 1.0;
-    if (upgrades.C18) globalDmgMult *= 1.6;
+    // C17: Glass Cannon (+50% damage, -50% HP) — matches UpgradeManager glassCannonDamageMult
+    if (upgrades.C17) globalDmgMult *= 1.5;
+    // C18: Slow and Steady (+40% damage per hit, cooldown ×1.4) — matches UpgradeManager
+    const slowSteadySpeedMult = upgrades.C18 ? (1.0 / 1.4) : 1.0;
+    if (upgrades.C18) globalDmgMult *= 1.4;
     // R21: Specialist (+15% per tower type NOT owned)
     if (upgrades.R21) {
       const typesOwned = Object.keys(t).filter(k => t[k] > 0).length;
@@ -387,8 +387,8 @@ class TowerAI {
     // R30: Sympathetic Damage (8% splash — estimate ~10% bonus from crowd hits)
     if (upgrades.R30) globalDmgMult *= 1.10;
 
-    // R27: Double Shift (1.6x attack rate)
-    const doubleShiftMult = upgrades.R27 ? 1.6 : 1.0;
+    // R27: Double Shift (1.4x attack rate) — matches UpgradeManager
+    const doubleShiftMult = upgrades.R27 ? 1.4 : 1.0;
 
     // Mop: damage / cooldown
     const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3;
@@ -1211,7 +1211,7 @@ function analyzeUpgrades() {
     // Rare — Build-Defining
     { id: 'R23', dps: 5.0, note: 'Devotion: +60% dmg + -30% cost for 2 tower types — STRONG focused builds' },
     { id: 'R24', dps: 4.0, note: 'Skeleton Crew: +25% per empty slot (max 6 towers) — synergy with minimalist play' },
-    { id: 'R27', dps: 5.0, note: '1.6x attack rate but 2 self-dmg — still strong, less OP' },
+    { id: 'R27', dps: 5.0, note: '1.4x attack rate but 2 self-dmg — still strong, less OP' },
     { id: 'R28', dps: 2.5, note: 'front +50%, back -30% — ~+10% avg' },
     { id: 'R29', dps: 3.0, note: 'Contagion: slow spreads — massive with R17 Marked for Death combo' },
     { id: 'R30', dps: 2.5, note: '8% splash — scales with dense waves' },

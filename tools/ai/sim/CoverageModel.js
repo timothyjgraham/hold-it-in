@@ -40,8 +40,8 @@ class CoverageModel {
 
     // C17: Glass Cannon (+50% damage, -50% HP)
     if (upgrades.C17) globalDmgMult *= 1.5;
-    // C18: Slow and Steady (+40% damage per hit, -40% attack speed)
-    const slowSteadySpeedMult = upgrades.C18 ? 0.6 : 1.0;
+    // C18: Slow and Steady (+40% damage per hit, cooldown ×1.4 → DPS ×(1/1.4))
+    const slowSteadySpeedMult = upgrades.C18 ? (1.0 / 1.4) : 1.0;
     if (upgrades.C18) globalDmgMult *= 1.4;
     // R21: Specialist (+15% per tower type NOT owned)
     if (upgrades.R21) {
@@ -53,8 +53,8 @@ class CoverageModel {
     if (upgrades.R23) globalDmgMult *= 1 + 0.6 * 0.6;
     // R28: Danger Pay (front +50%, back -30% — estimate avg ~+10% across all towers)
     if (upgrades.R28) globalDmgMult *= 1.10;
-    // R30: Sympathetic Damage (8% splash — estimate ~10% bonus from crowd hits)
-    if (upgrades.R30) globalDmgMult *= 1.10;
+    // R30: Sympathetic Damage (8% splash to 4u radius — not modeled in computeDPS,
+    // applied wave-aware in resolveFast instead)
 
     // R27: Double Shift (1.4x attack rate)
     const doubleShiftMult = upgrades.R27 ? 1.4 : 1.0;
@@ -91,8 +91,8 @@ class CoverageModel {
     const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25 * ubikScale * ubikFocus;
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
     const ubikDPS = (GAME.towers.ubik.damage * ubikDmgMult * GAME.towers.ubik.sprayDuration) / ubikCycle;
-    // C12: Wide Spray — 80% wider cone → hits ~50% more enemies (AoE 2.0 → 3.0)
-    const ubikAoeMult = upgrades.C12 ? 3.0 : 2.0;
+    // C12: Wide Spray — 80% wider cone → hits ~80% more enemies (AoE 2.0 → 3.6)
+    const ubikAoeMult = upgrades.C12 ? 3.6 : 2.0;
     dps += t.ubik * ubikDPS * ubikAoeMult * slowSteadySpeedMult * doubleShiftMult;
 
     // Pot plant: trip damage / (stun + re-approach time)
@@ -158,39 +158,8 @@ class CoverageModel {
       dps *= 1 + emptySlots * 0.25;
     }
 
-    // ── Chase Cards (ungated — always active, scale with investment) ──
-
-    // R33: Plumber's Union — soaked enemies take ×1.5 damage, +0.1× per mop upgrade (cap ×2.5)
-    if (upgrades.R33) {
-      const mopCount = countUpgradesForTowerSim(upgrades, 'mop', 'R33');
-      const soakMult = Math.min(2.5, 1.5 + mopCount * 0.1);
-      const soakedFraction = Math.min(1.0, 0.15 + 0.20 * t.mop + (upgrades.C7 ? 0.15 : 0)
-        + (upgrades.C9 && mopUpgradeCount >= 2 ? 0.10 : 0)); // retrigger = more soaks
-      dps *= 1 + soakedFraction * (soakMult - 1);
-    }
-
-    // R34: Terracotta Army — tripped enemies are Cracked: ×1.4 from ALL sources (+0.15× per pot upgrade)
-    // Multiplicative bridge between pot builds and DPS — Path of Achra style
-    if (upgrades.R34) {
-      const potCount = countUpgradesForTowerSim(upgrades, 'potplant', 'R34');
-      const crackMult = 1.4 + potCount * 0.15;
-      // Retrigger means more enemies cracked
-      const retriggerBoost = (upgrades.C16 && potUpgradeCount >= 2) ? 0.08 : 0;
-      const crackedFraction = Math.min(0.8, 0.15 + t.potplant * 0.12 + retriggerBoost);
-      dps *= 1 + crackedFraction * (crackMult - 1);
-      dps += t.potplant * 2.0 * (1 + potCount * 0.3);
-    }
-
-    // R35: Money Printer — coins buff all tower damage +1%/4s (cap 30+5/mag upgrade) + atk speed
-    if (upgrades.R35) {
-      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet', 'R35');
-      const stackCap = 30 + magCount * 5;
-      const coinsPerSec = (t.coinmagnet > 0 ? t.coinmagnet : 0.5) * (upgrades.C1 ? 2.5 : 1.5);
-      const steadyState = Math.min(stackCap, coinsPerSec * 4);
-      dps *= 1 + steadyState / 100;
-      const atkSpeedBonus = Math.min(0.15, steadyState * 0.005);
-      dps *= 1 + atkSpeedBonus;
-    }
+    // NOTE: Chase Cards (R33, R34, R35) are applied ONLY in resolveFast()/resolveTick()
+    // to avoid double-counting. They are NOT applied here in computeDPS().
 
     return dps;
   }
@@ -248,37 +217,81 @@ class CoverageModel {
       }
     }
 
-    // ── 2. Compute tower DPS ──
+    // ── 2. Compute enemy ability fractions for this wave ──
+    const totalEnemyCount = enemies.length;
+    let slowImmuneCount = 0;
+    let jumpBarrierCount = 0;
+    let jumpTowerCount = 0;
+    let knockbackImmuneCount = 0;
+    let tripImmuneCount = 0;
+    let sprayResistTotal = 0; // sum of (1 - sprayResist) for resist enemies
+    let magnetDisableCount = 0;
+
+    for (const type of enemies) {
+      const def = GAME.enemies[type];
+      if (!def) continue;
+      if (def.slowImmune) slowImmuneCount++;
+      if (def.canJumpBarrier) jumpBarrierCount++;
+      if (def.canJumpTower) jumpTowerCount++;
+      if (def.knockbackImmune) knockbackImmuneCount++;
+      if (def.tripImmune) tripImmuneCount++;
+      if (def.sprayResist) sprayResistTotal += (1 - def.sprayResist);
+      if (def.magnetDisableRange) magnetDisableCount++;
+    }
+
+    const slowImmuneFrac = totalEnemyCount > 0 ? slowImmuneCount / totalEnemyCount : 0;
+    const jumpBarrierFrac = totalEnemyCount > 0 ? jumpBarrierCount / totalEnemyCount : 0;
+    const jumpTowerFrac = totalEnemyCount > 0 ? jumpTowerCount / totalEnemyCount : 0;
+    const knockbackImmuneFrac = totalEnemyCount > 0 ? knockbackImmuneCount / totalEnemyCount : 0;
+    const tripImmuneFrac = totalEnemyCount > 0 ? tripImmuneCount / totalEnemyCount : 0;
+    // Average spray effectiveness: enemies with sprayResist 0.5 take half damage
+    const sprayEffectiveness = totalEnemyCount > 0
+      ? 1.0 - (sprayResistTotal / totalEnemyCount) : 1.0;
+    const magnetDisableFrac = totalEnemyCount > 0 ? magnetDisableCount / totalEnemyCount : 0;
+
+    // ── 3. Compute tower DPS ──
     const dps = this.computeDPS(towers, upgrades, permanentDmgBonus, wave);
 
-    // ── 3. Compute wave timing ──
+    // ── 4. Compute wave timing ──
     const avgSpeed = 3.5 * (1 + wave * 0.04) * eventSpeedMult;
     const traverseTime = GAME.traverseDistance / avgSpeed;
     const spawnDuration = enemies.length * interval;
     const waveDuration = spawnDuration + traverseTime;
 
-    // ── 4. Apply all upgrade bonuses ──
+    // ── 5. Apply all upgrade bonuses ──
 
-    // Slow towers add effective time
-    let slowBonus = towers.wetfloor > 0 ? 1.25 : 1.0;
+    // Slow towers add effective time — reduced by slow-immune and barrier-jumper fractions
+    const slowableFrac = 1.0 - slowImmuneCount / Math.max(1, totalEnemyCount);
+    const barrierEffective = 1.0 - jumpBarrierFrac * 0.5; // barrier jumpers partially bypass signs
+    let slowBonus = towers.wetfloor > 0 ? (1.0 + 0.25 * slowableFrac * barrierEffective) : 1.0;
     // C5: Extra Slippery — slow to 15% (from 40%), massive slow improvement
-    if (upgrades.C5 && towers.wetfloor > 0) slowBonus *= 1.30;
+    if (upgrades.C5 && towers.wetfloor > 0) slowBonus *= (1.0 + 0.30 * slowableFrac);
     // C4: Reinforced Signs — +120% HP per stack, signs survive longer = more slowing
-    if (upgrades.C4 && towers.wetfloor > 0) slowBonus *= (1 + (upgrades.C4) * 0.06);
-    // R29: Contagion (slow spreads — ~30% more enemies slowed)
-    if (upgrades.R29 && towers.wetfloor > 0) slowBonus *= 1.15;
-    // R17: Marked for Death (+40% damage to slowed enemies, ~60% slowed)
-    const markedBonus = (upgrades.R17 && towers.wetfloor > 0) ? 1.25 : 1.0;
-    // L12: Overtime — conditional: scales with sign upgrades, gated by conditionalScale
+    if (upgrades.C4 && towers.wetfloor > 0) slowBonus *= (1 + (upgrades.C4) * 0.06 * slowableFrac);
+    // R29: Contagion (slow spreads — ~30% more enemies slowed, reduced by immune fraction)
+    if (upgrades.R29 && towers.wetfloor > 0) slowBonus *= (1.0 + 0.15 * slowableFrac);
+    // R17: Marked for Death (+40% damage to slowed enemies — only applies to slowable fraction)
+    const markedBonus = (upgrades.R17 && towers.wetfloor > 0)
+      ? (1.0 + 0.40 * slowableFrac * 0.6) : 1.0; // ~60% of slowable enemies are slowed at any time
+    // L12: Overtime — 2× tower speed + 0.5× enemy speed = ~4× effective DPS during window
     const overtimeScale = upgrades.L12 ? conditionalScale(upgrades, 'wetfloor', 'L12') : 0;
     const overtimeDur = upgrades.L12 ? (3 + 0.8 * countUpgradesForTowerSim(upgrades, 'wetfloor', 'L12')) : 0;
-    const overtimeBonus = upgrades.L12 ? (1 + overtimeScale * 1.0 * Math.min(overtimeDur, waveDuration) / waveDuration) : 1.0;
-    // L2: Desperate Measures (2x damage below 50% door HP)
-    const desperateBonus = (upgrades.L2 && doorHP < doorMaxHP * 0.5) ? 2.0 : 1.0;
-    // R16: Crossfire (estimate — requires 3+ tower types hit)
-    const crossfireBonus = upgrades.R16 ? 1.08 : 1.0;
-    // R18: Crowd Surfing (+30% when 3+ enemies nearby, ~25% in crowds)
-    const crowdBonus = upgrades.R18 ? 1.08 : 1.0;
+    // During overtime window: 2× attacks AND enemies take ~2× longer (0.5× speed), so ~4× effective
+    const overtimeWindowMult = 4.0;
+    const overtimeBonus = upgrades.L12
+      ? (1 + overtimeScale * (overtimeWindowMult - 1) * Math.min(overtimeDur, waveDuration) / waveDuration)
+      : 1.0;
+    // L2: Desperate Measures (2x damage + 30% attack speed below 50% door HP)
+    const desperateBonus = (upgrades.L2 && doorHP < doorMaxHP * 0.5) ? (2.0 * 1.3) : 1.0;
+    // R16: Crossfire — scales with number of distinct tower types owned
+    const towerTypesOwned = Object.keys(towers).filter(k => towers[k] > 0).length;
+    const crossfireProc = Math.min(0.7, towerTypesOwned >= 3 ? 0.15 + (towerTypesOwned - 3) * 0.15 : 0);
+    const crossfireBonus = upgrades.R16 ? (1.0 + 0.40 * crossfireProc) : 1.0;
+    // R18: Crowd Surfing — scales with enemy density (more enemies = more clustering)
+    const enemyDensity = Math.min(1.0, totalEnemyCount / 80); // 80+ enemies = full clustering
+    const crowdBonus = upgrades.R18 ? (1.0 + 0.30 * enemyDensity * 0.6) : 1.0;
+    // R30: Sympathetic Damage (8% splash to 4u radius) — scales with enemy density
+    const sympatheticBonus = upgrades.R30 ? (1.0 + 0.08 * enemyDensity * 2.5) : 1.0;
     // R31: Rush Defense (2.5x first 3s, then -25%)
     const rushBonus = upgrades.R31
       ? (1 + (2.5 * Math.min(3, waveDuration) - 0.25 * Math.max(0, waveDuration - 3)) / waveDuration)
@@ -293,8 +306,41 @@ class CoverageModel {
       : 1.0;
     // L17: Assembly Line (+20% per adjacent tower, estimate avg 1.5 adjacents)
     const assemblyBonus = upgrades.L17 ? 1.30 : 1.0;
-    // L18: Last Stand (3x at 1HP, estimate ~10% of towers at 1HP avg)
-    const lastStandBonus = upgrades.L18 ? 1.20 : 1.0;
+    // L18: Last Stand — model tower HP depletion from R27 Double Shift self-damage
+    // With R27: towers take 2 HP per attack. Estimate attacks per wave per tower.
+    // C17: Glass Cannon halves tower HP. L18: 3× damage + 50% speed at 1HP.
+    let lastStandBonus = 1.0;
+    if (upgrades.L18) {
+      const totalTowerCount = Object.values(towers).reduce((a, b) => a + b, 0);
+      if (upgrades.R27 && totalTowerCount > 0) {
+        // R27 burns tower HP: 2 damage per attack
+        // Estimate fraction of towers at 1HP by end of wave
+        const avgTowerHP = (() => {
+          let total = 0, count = 0;
+          for (const [type, n] of Object.entries(towers)) {
+            if (n <= 0) continue;
+            let hp = GAME.towers[type].hp;
+            if (upgrades.C17) hp = Math.ceil(hp * 0.5); // Glass Cannon halves HP
+            if (type === 'mop' && upgrades.C10) hp += (upgrades.C10) * 4;
+            if (type === 'wetfloor' && upgrades.C4) hp = Math.round(hp * (1 + (upgrades.C4) * 1.2));
+            if (type === 'coinmagnet' && upgrades.C3) hp += (upgrades.C3) * 5;
+            total += hp * n;
+            count += n;
+          }
+          return count > 0 ? total / count : 6;
+        })();
+        // Attacks per tower per wave ≈ waveDuration / avg cooldown
+        const avgCooldown = 1.2; // rough avg across attacking tower types
+        const attacksPerTower = waveDuration / avgCooldown;
+        const hpBurned = attacksPerTower * 2; // R27: 2 self-damage per attack
+        const atOneHP = Math.min(1.0, hpBurned / avgTowerHP);
+        // 3× damage and 1.5× attack speed for towers at 1HP
+        lastStandBonus = 1.0 + atOneHP * (3.0 * 1.5 - 1.0);
+      } else {
+        // Without R27, very few towers reach 1HP naturally (~5%)
+        lastStandBonus = 1.05;
+      }
+    }
     // L11: Bladder Burst (25% max HP splash on death, ~15% bonus)
     const burstBonus = upgrades.L11 ? 1.15 : 1.0;
     // L9: Ubik Flood — conditional: DPS scales with ubik upgrades, gated by conditionalScale
@@ -309,12 +355,15 @@ class CoverageModel {
     // ── Conditional legendaries: fast-mode approximations (L4, L5, L6, L7, L8) ──
 
     // L4: Rush Hour Pileup (mop) — collision stun + damage, scales with mop investment
+    // Reduced by knockback-immune enemy fraction
     const pileupScale = upgrades.L4 ? conditionalScale(upgrades, 'mop', 'L4') : 0;
-    const pileupBonus = upgrades.L4 ? (1 + pileupScale * 0.12) : 1.0;
+    const pileupBonus = upgrades.L4 ? (1 + pileupScale * 0.12 * (1 - knockbackImmuneFrac)) : 1.0;
 
     // L5: Domino Effect (pot) — chain tripping, scales with pot investment
+    // Reduced by trip-immune and jumper fractions (jumpers/barrier-jumpers can avoid trips)
     const dominoScale = upgrades.L5 ? conditionalScale(upgrades, 'potplant', 'L5') : 0;
-    const dominoBonus = (upgrades.L5 && towers.potplant > 0) ? (1 + dominoScale * 0.10) : 1.0;
+    const trippableFrac = 1.0 - tripImmuneFrac - jumpTowerFrac * 0.5;
+    const dominoBonus = (upgrades.L5 && towers.potplant > 0) ? (1 + dominoScale * 0.10 * Math.max(0, trippableFrac)) : 1.0;
 
     // L6: Spill Zone (wetfloor) — death puddles slow+damage, scales with sign investment
     const spillScale = upgrades.L6 ? conditionalScale(upgrades, 'wetfloor', 'L6') : 0;
@@ -340,12 +389,12 @@ class CoverageModel {
     }
 
     // R34: Terracotta Army — Cracked debuff: ×1.4 base +0.15× per pot upgrade on tripped enemies
-    // Multiplicative bridge: pot investment amplifies ALL damage sources
+    // Reduced by trip-immune enemy fraction
     let terracottaBonus = 1.0;
     if (upgrades.R34) {
       const potCount = countUpgradesForTowerSim(upgrades, 'potplant', 'R34');
       const crackMult = 1.4 + potCount * 0.15;
-      const crackedFraction = Math.min(0.8, 0.15 + towers.potplant * 0.12);
+      const crackedFraction = Math.min(0.8, (0.15 + towers.potplant * 0.12) * (1 - tripImmuneFrac));
       terracottaBonus = 1 + crackedFraction * (crackMult - 1);
     }
 
@@ -366,18 +415,43 @@ class CoverageModel {
     // NOTE: C1/C3 shockwave+resonance, C5 sign zone DPS, C9 mop retrigger, C16 pot retrigger
     // are all computed inside computeDPS() as tower-specific contributions (not global mults)
 
+    // ── Enemy ability DPS reductions ──
+    // Mop effectiveness reduced by knockback-immune enemies
+    // Ubik spray effectiveness reduced by sprayResist enemies
+    // Pot effectiveness reduced by trip-immune enemies and jumpers
+    // Magnet collection reduced by magnetDisable enemies
+    let enemyAbilityPenalty = 1.0;
+    if (towers.mop > 0 && knockbackImmuneFrac > 0) {
+      const mopFrac = towers.mop / Math.max(1, Object.values(towers).reduce((a, b) => a + b, 0));
+      enemyAbilityPenalty -= mopFrac * knockbackImmuneFrac * 0.3; // mop less effective vs immune
+    }
+    if (towers.ubik > 0 && sprayEffectiveness < 1.0) {
+      const ubikFrac = towers.ubik / Math.max(1, Object.values(towers).reduce((a, b) => a + b, 0));
+      enemyAbilityPenalty -= ubikFrac * (1 - sprayEffectiveness) * 0.5;
+    }
+    if (towers.potplant > 0 && (tripImmuneFrac > 0 || jumpTowerFrac > 0)) {
+      const potFrac = towers.potplant / Math.max(1, Object.values(towers).reduce((a, b) => a + b, 0));
+      enemyAbilityPenalty -= potFrac * (tripImmuneFrac + jumpTowerFrac * 0.3) * 0.5;
+    }
+    enemyAbilityPenalty = Math.max(0.5, enemyAbilityPenalty); // floor at 50%
+
     let effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
-      crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
+      crossfireBonus * crowdBonus * sympatheticBonus * rushBonus * attritionBonus * hoarderBonus *
       assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus *
       pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
       thornBonus * cactusSlowBonus *
-      plumbersUnionBonus * terracottaBonus * moneyPrinterBonus;
+      plumbersUnionBonus * terracottaBonus * moneyPrinterBonus *
+      enemyAbilityPenalty;
 
-    // Soft cap on total effective multiplier (matches game's _getTowerDamageMult soft cap)
+    // Soft cap: matches game's per-tower _getTowerDamageMult soft cap (3.0x base, 0.25 diminish).
+    // The game applies this PER TOWER PER ATTACK. We approximate by computing the global
+    // multiplier and capping it, since each tower sees roughly the same global multipliers.
+    const SOFT_CAP = 3.0;
+    const DIMINISH = 0.25;
     const baseDPS = this.computeDPS(towers, {}, 0, wave);
     if (baseDPS > 0) {
       const totalMult = effectiveDPS / baseDPS;
-      if (totalMult > 3.0) effectiveDPS = baseDPS * (3.0 + (totalMult - 3.0) * 0.25);
+      if (totalMult > SOFT_CAP) effectiveDPS = baseDPS * (SOFT_CAP + (totalMult - SOFT_CAP) * DIMINISH);
     }
 
     const totalDamageCapacity = effectiveDPS * waveDuration;
@@ -391,11 +465,13 @@ class CoverageModel {
     const doorDamage = Math.round(totalDoorDmgIfAllLeak * (1 - killRatio));
 
     // Coin collection: 30% base + 25% per magnet, cap 100%
+    // Magnets disabled by magnetDisableRange enemies reduce effective magnet count
+    const effectiveMagnets = towers.coinmagnet * (1 - magnetDisableFrac * 0.5);
     // C1: Overclocked Magnet — +12 range + 40% speed → +20% collection
     const overclockCollect = upgrades.C1 ? 0.20 : 0;
     // C3: at 3 stacks, global pull → +15% collection
     const globalPullCollect = ((upgrades.C3 || 0) >= 3) ? 0.15 : 0;
-    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25 + overclockCollect + globalPullCollect);
+    const collectionRate = Math.min(1.0, 0.3 + effectiveMagnets * 0.25 + overclockCollect + globalPullCollect);
     const coinValueMult = 1 + (upgrades.C2 || 0) * 0.5;
     let collected = Math.round(totalCoins * collectionRate * coinValueMult);
 
