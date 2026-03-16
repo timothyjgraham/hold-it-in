@@ -1,33 +1,51 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — Upgrade Drone Model Factory                                 ║
-// ║  Per-rarity drone bodies with toon-shaded propellers and placard signs.   ║
-// ║  Common=Scout pill, Rare=Carrier hex, Legendary=Mothership disc.         ║
+// ║  Unified drone body with Fortnite-style rarity coloring and effects.      ║
+// ║  One iconic silhouette — color, beam, and particles sell the rarity.      ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE, OUTLINE_WIDTH } from '../data/palette.js';
 import { toonMat, outlineMatStatic, outlineMatJittery } from '../shaders/toonMaterials.js';
 import { draw3DUpgradeIcon } from '../ui/UpgradeIconRenderer.js';
 
-// ─── CONSTANTS ──────────────────────────────────────────────────────────────
+// ─── BODY DIMENSIONS (universal — same shape for every rarity) ──────────────
 
-const DRONE_COLORS = [PALETTE.droneAlpha, PALETTE.droneBeta, PALETTE.droneGamma];
+const BODY_R      = 0.55;   // Main hull sphere radius
+const BODY_SQUISH = 0.45;   // Y scale → smooth disc/saucer silhouette
+const BODY_HALF_H = BODY_R * BODY_SQUISH;  // ~0.2475
+const DOME_R      = 0.18;   // Top sensor dome radius
+const LENS_R      = 0.12;   // Bottom sensor lens radius
+const RING_R      = BODY_R + 0.02;  // Equator accent ring major radius
+const ARM_DIST    = 0.8;    // Prop arm distance from center (diagonal)
 
-const RARITY_GLOW = {
-    common:    PALETTE.rarityCommon,
-    rare:      PALETTE.rarityRare,
-    legendary: PALETTE.rarityLegendary,
-};
+// ─── RARITY CONFIGURATION ───────────────────────────────────────────────────
+// Body shape is universal. Only color, glow, and effects change per rarity.
 
-const RARITY_BLADES = {
-    common:    1,
-    rare:      2,
-    legendary: 3,
-};
-
-const RARITY_OUTLINE = {
-    common:    1.0,
-    rare:      1.0,
-    legendary: 1.5,
+const RARITY = {
+    common: {
+        body:         PALETTE.droneCommon,       // warm off-white
+        accent:       PALETTE.fixture,           // neutral metal
+        glow:         PALETTE.rarityCommon,       // cream
+        emissive:     0.05,
+        outlineScale: 1.0,
+        bladeCount:   2,
+    },
+    rare: {
+        body:         PALETTE.droneRare,          // soft lavender
+        accent:       PALETTE.rarityRare,         // deeper violet
+        glow:         PALETTE.rarityRare,         // violet
+        emissive:     0.25,
+        outlineScale: 1.0,
+        bladeCount:   2,
+    },
+    legendary: {
+        body:         PALETTE.droneLegendary,     // rich gold
+        accent:       PALETTE.rarityLegendary,    // deep gold
+        glow:         PALETTE.rarityLegendary,    // gold
+        emissive:     0.4,
+        outlineScale: 1.5,
+        bladeCount:   3,
+    },
 };
 
 // ─── PLACARD CANVAS TEXTURE ─────────────────────────────────────────────────
@@ -241,11 +259,13 @@ function createPlacardTexture(upgrade, rarity) {
     return texture;
 }
 
-// ─── PROPELLER BUILDER (shared across rarities) ──────────────────────────────
+// ─── PROPELLER BUILDER ──────────────────────────────────────────────────────
 
-function _buildPropellers(root, armPositions, bodyH, bladeCount) {
+function _buildPropellers(root, armPositions, bladeCount) {
     const armMat = toonMat(PALETTE.fixture);
-    const rotorMat = toonMat(PALETTE.white, { transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+    const rotorMat = toonMat(PALETTE.white, {
+        transparent: true, opacity: 0.35, side: THREE.DoubleSide,
+    });
     const rotors = [];
 
     for (const ap of armPositions) {
@@ -254,7 +274,7 @@ function _buildPropellers(root, armPositions, bodyH, bladeCount) {
             new THREE.BoxGeometry(diagLength, 0.03, 0.05),
             armMat
         );
-        arm.position.set(ap.x * 0.5, bodyH / 2 + 0.02, ap.z * 0.5);
+        arm.position.set(ap.x * 0.5, BODY_HALF_H + 0.02, ap.z * 0.5);
         arm.rotation.y = Math.atan2(ap.z, ap.x);
         root.add(arm);
 
@@ -262,11 +282,11 @@ function _buildPropellers(root, armPositions, bodyH, bladeCount) {
             new THREE.CylinderGeometry(0.05, 0.05, 0.08, 8),
             toonMat(PALETTE.charcoal)
         );
-        motor.position.set(ap.x, bodyH / 2 + 0.06, ap.z);
+        motor.position.set(ap.x, BODY_HALF_H + 0.06, ap.z);
         root.add(motor);
 
         const rotorGroup = new THREE.Group();
-        rotorGroup.position.set(ap.x, bodyH / 2 + 0.12, ap.z);
+        rotorGroup.position.set(ap.x, BODY_HALF_H + 0.12, ap.z);
         for (let b = 0; b < bladeCount; b++) {
             const blade = new THREE.Mesh(
                 new THREE.BoxGeometry(0.5, 0.01, 0.06),
@@ -282,235 +302,250 @@ function _buildPropellers(root, armPositions, bodyH, bladeCount) {
     return rotors;
 }
 
-// ─── PER-RARITY BODY BUILDERS ────────────────────────────────────────────────
+// ─── UNIVERSAL DRONE BODY ───────────────────────────────────────────────────
+// Same sleek saucer shape for every rarity. Color + emissive from RARITY cfg.
 
-function _buildCommonBody(root, bodyColor, outlineW, bladeCount) {
+function _buildDroneBody(root, rarity) {
+    const cfg = RARITY[rarity];
     const bodyGroup = new THREE.Group();
     bodyGroup.name = 'droneBody';
-    const bodyR = 0.45, bodyH = 0.6;
-    const bodyMat = toonMat(bodyColor);
 
-    const cylinder = new THREE.Mesh(
-        new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 12), bodyMat
+    const bodyMat = toonMat(cfg.body, {
+        emissive: cfg.glow,
+        emissiveIntensity: cfg.emissive,
+    });
+
+    // Main hull — squished sphere → smooth saucer silhouette
+    const hull = new THREE.Mesh(
+        new THREE.SphereGeometry(BODY_R, 20, 14),
+        bodyMat
     );
-    bodyGroup.add(cylinder);
+    hull.scale.y = BODY_SQUISH;
+    bodyGroup.add(hull);
 
-    const topCap = new THREE.Mesh(
-        new THREE.SphereGeometry(bodyR, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), bodyMat
+    // Top sensor dome
+    const domeMat = toonMat(cfg.accent, {
+        emissive: cfg.glow,
+        emissiveIntensity: cfg.emissive * 0.5,
+    });
+    const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(DOME_R, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        domeMat
     );
-    topCap.position.y = bodyH / 2;
-    bodyGroup.add(topCap);
+    dome.position.y = BODY_HALF_H;
+    bodyGroup.add(dome);
 
-    const bottomCap = new THREE.Mesh(
-        new THREE.SphereGeometry(bodyR, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), bodyMat
+    // Equator accent ring
+    const accentRing = new THREE.Mesh(
+        new THREE.TorusGeometry(RING_R, 0.02, 8, 32),
+        toonMat(cfg.accent, { emissive: cfg.glow, emissiveIntensity: cfg.emissive * 0.3 })
     );
-    bottomCap.position.y = -bodyH / 2;
-    bodyGroup.add(bottomCap);
+    accentRing.rotation.x = Math.PI / 2;
+    bodyGroup.add(accentRing);
 
-    bodyGroup.add(new THREE.Mesh(
-        new THREE.CylinderGeometry(bodyR + outlineW, bodyR + outlineW, bodyH + outlineW * 2, 12),
+    // Bottom sensor lens (glowing)
+    const lens = new THREE.Mesh(
+        new THREE.SphereGeometry(LENS_R, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
+        new THREE.MeshBasicMaterial({
+            color: cfg.glow,
+            transparent: true,
+            opacity: 0.4 + cfg.emissive,
+        })
+    );
+    lens.position.y = -BODY_HALF_H;
+    bodyGroup.add(lens);
+
+    // Ink outline
+    const outlineW = OUTLINE_WIDTH.tower * cfg.outlineScale;
+    const outlineMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(BODY_R + outlineW, 20, 14),
         outlineMatStatic(outlineW)
-    ));
+    );
+    outlineMesh.scale.y = BODY_SQUISH;
+    bodyGroup.add(outlineMesh);
+
     root.add(bodyGroup);
 
-    const armLength = 0.7;
+    // Propeller arms (4 diagonals)
     const armPositions = [
-        { x: armLength, z: armLength }, { x: armLength, z: -armLength },
-        { x: -armLength, z: armLength }, { x: -armLength, z: -armLength },
+        { x: ARM_DIST, z: ARM_DIST },
+        { x: ARM_DIST, z: -ARM_DIST },
+        { x: -ARM_DIST, z: ARM_DIST },
+        { x: -ARM_DIST, z: -ARM_DIST },
     ];
-    const rotors = _buildPropellers(root, armPositions, bodyH, bladeCount);
+    const rotors = _buildPropellers(root, armPositions, cfg.bladeCount);
 
-    return { bodyGroup, rotors, bodyH };
+    return { bodyGroup, rotors, outlineW };
 }
 
-function _buildRareBody(root, bodyColor, glowColor, outlineW, bladeCount) {
-    const bodyGroup = new THREE.Group();
-    bodyGroup.name = 'droneBody';
-    const bodyR = 0.5, bodyH = 0.5;
+// ─── RARITY BEAM (Fortnite-style column of light) ──────────────────────────
+// Common = no beam. Rare = moderate violet. Legendary = dramatic gold.
+// Beam flares downward from drone body, enveloping the sign in rarity color.
 
-    const bodyMat = toonMat(bodyColor, { emissive: glowColor, emissiveIntensity: 0.15 });
+function _buildRarityBeam(root, rarity) {
+    if (rarity === 'common') return null;
 
-    // Hexagonal prism body (6 sides)
-    const hexBody = new THREE.Mesh(
-        new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 6), bodyMat
+    const cfg = RARITY[rarity];
+    const scale = rarity === 'legendary' ? 1.5 : 1.0;
+
+    const beamH        = 4.5 + scale;
+    const innerTopR    = 0.3 + scale * 0.15;
+    const innerBotR    = 1.5 + scale * 0.5;
+    const outerTopR    = innerTopR * 1.8;
+    const outerBotR    = innerBotR * 1.4;
+    const innerOpacity = 0.03 + scale * 0.02;
+    const outerOpacity = innerOpacity * 0.35;
+
+    const beamGroup = new THREE.Group();
+    beamGroup.name = 'rarityBeam';
+
+    // Inner beam — brighter core
+    const innerMat = new THREE.MeshBasicMaterial({
+        color: cfg.glow,
+        transparent: true,
+        opacity: innerOpacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+    const inner = new THREE.Mesh(
+        new THREE.CylinderGeometry(innerTopR, innerBotR, beamH, 16, 1, true),
+        innerMat
     );
-    bodyGroup.add(hexBody);
+    inner.position.y = -beamH / 2;
+    inner.userData._baseOpacity = innerOpacity;
+    inner.raycast = () => {};   // Don't intercept hover raycasts
+    beamGroup.add(inner);
 
-    // Body outline
-    bodyGroup.add(new THREE.Mesh(
-        new THREE.CylinderGeometry(bodyR + outlineW, bodyR + outlineW, bodyH + outlineW * 2, 6),
-        outlineMatStatic(outlineW)
-    ));
-
-    // Two side-pods in rarity violet
-    const podMat = toonMat(glowColor, { emissive: glowColor, emissiveIntensity: 0.2 });
-    for (const sx of [-1, 1]) {
-        const pod = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), podMat);
-        pod.position.set(sx * 0.7, 0, 0);
-        bodyGroup.add(pod);
-    }
-
-    // Thin antenna on top with violet sphere tip
-    const antennaMat = toonMat(PALETTE.fixture);
-    const antenna = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 0.35, 4), antennaMat
+    // Outer glow — softer, wider
+    const outerMat = new THREE.MeshBasicMaterial({
+        color: cfg.glow,
+        transparent: true,
+        opacity: outerOpacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+    const outer = new THREE.Mesh(
+        new THREE.CylinderGeometry(outerTopR, outerBotR, beamH, 16, 1, true),
+        outerMat
     );
-    antenna.position.y = bodyH / 2 + 0.175;
-    bodyGroup.add(antenna);
+    outer.position.y = -beamH / 2;
+    outer.userData._baseOpacity = outerOpacity;
+    outer.raycast = () => {};
+    beamGroup.add(outer);
 
-    const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), podMat);
-    antennaTip.position.y = bodyH / 2 + 0.38;
-    bodyGroup.add(antennaTip);
-
-    root.add(bodyGroup);
-
-    // 6 prop arms at hexagonal positions
-    const armLength = 0.7;
-    const armPositions = [];
-    for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        armPositions.push({
-            x: Math.cos(angle) * armLength,
-            z: Math.sin(angle) * armLength,
-        });
-    }
-    const rotors = _buildPropellers(root, armPositions, bodyH, bladeCount);
-
-    return { bodyGroup, rotors, bodyH };
+    root.add(beamGroup);
+    return beamGroup;
 }
 
-function _buildLegendaryBody(root, bodyColor, glowColor, outlineW, bladeCount) {
-    const bodyGroup = new THREE.Group();
-    bodyGroup.name = 'droneBody';
+// ─── LEGENDARY EXTRAS (ring, crown, jitter, glow dome) ─────────────────────
 
-    const bodyMat = toonMat(bodyColor, { emissive: glowColor, emissiveIntensity: 0.35 });
+function _buildLegendaryExtras(root, cfg) {
+    const extras = {};
 
-    // Flattened disc body (squished sphere)
-    const disc = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12), bodyMat);
-    disc.scale.y = 0.55;
-    bodyGroup.add(disc);
-
-    // Body outline
-    const outlineDisc = new THREE.Mesh(
-        new THREE.SphereGeometry(0.55 + outlineW, 16, 12),
-        outlineMatStatic(outlineW)
-    );
-    outlineDisc.scale.y = 0.55;
-    bodyGroup.add(outlineDisc);
-
-    // Borderlands jittery ink outline shells
-    const jitterOutline1 = new THREE.Mesh(
-        new THREE.SphereGeometry(0.55 + outlineW * 1.5, 16, 12),
-        outlineMatJittery(outlineW * 1.2, PALETTE.ink, 0.15)
-    );
-    jitterOutline1.scale.y = 0.55;
-    bodyGroup.add(jitterOutline1);
-
-    const jitterOutline2 = new THREE.Mesh(
-        new THREE.SphereGeometry(0.55 + outlineW * 2.0, 16, 12),
-        outlineMatJittery(outlineW * 1.5, glowColor, 0.10)
-    );
-    jitterOutline2.scale.y = 0.55;
-    bodyGroup.add(jitterOutline2);
-
-    // Gold orbital ring (slowly spins)
-    const ringMat = toonMat(glowColor, { emissive: glowColor, emissiveIntensity: 0.5 });
+    // Orbital ring (slowly rotating gold torus)
+    const ringMat = toonMat(cfg.glow, { emissive: cfg.glow, emissiveIntensity: 0.5 });
     const orbitalRing = new THREE.Mesh(
-        new THREE.TorusGeometry(0.7, 0.04, 8, 24), ringMat
+        new THREE.TorusGeometry(0.75, 0.035, 8, 24),
+        ringMat
     );
     orbitalRing.rotation.x = Math.PI / 2;
-    bodyGroup.add(orbitalRing);
+    root.add(orbitalRing);
+    extras.orbitalRing = orbitalRing;
+    extras.ringMat = ringMat;
 
-    // Crown spikes: 3 small gold cones at 120deg intervals
-    const crownMat = toonMat(glowColor, { emissive: glowColor, emissiveIntensity: 0.4 });
+    // Crown spikes (3 gold cones at 120° intervals)
+    const crownMat = toonMat(cfg.glow, { emissive: cfg.glow, emissiveIntensity: 0.4 });
     const crownSpikes = new THREE.Group();
     crownSpikes.name = 'crownSpikes';
     for (let i = 0; i < 3; i++) {
         const angle = (i / 3) * Math.PI * 2;
         const cone = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 6), crownMat);
-        cone.position.set(Math.cos(angle) * 0.25, 0.55 * 0.55 + 0.1, Math.sin(angle) * 0.25);
+        cone.position.set(
+            Math.cos(angle) * 0.25,
+            BODY_HALF_H + DOME_R + 0.1,
+            Math.sin(angle) * 0.25
+        );
         crownSpikes.add(cone);
     }
-    bodyGroup.add(crownSpikes);
+    root.add(crownSpikes);
+    extras.crownSpikes = crownSpikes;
 
-    // Translucent glow dome underneath
-    const dome = new THREE.Mesh(
+    // Jittery outlines (Borderlands-style ink wobble)
+    const outlineW = OUTLINE_WIDTH.tower * 1.5;
+    const jitter1 = new THREE.Mesh(
+        new THREE.SphereGeometry(BODY_R + outlineW * 1.5, 16, 12),
+        outlineMatJittery(outlineW * 1.2, PALETTE.ink, 0.15)
+    );
+    jitter1.scale.y = BODY_SQUISH;
+    root.add(jitter1);
+
+    const jitter2 = new THREE.Mesh(
+        new THREE.SphereGeometry(BODY_R + outlineW * 2.0, 16, 12),
+        outlineMatJittery(outlineW * 1.5, cfg.glow, 0.10)
+    );
+    jitter2.scale.y = BODY_SQUISH;
+    root.add(jitter2);
+    extras.jitterMats = [jitter1.material, jitter2.material];
+
+    // Glow dome underneath
+    const glowDome = new THREE.Mesh(
         new THREE.SphereGeometry(0.35, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
         new THREE.MeshBasicMaterial({
-            color: glowColor,
+            color: cfg.glow,
             transparent: true,
             opacity: 0.15,
             side: THREE.DoubleSide,
             depthWrite: false,
         })
     );
-    dome.position.y = -0.55 * 0.55;
-    dome.rotation.x = Math.PI;
-    bodyGroup.add(dome);
+    glowDome.position.y = -BODY_HALF_H - 0.05;
+    glowDome.rotation.x = Math.PI;
+    root.add(glowDome);
 
-    root.add(bodyGroup);
-
-    // 4 prop arms, longer (0.9 vs 0.7)
-    const armLength = 0.9;
-    const bodyH = 0.55 * 0.55 * 2; // effective height of squished sphere
-    const armPositions = [
-        { x: armLength, z: armLength }, { x: armLength, z: -armLength },
-        { x: -armLength, z: armLength }, { x: -armLength, z: -armLength },
-    ];
-    const rotors = _buildPropellers(root, armPositions, bodyH, bladeCount);
-
-    // Collect jitter materials for time updates
-    const jitterMats = [jitterOutline1.material, jitterOutline2.material];
-
-    return { bodyGroup, rotors, bodyH, orbitalRing, crownSpikes, jitterMats, ringMat };
+    return extras;
 }
 
-// ─── AMBIENT MOTE PARTICLES ─────────────────────────────────────────────────
+// ─── AMBIENT MOTES ──────────────────────────────────────────────────────────
+// Common: none. Rare: 6 violet. Legendary: 12 gold + 2 large counter-rotating.
 
-function _createAmbientMotes(root, rarity, glowColor) {
+function _createMotes(root, rarity) {
+    if (rarity === 'common') return [];
+
+    const cfg = RARITY[rarity];
     const motes = [];
 
-    if (rarity === 'rare') {
-        // 5 violet motes, orbit radius 0.6-1.0, twinkle opacity
-        for (let i = 0; i < 5; i++) {
-            const mat = toonMat(glowColor, {
-                emissive: glowColor, emissiveIntensity: 0.8,
-                transparent: true, opacity: 0.7,
-            });
-            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.035, 4, 4), mat);
-            root.add(mesh);
-            motes.push({
-                mesh,
-                radius: 0.6 + Math.random() * 0.4,
-                speed: 0.8 + Math.random() * 0.6,
-                phase: Math.random() * Math.PI * 2,
-                yOffset: (Math.random() - 0.5) * 0.4,
-                twinkleSpeed: 2 + Math.random() * 3,
-            });
-        }
-    } else if (rarity === 'legendary') {
-        // 10 gold motes, orbit radius 0.8-1.4
-        for (let i = 0; i < 10; i++) {
-            const mat = toonMat(glowColor, {
-                emissive: glowColor, emissiveIntensity: 1.0,
-                transparent: true, opacity: 0.8,
-            });
-            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), mat);
-            root.add(mesh);
-            motes.push({
-                mesh,
-                radius: 0.8 + Math.random() * 0.6,
-                speed: 0.6 + Math.random() * 0.8,
-                phase: Math.random() * Math.PI * 2,
-                yOffset: (Math.random() - 0.5) * 0.5,
-                twinkleSpeed: 1.5 + Math.random() * 2,
-                pulsing: false,
-            });
-        }
-        // 2 larger counter-rotating motes with scale pulsing
+    const count    = rarity === 'legendary' ? 12 : 6;
+    const minR     = rarity === 'legendary' ? 0.8 : 0.6;
+    const maxR     = rarity === 'legendary' ? 1.4 : 1.0;
+    const minSpd   = rarity === 'legendary' ? 0.6 : 0.8;
+    const maxSpd   = 1.4;
+    const size     = rarity === 'legendary' ? 0.04 : 0.035;
+    const ei       = rarity === 'legendary' ? 1.0 : 0.8;
+    const opa      = rarity === 'legendary' ? 0.8 : 0.7;
+
+    for (let i = 0; i < count; i++) {
+        const mat = toonMat(cfg.glow, {
+            emissive: cfg.glow, emissiveIntensity: ei,
+            transparent: true, opacity: opa,
+        });
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 4, 4), mat);
+        root.add(mesh);
+        motes.push({
+            mesh,
+            radius: minR + Math.random() * (maxR - minR),
+            speed: minSpd + Math.random() * (maxSpd - minSpd),
+            phase: Math.random() * Math.PI * 2,
+            yOffset: (Math.random() - 0.5) * 0.4,
+            twinkleSpeed: 2 + Math.random() * 3,
+            pulsing: false,
+        });
+    }
+
+    // Legendary: 2 larger counter-rotating motes with scale pulsing
+    if (rarity === 'legendary') {
         for (let i = 0; i < 2; i++) {
-            const mat = toonMat(glowColor, {
-                emissive: glowColor, emissiveIntensity: 1.2,
+            const mat = toonMat(cfg.glow, {
+                emissive: cfg.glow, emissiveIntensity: 1.2,
                 transparent: true, opacity: 0.9,
             });
             const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), mat);
@@ -518,7 +553,7 @@ function _createAmbientMotes(root, rarity, glowColor) {
             motes.push({
                 mesh,
                 radius: 1.0 + i * 0.3,
-                speed: -(0.5 + i * 0.3), // negative = counter-rotating
+                speed: -(0.5 + i * 0.3),    // negative = counter-rotating
                 phase: i * Math.PI,
                 yOffset: (Math.random() - 0.5) * 0.3,
                 twinkleSpeed: 1,
@@ -530,38 +565,74 @@ function _createAmbientMotes(root, rarity, glowColor) {
     return motes;
 }
 
+// ─── BEAM PARTICLES (legendary — rising motes within the beam column) ──────
+
+function _createBeamParticles(root, rarity) {
+    if (rarity !== 'legendary') return [];
+
+    const cfg = RARITY[rarity];
+    const particles = [];
+    const beamH = 6.0;
+
+    for (let i = 0; i < 8; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+            color: cfg.glow,
+            transparent: true,
+            opacity: 0.5,
+            depthWrite: false,
+        });
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), mat);
+        mesh.raycast = () => {};
+        root.add(mesh);
+        particles.push({
+            mesh,
+            angle: Math.random() * Math.PI * 2,
+            radius: 0.1 + Math.random() * 0.3,
+            y: -Math.random() * beamH,
+            speed: 0.4 + Math.random() * 0.4,
+            maxY: 0,
+            minY: -beamH,
+        });
+    }
+
+    return particles;
+}
+
 // ─── DRONE MESH FACTORY ─────────────────────────────────────────────────────
 
 /**
  * Create a complete upgrade drone with sign.
  *
  * @param {Object} upgrade - Upgrade data object from registry
- * @param {number} slotIndex - 0, 1, or 2 (determines drone body color)
+ * @param {number} slotIndex - 0, 1, or 2 (used for animation staggering)
  * @returns {THREE.Group} Drone group with userData for animation
  */
 export function createUpgradeDrone(upgrade, slotIndex) {
-    const rarity = upgrade.rarity;
-    const bodyColor = DRONE_COLORS[slotIndex % 3];
-    const glowColor = RARITY_GLOW[rarity];
-    const outlineW = OUTLINE_WIDTH.tower * RARITY_OUTLINE[rarity];
-    const bladeCount = RARITY_BLADES[rarity];
+    const rarity = upgrade.rarity || 'common';
+    const cfg = RARITY[rarity];
 
     const root = new THREE.Group();
     root.name = 'upgradeDrone';
 
-    // ── BUILD BODY (per-rarity) ─────────────────────────────────────────
-    let buildResult;
-    if (rarity === 'rare') {
-        buildResult = _buildRareBody(root, bodyColor, glowColor, outlineW, bladeCount);
-    } else if (rarity === 'legendary') {
-        buildResult = _buildLegendaryBody(root, bodyColor, glowColor, outlineW, bladeCount);
-    } else {
-        buildResult = _buildCommonBody(root, bodyColor, outlineW, bladeCount);
+    // ── Build universal drone body ──────────────────────────────────────
+    const { bodyGroup, rotors, outlineW } = _buildDroneBody(root, rarity);
+
+    // ── Rarity beam (rare + legendary) ─────────────────────────────────
+    const beamGroup = _buildRarityBeam(root, rarity);
+
+    // ── Legendary extras (ring, crown, jitter, glow dome) ──────────────
+    let extras = {};
+    if (rarity === 'legendary') {
+        extras = _buildLegendaryExtras(root, cfg);
     }
 
-    const { bodyGroup, rotors, bodyH } = buildResult;
+    // ── Ambient motes (rare + legendary) ───────────────────────────────
+    const motes = _createMotes(root, rarity);
 
-    // ── SIGN ATTACHMENT (two chain cylinders + placard) ──────────────────
+    // ── Beam particles (legendary) ─────────────────────────────────────
+    const beamParticles = _createBeamParticles(root, rarity);
+
+    // ── SIGN ATTACHMENT (two chain cylinders + placard) ─────────────────
     const signGroup = new THREE.Group();
     signGroup.name = 'signGroup';
 
@@ -616,11 +687,8 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     signGroup.add(placardOutline);
 
     // Position sign group at bottom of drone body
-    signGroup.position.y = -bodyH / 2 - 0.1;
+    signGroup.position.y = -BODY_HALF_H - 0.1;
     root.add(signGroup);
-
-    // ── AMBIENT MOTES ───────────────────────────────────────────────────
-    const motes = _createAmbientMotes(root, rarity, glowColor);
 
     // ── USERDATA FOR ANIMATION ──────────────────────────────────────────
     root.userData = {
@@ -635,7 +703,7 @@ export function createUpgradeDrone(upgrade, slotIndex) {
 
         // Placard texture (for animated icon re-rendering)
         placardTexture: placardTexture,
-        _iconFrame: slotIndex, // Stagger updates across drones
+        _iconFrame: slotIndex,   // Stagger updates across drones
 
         // Pendulum physics state
         pendulumAngle: 0,
@@ -653,13 +721,20 @@ export function createUpgradeDrone(upgrade, slotIndex) {
         flightCurve: null,
         state: 'idle',
 
-        // Per-rarity extras (Phase 3+4)
-        orbitalRing: buildResult.orbitalRing || null,
-        crownSpikes: buildResult.crownSpikes || null,
-        jitterMats: buildResult.jitterMats || null,
-        ringMat: buildResult.ringMat || null,
+        // Rarity beam
+        beamGroup: beamGroup,
+        _beamTime: 0,
+
+        // Per-rarity extras (legendary only)
+        orbitalRing: extras.orbitalRing || null,
+        crownSpikes: extras.crownSpikes || null,
+        jitterMats: extras.jitterMats || null,
+        ringMat: extras.ringMat || null,
+
+        // Particles
         motes: motes,
         _moteTime: 0,
+        beamParticles: beamParticles,
     };
 
     return root;
@@ -717,6 +792,38 @@ export function updateUpgradeDrone(drone, dt) {
         ud._externalAccel = ambientSway;
     } else if (ud.state !== 'entering') {
         ud._externalAccel = 0;
+    }
+
+    // ── BEAM ANIMATION (rare + legendary) ───────────────────────────────
+    if (ud.beamGroup) {
+        ud._beamTime += dt;
+        ud.beamGroup.rotation.y += dt * 0.3;
+
+        // Pulse opacity — legendary pulses faster
+        const pulseRate = ud.rarity === 'legendary' ? 2.5 : 1.5;
+        const pulse = 0.85 + Math.sin(ud._beamTime * pulseRate) * 0.15;
+
+        for (const child of ud.beamGroup.children) {
+            if (child.userData._baseOpacity !== undefined) {
+                child.material.opacity = child.userData._baseOpacity * pulse;
+            }
+        }
+    }
+
+    // ── BEAM PARTICLES (legendary — rising motes within beam) ───────────
+    if (ud.beamParticles && ud.beamParticles.length > 0) {
+        for (const p of ud.beamParticles) {
+            p.y += p.speed * dt;
+            if (p.y > p.maxY) p.y = p.minY + (p.y - p.maxY);
+            p.mesh.position.set(
+                Math.cos(p.angle) * p.radius,
+                p.y,
+                Math.sin(p.angle) * p.radius
+            );
+            // Fade near top/bottom edges
+            const t = (p.y - p.minY) / (p.maxY - p.minY);
+            p.mesh.material.opacity = Math.sin(t * Math.PI) * 0.5;
+        }
     }
 
     // ── LEGENDARY EXTRAS ────────────────────────────────────────────────

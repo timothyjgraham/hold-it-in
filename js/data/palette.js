@@ -80,11 +80,15 @@ export const PALETTE = {
     fillWarm:   0xfff0d0,   // Warm fill lights
 
     // ─── DRONES ─────────────────────────────────────────────────────────────
-    // Three distinct pastels for upgrade drones (one per slot in a trio)
+    // Per-rarity body tints (unified drone silhouette, color sells rarity)
 
-    droneAlpha:  0xf2b8c6,  // Soft rose — warm pastel, reads against all backgrounds
-    droneBeta:   0xa8d8ea,  // Powder blue — cool pastel, distinct from player hoodie
-    droneGamma:  0xc5e8b7,  // Sage green — neutral pastel, complements both others
+    droneAlpha:  0xf2b8c6,  // (legacy per-slot) Soft rose
+    droneBeta:   0xa8d8ea,  // (legacy per-slot) Powder blue
+    droneGamma:  0xc5e8b7,  // (legacy per-slot) Sage green
+
+    droneCommon:     0xeae5df,  // Warm off-white — standard issue, understated
+    droneRare:       0xbfb0e0,  // Soft lavender — clearly purple at a glance
+    droneLegendary:  0xffdd55,  // Rich warm gold — unmistakably legendary
 
     // ─── MEDIC DRONES ──────────────────────────────────────────────────────
     // Ambulance-themed rescue drones that collect defeated enemies
@@ -294,6 +298,6 @@ export function injectCSSPalette() {
 // TOWERS            magnet #f0a030 │ sign #e8d44a │ mop #9b59b6 │ ubik #6bcb77 │ potplant #c4663a
 // UI/EFFECTS        gold #ffd93d │ danger #ff6b7a │ success #50c878 │ glow #fff0c0
 // LIGHTING          ambient #505060 │ holyGold #ffd080 │ rimCool #6688aa │ fillWarm #fff0d0
-// DRONES            alpha #f2b8c6 │ beta #a8d8ea │ gamma #c5e8b7
+// DRONES            common #eae5df │ rare #bfb0e0 │ legendary #ffdd55 │ alpha #f2b8c6 │ beta #a8d8ea │ gamma #c5e8b7
 // MEDIC             medicBody #f5f0e8 │ medicCross #e05050 │ medicBed #ddd2c0
 // RARITY            common #faf5ef │ rare #9b8ec4 │ legendary #ffd93d
