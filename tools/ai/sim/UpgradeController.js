@@ -6,8 +6,9 @@
 const { GAME } = require('../shared/gameData');
 
 class UpgradeController {
-  constructor() {
+  constructor(options = {}) {
     this.acquired = {}; // id -> stack count
+    this.upgradeFilter = options.upgradeFilter || null; // fn(id) => bool
   }
 
   /**
@@ -27,6 +28,8 @@ class UpgradeController {
 
     // Build eligible pool
     const pool = GAME.upgrades.filter(u => {
+      // External filter (for ablation experiments)
+      if (this.upgradeFilter && !this.upgradeFilter(u.id)) return false;
       // Not maxed
       if ((this.acquired[u.id] || 0) >= u.maxStacks) return false;
       // Exclusive conflict

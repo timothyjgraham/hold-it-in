@@ -29,6 +29,7 @@ class GameSimulator {
     this.seed = options.seed != null ? options.seed : null;
     this.combatMode = options.combatMode || 'fast';
     this.traceBuild = options.traceBuild || false;
+    this.upgradeFilter = options.upgradeFilter || null; // fn(id) => bool, filters upgrade pool
   }
 
   /**
@@ -47,7 +48,7 @@ class GameSimulator {
     let doorMaxHP = GAME.doorMaxHP;
 
     const towerCtrl = new TowerController();
-    const upgradeCtrl = new UpgradeController();
+    const upgradeCtrl = new UpgradeController({ upgradeFilter: this.upgradeFilter });
     const coverage = new CoverageModel();
 
     const waveResults = [];

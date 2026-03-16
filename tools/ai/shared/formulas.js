@@ -12,7 +12,7 @@ function enemyHP(type, wave) {
 
 function enemySpeed(type, wave, eventSpeedMult = 1.0) {
   const e = GAME.enemies[type];
-  const speedCreep = 1 + wave * 0.02;
+  const speedCreep = 1 + wave * 0.04;
   return (e.baseSpeed + e.speedVar * 0.5) * speedCreep * eventSpeedMult;
 }
 
@@ -29,7 +29,7 @@ function burstSize(wave) {
 }
 
 function waveBonus(wave) {
-  return 10 + Math.min(wave, 8) * 2;
+  return 7 + Math.min(wave, 8) * 1;
 }
 
 function desperateChance(wave, eventChance = 0) {

@@ -38,11 +38,11 @@ class CoverageModel {
     // ── Global damage multipliers ──
     let globalDmgMult = 1.0 + permanentDmgBonus;
 
-    // C17: Glass Cannon (+80% damage, -50% HP)
-    if (upgrades.C17) globalDmgMult *= 1.8;
-    // C18: Slow and Steady (+60% damage per hit, -40% attack speed)
+    // C17: Glass Cannon (+50% damage, -50% HP)
+    if (upgrades.C17) globalDmgMult *= 1.5;
+    // C18: Slow and Steady (+40% damage per hit, -40% attack speed)
     const slowSteadySpeedMult = upgrades.C18 ? 0.6 : 1.0;
-    if (upgrades.C18) globalDmgMult *= 1.6;
+    if (upgrades.C18) globalDmgMult *= 1.4;
     // R21: Specialist (+15% per tower type NOT owned)
     if (upgrades.R21) {
       const typesOwned = Object.keys(t).filter(k => t[k] > 0).length;
@@ -56,8 +56,8 @@ class CoverageModel {
     // R30: Sympathetic Damage (8% splash — estimate ~10% bonus from crowd hits)
     if (upgrades.R30) globalDmgMult *= 1.10;
 
-    // R27: Double Shift (1.6x attack rate)
-    const doubleShiftMult = upgrades.R27 ? 1.6 : 1.0;
+    // R27: Double Shift (1.4x attack rate)
+    const doubleShiftMult = upgrades.R27 ? 1.4 : 1.0;
 
     // ── Tower-type upgrade counts (for conditionals) ──
     const mopUpgradeCount = countUpgradesForTowerSim(upgrades, 'mop');
@@ -68,24 +68,27 @@ class CoverageModel {
     // ── Per-tower DPS contributions ──
 
     // Mop: damage / cooldown
-    const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3;
-    // C7: Industrial Mop Head (+20% mop damage, wider sweep)
-    const mopHeadMult = upgrades.C7 ? 1.20 : 1.0;
+    const mopScale = t.mop >= 2 ? 1.0 : 0.4; // Tower-count scaling for DPS commons
+    const mopFocus = countUpgradesForTowerSim(upgrades, 'mop') >= 3 ? 1.2 : 1.0; // Focus bonus
+    const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3 * mopScale * mopFocus;
+    // C7: Industrial Mop Head (+15% mop damage, wider sweep)
+    const mopHeadMult = upgrades.C7 ? (1 + 0.15 * mopScale * mopFocus) : 1.0;
     // C9: Heavy Mop (+75% knockback ≈ +10% effective DPS)
-    const heavyMopMult = upgrades.C9 ? 1.10 : 1.0;
+    const heavyMopMult = upgrades.C9 ? (1 + 0.10 * mopFocus) : 1.0;
     // C9 conditional: if 2+ mop upgrades, mop retriggers on knocked enemies (+50% mop hit)
-    const mopRetrigger = (upgrades.C9 && mopUpgradeCount >= 2) ? 1.5 : 1.0;
-    // C10: Extra Absorbent (+15% mop damage from soaking — stacks)
-    const absorbentMult = 1 + (upgrades.C10 || 0) * 0.15;
+    const mopRetrigger = (upgrades.C9 && mopUpgradeCount >= 2) ? (1 + 0.5 * mopFocus) : 1.0;
+    // C10: Extra Absorbent — HP only, no DPS contribution
     dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult))
-      * mopHeadMult * heavyMopMult * absorbentMult * mopRetrigger
+      * mopHeadMult * heavyMopMult * mopRetrigger
       * slowSteadySpeedMult * doubleShiftMult;
 
     // Ubik: damage * (spray_duration / cycle_time) — hits ~2 enemies per spray (AoE)
-    let ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
+    const ubikScale = t.ubik >= 2 ? 1.0 : 0.4; // Tower-count scaling for DPS commons
+    const ubikFocus = countUpgradesForTowerSim(upgrades, 'ubik') >= 3 ? 1.2 : 1.0; // Focus bonus
+    let ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4 * ubikScale * ubikFocus;
     // C11: Pressure Washer — multiplicative +35% damage
-    if (upgrades.C11) ubikDmgMult *= 1.35;
-    const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25;
+    if (upgrades.C11) ubikDmgMult *= (1 + 0.35 * ubikScale * ubikFocus);
+    const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25 * ubikScale * ubikFocus;
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
     const ubikDPS = (GAME.towers.ubik.damage * ubikDmgMult * GAME.towers.ubik.sprayDuration) / ubikCycle;
     // C12: Wide Spray — 80% wider cone → hits ~50% more enemies (AoE 2.0 → 3.0)
@@ -93,30 +96,33 @@ class CoverageModel {
     dps += t.ubik * ubikDPS * ubikAoeMult * slowSteadySpeedMult * doubleShiftMult;
 
     // Pot plant: trip damage / (stun + re-approach time)
+    const potFocus = countUpgradesForTowerSim(upgrades, 'potplant') >= 3 ? 1.2 : 1.0; // Focus bonus
     // C16 conditional: if 2+ pot upgrades, Punctured = pot retrigger (+60% pot trip)
-    const potRetrigger = (upgrades.C16 && potUpgradeCount >= 2) ? 1.6 : 1.0;
+    const potRetrigger = (upgrades.C16 && potUpgradeCount >= 2) ? (1 + 0.6 * potFocus) : 1.0;
     dps += t.potplant * (GAME.towers.potplant.damage / 4) * potRetrigger * doubleShiftMult;
 
     // C16: Cactus Pot DPS — scales with pot archetype (also retriggered)
     if (upgrades.C16) {
-      dps += t.potplant * (3 + 2.5 * potUpgradeCount) * potRetrigger;
+      dps += t.potplant * (3 + 2.5 * potUpgradeCount) * potRetrigger * potFocus;
     }
 
     // C6: Prickly Signs — enemies take damage bashing into signs (~2 DPS per sign per stack)
+    const signFocus = countUpgradesForTowerSim(upgrades, 'wetfloor') >= 3 ? 1.2 : 1.0; // Focus bonus
     if (upgrades.C6 && t.wetfloor > 0) {
-      dps += t.wetfloor * (upgrades.C6) * 2.0;
+      dps += t.wetfloor * (upgrades.C6) * 2.0 * signFocus;
     }
 
     // C5: Extra Slippery conditional — sign zone becomes a damage zone (tower-specific)
     // If 2+ sign upgrades: signs deal (2 + 1.5 per sign upgrade) DPS to slowed enemies
     if (upgrades.C5 && signUpgradeCount >= 2 && t.wetfloor > 0) {
       const signZoneDPS = 2 + 1.5 * signUpgradeCount;
-      dps += t.wetfloor * signZoneDPS;
+      dps += t.wetfloor * signZoneDPS * signFocus;
     }
 
     // C20: Static Charge — on-collect proc, ~1 proc/2s per magnet ≈ 1.5 effective DPS
+    const magFocus = countUpgradesForTowerSim(upgrades, 'coinmagnet') >= 3 ? 1.2 : 1.0; // Focus bonus
     if (upgrades.C20 && t.coinmagnet > 0) {
-      dps += t.coinmagnet * 1.5;
+      dps += t.coinmagnet * 1.5 * magFocus;
     }
 
     // C1: Coin Shockwave — each coin collected deals AoE damage near the magnet
@@ -136,19 +142,13 @@ class CoverageModel {
         shockwaveDPS *= resonanceBonus;
       }
 
-      dps += shockwaveDPS;
+      dps += shockwaveDPS * magFocus;
     }
 
     // Apply global damage multiplier
     dps *= globalDmgMult;
 
-    // Soft cap on damage multiplier to prevent infinite scaling
-    const SOFT_CAP = 3.0;
-    const DIMINISH = 0.25;
-    if (globalDmgMult > SOFT_CAP) {
-      const cappedMult = SOFT_CAP + (globalDmgMult - SOFT_CAP) * DIMINISH;
-      dps = dps / globalDmgMult * cappedMult;
-    }
+    // Soft cap removed from computeDPS — applied to total multiplier in resolveFast() to match game
 
     // L13: Minimalist (2.0x if <=4 towers)
     if (upgrades.L13 && totalTowers <= 4) dps *= 2.0;
@@ -252,7 +252,7 @@ class CoverageModel {
     const dps = this.computeDPS(towers, upgrades, permanentDmgBonus, wave);
 
     // ── 3. Compute wave timing ──
-    const avgSpeed = 3.5 * (1 + wave * 0.02) * eventSpeedMult;
+    const avgSpeed = 3.5 * (1 + wave * 0.04) * eventSpeedMult;
     const traverseTime = GAME.traverseDistance / avgSpeed;
     const spawnDuration = enemies.length * interval;
     const waveDuration = spawnDuration + traverseTime;
@@ -275,16 +275,16 @@ class CoverageModel {
     const overtimeBonus = upgrades.L12 ? (1 + overtimeScale * 1.0 * Math.min(overtimeDur, waveDuration) / waveDuration) : 1.0;
     // L2: Desperate Measures (2x damage below 50% door HP)
     const desperateBonus = (upgrades.L2 && doorHP < doorMaxHP * 0.5) ? 2.0 : 1.0;
-    // R16: Crossfire (estimate 30% of enemies hit by 2+ types)
-    const crossfireBonus = upgrades.R16 ? 1.12 : 1.0;
-    // R18: Crowd Surfing (+30% when 2+ enemies nearby, ~40% in crowds)
-    const crowdBonus = upgrades.R18 ? 1.12 : 1.0;
+    // R16: Crossfire (estimate — requires 3+ tower types hit)
+    const crossfireBonus = upgrades.R16 ? 1.08 : 1.0;
+    // R18: Crowd Surfing (+30% when 3+ enemies nearby, ~25% in crowds)
+    const crowdBonus = upgrades.R18 ? 1.08 : 1.0;
     // R31: Rush Defense (2.5x first 3s, then -25%)
     const rushBonus = upgrades.R31
       ? (1 + (2.5 * Math.min(3, waveDuration) - 0.25 * Math.max(0, waveDuration - 3)) / waveDuration)
       : 1.0;
-    // R32: Attrition (+5%/sec cap 80% — average ~40% over typical wave)
-    const attritionBonus = upgrades.R32 ? 1.40 : 1.0;
+    // R32: Attrition (+4%/sec cap 50% — average ~25% over typical wave)
+    const attritionBonus = upgrades.R32 ? 1.25 : 1.0;
     // L14: Hoarder — conditional: threshold scales with magnet upgrades, gated by conditionalScale
     const hoarderScale = upgrades.L14 ? conditionalScale(upgrades, 'coinmagnet', 'L14') : 0;
     const hoarderThreshold = upgrades.L14 ? Math.max(25, 50 - 4 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L14')) : 50;
@@ -366,12 +366,19 @@ class CoverageModel {
     // NOTE: C1/C3 shockwave+resonance, C5 sign zone DPS, C9 mop retrigger, C16 pot retrigger
     // are all computed inside computeDPS() as tower-specific contributions (not global mults)
 
-    const effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
+    let effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
       crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
       assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus *
       pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
       thornBonus * cactusSlowBonus *
       plumbersUnionBonus * terracottaBonus * moneyPrinterBonus;
+
+    // Soft cap on total effective multiplier (matches game's _getTowerDamageMult soft cap)
+    const baseDPS = this.computeDPS(towers, {}, 0, wave);
+    if (baseDPS > 0) {
+      const totalMult = effectiveDPS / baseDPS;
+      if (totalMult > 3.0) effectiveDPS = baseDPS * (3.0 + (totalMult - 3.0) * 0.25);
+    }
 
     const totalDamageCapacity = effectiveDPS * waveDuration;
 
@@ -509,14 +516,14 @@ class CoverageModel {
 
     // ── Pre-compute global multiplier ──
     let globalMult = 1.0 + permanentDmgBonus;
-    if (upgrades.C17) globalMult *= 1.8;
-    if (upgrades.C18) globalMult *= 1.6;
+    if (upgrades.C17) globalMult *= 1.5;
+    if (upgrades.C18) globalMult *= 1.4;
     if (upgrades.R21) {
       const typesOwned = Object.keys(towers).filter(k => towers[k] > 0).length;
       globalMult *= 1 + (5 - typesOwned) * 0.15;
     }
     if (upgrades.R23) globalMult *= 1.36;
-    if (upgrades.R27) globalMult *= 1.6;
+    if (upgrades.R27) globalMult *= 1.4;
     if (upgrades.L13 && totalTowerCount <= 4) globalMult *= 2.0;
     if (upgrades.R24) {
       const empty = Math.max(0, 6 - totalTowerCount);

@@ -18,6 +18,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['coinmagnet'],
         stackable: false,
         maxStacks: 1,
+        exclusive: 'C20',  // mutually exclusive with Static Charge
         effectFn: null,
     },
     {
@@ -88,6 +89,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['mop'],
         stackable: false,
         maxStacks: 1,
+        exclusive: 'C9',  // mutually exclusive with Heavy Mop
         effectFn: null,
     },
     {
@@ -110,6 +112,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['mop'],
         stackable: true,
         maxStacks: 2,
+        exclusive: 'C7',  // mutually exclusive with Industrial Mop Head
         effectFn: null,
     },
     {
@@ -157,7 +160,8 @@ export const COMMON_UPGRADES = [
         icon: 'spray',
         towerRequirement: ['ubik'],
         stackable: true,
-        maxStacks: 2,  // cap +100% (2 stacks × 40% + base 40%)... actually plan says cap +100%
+        maxStacks: 2,
+        exclusive: 'C14',  // mutually exclusive with Rapid Spray
         effectFn: null,
     },
     {
@@ -168,7 +172,8 @@ export const COMMON_UPGRADES = [
         icon: 'spray',
         towerRequirement: ['ubik'],
         stackable: true,
-        maxStacks: 2,  // cap -50%
+        maxStacks: 2,
+        exclusive: 'C13',  // mutually exclusive with Corrosive Formula
         effectFn: null,
     },
 
@@ -182,6 +187,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['potplant'],
         stackable: false,
         maxStacks: 1,
+        exclusive: 'C16',  // mutually exclusive with Cactus Pot
         effectFn: null,
     },
     {
@@ -193,6 +199,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['potplant'],
         stackable: false,
         maxStacks: 1,
+        exclusive: 'C15',  // mutually exclusive with Spring-Loaded Pot
         effectFn: null,
     },
 
@@ -200,7 +207,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C17',
         name: 'Glass Cannon',
-        description: 'All towers deal +80% damage but lose 50% max HP',
+        description: 'All towers deal +50% damage but lose 50% max HP',
         rarity: 'common',
         icon: 'star',
         towerRequirement: null,
@@ -212,7 +219,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C18',
         name: 'Slow and Steady',
-        description: 'All towers attack 40% slower but deal +60% damage per hit',
+        description: 'All towers attack 40% slower but deal +40% damage per hit',
         rarity: 'common',
         icon: 'star',
         towerRequirement: null,
@@ -241,6 +248,7 @@ export const COMMON_UPGRADES = [
         towerRequirement: ['coinmagnet'],
         stackable: false,
         maxStacks: 1,
+        exclusive: 'C1',  // mutually exclusive with Overclocked Magnet
         effectFn: null,
     },
 ];
@@ -552,7 +560,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R27',
         name: 'Double Shift',
-        description: 'All towers attack 60% faster (cooldown ×0.625), but take 2 self-damage per attack.',
+        description: 'All towers attack 40% faster, but take 2 self-damage per attack.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general
@@ -613,7 +621,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R32',
         name: 'Attrition',
-        description: 'Towers gain +5% damage per second enemies are alive (caps at +80%). Resets each wave.',
+        description: 'Towers gain +4% damage per second enemies are alive (caps at +50%). Resets each wave.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general

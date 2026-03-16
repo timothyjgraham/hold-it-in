@@ -24,6 +24,16 @@ export class UpgradeManager {
         this._acquired = [];
     }
 
+    // ─── FOCUS BONUS ───────────────────────────────────────────────────────
+
+    /**
+     * Focus bonus: 3+ upgrades invested in a tower type → +20% effectiveness
+     * for ALL upgrades of that type. Rewards deep specialization.
+     */
+    _focusBonus(towerType) {
+        return this.countUpgradesForTower(towerType) >= 3 ? 1.2 : 1.0;
+    }
+
     // ─── QUERY HELPERS ──────────────────────────────────────────────────────
 
     /** Does the player own at least one stack of this upgrade? */
@@ -95,10 +105,14 @@ export class UpgradeManager {
                 return 1.0 + this.getStacks('C2') * 0.5;      // C2: +50% per stack
             case 'signSlowMult':
                 return this.hasUpgrade('C5') ? 0.15 : 0.4;    // C5: 15% speed (base 40%)
-            case 'mopCooldownMult':
-                return 1.0 - this.getStacks('C8') * 0.3;      // C8: -30% per stack
-            case 'mopKnockbackMult':
-                return 1.0 + this.getStacks('C9') * 0.75;     // C9: +75% per stack
+            case 'mopCooldownMult': {
+                const mf = this._focusBonus('mop');
+                return 1.0 - this.getStacks('C8') * 0.3 * mf; // C8: -30% per stack (×focus)
+            }
+            case 'mopKnockbackMult': {
+                const mf = this._focusBonus('mop');
+                return 1.0 + this.getStacks('C9') * 0.75 * mf; // C9: +75% per stack (×focus)
+            }
             case 'ubikWidthMult':
                 if (this.hasUpgrade('C11')) return 0.5;        // C11: Pressure Washer halves width
                 if (this.hasUpgrade('C12')) return 1.8;        // C12: Wide Spray +80% width (was 60%)
@@ -106,12 +120,15 @@ export class UpgradeManager {
             case 'ubikRangeMult':
                 return this.hasUpgrade('C11') ? 2.0 : 1.0;    // C11: Pressure Washer doubles range
             case 'ubikDamageMult': {
+                const uf = this._focusBonus('ubik');
                 let base = 1.0;                                // C12: Wide Spray no longer penalizes damage
-                if (this.hasUpgrade('C11')) base = 1.35;       // C11: Pressure Washer +35% damage (was 25%)
-                return base + this.getStacks('C13') * 0.4;    // C13: +40% per stack
+                if (this.hasUpgrade('C11')) base = 1 + 0.35 * uf; // C11: Pressure Washer +35% (×focus)
+                return base + this.getStacks('C13') * 0.4 * uf; // C13: +40% per stack (×focus)
             }
-            case 'ubikCooldownMult':
-                return 1.0 - this.getStacks('C14') * 0.25;    // C14: -25% per stack
+            case 'ubikCooldownMult': {
+                const uf = this._focusBonus('ubik');
+                return 1.0 - this.getStacks('C14') * 0.25 * uf; // C14: -25% per stack (×focus)
+            }
             case 'towerCostMult':
                 return this.hasUpgrade('R14') ? 0.8 : 1.0;    // R14: Clearance Sale -20%
 
@@ -128,19 +145,24 @@ export class UpgradeManager {
                 return this.getStacks('C4') * 1.2;             // C4: +120% per stack (was 100%)
             case 'signSlowLinger':
                 return this.hasUpgrade('C5') ? 1.0 : 0;       // C5: slow lingers 1s after exiting
-            case 'signBashDamage':
-                return this.getStacks('C6') * 10;              // C6: +10 per stack (was 8)
+            case 'signBashDamage': {
+                const sf = this._focusBonus('wetfloor');
+                return this.getStacks('C6') * 10 * sf;         // C6: +10 per stack (×focus)
+            }
             case 'mopMinArc':
                 return this.hasUpgrade('C7') ? Math.PI : 1.05; // C7: 180° (base ~60°) + 15% mop damage
-            case 'mopDamageMult':
-                return this.hasUpgrade('C7') ? 1.15 : 1.0;    // C7: Industrial Mop Head +15% damage
+            case 'mopDamageMult': {
+                const mf = this._focusBonus('mop');
+                return this.hasUpgrade('C7') ? (1 + 0.15 * mf) : 1.0; // C7: +15% (×focus)
+            }
             case 'mopHP':
                 return this.getStacks('C10') * 4;              // C10: +4 per stack
-            case 'potContactDPS':
-                // C16: Cactus Pot rework — scales with pot archetype, non-stackable
-                return this.hasUpgrade('C16')
-                    ? 3 + 2.5 * this.countUpgradesForTower('potplant')
-                    : 0;
+            case 'potContactDPS': {
+                // C16: Cactus Pot rework — scales with pot archetype, non-stackable (×focus)
+                if (!this.hasUpgrade('C16')) return 0;
+                const pf = this._focusBonus('potplant');
+                return (3 + 2.5 * this.countUpgradesForTower('potplant')) * pf;
+            }
             case 'potCactusSlowFactor':
                 return this.hasUpgrade('C16') ? 0.85 : 1.0;   // C16: Cactus Pot 15% slow on hit
             case 'potStunBonus':
@@ -152,13 +174,13 @@ export class UpgradeManager {
             case 'glassCannon':
                 return this.hasUpgrade('C17') ? 1 : 0;        // C17: +80% dmg, -50% HP
             case 'glassCannonDamageMult':
-                return this.hasUpgrade('C17') ? 1.8 : 1.0;
+                return this.hasUpgrade('C17') ? 1.5 : 1.0;
             case 'glassCannonHPMult':
                 return this.hasUpgrade('C17') ? 0.5 : 1.0;
             case 'slowSteady':
                 return this.hasUpgrade('C18') ? 1 : 0;        // C18: -40% speed, +60% dmg
             case 'slowSteadyDamageMult':
-                return this.hasUpgrade('C18') ? 1.6 : 1.0;
+                return this.hasUpgrade('C18') ? 1.4 : 1.0;
             case 'slowSteadyCooldownMult':
                 return this.hasUpgrade('C18') ? 1.4 : 1.0;    // 40% slower = 1.4× cooldown
             case 'bargainBinCost':
@@ -389,9 +411,9 @@ export class UpgradeManager {
             case 'attritionActive':
                 return this.hasUpgrade('R32') ? 1 : 0;
             case 'attritionPerSecond':
-                return this.hasUpgrade('R32') ? 0.05 : 0;     // +5% per second
+                return this.hasUpgrade('R32') ? 0.04 : 0;     // +4% per second
             case 'attritionCap':
-                return this.hasUpgrade('R32') ? 0.80 : 0;     // max +80%
+                return this.hasUpgrade('R32') ? 0.50 : 0;     // max +50%
 
             default:
                 return 0;
