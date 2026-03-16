@@ -1,0 +1,4842 @@
+{
+  "command": "synergy",
+  "scenario": "office",
+  "maxWaves": 50,
+  "seed": null,
+  "numRuns": 5000,
+  "topPct": 0.25,
+  "summary": {
+    "totalRuns": 5000,
+    "successRuns": 4754,
+    "uniqueUpgradesUsed": 73,
+    "totalUpgrades": 73,
+    "graphNodes": 73,
+    "graphEdges": 2524,
+    "positiveEdges": 125,
+    "negativeEdges": 2399,
+    "communities": 4,
+    "connectedComponents": 2,
+    "topSynergies": [
+      "Skeleton Crew + Last Stand (+5.15w)",
+      "Skeleton Crew + Assembly Line (+4.8w)",
+      "Skeleton Crew + Hoarder (+4.69w)",
+      "Skeleton Crew + Double Shift (+4.52w)",
+      "Slow and Steady + Plunger Protocol (+4.49w)"
+    ],
+    "topAntiSynergies": [
+      "Overclocked Magnet + Assembly Line (-23.84w)",
+      "Overclocked Magnet + Desperate Measures (-23.32w)",
+      "Overclocked Magnet + Loan Shark (-22.6w)",
+      "Overclocked Magnet + Last Stand (-22.51w)",
+      "Overclocked Magnet + Chain Reaction (-22.29w)"
+    ],
+    "itemsetsL2": 10,
+    "itemsetsL3": 3,
+    "itemsetsL4": 0,
+    "pivotWave": 25,
+    "hasTraces": true
+  },
+  "interactions": [
+    {
+      "idA": "R24",
+      "idB": "L18",
+      "nameA": "Skeleton Crew",
+      "nameB": "Last Stand",
+      "interaction": 5.15,
+      "lift": 1.01,
+      "chi2": 44.54,
+      "nBoth": 2123,
+      "nAonly": 273,
+      "nBonly": 2194,
+      "nNeither": 410,
+      "meanBoth": 49.3,
+      "meanAonly": 36.6,
+      "meanBonly": 49.9,
+      "meanNeither": 42.4
+    },
+    {
+      "idA": "R24",
+      "idB": "L17",
+      "nameA": "Skeleton Crew",
+      "nameB": "Assembly Line",
+      "interaction": 4.8,
+      "lift": 1.01,
+      "chi2": 55.76,
+      "nBoth": 2079,
+      "nAonly": 317,
+      "nBonly": 2192,
+      "nNeither": 412,
+      "meanBoth": 49.4,
+      "meanAonly": 37.4,
+      "meanBonly": 49.9,
+      "meanNeither": 42.7
+    },
+    {
+      "idA": "R24",
+      "idB": "L14",
+      "nameA": "Skeleton Crew",
+      "nameB": "Hoarder",
+      "interaction": 4.69,
+      "lift": 1.02,
+      "chi2": 134.36,
+      "nBoth": 1914,
+      "nAonly": 482,
+      "nBonly": 2025,
+      "nNeither": 579,
+      "meanBoth": 49.9,
+      "meanAonly": 39.5,
+      "meanBonly": 50,
+      "meanNeither": 44.3
+    },
+    {
+      "idA": "R24",
+      "idB": "R27",
+      "nameA": "Skeleton Crew",
+      "nameB": "Double Shift",
+      "interaction": 4.52,
+      "lift": 1.01,
+      "chi2": 68.75,
+      "nBoth": 1948,
+      "nAonly": 448,
+      "nBonly": 1985,
+      "nNeither": 619,
+      "meanBoth": 49.5,
+      "meanAonly": 40.4,
+      "meanBonly": 49.8,
+      "meanNeither": 45.2
+    },
+    {
+      "idA": "C18",
+      "idB": "L3",
+      "nameA": "Slow and Steady",
+      "nameB": "Plunger Protocol",
+      "interaction": 4.49,
+      "lift": 1.02,
+      "chi2": 60.87,
+      "nBoth": 1933,
+      "nAonly": 407,
+      "nBonly": 2286,
+      "nNeither": 374,
+      "meanBoth": 49.5,
+      "meanAonly": 39.1,
+      "meanBonly": 49.7,
+      "meanNeither": 43.7
+    },
+    {
+      "idA": "R24",
+      "idB": "L12",
+      "nameA": "Skeleton Crew",
+      "nameB": "Overtime",
+      "interaction": 4.35,
+      "lift": 1.02,
+      "chi2": 107.09,
+      "nBoth": 1884,
+      "nAonly": 512,
+      "nBonly": 1958,
+      "nNeither": 646,
+      "meanBoth": 49.8,
+      "meanAonly": 40.4,
+      "meanBonly": 50,
+      "meanNeither": 44.9
+    },
+    {
+      "idA": "R24",
+      "idB": "L9",
+      "nameA": "Skeleton Crew",
+      "nameB": "Ubik Flood",
+      "interaction": 4.19,
+      "lift": 1.02,
+      "chi2": 116.16,
+      "nBoth": 1937,
+      "nAonly": 459,
+      "nBonly": 2069,
+      "nNeither": 535,
+      "meanBoth": 49.8,
+      "meanAonly": 39.5,
+      "meanBonly": 50,
+      "meanNeither": 43.9
+    },
+    {
+      "idA": "R24",
+      "idB": "L7",
+      "nameA": "Skeleton Crew",
+      "nameB": "Loose Change",
+      "interaction": 4.18,
+      "lift": 1.01,
+      "chi2": 87.75,
+      "nBoth": 1925,
+      "nAonly": 471,
+      "nBonly": 1980,
+      "nNeither": 624,
+      "meanBoth": 49.6,
+      "meanAonly": 40.4,
+      "meanBonly": 49.9,
+      "meanNeither": 44.9
+    },
+    {
+      "idA": "C18",
+      "idB": "L9",
+      "nameA": "Slow and Steady",
+      "nameB": "Ubik Flood",
+      "interaction": 4.12,
+      "lift": 1.02,
+      "chi2": 113.24,
+      "nBoth": 1839,
+      "nAonly": 501,
+      "nBonly": 2167,
+      "nNeither": 493,
+      "meanBoth": 49.8,
+      "meanAonly": 39.8,
+      "meanBonly": 49.9,
+      "meanNeither": 44
+    },
+    {
+      "idA": "R24",
+      "idB": "L1",
+      "nameA": "Skeleton Crew",
+      "nameB": "Double Flush",
+      "interaction": 4.04,
+      "lift": 1.01,
+      "chi2": 30.24,
+      "nBoth": 2104,
+      "nAonly": 292,
+      "nBonly": 2188,
+      "nNeither": 416,
+      "meanBoth": 49.1,
+      "meanAonly": 38.2,
+      "meanBonly": 49.8,
+      "meanNeither": 43
+    },
+    {
+      "idA": "R24",
+      "idB": "L6",
+      "nameA": "Skeleton Crew",
+      "nameB": "Spill Zone",
+      "interaction": 4.03,
+      "lift": 1.02,
+      "chi2": 115.51,
+      "nBoth": 1883,
+      "nAonly": 513,
+      "nBonly": 2000,
+      "nNeither": 604,
+      "meanBoth": 49.9,
+      "meanAonly": 40.4,
+      "meanBonly": 50,
+      "meanNeither": 44.5
+    },
+    {
+      "idA": "R24",
+      "idB": "L15",
+      "nameA": "Skeleton Crew",
+      "nameB": "Chain Reaction",
+      "interaction": 3.96,
+      "lift": 1.01,
+      "chi2": 52.92,
+      "nBoth": 2069,
+      "nAonly": 327,
+      "nBonly": 2181,
+      "nNeither": 423,
+      "meanBoth": 49.3,
+      "meanAonly": 38.1,
+      "meanBonly": 49.9,
+      "meanNeither": 42.6
+    },
+    {
+      "idA": "C18",
+      "idB": "L15",
+      "nameA": "Slow and Steady",
+      "nameB": "Chain Reaction",
+      "interaction": 3.66,
+      "lift": 1.01,
+      "chi2": 65.98,
+      "nBoth": 1942,
+      "nAonly": 398,
+      "nBonly": 2308,
+      "nNeither": 352,
+      "meanBoth": 49.5,
+      "meanAonly": 38.8,
+      "meanBonly": 49.8,
+      "meanNeither": 42.8
+    },
+    {
+      "idA": "C18",
+      "idB": "L12",
+      "nameA": "Slow and Steady",
+      "nameB": "Overtime",
+      "interaction": 3.64,
+      "lift": 1.02,
+      "chi2": 105.66,
+      "nBoth": 1747,
+      "nAonly": 593,
+      "nBonly": 2095,
+      "nNeither": 565,
+      "meanBoth": 49.9,
+      "meanAonly": 41.2,
+      "meanBonly": 49.9,
+      "meanNeither": 44.8
+    },
+    {
+      "idA": "C8",
+      "idB": "C18",
+      "nameA": "Quick Sweep",
+      "nameB": "Slow and Steady",
+      "interaction": 3.59,
+      "lift": 1.02,
+      "chi2": 66.01,
+      "nBoth": 1754,
+      "nAonly": 2028,
+      "nBonly": 586,
+      "nNeither": 632,
+      "meanBoth": 49.5,
+      "meanAonly": 49.8,
+      "meanBonly": 42.1,
+      "meanNeither": 45.9
+    },
+    {
+      "idA": "R24",
+      "idB": "L2",
+      "nameA": "Skeleton Crew",
+      "nameB": "Desperate Measures",
+      "interaction": 3.57,
+      "lift": 1.01,
+      "chi2": 54.25,
+      "nBoth": 2062,
+      "nAonly": 334,
+      "nBonly": 2189,
+      "nNeither": 415,
+      "meanBoth": 49.4,
+      "meanAonly": 38.3,
+      "meanBonly": 49.9,
+      "meanNeither": 42.4
+    },
+    {
+      "idA": "C13",
+      "idB": "C18",
+      "nameA": "Corrosive Formula",
+      "nameB": "Slow and Steady",
+      "interaction": 3.52,
+      "lift": 1.01,
+      "chi2": 39.7,
+      "nBoth": 1929,
+      "nAonly": 2239,
+      "nBonly": 411,
+      "nNeither": 421,
+      "meanBoth": 49.2,
+      "meanAonly": 49.7,
+      "meanBonly": 40.4,
+      "meanNeither": 44.4
+    },
+    {
+      "idA": "C18",
+      "idB": "L18",
+      "nameA": "Slow and Steady",
+      "nameB": "Last Stand",
+      "interaction": 3.51,
+      "lift": 1.01,
+      "chi2": 51.94,
+      "nBoth": 1991,
+      "nAonly": 349,
+      "nBonly": 2326,
+      "nNeither": 334,
+      "meanBoth": 49.4,
+      "meanAonly": 38.1,
+      "meanBonly": 49.8,
+      "meanNeither": 42.1
+    },
+    {
+      "idA": "R24",
+      "idB": "R33",
+      "nameA": "Skeleton Crew",
+      "nameB": "Plumber's Union",
+      "interaction": 3.47,
+      "lift": 1.01,
+      "chi2": 56.75,
+      "nBoth": 1933,
+      "nAonly": 463,
+      "nBonly": 1963,
+      "nNeither": 641,
+      "meanBoth": 49.4,
+      "meanAonly": 41.1,
+      "meanBonly": 49.9,
+      "meanNeither": 45.1
+    },
+    {
+      "idA": "C18",
+      "idB": "L4",
+      "nameA": "Slow and Steady",
+      "nameB": "Rush Hour Pileup",
+      "interaction": 3.32,
+      "lift": 1.02,
+      "chi2": 96.5,
+      "nBoth": 1764,
+      "nAonly": 576,
+      "nBonly": 2088,
+      "nNeither": 572,
+      "meanBoth": 49.8,
+      "meanAonly": 41.2,
+      "meanBonly": 50,
+      "meanNeither": 44.7
+    },
+    {
+      "idA": "R24",
+      "idB": "L3",
+      "nameA": "Skeleton Crew",
+      "nameB": "Plunger Protocol",
+      "interaction": 3.29,
+      "lift": 1.01,
+      "chi2": 36.01,
+      "nBoth": 2056,
+      "nAonly": 340,
+      "nBonly": 2163,
+      "nNeither": 441,
+      "meanBoth": 49.3,
+      "meanAonly": 39.1,
+      "meanBonly": 49.9,
+      "meanNeither": 43
+    },
+    {
+      "idA": "C18",
+      "idB": "R33",
+      "nameA": "Slow and Steady",
+      "nameB": "Plumber's Union",
+      "interaction": 3.27,
+      "lift": 1.02,
+      "chi2": 68.71,
+      "nBoth": 1783,
+      "nAonly": 557,
+      "nBonly": 2113,
+      "nNeither": 547,
+      "meanBoth": 49.5,
+      "meanAonly": 41.7,
+      "meanBonly": 49.8,
+      "meanNeither": 45.2
+    },
+    {
+      "idA": "C18",
+      "idB": "L6",
+      "nameA": "Slow and Steady",
+      "nameB": "Spill Zone",
+      "interaction": 3.26,
+      "lift": 1.02,
+      "chi2": 104.95,
+      "nBoth": 1766,
+      "nAonly": 574,
+      "nBonly": 2117,
+      "nNeither": 543,
+      "meanBoth": 49.9,
+      "meanAonly": 41,
+      "meanBonly": 50,
+      "meanNeither": 44.3
+    },
+    {
+      "idA": "R24",
+      "idB": "L11",
+      "nameA": "Skeleton Crew",
+      "nameB": "Bladder Burst",
+      "interaction": 3.23,
+      "lift": 1.01,
+      "chi2": 30.48,
+      "nBoth": 2086,
+      "nAonly": 310,
+      "nBonly": 2205,
+      "nNeither": 399,
+      "meanBoth": 49.1,
+      "meanAonly": 38.9,
+      "meanBonly": 49.8,
+      "meanNeither": 42.8
+    },
+    {
+      "idA": "C18",
+      "idB": "L5",
+      "nameA": "Slow and Steady",
+      "nameB": "Domino Effect",
+      "interaction": 3.21,
+      "lift": 1.02,
+      "chi2": 101.38,
+      "nBoth": 1603,
+      "nAonly": 737,
+      "nBonly": 1867,
+      "nNeither": 793,
+      "meanBoth": 49.9,
+      "meanAonly": 42.9,
+      "meanBonly": 50,
+      "meanNeither": 46.2
+    },
+    {
+      "idA": "C18",
+      "idB": "L11",
+      "nameA": "Slow and Steady",
+      "nameB": "Bladder Burst",
+      "interaction": 3.14,
+      "lift": 1.01,
+      "chi2": 36.8,
+      "nBoth": 1979,
+      "nAonly": 361,
+      "nBonly": 2312,
+      "nNeither": 348,
+      "meanBoth": 49.2,
+      "meanAonly": 39.3,
+      "meanBonly": 49.7,
+      "meanNeither": 42.9
+    },
+    {
+      "idA": "R23",
+      "idB": "R24",
+      "nameA": "Devotion",
+      "nameB": "Skeleton Crew",
+      "interaction": 3.09,
+      "lift": 1.01,
+      "chi2": 43.23,
+      "nBoth": 1930,
+      "nAonly": 1953,
+      "nBonly": 466,
+      "nNeither": 651,
+      "meanBoth": 49.3,
+      "meanAonly": 49.9,
+      "meanBonly": 41.5,
+      "meanNeither": 45.2
+    },
+    {
+      "idA": "C18",
+      "idB": "L7",
+      "nameA": "Slow and Steady",
+      "nameB": "Loose Change",
+      "interaction": 3.08,
+      "lift": 1.02,
+      "chi2": 84.65,
+      "nBoth": 1775,
+      "nAonly": 565,
+      "nBonly": 2130,
+      "nNeither": 530,
+      "meanBoth": 49.7,
+      "meanAonly": 41.3,
+      "meanBonly": 49.9,
+      "meanNeither": 44.6
+    },
+    {
+      "idA": "C18",
+      "idB": "R27",
+      "nameA": "Slow and Steady",
+      "nameB": "Double Shift",
+      "interaction": 3.03,
+      "lift": 1.02,
+      "chi2": 68.34,
+      "nBoth": 1779,
+      "nAonly": 561,
+      "nBonly": 2154,
+      "nNeither": 506,
+      "meanBoth": 49.6,
+      "meanAonly": 41.6,
+      "meanBonly": 49.8,
+      "meanNeither": 44.9
+    },
+    {
+      "idA": "C18",
+      "idB": "L14",
+      "nameA": "Slow and Steady",
+      "nameB": "Hoarder",
+      "interaction": 2.99,
+      "lift": 1.02,
+      "chi2": 117.39,
+      "nBoth": 1774,
+      "nAonly": 566,
+      "nBonly": 2165,
+      "nNeither": 495,
+      "meanBoth": 49.9,
+      "meanAonly": 40.7,
+      "meanBonly": 50,
+      "meanNeither": 43.8
+    },
+    {
+      "idA": "C18",
+      "idB": "L8",
+      "nameA": "Slow and Steady",
+      "nameB": "Nuclear Mop",
+      "interaction": 2.98,
+      "lift": 1.02,
+      "chi2": 96.09,
+      "nBoth": 1735,
+      "nAonly": 605,
+      "nBonly": 2108,
+      "nNeither": 552,
+      "meanBoth": 49.8,
+      "meanAonly": 41.6,
+      "meanBonly": 49.9,
+      "meanNeither": 44.7
+    },
+    {
+      "idA": "C18",
+      "idB": "L2",
+      "nameA": "Slow and Steady",
+      "nameB": "Desperate Measures",
+      "interaction": 2.89,
+      "lift": 1.01,
+      "chi2": 59.97,
+      "nBoth": 1946,
+      "nAonly": 394,
+      "nBonly": 2305,
+      "nNeither": 355,
+      "meanBoth": 49.4,
+      "meanAonly": 39,
+      "meanBonly": 49.8,
+      "meanNeither": 42.3
+    },
+    {
+      "idA": "C18",
+      "idB": "L16",
+      "nameA": "Slow and Steady",
+      "nameB": "Loan Shark",
+      "interaction": 2.87,
+      "lift": 1.01,
+      "chi2": 26.68,
+      "nBoth": 1963,
+      "nAonly": 377,
+      "nBonly": 2317,
+      "nNeither": 343,
+      "meanBoth": 49.1,
+      "meanAonly": 40.2,
+      "meanBonly": 49.6,
+      "meanNeither": 43.6
+    },
+    {
+      "idA": "R24",
+      "idB": "L8",
+      "nameA": "Skeleton Crew",
+      "nameB": "Nuclear Mop",
+      "interaction": 2.75,
+      "lift": 1.01,
+      "chi2": 95.39,
+      "nBoth": 1828,
+      "nAonly": 568,
+      "nBonly": 2015,
+      "nNeither": 589,
+      "meanBoth": 49.7,
+      "meanAonly": 41.6,
+      "meanBonly": 49.9,
+      "meanNeither": 44.6
+    },
+    {
+      "idA": "C14",
+      "idB": "R24",
+      "nameA": "Rapid Spray",
+      "nameB": "Skeleton Crew",
+      "interaction": 2.74,
+      "lift": 1.01,
+      "chi2": 30.07,
+      "nBoth": 2015,
+      "nAonly": 2156,
+      "nBonly": 381,
+      "nNeither": 448,
+      "meanBoth": 49.1,
+      "meanAonly": 49.7,
+      "meanBonly": 40.9,
+      "meanNeither": 44.2
+    },
+    {
+      "idA": "R24",
+      "idB": "L4",
+      "nameA": "Skeleton Crew",
+      "nameB": "Rush Hour Pileup",
+      "interaction": 2.73,
+      "lift": 1.01,
+      "chi2": 100.55,
+      "nBoth": 1826,
+      "nAonly": 570,
+      "nBonly": 2026,
+      "nNeither": 578,
+      "meanBoth": 49.8,
+      "meanAonly": 41.5,
+      "meanBonly": 50,
+      "meanNeither": 44.4
+    },
+    {
+      "idA": "C18",
+      "idB": "R30",
+      "nameA": "Slow and Steady",
+      "nameB": "Sympathetic Damage",
+      "interaction": 2.68,
+      "lift": 1.01,
+      "chi2": 32.65,
+      "nBoth": 1786,
+      "nAonly": 554,
+      "nBonly": 2148,
+      "nNeither": 512,
+      "meanBoth": 49.2,
+      "meanAonly": 42.6,
+      "meanBonly": 49.6,
+      "meanNeither": 45.7
+    },
+    {
+      "idA": "R24",
+      "idB": "R35",
+      "nameA": "Skeleton Crew",
+      "nameB": "Money Printer",
+      "interaction": 2.61,
+      "lift": 1.01,
+      "chi2": 35.86,
+      "nBoth": 1944,
+      "nAonly": 452,
+      "nBonly": 1984,
+      "nNeither": 620,
+      "meanBoth": 49.2,
+      "meanAonly": 41.8,
+      "meanBonly": 49.9,
+      "meanNeither": 45.1
+    },
+    {
+      "idA": "C18",
+      "idB": "L1",
+      "nameA": "Slow and Steady",
+      "nameB": "Double Flush",
+      "interaction": 2.59,
+      "lift": 1.01,
+      "chi2": 33.41,
+      "nBoth": 1976,
+      "nAonly": 364,
+      "nBonly": 2316,
+      "nNeither": 344,
+      "meanBoth": 49.2,
+      "meanAonly": 39.5,
+      "meanBonly": 49.8,
+      "meanNeither": 42.6
+    },
+    {
+      "idA": "C18",
+      "idB": "R1",
+      "nameA": "Slow and Steady",
+      "nameB": "Wet & Soapy",
+      "interaction": 2.54,
+      "lift": 1.02,
+      "chi2": 56.86,
+      "nBoth": 1344,
+      "nAonly": 996,
+      "nBonly": 1635,
+      "nNeither": 1025,
+      "meanBoth": 49.7,
+      "meanAonly": 45,
+      "meanBonly": 49.7,
+      "meanNeither": 47.5
+    },
+    {
+      "idA": "C18",
+      "idB": "R23",
+      "nameA": "Slow and Steady",
+      "nameB": "Devotion",
+      "interaction": 2.44,
+      "lift": 1.01,
+      "chi2": 43.76,
+      "nBoth": 1800,
+      "nAonly": 540,
+      "nBonly": 2083,
+      "nNeither": 577,
+      "meanBoth": 49.3,
+      "meanAonly": 42.1,
+      "meanBonly": 49.9,
+      "meanNeither": 45.1
+    },
+    {
+      "idA": "R24",
+      "idB": "L10",
+      "nameA": "Skeleton Crew",
+      "nameB": "Golden Magnet",
+      "interaction": 2.39,
+      "lift": 1.01,
+      "chi2": 48.28,
+      "nBoth": 1925,
+      "nAonly": 471,
+      "nBonly": 2028,
+      "nNeither": 576,
+      "meanBoth": 49.4,
+      "meanAonly": 41.4,
+      "meanBonly": 50,
+      "meanNeither": 44.4
+    },
+    {
+      "idA": "C1",
+      "idB": "C3",
+      "nameA": "Overclocked Magnet",
+      "nameB": "Magnet Durability",
+      "interaction": 2.37,
+      "lift": 0.99,
+      "chi2": 128.01,
+      "nBoth": 1655,
+      "nAonly": 618,
+      "nBonly": 687,
+      "nNeither": 2040,
+      "meanBoth": 50,
+      "meanAonly": 50,
+      "meanBonly": 45.1,
+      "meanNeither": 47.5
+    },
+    {
+      "idA": "R3",
+      "idB": "R24",
+      "nameA": "Magnetic Mops",
+      "nameB": "Skeleton Crew",
+      "interaction": 2.37,
+      "lift": 1.02,
+      "chi2": 69.75,
+      "nBoth": 1493,
+      "nAonly": 1526,
+      "nBonly": 903,
+      "nNeither": 1078,
+      "meanBoth": 49.7,
+      "meanAonly": 49.8,
+      "meanBonly": 44.7,
+      "meanNeither": 47.2
+    },
+    {
+      "idA": "R7",
+      "idB": "R24",
+      "nameA": "Mop & Bucket",
+      "nameB": "Skeleton Crew",
+      "interaction": 2.33,
+      "lift": 1.01,
+      "chi2": 71.2,
+      "nBoth": 1535,
+      "nAonly": 1548,
+      "nBonly": 861,
+      "nNeither": 1056,
+      "meanBoth": 49.7,
+      "meanAonly": 49.9,
+      "meanBonly": 44.4,
+      "meanNeither": 47
+    },
+    {
+      "idA": "C18",
+      "idB": "R7",
+      "nameA": "Slow and Steady",
+      "nameB": "Mop & Bucket",
+      "interaction": 2.32,
+      "lift": 1.02,
+      "chi2": 67.55,
+      "nBoth": 1388,
+      "nAonly": 952,
+      "nBonly": 1695,
+      "nNeither": 965,
+      "meanBoth": 49.8,
+      "meanAonly": 44.6,
+      "meanBonly": 49.9,
+      "meanNeither": 47
+    },
+    {
+      "idA": "R24",
+      "idB": "R34",
+      "nameA": "Skeleton Crew",
+      "nameB": "Terracotta Army",
+      "interaction": 2.3,
+      "lift": 1.01,
+      "chi2": 25,
+      "nBoth": 1892,
+      "nAonly": 504,
+      "nBonly": 1932,
+      "nNeither": 672,
+      "meanBoth": 49.1,
+      "meanAonly": 43,
+      "meanBonly": 49.7,
+      "meanNeither": 45.9
+    },
+    {
+      "idA": "C18",
+      "idB": "R16",
+      "nameA": "Slow and Steady",
+      "nameB": "Crossfire",
+      "interaction": 2.28,
+      "lift": 1.01,
+      "chi2": 28.7,
+      "nBoth": 1658,
+      "nAonly": 682,
+      "nBonly": 1944,
+      "nNeither": 716,
+      "meanBoth": 49.2,
+      "meanAonly": 43.9,
+      "meanBonly": 49.7,
+      "meanNeither": 46.6
+    },
+    {
+      "idA": "C18",
+      "idB": "R3",
+      "nameA": "Slow and Steady",
+      "nameB": "Magnetic Mops",
+      "interaction": 2.27,
+      "lift": 1.02,
+      "chi2": 62.75,
+      "nBoth": 1360,
+      "nAonly": 980,
+      "nBonly": 1659,
+      "nNeither": 1001,
+      "meanBoth": 49.7,
+      "meanAonly": 44.8,
+      "meanBonly": 49.8,
+      "meanNeither": 47.2
+    },
+    {
+      "idA": "C18",
+      "idB": "R12",
+      "nameA": "Slow and Steady",
+      "nameB": "Payday",
+      "interaction": 2.27,
+      "lift": 1.02,
+      "chi2": 41.34,
+      "nBoth": 1356,
+      "nAonly": 984,
+      "nBonly": 1606,
+      "nNeither": 1054,
+      "meanBoth": 49.5,
+      "meanAonly": 45.1,
+      "meanBonly": 49.7,
+      "meanNeither": 47.6
+    }
+  ],
+  "itemsets": {
+    "L1": [
+      {
+        "ids": [
+          "C1"
+        ],
+        "names": [
+          "Overclocked Magnet"
+        ],
+        "support": 0.4781236853176273
+      },
+      {
+        "ids": [
+          "C2"
+        ],
+        "names": [
+          "Double Dip"
+        ],
+        "support": 0.7086663862010938
+      },
+      {
+        "ids": [
+          "C3"
+        ],
+        "names": [
+          "Magnet Durability"
+        ],
+        "support": 0.4732856541859487
+      },
+      {
+        "ids": [
+          "C4"
+        ],
+        "names": [
+          "Reinforced Signs"
+        ],
+        "support": 0.4343710559528818
+      },
+      {
+        "ids": [
+          "C5"
+        ],
+        "names": [
+          "Extra Slippery"
+        ],
+        "support": 0.3838872528397139
+      },
+      {
+        "ids": [
+          "C6"
+        ],
+        "names": [
+          "Prickly Signs"
+        ],
+        "support": 0.38199411022297014
+      },
+      {
+        "ids": [
+          "C7"
+        ],
+        "names": [
+          "Industrial Mop Head"
+        ],
+        "support": 0.3710559528817838
+      },
+      {
+        "ids": [
+          "C8"
+        ],
+        "names": [
+          "Quick Sweep"
+        ],
+        "support": 0.7864955826672276
+      },
+      {
+        "ids": [
+          "C9"
+        ],
+        "names": [
+          "Heavy Mop"
+        ],
+        "support": 0.3935633151030711
+      },
+      {
+        "ids": [
+          "C10"
+        ],
+        "names": [
+          "Extra Absorbent"
+        ],
+        "support": 0.46697517879680267
+      },
+      {
+        "ids": [
+          "C11"
+        ],
+        "names": [
+          "Pressure Washer"
+        ],
+        "support": 0.289019772822886
+      },
+      {
+        "ids": [
+          "C12"
+        ],
+        "names": [
+          "Wide Spray"
+        ],
+        "support": 0.29869583508624314
+      },
+      {
+        "ids": [
+          "C13"
+        ],
+        "names": [
+          "Corrosive Formula"
+        ],
+        "support": 0.861800588977703
+      },
+      {
+        "ids": [
+          "C14"
+        ],
+        "names": [
+          "Rapid Spray"
+        ],
+        "support": 0.8607488430795119
+      },
+      {
+        "ids": [
+          "C15"
+        ],
+        "names": [
+          "Spring-Loaded Pot"
+        ],
+        "support": 0.29533024821203196
+      },
+      {
+        "ids": [
+          "C16"
+        ],
+        "names": [
+          "Cactus Pot"
+        ],
+        "support": 0.29995793016407235
+      },
+      {
+        "ids": [
+          "C17"
+        ],
+        "names": [
+          "Glass Cannon"
+        ],
+        "support": 0.4869583508624316
+      },
+      {
+        "ids": [
+          "C18"
+        ],
+        "names": [
+          "Slow and Steady"
+        ],
+        "support": 0.4587715607909129
+      },
+      {
+        "ids": [
+          "C19"
+        ],
+        "names": [
+          "Bargain Bin"
+        ],
+        "support": 0.2936474547749264
+      },
+      {
+        "ids": [
+          "C20"
+        ],
+        "names": [
+          "Static Charge"
+        ],
+        "support": 0.5782498948254102
+      },
+      {
+        "ids": [
+          "R1"
+        ],
+        "names": [
+          "Wet & Soapy"
+        ],
+        "support": 0.6196886832141355
+      },
+      {
+        "ids": [
+          "R2"
+        ],
+        "names": [
+          "Mop Splash"
+        ],
+        "support": 0.5936053849389987
+      },
+      {
+        "ids": [
+          "R3"
+        ],
+        "names": [
+          "Magnetic Mops"
+        ],
+        "support": 0.6299957930164073
+      },
+      {
+        "ids": [
+          "R4"
+        ],
+        "names": [
+          "Ubik Slick"
+        ],
+        "support": 0.5893984013462348
+      },
+      {
+        "ids": [
+          "R5"
+        ],
+        "names": [
+          "Coin Shrapnel"
+        ],
+        "support": 0.45056794278502316
+      },
+      {
+        "ids": [
+          "R6"
+        ],
+        "names": [
+          "Sign Fortress"
+        ],
+        "support": 0.3666386201093816
+      },
+      {
+        "ids": [
+          "R7"
+        ],
+        "names": [
+          "Mop & Bucket"
+        ],
+        "support": 0.6442995372318048
+      },
+      {
+        "ids": [
+          "R8"
+        ],
+        "names": [
+          "Pot Magnet"
+        ],
+        "support": 0.5841396718552798
+      },
+      {
+        "ids": [
+          "R9"
+        ],
+        "names": [
+          "Sticky Mop"
+        ],
+        "support": 0.43037442153975597
+      },
+      {
+        "ids": [
+          "R10"
+        ],
+        "names": [
+          "Chain Trip"
+        ],
+        "support": 0.28817837610433317
+      },
+      {
+        "ids": [
+          "R11"
+        ],
+        "names": [
+          "Spray & Pray"
+        ],
+        "support": 0.5538493899873791
+      },
+      {
+        "ids": [
+          "R12"
+        ],
+        "names": [
+          "Payday"
+        ],
+        "support": 0.6144299537231804
+      },
+      {
+        "ids": [
+          "R13"
+        ],
+        "names": [
+          "The Tip Jar"
+        ],
+        "support": 0.7698779974758099
+      },
+      {
+        "ids": [
+          "R14"
+        ],
+        "names": [
+          "Clearance Sale"
+        ],
+        "support": 0.7654606647034077
+      },
+      {
+        "ids": [
+          "R15"
+        ],
+        "names": [
+          "Insurance Policy"
+        ],
+        "support": 0.45351283129995795
+      },
+      {
+        "ids": [
+          "R16"
+        ],
+        "names": [
+          "Crossfire"
+        ],
+        "support": 0.7444257467395877
+      },
+      {
+        "ids": [
+          "R17"
+        ],
+        "names": [
+          "Marked for Death"
+        ],
+        "support": 0.5500631047538914
+      },
+      {
+        "ids": [
+          "R18"
+        ],
+        "names": [
+          "Crowd Surfing"
+        ],
+        "support": 0.7534707614640302
+      },
+      {
+        "ids": [
+          "R19"
+        ],
+        "names": [
+          "Overkill Bonus"
+        ],
+        "support": 0.6171644930584771
+      },
+      {
+        "ids": [
+          "R20"
+        ],
+        "names": [
+          "Aftershock"
+        ],
+        "support": 0.27492637778712664
+      },
+      {
+        "ids": [
+          "R21"
+        ],
+        "names": [
+          "Specialist"
+        ],
+        "support": 0.4556163230963399
+      },
+      {
+        "ids": [
+          "R22"
+        ],
+        "names": [
+          "Recycler"
+        ],
+        "support": 0.45372318047959614
+      },
+      {
+        "ids": [
+          "R23"
+        ],
+        "names": [
+          "Devotion"
+        ],
+        "support": 0.8060580563735802
+      },
+      {
+        "ids": [
+          "R24"
+        ],
+        "names": [
+          "Skeleton Crew"
+        ],
+        "support": 0.4703407656710139
+      },
+      {
+        "ids": [
+          "R25"
+        ],
+        "names": [
+          "Compound Interest"
+        ],
+        "support": 0.8155237694572991
+      },
+      {
+        "ids": [
+          "R26"
+        ],
+        "names": [
+          "Controlled Demolition"
+        ],
+        "support": 0.7816575515355491
+      },
+      {
+        "ids": [
+          "R27"
+        ],
+        "names": [
+          "Double Shift"
+        ],
+        "support": 0.8180479596129575
+      },
+      {
+        "ids": [
+          "R28"
+        ],
+        "names": [
+          "Danger Pay"
+        ],
+        "support": 0.8085822465292385
+      },
+      {
+        "ids": [
+          "R29"
+        ],
+        "names": [
+          "Contagion"
+        ],
+        "support": 0.6678586453512831
+      },
+      {
+        "ids": [
+          "R30"
+        ],
+        "names": [
+          "Sympathetic Damage"
+        ],
+        "support": 0.8119478334034498
+      },
+      {
+        "ids": [
+          "R31"
+        ],
+        "names": [
+          "Rush Defense"
+        ],
+        "support": 0.4623474968447623
+      },
+      {
+        "ids": [
+          "R32"
+        ],
+        "names": [
+          "Attrition"
+        ],
+        "support": 0.46992006731173747
+      },
+      {
+        "ids": [
+          "R33"
+        ],
+        "names": [
+          "Plumber's Union"
+        ],
+        "support": 0.8104753891459824
+      },
+      {
+        "ids": [
+          "R34"
+        ],
+        "names": [
+          "Terracotta Army"
+        ],
+        "support": 0.7898611695414388
+      },
+      {
+        "ids": [
+          "R35"
+        ],
+        "names": [
+          "Money Printer"
+        ],
+        "support": 0.8140513251998317
+      },
+      {
+        "ids": [
+          "L1"
+        ],
+        "names": [
+          "Double Flush"
+        ],
+        "support": 0.8872528397139251
+      },
+      {
+        "ids": [
+          "L2"
+        ],
+        "names": [
+          "Desperate Measures"
+        ],
+        "support": 0.8834665544804375
+      },
+      {
+        "ids": [
+          "L3"
+        ],
+        "names": [
+          "Plunger Protocol"
+        ],
+        "support": 0.8742111905763568
+      },
+      {
+        "ids": [
+          "L4"
+        ],
+        "names": [
+          "Rush Hour Pileup"
+        ],
+        "support": 0.8062684055532183
+      },
+      {
+        "ids": [
+          "L5"
+        ],
+        "names": [
+          "Domino Effect"
+        ],
+        "support": 0.72780816154817
+      },
+      {
+        "ids": [
+          "L6"
+        ],
+        "names": [
+          "Spill Zone"
+        ],
+        "support": 0.8138409760201936
+      },
+      {
+        "ids": [
+          "L7"
+        ],
+        "names": [
+          "Loose Change"
+        ],
+        "support": 0.815313420277661
+      },
+      {
+        "ids": [
+          "L8"
+        ],
+        "names": [
+          "Nuclear Mop"
+        ],
+        "support": 0.8037442153975599
+      },
+      {
+        "ids": [
+          "L9"
+        ],
+        "names": [
+          "Ubik Flood"
+        ],
+        "support": 0.8390828775767775
+      },
+      {
+        "ids": [
+          "L10"
+        ],
+        "names": [
+          "Golden Magnet"
+        ],
+        "support": 0.8216238956668069
+      },
+      {
+        "ids": [
+          "L11"
+        ],
+        "names": [
+          "Bladder Burst"
+        ],
+        "support": 0.887042490534287
+      },
+      {
+        "ids": [
+          "L12"
+        ],
+        "names": [
+          "Overtime"
+        ],
+        "support": 0.8041649137568363
+      },
+      {
+        "ids": [
+          "L13"
+        ],
+        "names": [
+          "Minimalist"
+        ],
+        "support": 0.4779133361379891
+      },
+      {
+        "ids": [
+          "L14"
+        ],
+        "names": [
+          "Hoarder"
+        ],
+        "support": 0.8266722759781236
+      },
+      {
+        "ids": [
+          "L15"
+        ],
+        "names": [
+          "Chain Reaction"
+        ],
+        "support": 0.8826251577618848
+      },
+      {
+        "ids": [
+          "L16"
+        ],
+        "names": [
+          "Loan Shark"
+        ],
+        "support": 0.8817837610433319
+      },
+      {
+        "ids": [
+          "L17"
+        ],
+        "names": [
+          "Assembly Line"
+        ],
+        "support": 0.8868321413546487
+      },
+      {
+        "ids": [
+          "L18"
+        ],
+        "names": [
+          "Last Stand"
+        ],
+        "support": 0.8954564577198149
+      }
+    ],
+    "L2": [
+      {
+        "ids": [
+          "C1",
+          "C3"
+        ],
+        "names": [
+          "Overclocked Magnet",
+          "Magnet Durability"
+        ],
+        "support": 0.34812789230122004,
+        "lift": 1.54,
+        "interaction": 2.37
+      },
+      {
+        "ids": [
+          "C3",
+          "C19"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Bargain Bin"
+        ],
+        "support": 0.23348758939840134,
+        "lift": 1.68,
+        "interaction": 1.4
+      },
+      {
+        "ids": [
+          "C3",
+          "C6"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Prickly Signs"
+        ],
+        "support": 0.2919646613378208,
+        "lift": 1.61,
+        "interaction": 0.99
+      },
+      {
+        "ids": [
+          "C3",
+          "C15"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Spring-Loaded Pot"
+        ],
+        "support": 0.23285654185948676,
+        "lift": 1.67,
+        "interaction": 0.83
+      },
+      {
+        "ids": [
+          "C3",
+          "C16"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Cactus Pot"
+        ],
+        "support": 0.23727387463188893,
+        "lift": 1.67,
+        "interaction": 0.83
+      },
+      {
+        "ids": [
+          "C3",
+          "C5"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Extra Slippery"
+        ],
+        "support": 0.2930164072360118,
+        "lift": 1.61,
+        "interaction": 0.54
+      },
+      {
+        "ids": [
+          "C5",
+          "C6"
+        ],
+        "names": [
+          "Extra Slippery",
+          "Prickly Signs"
+        ],
+        "support": 0.274295330248212,
+        "lift": 1.87,
+        "interaction": 0.44
+      },
+      {
+        "ids": [
+          "C4",
+          "C6"
+        ],
+        "names": [
+          "Reinforced Signs",
+          "Prickly Signs"
+        ],
+        "support": 0.2829196466133782,
+        "lift": 1.71,
+        "interaction": 0.42
+      },
+      {
+        "ids": [
+          "C4",
+          "C5"
+        ],
+        "names": [
+          "Reinforced Signs",
+          "Extra Slippery"
+        ],
+        "support": 0.2864955826672276,
+        "lift": 1.72,
+        "interaction": 0.29
+      },
+      {
+        "ids": [
+          "C1",
+          "C6"
+        ],
+        "names": [
+          "Overclocked Magnet",
+          "Prickly Signs"
+        ],
+        "support": 0.29701304164913755,
+        "lift": 1.63,
+        "interaction": 0.01
+      }
+    ],
+    "L3": [
+      {
+        "ids": [
+          "C3",
+          "C5",
+          "C6"
+        ],
+        "names": [
+          "Magnet Durability",
+          "Extra Slippery",
+          "Prickly Signs"
+        ],
+        "support": 0.21750105174589818,
+        "interaction": -1.34
+      },
+      {
+        "ids": [
+          "C1",
+          "C3",
+          "C6"
+        ],
+        "names": [
+          "Overclocked Magnet",
+          "Magnet Durability",
+          "Prickly Signs"
+        ],
+        "support": 0.24084981068573832,
+        "interaction": -2.79
+      },
+      {
+        "ids": [
+          "C4",
+          "C5",
+          "C6"
+        ],
+        "names": [
+          "Reinforced Signs",
+          "Extra Slippery",
+          "Prickly Signs"
+        ],
+        "support": 0.2153975599495162,
+        "interaction": -3.76
+      }
+    ],
+    "L4": []
+  },
+  "communities": {
+    "communities": [
+      {
+        "id": 2,
+        "members": [
+          {
+            "id": "C2",
+            "name": "Double Dip",
+            "rarity": "common",
+            "pickRate": 0.695
+          },
+          {
+            "id": "C5",
+            "name": "Extra Slippery",
+            "rarity": "common",
+            "pickRate": 0.369
+          },
+          {
+            "id": "C6",
+            "name": "Prickly Signs",
+            "rarity": "common",
+            "pickRate": 0.372
+          },
+          {
+            "id": "C7",
+            "name": "Industrial Mop Head",
+            "rarity": "common",
+            "pickRate": 0.357
+          },
+          {
+            "id": "C8",
+            "name": "Quick Sweep",
+            "rarity": "common",
+            "pickRate": 0.756
+          },
+          {
+            "id": "C9",
+            "name": "Heavy Mop",
+            "rarity": "common",
+            "pickRate": 0.378
+          },
+          {
+            "id": "C10",
+            "name": "Extra Absorbent",
+            "rarity": "common",
+            "pickRate": 0.449
+          },
+          {
+            "id": "C11",
+            "name": "Pressure Washer",
+            "rarity": "common",
+            "pickRate": 0.282
+          },
+          {
+            "id": "C13",
+            "name": "Corrosive Formula",
+            "rarity": "common",
+            "pickRate": 0.834
+          },
+          {
+            "id": "C15",
+            "name": "Spring-Loaded Pot",
+            "rarity": "common",
+            "pickRate": 0.284
+          },
+          {
+            "id": "C16",
+            "name": "Cactus Pot",
+            "rarity": "common",
+            "pickRate": 0.286
+          },
+          {
+            "id": "C18",
+            "name": "Slow and Steady",
+            "rarity": "common",
+            "pickRate": 0.468
+          },
+          {
+            "id": "C20",
+            "name": "Static Charge",
+            "rarity": "common",
+            "pickRate": 0.56
+          },
+          {
+            "id": "R1",
+            "name": "Wet & Soapy",
+            "rarity": "rare",
+            "pickRate": 0.596
+          },
+          {
+            "id": "R4",
+            "name": "Ubik Slick",
+            "rarity": "rare",
+            "pickRate": 0.565
+          },
+          {
+            "id": "R5",
+            "name": "Coin Shrapnel",
+            "rarity": "rare",
+            "pickRate": 0.433
+          },
+          {
+            "id": "R6",
+            "name": "Sign Fortress",
+            "rarity": "rare",
+            "pickRate": 0.352
+          },
+          {
+            "id": "R8",
+            "name": "Pot Magnet",
+            "rarity": "rare",
+            "pickRate": 0.561
+          },
+          {
+            "id": "R9",
+            "name": "Sticky Mop",
+            "rarity": "rare",
+            "pickRate": 0.412
+          },
+          {
+            "id": "R10",
+            "name": "Chain Trip",
+            "rarity": "rare",
+            "pickRate": 0.275
+          },
+          {
+            "id": "R11",
+            "name": "Spray & Pray",
+            "rarity": "rare",
+            "pickRate": 0.531
+          },
+          {
+            "id": "R12",
+            "name": "Payday",
+            "rarity": "rare",
+            "pickRate": 0.592
+          },
+          {
+            "id": "R13",
+            "name": "The Tip Jar",
+            "rarity": "rare",
+            "pickRate": 0.748
+          },
+          {
+            "id": "R15",
+            "name": "Insurance Policy",
+            "rarity": "rare",
+            "pickRate": 0.441
+          },
+          {
+            "id": "R16",
+            "name": "Crossfire",
+            "rarity": "rare",
+            "pickRate": 0.72
+          },
+          {
+            "id": "R17",
+            "name": "Marked for Death",
+            "rarity": "rare",
+            "pickRate": 0.527
+          },
+          {
+            "id": "R18",
+            "name": "Crowd Surfing",
+            "rarity": "rare",
+            "pickRate": 0.731
+          },
+          {
+            "id": "R19",
+            "name": "Overkill Bonus",
+            "rarity": "rare",
+            "pickRate": 0.601
+          },
+          {
+            "id": "R20",
+            "name": "Aftershock",
+            "rarity": "rare",
+            "pickRate": 0.262
+          },
+          {
+            "id": "R21",
+            "name": "Specialist",
+            "rarity": "rare",
+            "pickRate": 0.442
+          },
+          {
+            "id": "R26",
+            "name": "Controlled Demolition",
+            "rarity": "rare",
+            "pickRate": 0.762
+          },
+          {
+            "id": "R28",
+            "name": "Danger Pay",
+            "rarity": "rare",
+            "pickRate": 0.785
+          },
+          {
+            "id": "R29",
+            "name": "Contagion",
+            "rarity": "rare",
+            "pickRate": 0.642
+          },
+          {
+            "id": "R30",
+            "name": "Sympathetic Damage",
+            "rarity": "rare",
+            "pickRate": 0.787
+          },
+          {
+            "id": "R32",
+            "name": "Attrition",
+            "rarity": "rare",
+            "pickRate": 0.452
+          },
+          {
+            "id": "L3",
+            "name": "Plunger Protocol",
+            "rarity": "legendary",
+            "pickRate": 0.844
+          },
+          {
+            "id": "L4",
+            "name": "Rush Hour Pileup",
+            "rarity": "legendary",
+            "pickRate": 0.77
+          },
+          {
+            "id": "L5",
+            "name": "Domino Effect",
+            "rarity": "legendary",
+            "pickRate": 0.694
+          },
+          {
+            "id": "L8",
+            "name": "Nuclear Mop",
+            "rarity": "legendary",
+            "pickRate": 0.769
+          },
+          {
+            "id": "L13",
+            "name": "Minimalist",
+            "rarity": "legendary",
+            "pickRate": 0.458
+          },
+          {
+            "id": "L16",
+            "name": "Loan Shark",
+            "rarity": "legendary",
+            "pickRate": 0.856
+          }
+        ],
+        "density": 0.05,
+        "size": 41
+      },
+      {
+        "id": 3,
+        "members": [
+          {
+            "id": "C14",
+            "name": "Rapid Spray",
+            "rarity": "common",
+            "pickRate": 0.834
+          },
+          {
+            "id": "C17",
+            "name": "Glass Cannon",
+            "rarity": "common",
+            "pickRate": 0.472
+          },
+          {
+            "id": "R2",
+            "name": "Mop Splash",
+            "rarity": "rare",
+            "pickRate": 0.57
+          },
+          {
+            "id": "R3",
+            "name": "Magnetic Mops",
+            "rarity": "rare",
+            "pickRate": 0.604
+          },
+          {
+            "id": "R7",
+            "name": "Mop & Bucket",
+            "rarity": "rare",
+            "pickRate": 0.617
+          },
+          {
+            "id": "R14",
+            "name": "Clearance Sale",
+            "rarity": "rare",
+            "pickRate": 0.744
+          },
+          {
+            "id": "R22",
+            "name": "Recycler",
+            "rarity": "rare",
+            "pickRate": 0.442
+          },
+          {
+            "id": "R23",
+            "name": "Devotion",
+            "rarity": "rare",
+            "pickRate": 0.777
+          },
+          {
+            "id": "R24",
+            "name": "Skeleton Crew",
+            "rarity": "rare",
+            "pickRate": 0.479
+          },
+          {
+            "id": "R25",
+            "name": "Compound Interest",
+            "rarity": "rare",
+            "pickRate": 0.793
+          },
+          {
+            "id": "R27",
+            "name": "Double Shift",
+            "rarity": "rare",
+            "pickRate": 0.787
+          },
+          {
+            "id": "R33",
+            "name": "Plumber's Union",
+            "rarity": "rare",
+            "pickRate": 0.779
+          },
+          {
+            "id": "R34",
+            "name": "Terracotta Army",
+            "rarity": "rare",
+            "pickRate": 0.765
+          },
+          {
+            "id": "R35",
+            "name": "Money Printer",
+            "rarity": "rare",
+            "pickRate": 0.786
+          },
+          {
+            "id": "L1",
+            "name": "Double Flush",
+            "rarity": "legendary",
+            "pickRate": 0.858
+          },
+          {
+            "id": "L2",
+            "name": "Desperate Measures",
+            "rarity": "legendary",
+            "pickRate": 0.85
+          },
+          {
+            "id": "L6",
+            "name": "Spill Zone",
+            "rarity": "legendary",
+            "pickRate": 0.777
+          },
+          {
+            "id": "L7",
+            "name": "Loose Change",
+            "rarity": "legendary",
+            "pickRate": 0.781
+          },
+          {
+            "id": "L9",
+            "name": "Ubik Flood",
+            "rarity": "legendary",
+            "pickRate": 0.801
+          },
+          {
+            "id": "L10",
+            "name": "Golden Magnet",
+            "rarity": "legendary",
+            "pickRate": 0.791
+          },
+          {
+            "id": "L11",
+            "name": "Bladder Burst",
+            "rarity": "legendary",
+            "pickRate": 0.858
+          },
+          {
+            "id": "L12",
+            "name": "Overtime",
+            "rarity": "legendary",
+            "pickRate": 0.768
+          },
+          {
+            "id": "L14",
+            "name": "Hoarder",
+            "rarity": "legendary",
+            "pickRate": 0.788
+          },
+          {
+            "id": "L15",
+            "name": "Chain Reaction",
+            "rarity": "legendary",
+            "pickRate": 0.85
+          },
+          {
+            "id": "L17",
+            "name": "Assembly Line",
+            "rarity": "legendary",
+            "pickRate": 0.854
+          },
+          {
+            "id": "L18",
+            "name": "Last Stand",
+            "rarity": "legendary",
+            "pickRate": 0.863
+          }
+        ],
+        "density": 0.08,
+        "size": 26
+      },
+      {
+        "id": 0,
+        "members": [
+          {
+            "id": "C1",
+            "name": "Overclocked Magnet",
+            "rarity": "common",
+            "pickRate": 0.455
+          },
+          {
+            "id": "C3",
+            "name": "Magnet Durability",
+            "rarity": "common",
+            "pickRate": 0.468
+          },
+          {
+            "id": "C4",
+            "name": "Reinforced Signs",
+            "rarity": "common",
+            "pickRate": 0.423
+          },
+          {
+            "id": "C19",
+            "name": "Bargain Bin",
+            "rarity": "common",
+            "pickRate": 0.282
+          },
+          {
+            "id": "R31",
+            "name": "Rush Defense",
+            "rarity": "rare",
+            "pickRate": 0.459
+          }
+        ],
+        "density": 0.4,
+        "size": 5
+      },
+      {
+        "id": 1,
+        "members": [
+          {
+            "id": "C12",
+            "name": "Wide Spray",
+            "rarity": "common",
+            "pickRate": 0.291
+          }
+        ],
+        "density": 0,
+        "size": 1
+      }
+    ],
+    "bridges": [
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L9",
+        "targetName": "Ubik Flood",
+        "weight": 4.12,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L15",
+        "targetName": "Chain Reaction",
+        "weight": 3.66,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L12",
+        "targetName": "Overtime",
+        "weight": 3.64,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L18",
+        "targetName": "Last Stand",
+        "weight": 3.51,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "L3",
+        "targetName": "Plunger Protocol",
+        "weight": 3.29,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R33",
+        "targetName": "Plumber's Union",
+        "weight": 3.27,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L6",
+        "targetName": "Spill Zone",
+        "weight": 3.26,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L11",
+        "targetName": "Bladder Burst",
+        "weight": 3.14,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L7",
+        "targetName": "Loose Change",
+        "weight": 3.08,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R27",
+        "targetName": "Double Shift",
+        "weight": 3.03,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L14",
+        "targetName": "Hoarder",
+        "weight": 2.99,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L2",
+        "targetName": "Desperate Measures",
+        "weight": 2.89,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "L8",
+        "targetName": "Nuclear Mop",
+        "weight": 2.75,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "L4",
+        "targetName": "Rush Hour Pileup",
+        "weight": 2.73,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L1",
+        "targetName": "Double Flush",
+        "weight": 2.59,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R23",
+        "targetName": "Devotion",
+        "weight": 2.44,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R7",
+        "targetName": "Mop & Bucket",
+        "weight": 2.32,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R3",
+        "targetName": "Magnetic Mops",
+        "weight": 2.27,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C1",
+        "sourceName": "Overclocked Magnet",
+        "target": "C18",
+        "targetName": "Slow and Steady",
+        "weight": 2.24,
+        "fromComm": 0,
+        "toComm": 2
+      },
+      {
+        "source": "C14",
+        "sourceName": "Rapid Spray",
+        "target": "C18",
+        "targetName": "Slow and Steady",
+        "weight": 2.19,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R35",
+        "targetName": "Money Printer",
+        "weight": 2.19,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L17",
+        "targetName": "Assembly Line",
+        "weight": 2.17,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "L10",
+        "targetName": "Golden Magnet",
+        "weight": 2.06,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "R30",
+        "targetName": "Sympathetic Damage",
+        "weight": 2.05,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "R28",
+        "targetName": "Danger Pay",
+        "weight": 1.97,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C2",
+        "sourceName": "Double Dip",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.96,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C13",
+        "sourceName": "Corrosive Formula",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.92,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R34",
+        "targetName": "Terracotta Army",
+        "weight": 1.88,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R2",
+        "targetName": "Mop Splash",
+        "weight": 1.87,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R4",
+        "sourceName": "Ubik Slick",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.86,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R1",
+        "sourceName": "Wet & Soapy",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.84,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R11",
+        "sourceName": "Spray & Pray",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.78,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "R29",
+        "targetName": "Contagion",
+        "weight": 1.75,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R25",
+        "targetName": "Compound Interest",
+        "weight": 1.72,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R8",
+        "sourceName": "Pot Magnet",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.69,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R17",
+        "sourceName": "Marked for Death",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.67,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C3",
+        "sourceName": "Magnet Durability",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.65,
+        "fromComm": 0,
+        "toComm": 3
+      },
+      {
+        "source": "C4",
+        "sourceName": "Reinforced Signs",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.6,
+        "fromComm": 0,
+        "toComm": 3
+      },
+      {
+        "source": "R12",
+        "sourceName": "Payday",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.56,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R13",
+        "sourceName": "The Tip Jar",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.53,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "L16",
+        "targetName": "Loan Shark",
+        "weight": 1.4,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C8",
+        "sourceName": "Quick Sweep",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.35,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "C19",
+        "targetName": "Bargain Bin",
+        "weight": 1.34,
+        "fromComm": 2,
+        "toComm": 0
+      },
+      {
+        "source": "R18",
+        "sourceName": "Crowd Surfing",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.33,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R16",
+        "sourceName": "Crossfire",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.32,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R14",
+        "targetName": "Clearance Sale",
+        "weight": 1.28,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C3",
+        "sourceName": "Magnet Durability",
+        "target": "C18",
+        "targetName": "Slow and Steady",
+        "weight": 1.17,
+        "fromComm": 0,
+        "toComm": 2
+      },
+      {
+        "source": "R5",
+        "sourceName": "Coin Shrapnel",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.17,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C18",
+        "sourceName": "Slow and Steady",
+        "target": "R22",
+        "targetName": "Recycler",
+        "weight": 1.07,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R6",
+        "sourceName": "Sign Fortress",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.05,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R24",
+        "sourceName": "Skeleton Crew",
+        "target": "R32",
+        "targetName": "Attrition",
+        "weight": 1.04,
+        "fromComm": 3,
+        "toComm": 2
+      },
+      {
+        "source": "C20",
+        "sourceName": "Static Charge",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.03,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "R9",
+        "sourceName": "Sticky Mop",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.02,
+        "fromComm": 2,
+        "toComm": 3
+      },
+      {
+        "source": "C1",
+        "sourceName": "Overclocked Magnet",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.01,
+        "fromComm": 0,
+        "toComm": 3
+      },
+      {
+        "source": "C4",
+        "sourceName": "Reinforced Signs",
+        "target": "C18",
+        "targetName": "Slow and Steady",
+        "weight": 1.01,
+        "fromComm": 0,
+        "toComm": 2
+      },
+      {
+        "source": "C15",
+        "sourceName": "Spring-Loaded Pot",
+        "target": "R24",
+        "targetName": "Skeleton Crew",
+        "weight": 1.01,
+        "fromComm": 2,
+        "toComm": 3
+      }
+    ]
+  },
+  "centrality": [
+    {
+      "id": "C18",
+      "name": "Slow and Steady",
+      "rarity": "common",
+      "pickRate": 0.468,
+      "betweenness": 0.6578
+    },
+    {
+      "id": "R24",
+      "name": "Skeleton Crew",
+      "rarity": "rare",
+      "pickRate": 0.479,
+      "betweenness": 0.2959
+    },
+    {
+      "id": "C3",
+      "name": "Magnet Durability",
+      "rarity": "common",
+      "pickRate": 0.468,
+      "betweenness": 0.0289
+    },
+    {
+      "id": "C1",
+      "name": "Overclocked Magnet",
+      "rarity": "common",
+      "pickRate": 0.455,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C2",
+      "name": "Double Dip",
+      "rarity": "common",
+      "pickRate": 0.695,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C4",
+      "name": "Reinforced Signs",
+      "rarity": "common",
+      "pickRate": 0.423,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C8",
+      "name": "Quick Sweep",
+      "rarity": "common",
+      "pickRate": 0.756,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C13",
+      "name": "Corrosive Formula",
+      "rarity": "common",
+      "pickRate": 0.834,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C14",
+      "name": "Rapid Spray",
+      "rarity": "common",
+      "pickRate": 0.834,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C15",
+      "name": "Spring-Loaded Pot",
+      "rarity": "common",
+      "pickRate": 0.284,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "C20",
+      "name": "Static Charge",
+      "rarity": "common",
+      "pickRate": 0.56,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R1",
+      "name": "Wet & Soapy",
+      "rarity": "rare",
+      "pickRate": 0.596,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R2",
+      "name": "Mop Splash",
+      "rarity": "rare",
+      "pickRate": 0.57,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R3",
+      "name": "Magnetic Mops",
+      "rarity": "rare",
+      "pickRate": 0.604,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R4",
+      "name": "Ubik Slick",
+      "rarity": "rare",
+      "pickRate": 0.565,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R5",
+      "name": "Coin Shrapnel",
+      "rarity": "rare",
+      "pickRate": 0.433,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R6",
+      "name": "Sign Fortress",
+      "rarity": "rare",
+      "pickRate": 0.352,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R7",
+      "name": "Mop & Bucket",
+      "rarity": "rare",
+      "pickRate": 0.617,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R8",
+      "name": "Pot Magnet",
+      "rarity": "rare",
+      "pickRate": 0.561,
+      "betweenness": 0.0002
+    },
+    {
+      "id": "R9",
+      "name": "Sticky Mop",
+      "rarity": "rare",
+      "pickRate": 0.412,
+      "betweenness": 0.0002
+    }
+  ],
+  "islands": {
+    "components": [
+      {
+        "members": [
+          {
+            "id": "C1",
+            "name": "Overclocked Magnet"
+          },
+          {
+            "id": "C3",
+            "name": "Magnet Durability"
+          },
+          {
+            "id": "C18",
+            "name": "Slow and Steady"
+          },
+          {
+            "id": "R24",
+            "name": "Skeleton Crew"
+          },
+          {
+            "id": "C19",
+            "name": "Bargain Bin"
+          },
+          {
+            "id": "C4",
+            "name": "Reinforced Signs"
+          },
+          {
+            "id": "R31",
+            "name": "Rush Defense"
+          },
+          {
+            "id": "L3",
+            "name": "Plunger Protocol"
+          },
+          {
+            "id": "L9",
+            "name": "Ubik Flood"
+          },
+          {
+            "id": "L15",
+            "name": "Chain Reaction"
+          },
+          {
+            "id": "L12",
+            "name": "Overtime"
+          },
+          {
+            "id": "C8",
+            "name": "Quick Sweep"
+          },
+          {
+            "id": "C13",
+            "name": "Corrosive Formula"
+          },
+          {
+            "id": "L18",
+            "name": "Last Stand"
+          },
+          {
+            "id": "L4",
+            "name": "Rush Hour Pileup"
+          },
+          {
+            "id": "R33",
+            "name": "Plumber's Union"
+          },
+          {
+            "id": "L6",
+            "name": "Spill Zone"
+          },
+          {
+            "id": "L5",
+            "name": "Domino Effect"
+          },
+          {
+            "id": "L11",
+            "name": "Bladder Burst"
+          },
+          {
+            "id": "L7",
+            "name": "Loose Change"
+          },
+          {
+            "id": "R27",
+            "name": "Double Shift"
+          },
+          {
+            "id": "L14",
+            "name": "Hoarder"
+          },
+          {
+            "id": "L8",
+            "name": "Nuclear Mop"
+          },
+          {
+            "id": "L2",
+            "name": "Desperate Measures"
+          },
+          {
+            "id": "L16",
+            "name": "Loan Shark"
+          },
+          {
+            "id": "R30",
+            "name": "Sympathetic Damage"
+          },
+          {
+            "id": "L1",
+            "name": "Double Flush"
+          },
+          {
+            "id": "R1",
+            "name": "Wet & Soapy"
+          },
+          {
+            "id": "R23",
+            "name": "Devotion"
+          },
+          {
+            "id": "R7",
+            "name": "Mop & Bucket"
+          },
+          {
+            "id": "R16",
+            "name": "Crossfire"
+          },
+          {
+            "id": "R3",
+            "name": "Magnetic Mops"
+          },
+          {
+            "id": "R12",
+            "name": "Payday"
+          },
+          {
+            "id": "R18",
+            "name": "Crowd Surfing"
+          },
+          {
+            "id": "R8",
+            "name": "Pot Magnet"
+          },
+          {
+            "id": "C14",
+            "name": "Rapid Spray"
+          },
+          {
+            "id": "C20",
+            "name": "Static Charge"
+          },
+          {
+            "id": "R35",
+            "name": "Money Printer"
+          },
+          {
+            "id": "L17",
+            "name": "Assembly Line"
+          },
+          {
+            "id": "C2",
+            "name": "Double Dip"
+          },
+          {
+            "id": "R4",
+            "name": "Ubik Slick"
+          },
+          {
+            "id": "R28",
+            "name": "Danger Pay"
+          },
+          {
+            "id": "L10",
+            "name": "Golden Magnet"
+          },
+          {
+            "id": "R29",
+            "name": "Contagion"
+          },
+          {
+            "id": "R13",
+            "name": "The Tip Jar"
+          },
+          {
+            "id": "R17",
+            "name": "Marked for Death"
+          },
+          {
+            "id": "R11",
+            "name": "Spray & Pray"
+          },
+          {
+            "id": "R34",
+            "name": "Terracotta Army"
+          },
+          {
+            "id": "R2",
+            "name": "Mop Splash"
+          },
+          {
+            "id": "R5",
+            "name": "Coin Shrapnel"
+          },
+          {
+            "id": "C16",
+            "name": "Cactus Pot"
+          },
+          {
+            "id": "R9",
+            "name": "Sticky Mop"
+          },
+          {
+            "id": "L13",
+            "name": "Minimalist"
+          },
+          {
+            "id": "R25",
+            "name": "Compound Interest"
+          },
+          {
+            "id": "C6",
+            "name": "Prickly Signs"
+          },
+          {
+            "id": "C5",
+            "name": "Extra Slippery"
+          },
+          {
+            "id": "R20",
+            "name": "Aftershock"
+          },
+          {
+            "id": "C7",
+            "name": "Industrial Mop Head"
+          },
+          {
+            "id": "C15",
+            "name": "Spring-Loaded Pot"
+          },
+          {
+            "id": "R10",
+            "name": "Chain Trip"
+          },
+          {
+            "id": "R32",
+            "name": "Attrition"
+          },
+          {
+            "id": "C10",
+            "name": "Extra Absorbent"
+          },
+          {
+            "id": "R26",
+            "name": "Controlled Demolition"
+          },
+          {
+            "id": "R6",
+            "name": "Sign Fortress"
+          },
+          {
+            "id": "R14",
+            "name": "Clearance Sale"
+          },
+          {
+            "id": "C9",
+            "name": "Heavy Mop"
+          },
+          {
+            "id": "R21",
+            "name": "Specialist"
+          },
+          {
+            "id": "R15",
+            "name": "Insurance Policy"
+          },
+          {
+            "id": "R19",
+            "name": "Overkill Bonus"
+          },
+          {
+            "id": "R22",
+            "name": "Recycler"
+          },
+          {
+            "id": "C11",
+            "name": "Pressure Washer"
+          },
+          {
+            "id": "C17",
+            "name": "Glass Cannon"
+          }
+        ],
+        "size": 72
+      },
+      {
+        "members": [
+          {
+            "id": "C12",
+            "name": "Wide Spray"
+          }
+        ],
+        "size": 1
+      }
+    ],
+    "fragileConnections": [],
+    "suggestions": [
+      "1 upgrades are isolated singletons (no significant interaction effects with any other upgrade)."
+    ]
+  },
+  "rejections": [
+    {
+      "id": "C11",
+      "name": "Pressure Washer",
+      "rarity": "common",
+      "offers": 11165,
+      "picks": 1409,
+      "rejectionRate": 0.874,
+      "topWinners": [
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 328
+        },
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 318
+        },
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 269
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "name": "Wide Spray",
+      "rarity": "common",
+      "offers": 11417,
+      "picks": 1453,
+      "rejectionRate": 0.873,
+      "topWinners": [
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 354
+        },
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 324
+        },
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 285
+        }
+      ]
+    },
+    {
+      "id": "C19",
+      "name": "Bargain Bin",
+      "rarity": "common",
+      "offers": 9632,
+      "picks": 1410,
+      "rejectionRate": 0.854,
+      "topWinners": [
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 212
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 208
+        },
+        {
+          "id": "R18",
+          "name": "Crowd Surfing",
+          "count": 204
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "name": "Extra Slippery",
+      "rarity": "common",
+      "offers": 12535,
+      "picks": 1846,
+      "rejectionRate": 0.853,
+      "topWinners": [
+        {
+          "id": "R35",
+          "name": "Money Printer",
+          "count": 270
+        },
+        {
+          "id": "R26",
+          "name": "Controlled Demolition",
+          "count": 264
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 262
+        }
+      ]
+    },
+    {
+      "id": "C15",
+      "name": "Spring-Loaded Pot",
+      "rarity": "common",
+      "offers": 9591,
+      "picks": 1419,
+      "rejectionRate": 0.852,
+      "topWinners": [
+        {
+          "id": "L17",
+          "name": "Assembly Line",
+          "count": 227
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 214
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 211
+        }
+      ]
+    },
+    {
+      "id": "R15",
+      "name": "Insurance Policy",
+      "rarity": "rare",
+      "offers": 14848,
+      "picks": 2204,
+      "rejectionRate": 0.852,
+      "topWinners": [
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 449
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 437
+        },
+        {
+          "id": "C8",
+          "name": "Quick Sweep",
+          "count": 432
+        }
+      ]
+    },
+    {
+      "id": "R21",
+      "name": "Specialist",
+      "rarity": "rare",
+      "offers": 14926,
+      "picks": 2209,
+      "rejectionRate": 0.852,
+      "topWinners": [
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 468
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 435
+        },
+        {
+          "id": "L12",
+          "name": "Overtime",
+          "count": 427
+        }
+      ]
+    },
+    {
+      "id": "R22",
+      "name": "Recycler",
+      "rarity": "rare",
+      "offers": 14879,
+      "picks": 2208,
+      "rejectionRate": 0.852,
+      "topWinners": [
+        {
+          "id": "L12",
+          "name": "Overtime",
+          "count": 426
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 407
+        },
+        {
+          "id": "C8",
+          "name": "Quick Sweep",
+          "count": 401
+        }
+      ]
+    },
+    {
+      "id": "C16",
+      "name": "Cactus Pot",
+      "rarity": "common",
+      "offers": 9527,
+      "picks": 1428,
+      "rejectionRate": 0.85,
+      "topWinners": [
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 213
+        },
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 205
+        },
+        {
+          "id": "L18",
+          "name": "Last Stand",
+          "count": 203
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "name": "Industrial Mop Head",
+      "rarity": "common",
+      "offers": 11112,
+      "picks": 1783,
+      "rejectionRate": 0.84,
+      "topWinners": [
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 257
+        },
+        {
+          "id": "R18",
+          "name": "Crowd Surfing",
+          "count": 243
+        },
+        {
+          "id": "R14",
+          "name": "Clearance Sale",
+          "count": 240
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "name": "Overclocked Magnet",
+      "rarity": "common",
+      "offers": 13703,
+      "picks": 2273,
+      "rejectionRate": 0.834,
+      "topWinners": [
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 358
+        },
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 352
+        },
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 296
+        }
+      ]
+    },
+    {
+      "id": "R20",
+      "name": "Aftershock",
+      "rarity": "rare",
+      "offers": 7539,
+      "picks": 1312,
+      "rejectionRate": 0.826,
+      "topWinners": [
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 169
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 168
+        },
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 164
+        }
+      ]
+    },
+    {
+      "id": "R10",
+      "name": "Chain Trip",
+      "rarity": "rare",
+      "offers": 7573,
+      "picks": 1373,
+      "rejectionRate": 0.819,
+      "topWinners": [
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 183
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 181
+        },
+        {
+          "id": "L18",
+          "name": "Last Stand",
+          "count": 157
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "name": "Prickly Signs",
+      "rarity": "common",
+      "offers": 16864,
+      "picks": 3215,
+      "rejectionRate": 0.809,
+      "topWinners": [
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 332
+        },
+        {
+          "id": "R14",
+          "name": "Clearance Sale",
+          "count": 327
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 322
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "name": "Heavy Mop",
+      "rarity": "common",
+      "offers": 13658,
+      "picks": 2666,
+      "rejectionRate": 0.805,
+      "topWinners": [
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 291
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 275
+        },
+        {
+          "id": "R35",
+          "name": "Money Printer",
+          "count": 275
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "name": "Reinforced Signs",
+      "rarity": "common",
+      "offers": 17128,
+      "picks": 3511,
+      "rejectionRate": 0.795,
+      "topWinners": [
+        {
+          "id": "R18",
+          "name": "Crowd Surfing",
+          "count": 336
+        },
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 325
+        },
+        {
+          "id": "L17",
+          "name": "Assembly Line",
+          "count": 321
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "name": "Sign Fortress",
+      "rarity": "rare",
+      "offers": 8399,
+      "picks": 1760,
+      "rejectionRate": 0.79,
+      "topWinners": [
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 179
+        },
+        {
+          "id": "R13",
+          "name": "The Tip Jar",
+          "count": 170
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 169
+        }
+      ]
+    },
+    {
+      "id": "C20",
+      "name": "Static Charge",
+      "rarity": "common",
+      "offers": 13259,
+      "picks": 2801,
+      "rejectionRate": 0.789,
+      "topWinners": [
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 381
+        },
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 380
+        },
+        {
+          "id": "R34",
+          "name": "Terracotta Army",
+          "count": 289
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "Magnet Durability",
+      "rarity": "common",
+      "offers": 19164,
+      "picks": 4122,
+      "rejectionRate": 0.785,
+      "topWinners": [
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 458
+        },
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 395
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 361
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "name": "Extra Absorbent",
+      "rarity": "common",
+      "offers": 14390,
+      "picks": 3316,
+      "rejectionRate": 0.77,
+      "topWinners": [
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 288
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 284
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 273
+        }
+      ]
+    },
+    {
+      "id": "R19",
+      "name": "Overkill Bonus",
+      "rarity": "rare",
+      "offers": 12097,
+      "picks": 3003,
+      "rejectionRate": 0.752,
+      "topWinners": [
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 392
+        },
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 341
+        },
+        {
+          "id": "L5",
+          "name": "Domino Effect",
+          "count": 322
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "name": "Coin Shrapnel",
+      "rarity": "rare",
+      "offers": 8472,
+      "picks": 2165,
+      "rejectionRate": 0.744,
+      "topWinners": [
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 200
+        },
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 192
+        },
+        {
+          "id": "L17",
+          "name": "Assembly Line",
+          "count": 181
+        }
+      ]
+    },
+    {
+      "id": "R9",
+      "name": "Sticky Mop",
+      "rarity": "rare",
+      "offers": 8003,
+      "picks": 2059,
+      "rejectionRate": 0.743,
+      "topWinners": [
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 174
+        },
+        {
+          "id": "L15",
+          "name": "Chain Reaction",
+          "count": 171
+        },
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 167
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "Double Dip",
+      "rarity": "common",
+      "offers": 11101,
+      "picks": 3475,
+      "rejectionRate": 0.687,
+      "topWinners": [
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 227
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 216
+        },
+        {
+          "id": "R27",
+          "name": "Double Shift",
+          "count": 212
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "name": "Domino Effect",
+      "rarity": "legendary",
+      "offers": 10569,
+      "picks": 3470,
+      "rejectionRate": 0.672,
+      "topWinners": [
+        {
+          "id": "L3",
+          "name": "Plunger Protocol",
+          "count": 219
+        },
+        {
+          "id": "L2",
+          "name": "Desperate Measures",
+          "count": 205
+        },
+        {
+          "id": "L1",
+          "name": "Double Flush",
+          "count": 204
+        }
+      ]
+    },
+    {
+      "id": "L13",
+      "name": "Minimalist",
+      "rarity": "legendary",
+      "offers": 6721,
+      "picks": 2289,
+      "rejectionRate": 0.659,
+      "topWinners": [
+        {
+          "id": "C13",
+          "name": "Corrosive Formula",
+          "count": 186
+        },
+        {
+          "id": "C8",
+          "name": "Quick Sweep",
+          "count": 176
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 170
+        }
+      ]
+    },
+    {
+      "id": "R11",
+      "name": "Spray & Pray",
+      "rarity": "rare",
+      "offers": 7627,
+      "picks": 2654,
+      "rejectionRate": 0.652,
+      "topWinners": [
+        {
+          "id": "L16",
+          "name": "Loan Shark",
+          "count": 149
+        },
+        {
+          "id": "R23",
+          "name": "Devotion",
+          "count": 140
+        },
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 136
+        }
+      ]
+    },
+    {
+      "id": "C18",
+      "name": "Slow and Steady",
+      "rarity": "common",
+      "offers": 6645,
+      "picks": 2340,
+      "rejectionRate": 0.648,
+      "topWinners": [
+        {
+          "id": "C17",
+          "name": "Glass Cannon",
+          "count": 445
+        },
+        {
+          "id": "C2",
+          "name": "Double Dip",
+          "count": 348
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 319
+        }
+      ]
+    },
+    {
+      "id": "C17",
+      "name": "Glass Cannon",
+      "rarity": "common",
+      "offers": 6680,
+      "picks": 2359,
+      "rejectionRate": 0.647,
+      "topWinners": [
+        {
+          "id": "C18",
+          "name": "Slow and Steady",
+          "count": 465
+        },
+        {
+          "id": "C2",
+          "name": "Double Dip",
+          "count": 384
+        },
+        {
+          "id": "C14",
+          "name": "Rapid Spray",
+          "count": 306
+        }
+      ]
+    },
+    {
+      "id": "R17",
+      "name": "Marked for Death",
+      "rarity": "rare",
+      "offers": 7252,
+      "picks": 2633,
+      "rejectionRate": 0.637,
+      "topWinners": [
+        {
+          "id": "L11",
+          "name": "Bladder Burst",
+          "count": 157
+        },
+        {
+          "id": "L15",
+          "name": "Chain Reaction",
+          "count": 147
+        },
+        {
+          "id": "L18",
+          "name": "Last Stand",
+          "count": 136
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "upgrades": [
+      {
+        "id": "C17",
+        "name": "Glass Cannon",
+        "totalPicks": 2359,
+        "earlyPicks": 2025,
+        "earlyPct": 86,
+        "latePicks": 103,
+        "latePct": 4,
+        "avgPickWave": 6.5
+      },
+      {
+        "id": "C18",
+        "name": "Slow and Steady",
+        "totalPicks": 2340,
+        "earlyPicks": 1995,
+        "earlyPct": 85,
+        "latePicks": 84,
+        "latePct": 4,
+        "avgPickWave": 6.5
+      },
+      {
+        "id": "C12",
+        "name": "Wide Spray",
+        "totalPicks": 1453,
+        "earlyPicks": 766,
+        "earlyPct": 53,
+        "latePicks": 364,
+        "latePct": 25,
+        "avgPickWave": 17.2
+      },
+      {
+        "id": "R32",
+        "name": "Attrition",
+        "totalPicks": 2261,
+        "earlyPicks": 786,
+        "earlyPct": 35,
+        "latePicks": 422,
+        "latePct": 19,
+        "avgPickWave": 17.8
+      },
+      {
+        "id": "C11",
+        "name": "Pressure Washer",
+        "totalPicks": 1409,
+        "earlyPicks": 738,
+        "earlyPct": 52,
+        "latePicks": 384,
+        "latePct": 27,
+        "avgPickWave": 18
+      },
+      {
+        "id": "R31",
+        "name": "Rush Defense",
+        "totalPicks": 2297,
+        "earlyPicks": 794,
+        "earlyPct": 35,
+        "latePicks": 444,
+        "latePct": 19,
+        "avgPickWave": 18
+      },
+      {
+        "id": "R24",
+        "name": "Skeleton Crew",
+        "totalPicks": 2396,
+        "earlyPicks": 832,
+        "earlyPct": 35,
+        "latePicks": 471,
+        "latePct": 20,
+        "avgPickWave": 18.1
+      },
+      {
+        "id": "C2",
+        "name": "Double Dip",
+        "totalPicks": 3475,
+        "earlyPicks": 1644,
+        "earlyPct": 47,
+        "latePicks": 1014,
+        "latePct": 29,
+        "avgPickWave": 18.6
+      },
+      {
+        "id": "C1",
+        "name": "Overclocked Magnet",
+        "totalPicks": 2273,
+        "earlyPicks": 986,
+        "earlyPct": 43,
+        "latePicks": 714,
+        "latePct": 31,
+        "avgPickWave": 19.9
+      },
+      {
+        "id": "C14",
+        "name": "Rapid Spray",
+        "totalPicks": 7068,
+        "earlyPicks": 2522,
+        "earlyPct": 36,
+        "latePicks": 1921,
+        "latePct": 27,
+        "avgPickWave": 20
+      },
+      {
+        "id": "C13",
+        "name": "Corrosive Formula",
+        "totalPicks": 7104,
+        "earlyPicks": 2435,
+        "earlyPct": 34,
+        "latePicks": 1949,
+        "latePct": 27,
+        "avgPickWave": 20.2
+      },
+      {
+        "id": "C5",
+        "name": "Extra Slippery",
+        "totalPicks": 1846,
+        "earlyPicks": 618,
+        "earlyPct": 33,
+        "latePicks": 575,
+        "latePct": 31,
+        "avgPickWave": 21.3
+      },
+      {
+        "id": "R25",
+        "name": "Compound Interest",
+        "totalPicks": 3965,
+        "earlyPicks": 1006,
+        "earlyPct": 25,
+        "latePicks": 1237,
+        "latePct": 31,
+        "avgPickWave": 22.2
+      },
+      {
+        "id": "C20",
+        "name": "Static Charge",
+        "totalPicks": 2801,
+        "earlyPicks": 1042,
+        "earlyPct": 37,
+        "latePicks": 1050,
+        "latePct": 37,
+        "avgPickWave": 22.4
+      },
+      {
+        "id": "R27",
+        "name": "Double Shift",
+        "totalPicks": 3933,
+        "earlyPicks": 955,
+        "earlyPct": 24,
+        "latePicks": 1255,
+        "latePct": 32,
+        "avgPickWave": 22.5
+      },
+      {
+        "id": "R28",
+        "name": "Danger Pay",
+        "totalPicks": 3926,
+        "earlyPicks": 976,
+        "earlyPct": 25,
+        "latePicks": 1252,
+        "latePct": 32,
+        "avgPickWave": 22.6
+      },
+      {
+        "id": "L13",
+        "name": "Minimalist",
+        "totalPicks": 2289,
+        "earlyPicks": 510,
+        "earlyPct": 22,
+        "latePicks": 733,
+        "latePct": 32,
+        "avgPickWave": 22.8
+      },
+      {
+        "id": "R30",
+        "name": "Sympathetic Damage",
+        "totalPicks": 3934,
+        "earlyPicks": 910,
+        "earlyPct": 23,
+        "latePicks": 1299,
+        "latePct": 33,
+        "avgPickWave": 22.9
+      },
+      {
+        "id": "R23",
+        "name": "Devotion",
+        "totalPicks": 3883,
+        "earlyPicks": 891,
+        "earlyPct": 23,
+        "latePicks": 1282,
+        "latePct": 33,
+        "avgPickWave": 23
+      },
+      {
+        "id": "R21",
+        "name": "Specialist",
+        "totalPicks": 2209,
+        "earlyPicks": 562,
+        "earlyPct": 25,
+        "latePicks": 788,
+        "latePct": 36,
+        "avgPickWave": 23.3
+      },
+      {
+        "id": "R33",
+        "name": "Plumber's Union",
+        "totalPicks": 3896,
+        "earlyPicks": 879,
+        "earlyPct": 23,
+        "latePicks": 1344,
+        "latePct": 34,
+        "avgPickWave": 23.4
+      },
+      {
+        "id": "C3",
+        "name": "Magnet Durability",
+        "totalPicks": 4122,
+        "earlyPicks": 1299,
+        "earlyPct": 32,
+        "latePicks": 1623,
+        "latePct": 39,
+        "avgPickWave": 23.6
+      },
+      {
+        "id": "C8",
+        "name": "Quick Sweep",
+        "totalPicks": 6208,
+        "earlyPicks": 1404,
+        "earlyPct": 23,
+        "latePicks": 2161,
+        "latePct": 35,
+        "avgPickWave": 23.6
+      },
+      {
+        "id": "R26",
+        "name": "Controlled Demolition",
+        "totalPicks": 3808,
+        "earlyPicks": 879,
+        "earlyPct": 23,
+        "latePicks": 1362,
+        "latePct": 36,
+        "avgPickWave": 23.6
+      },
+      {
+        "id": "R35",
+        "name": "Money Printer",
+        "totalPicks": 3928,
+        "earlyPicks": 904,
+        "earlyPct": 23,
+        "latePicks": 1379,
+        "latePct": 35,
+        "avgPickWave": 23.6
+      },
+      {
+        "id": "R22",
+        "name": "Recycler",
+        "totalPicks": 2208,
+        "earlyPicks": 549,
+        "earlyPct": 25,
+        "latePicks": 817,
+        "latePct": 37,
+        "avgPickWave": 23.7
+      },
+      {
+        "id": "R15",
+        "name": "Insurance Policy",
+        "totalPicks": 2204,
+        "earlyPicks": 543,
+        "earlyPct": 25,
+        "latePicks": 820,
+        "latePct": 37,
+        "avgPickWave": 23.8
+      },
+      {
+        "id": "R34",
+        "name": "Terracotta Army",
+        "totalPicks": 3824,
+        "earlyPicks": 870,
+        "earlyPct": 23,
+        "latePicks": 1378,
+        "latePct": 36,
+        "avgPickWave": 23.8
+      },
+      {
+        "id": "R13",
+        "name": "The Tip Jar",
+        "totalPicks": 3742,
+        "earlyPicks": 867,
+        "earlyPct": 23,
+        "latePicks": 1370,
+        "latePct": 37,
+        "avgPickWave": 23.9
+      },
+      {
+        "id": "L16",
+        "name": "Loan Shark",
+        "totalPicks": 4280,
+        "earlyPicks": 611,
+        "earlyPct": 14,
+        "latePicks": 1406,
+        "latePct": 33,
+        "avgPickWave": 24.1
+      },
+      {
+        "id": "R14",
+        "name": "Clearance Sale",
+        "totalPicks": 3722,
+        "earlyPicks": 849,
+        "earlyPct": 23,
+        "latePicks": 1424,
+        "latePct": 38,
+        "avgPickWave": 24.3
+      },
+      {
+        "id": "R16",
+        "name": "Crossfire",
+        "totalPicks": 3602,
+        "earlyPicks": 843,
+        "earlyPct": 23,
+        "latePicks": 1397,
+        "latePct": 39,
+        "avgPickWave": 24.3
+      },
+      {
+        "id": "R18",
+        "name": "Crowd Surfing",
+        "totalPicks": 3653,
+        "earlyPicks": 830,
+        "earlyPct": 23,
+        "latePicks": 1432,
+        "latePct": 39,
+        "avgPickWave": 24.5
+      },
+      {
+        "id": "R19",
+        "name": "Overkill Bonus",
+        "totalPicks": 3003,
+        "earlyPicks": 689,
+        "earlyPct": 23,
+        "latePicks": 1174,
+        "latePct": 39,
+        "avgPickWave": 24.5
+      },
+      {
+        "id": "L17",
+        "name": "Assembly Line",
+        "totalPicks": 4271,
+        "earlyPicks": 586,
+        "earlyPct": 14,
+        "latePicks": 1548,
+        "latePct": 36,
+        "avgPickWave": 24.8
+      },
+      {
+        "id": "L15",
+        "name": "Chain Reaction",
+        "totalPicks": 4250,
+        "earlyPicks": 608,
+        "earlyPct": 14,
+        "latePicks": 1534,
+        "latePct": 36,
+        "avgPickWave": 25
+      },
+      {
+        "id": "L18",
+        "name": "Last Stand",
+        "totalPicks": 4317,
+        "earlyPicks": 587,
+        "earlyPct": 14,
+        "latePicks": 1626,
+        "latePct": 38,
+        "avgPickWave": 25.1
+      },
+      {
+        "id": "C6",
+        "name": "Prickly Signs",
+        "totalPicks": 3215,
+        "earlyPicks": 746,
+        "earlyPct": 23,
+        "latePicks": 1369,
+        "latePct": 43,
+        "avgPickWave": 25.5
+      },
+      {
+        "id": "L1",
+        "name": "Double Flush",
+        "totalPicks": 4292,
+        "earlyPicks": 617,
+        "earlyPct": 14,
+        "latePicks": 1686,
+        "latePct": 39,
+        "avgPickWave": 25.5
+      },
+      {
+        "id": "L2",
+        "name": "Desperate Measures",
+        "totalPicks": 4251,
+        "earlyPicks": 570,
+        "earlyPct": 13,
+        "latePicks": 1624,
+        "latePct": 38,
+        "avgPickWave": 25.5
+      },
+      {
+        "id": "L11",
+        "name": "Bladder Burst",
+        "totalPicks": 4291,
+        "earlyPicks": 590,
+        "earlyPct": 14,
+        "latePicks": 1635,
+        "latePct": 38,
+        "avgPickWave": 25.5
+      },
+      {
+        "id": "L3",
+        "name": "Plunger Protocol",
+        "totalPicks": 4219,
+        "earlyPicks": 572,
+        "earlyPct": 14,
+        "latePicks": 1703,
+        "latePct": 40,
+        "avgPickWave": 26
+      },
+      {
+        "id": "C15",
+        "name": "Spring-Loaded Pot",
+        "totalPicks": 1419,
+        "earlyPicks": 153,
+        "earlyPct": 11,
+        "latePicks": 568,
+        "latePct": 40,
+        "avgPickWave": 26.4
+      },
+      {
+        "id": "C16",
+        "name": "Cactus Pot",
+        "totalPicks": 1428,
+        "earlyPicks": 127,
+        "earlyPct": 9,
+        "latePicks": 575,
+        "latePct": 40,
+        "avgPickWave": 26.4
+      },
+      {
+        "id": "C4",
+        "name": "Reinforced Signs",
+        "totalPicks": 3511,
+        "earlyPicks": 737,
+        "earlyPct": 21,
+        "latePicks": 1616,
+        "latePct": 46,
+        "avgPickWave": 26.6
+      },
+      {
+        "id": "C19",
+        "name": "Bargain Bin",
+        "totalPicks": 1410,
+        "earlyPicks": 124,
+        "earlyPct": 9,
+        "latePicks": 581,
+        "latePct": 41,
+        "avgPickWave": 26.7
+      },
+      {
+        "id": "C7",
+        "name": "Industrial Mop Head",
+        "totalPicks": 1783,
+        "earlyPicks": 311,
+        "earlyPct": 17,
+        "latePicks": 798,
+        "latePct": 45,
+        "avgPickWave": 27.2
+      },
+      {
+        "id": "R29",
+        "name": "Contagion",
+        "totalPicks": 3212,
+        "earlyPicks": 369,
+        "earlyPct": 11,
+        "latePicks": 1402,
+        "latePct": 44,
+        "avgPickWave": 27.3
+      },
+      {
+        "id": "L10",
+        "name": "Golden Magnet",
+        "totalPicks": 3953,
+        "earlyPicks": 129,
+        "earlyPct": 3,
+        "latePicks": 1767,
+        "latePct": 45,
+        "avgPickWave": 28.4
+      },
+      {
+        "id": "C9",
+        "name": "Heavy Mop",
+        "totalPicks": 2666,
+        "earlyPicks": 336,
+        "earlyPct": 13,
+        "latePicks": 1333,
+        "latePct": 50,
+        "avgPickWave": 29
+      },
+      {
+        "id": "L9",
+        "name": "Ubik Flood",
+        "totalPicks": 4006,
+        "earlyPicks": 67,
+        "earlyPct": 2,
+        "latePicks": 2039,
+        "latePct": 51,
+        "avgPickWave": 30.1
+      },
+      {
+        "id": "R12",
+        "name": "Payday",
+        "totalPicks": 2962,
+        "earlyPicks": 227,
+        "earlyPct": 8,
+        "latePicks": 1641,
+        "latePct": 55,
+        "avgPickWave": 30.6
+      },
+      {
+        "id": "L4",
+        "name": "Rush Hour Pileup",
+        "totalPicks": 3852,
+        "earlyPicks": 45,
+        "earlyPct": 1,
+        "latePicks": 2115,
+        "latePct": 55,
+        "avgPickWave": 30.8
+      },
+      {
+        "id": "L14",
+        "name": "Hoarder",
+        "totalPicks": 3939,
+        "earlyPicks": 55,
+        "earlyPct": 1,
+        "latePicks": 2202,
+        "latePct": 56,
+        "avgPickWave": 31
+      },
+      {
+        "id": "L7",
+        "name": "Loose Change",
+        "totalPicks": 3905,
+        "earlyPicks": 50,
+        "earlyPct": 1,
+        "latePicks": 2216,
+        "latePct": 57,
+        "avgPickWave": 31.2
+      },
+      {
+        "id": "R7",
+        "name": "Mop & Bucket",
+        "totalPicks": 3083,
+        "earlyPicks": 189,
+        "earlyPct": 6,
+        "latePicks": 1770,
+        "latePct": 57,
+        "avgPickWave": 31.3
+      },
+      {
+        "id": "L8",
+        "name": "Nuclear Mop",
+        "totalPicks": 3843,
+        "earlyPicks": 49,
+        "earlyPct": 1,
+        "latePicks": 2184,
+        "latePct": 57,
+        "avgPickWave": 31.3
+      },
+      {
+        "id": "C10",
+        "name": "Extra Absorbent",
+        "totalPicks": 3316,
+        "earlyPicks": 303,
+        "earlyPct": 9,
+        "latePicks": 1946,
+        "latePct": 59,
+        "avgPickWave": 31.6
+      },
+      {
+        "id": "R3",
+        "name": "Magnetic Mops",
+        "totalPicks": 3019,
+        "earlyPicks": 151,
+        "earlyPct": 5,
+        "latePicks": 1866,
+        "latePct": 62,
+        "avgPickWave": 32.5
+      },
+      {
+        "id": "R1",
+        "name": "Wet & Soapy",
+        "totalPicks": 2979,
+        "earlyPicks": 190,
+        "earlyPct": 6,
+        "latePicks": 1894,
+        "latePct": 64,
+        "avgPickWave": 32.6
+      },
+      {
+        "id": "R4",
+        "name": "Ubik Slick",
+        "totalPicks": 2825,
+        "earlyPicks": 163,
+        "earlyPct": 6,
+        "latePicks": 1768,
+        "latePct": 63,
+        "avgPickWave": 32.6
+      },
+      {
+        "id": "R11",
+        "name": "Spray & Pray",
+        "totalPicks": 2654,
+        "earlyPicks": 168,
+        "earlyPct": 6,
+        "latePicks": 1647,
+        "latePct": 62,
+        "avgPickWave": 32.6
+      },
+      {
+        "id": "R17",
+        "name": "Marked for Death",
+        "totalPicks": 2633,
+        "earlyPicks": 167,
+        "earlyPct": 6,
+        "latePicks": 1634,
+        "latePct": 62,
+        "avgPickWave": 32.8
+      },
+      {
+        "id": "R20",
+        "name": "Aftershock",
+        "totalPicks": 1312,
+        "earlyPicks": 36,
+        "earlyPct": 3,
+        "latePicks": 799,
+        "latePct": 61,
+        "avgPickWave": 32.9
+      },
+      {
+        "id": "R2",
+        "name": "Mop Splash",
+        "totalPicks": 2850,
+        "earlyPicks": 154,
+        "earlyPct": 5,
+        "latePicks": 1827,
+        "latePct": 64,
+        "avgPickWave": 33.1
+      },
+      {
+        "id": "R8",
+        "name": "Pot Magnet",
+        "totalPicks": 2804,
+        "earlyPicks": 183,
+        "earlyPct": 7,
+        "latePicks": 1818,
+        "latePct": 65,
+        "avgPickWave": 33.1
+      },
+      {
+        "id": "R6",
+        "name": "Sign Fortress",
+        "totalPicks": 1760,
+        "earlyPicks": 115,
+        "earlyPct": 7,
+        "latePicks": 1117,
+        "latePct": 63,
+        "avgPickWave": 33.7
+      },
+      {
+        "id": "R10",
+        "name": "Chain Trip",
+        "totalPicks": 1373,
+        "earlyPicks": 41,
+        "earlyPct": 3,
+        "latePicks": 868,
+        "latePct": 63,
+        "avgPickWave": 33.9
+      },
+      {
+        "id": "R5",
+        "name": "Coin Shrapnel",
+        "totalPicks": 2165,
+        "earlyPicks": 155,
+        "earlyPct": 7,
+        "latePicks": 1443,
+        "latePct": 67,
+        "avgPickWave": 34.1
+      },
+      {
+        "id": "L6",
+        "name": "Spill Zone",
+        "totalPicks": 3883,
+        "earlyPicks": 41,
+        "earlyPct": 1,
+        "latePicks": 2695,
+        "latePct": 69,
+        "avgPickWave": 34.2
+      },
+      {
+        "id": "L12",
+        "name": "Overtime",
+        "totalPicks": 3842,
+        "earlyPicks": 34,
+        "earlyPct": 1,
+        "latePicks": 2699,
+        "latePct": 70,
+        "avgPickWave": 34.2
+      },
+      {
+        "id": "L5",
+        "name": "Domino Effect",
+        "totalPicks": 3470,
+        "earlyPicks": 31,
+        "earlyPct": 1,
+        "latePicks": 2463,
+        "latePct": 71,
+        "avgPickWave": 35.1
+      },
+      {
+        "id": "R9",
+        "name": "Sticky Mop",
+        "totalPicks": 2059,
+        "earlyPicks": 76,
+        "earlyPct": 4,
+        "latePicks": 1462,
+        "latePct": 71,
+        "avgPickWave": 35.4
+      }
+    ],
+    "pivotWave": 25,
+    "pivotData": [
+      {
+        "wave": 2,
+        "avgSimilarity": 0.025
+      },
+      {
+        "wave": 3,
+        "avgSimilarity": 0.05
+      },
+      {
+        "wave": 4,
+        "avgSimilarity": 0.075
+      },
+      {
+        "wave": 5,
+        "avgSimilarity": 0.099
+      },
+      {
+        "wave": 6,
+        "avgSimilarity": 0.123
+      },
+      {
+        "wave": 7,
+        "avgSimilarity": 0.147
+      },
+      {
+        "wave": 8,
+        "avgSimilarity": 0.17
+      },
+      {
+        "wave": 9,
+        "avgSimilarity": 0.192
+      },
+      {
+        "wave": 10,
+        "avgSimilarity": 0.214
+      },
+      {
+        "wave": 11,
+        "avgSimilarity": 0.236
+      },
+      {
+        "wave": 12,
+        "avgSimilarity": 0.258
+      },
+      {
+        "wave": 13,
+        "avgSimilarity": 0.279
+      },
+      {
+        "wave": 14,
+        "avgSimilarity": 0.3
+      },
+      {
+        "wave": 15,
+        "avgSimilarity": 0.321
+      },
+      {
+        "wave": 16,
+        "avgSimilarity": 0.341
+      },
+      {
+        "wave": 17,
+        "avgSimilarity": 0.36
+      },
+      {
+        "wave": 18,
+        "avgSimilarity": 0.38
+      },
+      {
+        "wave": 19,
+        "avgSimilarity": 0.4
+      },
+      {
+        "wave": 20,
+        "avgSimilarity": 0.42
+      },
+      {
+        "wave": 21,
+        "avgSimilarity": 0.44
+      },
+      {
+        "wave": 22,
+        "avgSimilarity": 0.46
+      },
+      {
+        "wave": 23,
+        "avgSimilarity": 0.479
+      },
+      {
+        "wave": 24,
+        "avgSimilarity": 0.499
+      },
+      {
+        "wave": 25,
+        "avgSimilarity": 0.519
+      },
+      {
+        "wave": 26,
+        "avgSimilarity": 0.539
+      },
+      {
+        "wave": 27,
+        "avgSimilarity": 0.559
+      },
+      {
+        "wave": 28,
+        "avgSimilarity": 0.578
+      },
+      {
+        "wave": 29,
+        "avgSimilarity": 0.598
+      },
+      {
+        "wave": 30,
+        "avgSimilarity": 0.617
+      },
+      {
+        "wave": 31,
+        "avgSimilarity": 0.637
+      },
+      {
+        "wave": 32,
+        "avgSimilarity": 0.656
+      },
+      {
+        "wave": 33,
+        "avgSimilarity": 0.675
+      },
+      {
+        "wave": 34,
+        "avgSimilarity": 0.695
+      },
+      {
+        "wave": 35,
+        "avgSimilarity": 0.714
+      },
+      {
+        "wave": 36,
+        "avgSimilarity": 0.733
+      },
+      {
+        "wave": 37,
+        "avgSimilarity": 0.753
+      },
+      {
+        "wave": 38,
+        "avgSimilarity": 0.772
+      },
+      {
+        "wave": 39,
+        "avgSimilarity": 0.791
+      },
+      {
+        "wave": 40,
+        "avgSimilarity": 0.81
+      },
+      {
+        "wave": 41,
+        "avgSimilarity": 0.83
+      },
+      {
+        "wave": 42,
+        "avgSimilarity": 0.849
+      },
+      {
+        "wave": 43,
+        "avgSimilarity": 0.868
+      },
+      {
+        "wave": 44,
+        "avgSimilarity": 0.887
+      },
+      {
+        "wave": 45,
+        "avgSimilarity": 0.906
+      },
+      {
+        "wave": 46,
+        "avgSimilarity": 0.925
+      },
+      {
+        "wave": 47,
+        "avgSimilarity": 0.944
+      },
+      {
+        "wave": 48,
+        "avgSimilarity": 0.962
+      },
+      {
+        "wave": 49,
+        "avgSimilarity": 0.981
+      },
+      {
+        "wave": 50,
+        "avgSimilarity": 1
+      }
+    ]
+  }
+}

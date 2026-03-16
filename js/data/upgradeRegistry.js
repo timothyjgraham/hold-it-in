@@ -12,7 +12,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C1',
         name: 'Overclocked Magnet',
-        description: 'Coin Magnet collection range +12 (8 → 20 units), +2 HP, and +8% tower uptime from economy',
+        description: 'Coin Shockwave: each coin collected pulses AoE damage (3 + 1.5 per magnet upgrade) to nearby enemies. +12 range, +2 HP.',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -34,12 +34,12 @@ export const COMMON_UPGRADES = [
     {
         id: 'C3',
         name: 'Magnet Durability',
-        description: 'Coin Magnets gain +5 HP and pull 5% faster per stack',
+        description: 'Coin Resonance: each coin collected permanently increases shockwave damage by (0.5 + 0.25 per stack)%. +5 HP, +10% pull speed per stack.',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
         stackable: true,
-        maxStacks: 3,  // cap +12
+        maxStacks: 3,
         effectFn: null,
     },
 
@@ -58,7 +58,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C5',
         name: 'Extra Slippery',
-        description: 'Wet Floor Signs slow enemies to 15% speed (from 40%). Slow lingers 1s after exiting zone.',
+        description: 'Wet Floor Signs slow to 15% speed, linger 1s. If 2+ sign upgrades: signs deal (2 + 1.5 per sign upgrade) DPS to enemies in slow zone.',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -104,12 +104,12 @@ export const COMMON_UPGRADES = [
     {
         id: 'C9',
         name: 'Heavy Mop',
-        description: 'Mop knockback distance +75%',
+        description: 'Mop knockback +75%. If 2+ mop upgrades: mop retriggers on knocked enemies (50% bonus mop hit).',
         rarity: 'common',
         icon: 'mop',
         towerRequirement: ['mop'],
         stackable: true,
-        maxStacks: 2,  // cap +100%
+        maxStacks: 2,
         effectFn: null,
     },
     {
@@ -187,7 +187,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C16',
         name: 'Cactus Pot',
-        description: 'Pot Plants deal (3 + 2.5 per pot upgrade) dps to adjacent enemies and slow them by 15%. Scales with pot archetype.',
+        description: 'Pot Plants deal (3 + 2.5 per pot upgrade) DPS to adjacent enemies, 15% slow. If 2+ pot upgrades: Punctured enemies are retriggered by thorns (60% bonus trip damage).',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -629,40 +629,37 @@ export const RARE_UPGRADES = [
     {
         id: 'R33',
         name: "Plumber's Union",
-        description: 'Mop hits soak enemies — soaked enemies take 2× damage from all sources (4s). Requires 3+ mop upgrades.',
+        description: 'Mop hits soak enemies — soaked enemies take ×1.5 damage from all sources (4s). Per mop upgrade owned: +0.1× (caps at ×2.5).',
         rarity: 'rare',
         icon: 'mop',
-        towerRequirement: ['mop'],
+        towerRequirement: null,  // Balatro-style: offered ungated, you build around it
         stackable: false,
         maxStacks: 1,
-        chaseThreshold: 3,
-        chaseTowerType: 'mop',
+        buildDefining: true,
         effectFn: null,
     },
     {
         id: 'R34',
         name: 'Terracotta Army',
-        description: 'Pot trip damage ×(pot count on field). Destroyed pots shatter into 3 damaging shards. Requires 3+ pot upgrades.',
+        description: 'Tripped enemies are Cracked — taking ×1.4 damage from ALL sources for 3s. Per pot upgrade owned: +0.15× mult. Destroyed pots shatter into 3 damaging shards.',
         rarity: 'rare',
         icon: 'pot',
-        towerRequirement: ['potplant'],
+        towerRequirement: null,  // Balatro-style: offered ungated, you build around it
         stackable: false,
         maxStacks: 1,
-        chaseThreshold: 3,
-        chaseTowerType: 'potplant',
+        buildDefining: true,
         effectFn: null,
     },
     {
         id: 'R35',
         name: 'Money Printer',
-        description: 'Each coin collected by magnets buffs all tower damage +1% for 4s (stacks to +30%). Requires 3+ magnet upgrades.',
+        description: 'Each coin collected buffs all tower damage +1% for 4s (stacks to +30%). Per magnet upgrade owned: +5% stack cap. Coins collected also grant +0.5% attack speed (stacks to +15%).',
         rarity: 'rare',
         icon: 'magnet',
-        towerRequirement: ['coinmagnet'],
+        towerRequirement: null,  // Balatro-style: offered ungated, you build around it
         stackable: false,
         maxStacks: 1,
-        chaseThreshold: 3,
-        chaseTowerType: 'coinmagnet',
+        buildDefining: true,
         effectFn: null,
     },
 ];

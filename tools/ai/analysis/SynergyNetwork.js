@@ -331,6 +331,7 @@ class SynergyNetwork {
 
     // ── Level 4: quads where ALL 4 constituent triples passed L3 ──
     const L4 = [];
+    const L4set = new Set();
 
     if (L3.length > 0 && L3.length < 200) {
       // Candidate generation from L3
@@ -343,6 +344,9 @@ class SynergyNetwork {
 
           const quad = [...merged].sort((x, y) => x - y);
           const [i, j, k, l] = quad;
+
+          const quadKey = `${i},${j},${k},${l}`;
+          if (L4set.has(quadKey)) continue;
 
           // Check all 4 constituent triples are in L3
           const t1 = `${i},${j},${k}`;
@@ -359,6 +363,7 @@ class SynergyNetwork {
           const support = count / nSuccess;
           if (support < minSup) continue;
 
+          L4set.add(quadKey);
           L4.push({ items: quad, support });
         }
       }

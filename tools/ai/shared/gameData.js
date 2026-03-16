@@ -220,22 +220,22 @@ const GAME = {
   // ── UPGRADES ────────────────────────────────────────────────────────────
   upgrades: [
     // Common (20)
-    { id: 'C1', name: 'Overclocked Magnet', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'magnetRange', value: 12, bonusHP: 2 },
+    { id: 'C1', name: 'Overclocked Magnet', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'coinShockwave', shockBaseDmg: 3, shockPerUpgrade: 1.5, shockAoE: 6, value: 12, bonusHP: 2 },
     { id: 'C2', name: 'Double Dip', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'coinValueMult', value: 0.5 },
-    { id: 'C3', name: 'Magnet Durability', rarity: 'common', tower: 'coinmagnet', maxStacks: 3, effect: 'magnetHP', value: 5 },
+    { id: 'C3', name: 'Magnet Durability', rarity: 'common', tower: 'coinmagnet', maxStacks: 3, effect: 'coinResonance', value: 5, resonanceBase: 0.005, resonancePerStack: 0.0025, resonanceCap: 5.0 },
     { id: 'C4', name: 'Reinforced Signs', rarity: 'common', tower: 'wetfloor', maxStacks: 3, effect: 'signHP', value: 1.2 },
-    { id: 'C5', name: 'Extra Slippery', rarity: 'common', tower: 'wetfloor', maxStacks: 1, effect: 'slowFactor', value: 0.15 },
+    { id: 'C5', name: 'Extra Slippery', rarity: 'common', tower: 'wetfloor', maxStacks: 1, effect: 'slowFactor', value: 0.15, signZoneDPS: true },
     { id: 'C6', name: 'Prickly Signs', rarity: 'common', tower: 'wetfloor', maxStacks: 3, effect: 'signDamage', value: 10 },
     { id: 'C7', name: 'Industrial Mop Head', rarity: 'common', tower: 'mop', maxStacks: 1, effect: 'mopArc', value: 3.0 },
     { id: 'C8', name: 'Quick Sweep', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopCooldown', value: -0.3 },
-    { id: 'C9', name: 'Heavy Mop', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopKnockback', value: 0.75 },
+    { id: 'C9', name: 'Heavy Mop', rarity: 'common', tower: 'mop', maxStacks: 2, effect: 'mopKnockback', value: 0.75, mopRetrigger: true },
     { id: 'C10', name: 'Extra Absorbent', rarity: 'common', tower: 'mop', maxStacks: 3, effect: 'mopHP', value: 4 },
     { id: 'C11', name: 'Pressure Washer', rarity: 'common', tower: 'ubik', maxStacks: 1, effect: 'ubikNarrow', value: 1, damageMult: 1.35, exclusive: 'C12' },
     { id: 'C12', name: 'Wide Spray', rarity: 'common', tower: 'ubik', maxStacks: 1, effect: 'ubikWide', value: 1.8, exclusive: 'C11' },
     { id: 'C13', name: 'Corrosive Formula', rarity: 'common', tower: 'ubik', maxStacks: 2, effect: 'ubikDamage', value: 0.4 },
     { id: 'C14', name: 'Rapid Spray', rarity: 'common', tower: 'ubik', maxStacks: 2, effect: 'ubikCooldown', value: -0.25 },
     { id: 'C15', name: 'Spring-Loaded Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potBounce', value: 1 },
-    { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potDPS', value: 2, scaling: 'pot' },
+    { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potDPS', value: 2, scaling: 'pot', potRetrigger: true },
     { id: 'C17', name: 'Glass Cannon', rarity: 'common', tower: null, maxStacks: 1, effect: 'glassCannon', value: 1, exclusive: 'C18' },
     { id: 'C18', name: 'Slow and Steady', rarity: 'common', tower: null, maxStacks: 1, effect: 'slowSteady', value: 1, exclusive: 'C17' },
     { id: 'C19', name: 'Bargain Bin', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'bargainBin', value: 1 },
@@ -274,6 +274,10 @@ const GAME = {
     { id: 'R30', name: 'Sympathetic Damage', rarity: 'rare', tower: null, maxStacks: 1, effect: 'sympatheticDmg', value: 0.08, buildDefining: true },
     { id: 'R31', name: 'Rush Defense', rarity: 'rare', tower: null, maxStacks: 1, effect: 'rushDefense', value: 2.5, exclusive: 'R32', buildDefining: true },
     { id: 'R32', name: 'Attrition', rarity: 'rare', tower: null, maxStacks: 1, effect: 'attrition', value: 0.05, exclusive: 'R31', buildDefining: true },
+    // Chase Cards — Specialist Rares (R33-R35): ungated, always offered, scale with investment
+    { id: 'R33', name: "Plumber's Union", rarity: 'rare', tower: null, maxStacks: 1, effect: 'plumbersUnion', baseMult: 1.5, perUpgradeMult: 0.1, cap: 2.5, buildDefining: true },
+    { id: 'R34', name: 'Terracotta Army', rarity: 'rare', tower: null, maxStacks: 1, effect: 'terracottaArmy', baseMult: 1.4, perUpgradeMult: 0.15, buildDefining: true },
+    { id: 'R35', name: 'Money Printer', rarity: 'rare', tower: null, maxStacks: 1, effect: 'moneyPrinter', baseStackCap: 30, perUpgradeCapBonus: 5, buildDefining: true },
     // Legendary (18)
     { id: 'L1', name: 'Double Flush', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'doorHPBoost', value: 4 },
     { id: 'L2', name: 'Desperate Measures', rarity: 'legendary', tower: null, maxStacks: 1, effect: 'desperateMeasures', value: 1 },

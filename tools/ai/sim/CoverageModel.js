@@ -30,7 +30,7 @@ class CoverageModel {
    * @param {number} [permanentDmgBonus=0] - from R26 Controlled Demolition stacks
    * @returns {number} estimated DPS
    */
-  computeDPS(towers, upgrades, permanentDmgBonus = 0) {
+  computeDPS(towers, upgrades, permanentDmgBonus = 0, wave = 10) {
     let dps = 0;
     const t = towers;
     const totalTowers = Object.values(t).reduce((a, b) => a + b, 0);
@@ -59,22 +59,31 @@ class CoverageModel {
     // R27: Double Shift (1.6x attack rate)
     const doubleShiftMult = upgrades.R27 ? 1.6 : 1.0;
 
+    // ── Tower-type upgrade counts (for conditionals) ──
+    const mopUpgradeCount = countUpgradesForTowerSim(upgrades, 'mop');
+    const signUpgradeCount = countUpgradesForTowerSim(upgrades, 'wetfloor');
+    const potUpgradeCount = countUpgradesForTowerSim(upgrades, 'potplant');
+    const magUpgradeCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
+
     // ── Per-tower DPS contributions ──
 
     // Mop: damage / cooldown
     const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3;
-    // C7: Industrial Mop Head (+20% mop damage, +15% range — wider sweep)
+    // C7: Industrial Mop Head (+20% mop damage, wider sweep)
     const mopHeadMult = upgrades.C7 ? 1.20 : 1.0;
-    // C9: Heavy Mop (+75% knockback — more repositioning time ≈ +10% effective DPS)
+    // C9: Heavy Mop (+75% knockback ≈ +10% effective DPS)
     const heavyMopMult = upgrades.C9 ? 1.10 : 1.0;
+    // C9 conditional: if 2+ mop upgrades, mop retriggers on knocked enemies (+50% mop hit)
+    const mopRetrigger = (upgrades.C9 && mopUpgradeCount >= 2) ? 1.5 : 1.0;
     // C10: Extra Absorbent (+15% mop damage from soaking — stacks)
     const absorbentMult = 1 + (upgrades.C10 || 0) * 0.15;
     dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult))
-      * mopHeadMult * heavyMopMult * absorbentMult * slowSteadySpeedMult * doubleShiftMult;
+      * mopHeadMult * heavyMopMult * absorbentMult * mopRetrigger
+      * slowSteadySpeedMult * doubleShiftMult;
 
     // Ubik: damage * (spray_duration / cycle_time) — hits ~2 enemies per spray (AoE)
     let ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
-    // C11: Pressure Washer — multiplicative +35% damage (no longer clobbered by C13)
+    // C11: Pressure Washer — multiplicative +35% damage
     if (upgrades.C11) ubikDmgMult *= 1.35;
     const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25;
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
@@ -84,12 +93,13 @@ class CoverageModel {
     dps += t.ubik * ubikDPS * ubikAoeMult * slowSteadySpeedMult * doubleShiftMult;
 
     // Pot plant: trip damage / (stun + re-approach time)
-    dps += t.potplant * (GAME.towers.potplant.damage / 4) * doubleShiftMult;
+    // C16 conditional: if 2+ pot upgrades, Punctured = pot retrigger (+60% pot trip)
+    const potRetrigger = (upgrades.C16 && potUpgradeCount >= 2) ? 1.6 : 1.0;
+    dps += t.potplant * (GAME.towers.potplant.damage / 4) * potRetrigger * doubleShiftMult;
 
-    // C16: Cactus Pot DPS — scales with pot archetype + 5% global thorn bonus
+    // C16: Cactus Pot DPS — scales with pot archetype (also retriggered)
     if (upgrades.C16) {
-      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
-      dps += t.potplant * (3 + 2.5 * potCount);
+      dps += t.potplant * (3 + 2.5 * potUpgradeCount) * potRetrigger;
     }
 
     // C6: Prickly Signs — enemies take damage bashing into signs (~2 DPS per sign per stack)
@@ -97,9 +107,36 @@ class CoverageModel {
       dps += t.wetfloor * (upgrades.C6) * 2.0;
     }
 
+    // C5: Extra Slippery conditional — sign zone becomes a damage zone (tower-specific)
+    // If 2+ sign upgrades: signs deal (2 + 1.5 per sign upgrade) DPS to slowed enemies
+    if (upgrades.C5 && signUpgradeCount >= 2 && t.wetfloor > 0) {
+      const signZoneDPS = 2 + 1.5 * signUpgradeCount;
+      dps += t.wetfloor * signZoneDPS;
+    }
+
     // C20: Static Charge — on-collect proc, ~1 proc/2s per magnet ≈ 1.5 effective DPS
     if (upgrades.C20 && t.coinmagnet > 0) {
       dps += t.coinmagnet * 1.5;
+    }
+
+    // C1: Coin Shockwave — each coin collected deals AoE damage near the magnet
+    // Balatro-style economy→DPS conversion: magnets become a damage source
+    if (upgrades.C1 && t.coinmagnet > 0) {
+      const shockDmgPerCoin = 3 + 1.5 * magUpgradeCount;
+      const coinsPerSec = t.coinmagnet * 2.5;
+      const shockAoE = 2.0; // avg enemies hit per shockwave
+      let shockwaveDPS = coinsPerSec * shockDmgPerCoin * shockAoE;
+
+      // C3: Coin Resonance — permanent scaling on shockwave damage (Balatro scaling joker)
+      // Each coin collected permanently increases shockwave damage by (0.5+0.25*stacks)%
+      if (upgrades.C3) {
+        const resonanceRate = 0.005 + 0.0025 * (upgrades.C3 || 0);
+        const estimatedTotalCoins = 12 * wave; // ~12 coins per wave on avg
+        const resonanceBonus = Math.min(5.0, 1 + resonanceRate * estimatedTotalCoins);
+        shockwaveDPS *= resonanceBonus;
+      }
+
+      dps += shockwaveDPS;
     }
 
     // Apply global damage multiplier
@@ -121,42 +158,38 @@ class CoverageModel {
       dps *= 1 + emptySlots * 0.25;
     }
 
-    // ── Chase Cards ──
+    // ── Chase Cards (ungated — always active, scale with investment) ──
 
-    // R33: Plumber's Union — soaked enemies take 2× damage (mop specialist)
-    // Only active at 3+ mop-type upgrades. Estimate ~40% of enemies soaked with 1 mop,
-    // ~70% with 2 mops + C8, near-full with 3+ mops.
+    // R33: Plumber's Union — soaked enemies take ×1.5 damage, +0.1× per mop upgrade (cap ×2.5)
     if (upgrades.R33) {
-      const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
-      if (mopCount >= 3) {
-        const soakedFraction = Math.min(1.0, 0.25 * t.mop + (upgrades.C7 ? 0.15 : 0));
-        dps *= 1 + soakedFraction;  // 2× on soaked portion
-      }
+      const mopCount = countUpgradesForTowerSim(upgrades, 'mop', 'R33');
+      const soakMult = Math.min(2.5, 1.5 + mopCount * 0.1);
+      const soakedFraction = Math.min(1.0, 0.15 + 0.20 * t.mop + (upgrades.C7 ? 0.15 : 0)
+        + (upgrades.C9 && mopUpgradeCount >= 2 ? 0.10 : 0)); // retrigger = more soaks
+      dps *= 1 + soakedFraction * (soakMult - 1);
     }
 
-    // R34: Terracotta Army — trip damage × pot count + shatter on death (pot specialist)
-    // Only active at 3+ pot-type upgrades. Multiplicative pot scaling.
+    // R34: Terracotta Army — tripped enemies are Cracked: ×1.4 from ALL sources (+0.15× per pot upgrade)
+    // Multiplicative bridge between pot builds and DPS — Path of Achra style
     if (upgrades.R34) {
-      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
-      if (potCount >= 3) {
-        // Trip damage scaled by pot count + shatter shards on death
-        const potTowerCount = t.potplant;
-        const tripScaling = Math.max(1, potTowerCount); // trip damage × pot count
-        const shatterBonus = potTowerCount * 3 * 0.5;   // 3 shards × 50% trip damage each
-        dps += t.potplant * (GAME.towers.potplant.damage / 4) * (tripScaling - 1 + shatterBonus * 0.1);
-      }
+      const potCount = countUpgradesForTowerSim(upgrades, 'potplant', 'R34');
+      const crackMult = 1.4 + potCount * 0.15;
+      // Retrigger means more enemies cracked
+      const retriggerBoost = (upgrades.C16 && potUpgradeCount >= 2) ? 0.08 : 0;
+      const crackedFraction = Math.min(0.8, 0.15 + t.potplant * 0.12 + retriggerBoost);
+      dps *= 1 + crackedFraction * (crackMult - 1);
+      dps += t.potplant * 2.0 * (1 + potCount * 0.3);
     }
 
-    // R35: Money Printer — coins collected buff all tower damage (magnet specialist)
-    // Only active at 3+ magnet-type upgrades. Estimate steady-state buff.
+    // R35: Money Printer — coins buff all tower damage +1%/4s (cap 30+5/mag upgrade) + atk speed
     if (upgrades.R35) {
-      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
-      if (magCount >= 3) {
-        // Estimate coins/sec × duration = steady-state stacks, capped at 30
-        const coinsPerSec = t.coinmagnet * (upgrades.C1 ? 2.5 : 1.5);
-        const steadyState = Math.min(30, coinsPerSec * 4);
-        dps *= 1 + steadyState / 100;
-      }
+      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet', 'R35');
+      const stackCap = 30 + magCount * 5;
+      const coinsPerSec = (t.coinmagnet > 0 ? t.coinmagnet : 0.5) * (upgrades.C1 ? 2.5 : 1.5);
+      const steadyState = Math.min(stackCap, coinsPerSec * 4);
+      dps *= 1 + steadyState / 100;
+      const atkSpeedBonus = Math.min(0.15, steadyState * 0.005);
+      dps *= 1 + atkSpeedBonus;
     }
 
     return dps;
@@ -216,7 +249,7 @@ class CoverageModel {
     }
 
     // ── 2. Compute tower DPS ──
-    const dps = this.computeDPS(towers, upgrades, permanentDmgBonus);
+    const dps = this.computeDPS(towers, upgrades, permanentDmgBonus, wave);
 
     // ── 3. Compute wave timing ──
     const avgSpeed = 3.5 * (1 + wave * 0.02) * eventSpeedMult;
@@ -295,54 +328,49 @@ class CoverageModel {
     const nuclearScale = upgrades.L8 ? conditionalScale(upgrades, 'mop', 'L8') : 0;
     const nuclearBonus = upgrades.L8 ? (1 + nuclearScale * 0.15) : 1.0;
 
-    // ── Chase Cards (fast-mode approximations) ──
+    // ── Chase Cards (ungated, Balatro-style — always active, scale with investment) ──
 
-    // R33: Plumber's Union — soaked enemies take 2× from all sources
+    // R33: Plumber's Union — soak ×1.5 base, +0.1× per mop upgrade, cap ×2.5
     let plumbersUnionBonus = 1.0;
     if (upgrades.R33) {
-      const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
-      if (mopCount >= 3) {
-        const soakedFraction = Math.min(1.0, 0.25 * towers.mop + (upgrades.C7 ? 0.15 : 0));
-        plumbersUnionBonus = 1 + soakedFraction;
-      }
+      const mopCount = countUpgradesForTowerSim(upgrades, 'mop', 'R33');
+      const soakMult = Math.min(2.5, 1.5 + mopCount * 0.1);
+      const soakedFraction = Math.min(1.0, 0.15 + 0.20 * towers.mop + (upgrades.C7 ? 0.15 : 0));
+      plumbersUnionBonus = 1 + soakedFraction * (soakMult - 1);
     }
 
-    // R34: Terracotta Army — trip damage × pot count + shatter on death
+    // R34: Terracotta Army — Cracked debuff: ×1.4 base +0.15× per pot upgrade on tripped enemies
+    // Multiplicative bridge: pot investment amplifies ALL damage sources
     let terracottaBonus = 1.0;
     if (upgrades.R34) {
-      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
-      if (potCount >= 3 && towers.potplant > 0) {
-        terracottaBonus = 1 + towers.potplant * 0.08; // approximate scaling
-      }
+      const potCount = countUpgradesForTowerSim(upgrades, 'potplant', 'R34');
+      const crackMult = 1.4 + potCount * 0.15;
+      const crackedFraction = Math.min(0.8, 0.15 + towers.potplant * 0.12);
+      terracottaBonus = 1 + crackedFraction * (crackMult - 1);
     }
 
-    // R35: Money Printer — coins collected buff all tower damage
+    // R35: Money Printer — coins buff all damage +1%/4s (cap 30 + 5/magnet upgrade) + attack speed
     let moneyPrinterBonus = 1.0;
     if (upgrades.R35) {
-      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
-      if (magCount >= 3 && towers.coinmagnet > 0) {
-        const coinsPerSec = towers.coinmagnet * (upgrades.C1 ? 2.5 : 1.5);
-        const steadyState = Math.min(30, coinsPerSec * 4);
-        moneyPrinterBonus = 1 + steadyState / 100;
-      }
+      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet', 'R35');
+      const stackCap = 30 + magCount * 5;
+      const coinsPerSec = (towers.coinmagnet > 0 ? towers.coinmagnet : 0.5) * (upgrades.C1 ? 2.5 : 1.5);
+      const steadyState = Math.min(stackCap, coinsPerSec * 4);
+      moneyPrinterBonus = (1 + steadyState / 100) * (1 + Math.min(0.15, steadyState * 0.005));
     }
 
-    // C1: Overclocked Magnet — wider collection ≈ +8% effective tower uptime from economy
-    const overclockBonus = (upgrades.C1 && towers.coinmagnet > 0) ? 1.08 : 1.0;
-
-    // C3: Magnet Durability — +5 HP/stack + 5% pull speed/stack, magnets survive longer + collect faster
-    const magDurBonus = (upgrades.C3 && towers.coinmagnet > 0) ? (1 + (upgrades.C3) * 0.05) : 1.0;
-
-    // C16: Cactus Pot thorn bonus — enemies weakened by thorns take 3% more damage + 15% slow
+    // C16: Cactus Pot — thorn 15% slow (pot-specific retrigger is handled in computeDPS)
     const thornBonus = (upgrades.C16 && towers.potplant > 0) ? 1.03 : 1.0;
-    // C16: Cactus Pot slow — 15% slow on enemies in thorn aura ≈ +5% effective DPS
     const cactusSlowBonus = (upgrades.C16 && towers.potplant > 0) ? 1.05 : 1.0;
+
+    // NOTE: C1/C3 shockwave+resonance, C5 sign zone DPS, C9 mop retrigger, C16 pot retrigger
+    // are all computed inside computeDPS() as tower-specific contributions (not global mults)
 
     const effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
       crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
       assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus *
       pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
-      overclockBonus * magDurBonus * thornBonus * cactusSlowBonus *
+      thornBonus * cactusSlowBonus *
       plumbersUnionBonus * terracottaBonus * moneyPrinterBonus;
 
     const totalDamageCapacity = effectiveDPS * waveDuration;
@@ -356,9 +384,11 @@ class CoverageModel {
     const doorDamage = Math.round(totalDoorDmgIfAllLeak * (1 - killRatio));
 
     // Coin collection: 30% base + 25% per magnet, cap 100%
-    // C1: Overclocked Magnet — +12 range, improves collection by ~15%
-    const overclockCollect = upgrades.C1 ? 0.15 : 0;
-    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25 + overclockCollect);
+    // C1: Overclocked Magnet — +12 range + 40% speed → +20% collection
+    const overclockCollect = upgrades.C1 ? 0.20 : 0;
+    // C3: at 3 stacks, global pull → +15% collection
+    const globalPullCollect = ((upgrades.C3 || 0) >= 3) ? 0.15 : 0;
+    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25 + overclockCollect + globalPullCollect);
     const coinValueMult = 1 + (upgrades.C2 || 0) * 0.5;
     let collected = Math.round(totalCoins * collectionRate * coinValueMult);
 
