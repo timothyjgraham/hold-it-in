@@ -396,7 +396,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R13',
         name: 'The Tip Jar',
-        description: 'Enemy kills have 15% chance to drop a golden coin worth 3×',
+        description: 'Enemy kills have 15% chance to drop a big shiny coin worth 3×',
         rarity: 'rare',
         icon: 'coin',
         towerRequirement: null,  // general

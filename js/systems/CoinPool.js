@@ -53,9 +53,11 @@ export class CoinPool {
         }
     }
 
-    spawnCoins(x, z, totalValue, numCoins, scene) {
+    spawnCoins(x, z, totalValue, numCoins, scene, options = {}) {
         const perCoin = Math.floor(totalValue / numCoins);
         let remainder = totalValue - perCoin * numCoins;
+        const isTip = !!options.tipJar;
+        const scale = isTip ? COIN_SCALE * 1.5 : COIN_SCALE;
 
         for (let i = 0; i < numCoins; i++) {
             const value = perCoin + (i === numCoins - 1 ? remainder : 0);
@@ -63,39 +65,54 @@ export class CoinPool {
             mesh.visible = true;
             mesh.position.set(x, 1.0, z);
             mesh.rotation.set(0, Math.random() * Math.PI * 2, 0);
-            mesh.scale.set(COIN_SCALE, COIN_SCALE, COIN_SCALE);
+            mesh.scale.set(scale, scale, scale);
 
-            // Reset materials
+            // Reset materials + apply tip jar glow
             mesh.traverse(child => {
                 if (child.isMesh) {
                     child.material.opacity = 1;
                     child.material.transparent = false;
+                    if (isTip) {
+                        child.material.emissiveIntensity = 0.9;
+                        child.material.emissive.setHex(0xfff0a0);
+                    }
                 }
             });
+
+            // Tip jar coins get a small point light for sparkle
+            let tipLight = null;
+            if (isTip) {
+                tipLight = new THREE.PointLight(0xffd93d, 2, 5);
+                tipLight.position.set(0, 0, 0);
+                mesh.add(tipLight);
+            }
 
             scene.add(mesh);
 
             // Burst upward with spread — coins fountain out of the enemy
             const angle = (i / numCoins) * Math.PI * 2 + Math.random() * 0.5;
-            const spread = 1.5 + Math.random() * 2.0;
+            const spread = isTip ? 0.5 : 1.5 + Math.random() * 2.0;
 
             this._active.push({
                 mesh,
                 value,
                 x, y: 1.0, z,
                 vx: Math.cos(angle) * spread,
-                vy: 5 + Math.random() * 3,       // high pop for drama
+                vy: isTip ? 7 + Math.random() * 2 : 5 + Math.random() * 3,
                 vz: Math.sin(angle) * spread,
-                spinOffset: Math.random() * Math.PI * 2,  // desync spin per coin
-                bobOffset: Math.random() * Math.PI * 2,   // desync bob per coin
-                state: 'flying',     // flying | hovering | magnetPull | expiring
+                spinOffset: Math.random() * Math.PI * 2,
+                bobOffset: Math.random() * Math.PI * 2,
+                state: 'flying',
                 life: BASE_LIFETIME,
                 maxLife: BASE_LIFETIME,
                 collectTarget: null,
                 collectProgress: 0,
                 collectStartPos: null,
-                spawnTimer: SPAWN_POP_DURATION,  // scale pop countdown
-                settleSpeed: 0,                  // velocity when transitioning to hover
+                spawnTimer: SPAWN_POP_DURATION,
+                settleSpeed: 0,
+                tipJar: isTip,
+                tipLight,
+                coinScale: scale,
             });
 
             this._stats.totalSpawned++;
@@ -124,10 +141,10 @@ export class CoinPool {
                 if (c.spawnTimer > 0) {
                     c.spawnTimer -= dt;
                     const t = 1 - (c.spawnTimer / SPAWN_POP_DURATION);
-                    // Elastic ease out: overshoot then settle
+                    const cs = c.coinScale || COIN_SCALE;
                     const elastic = t < 0.5
-                        ? COIN_SCALE * (1 + (SPAWN_POP_SCALE - 1) * (1 - t * 2))
-                        : COIN_SCALE;
+                        ? cs * (1 + (SPAWN_POP_SCALE - 1) * (1 - t * 2))
+                        : cs;
                     c.mesh.scale.setScalar(elastic);
                 }
 
@@ -155,20 +172,28 @@ export class CoinPool {
 
                 // === SQUASH & STRETCH ===
                 // Subtle vertical squash at bottom of bob, stretch at top
+                const cs = c.coinScale || COIN_SCALE;
                 const squash = 1 + bob * SQUASH_AMP;
                 c.mesh.scale.set(
-                    COIN_SCALE / squash,  // wider when squashed
-                    COIN_SCALE * squash,  // taller when stretched
-                    COIN_SCALE / squash
+                    cs / squash,  // wider when squashed
+                    cs * squash,  // taller when stretched
+                    cs / squash
                 );
 
                 // === EMISSIVE PULSE ===
                 // Shimmer synced to spin — brighter when face is toward camera
                 const spinAngle = c.mesh.rotation.y % (Math.PI * 2);
                 const faceFactor = Math.abs(Math.cos(spinAngle));
-                const emissive = 0.35 + faceFactor * 0.45;
+                const emissive = c.tipJar
+                    ? 0.6 + faceFactor * 0.6 + Math.sin(elapsedTime * 8) * 0.2
+                    : 0.35 + faceFactor * 0.45;
                 const coinMesh = c.mesh.children[0];
                 if (coinMesh?.material) coinMesh.material.emissiveIntensity = emissive;
+
+                // Tip jar sparkle light pulse
+                if (c.tipLight) {
+                    c.tipLight.intensity = 1.5 + Math.sin(elapsedTime * 6) * 0.8;
+                }
 
                 // === EXPIRY WARNING ===
                 if (c.life <= BLINK_TIME) {
@@ -202,13 +227,14 @@ export class CoinPool {
                     });
 
                     // Scale pulse — gentle breathe synced to glow
+                    const csExpiry = c.coinScale || COIN_SCALE;
                     const breathe = 1 + pulseNorm * 0.12 * (1 + urgencyT);
-                    c.mesh.scale.setScalar(COIN_SCALE * breathe);
+                    c.mesh.scale.setScalar(csExpiry * breathe);
 
                     // Final shrink + fade in last 0.5s
                     if (c.life <= 0.5) {
                         const shrink = c.life / 0.5;
-                        c.mesh.scale.setScalar(COIN_SCALE * shrink);
+                        c.mesh.scale.setScalar(csExpiry * shrink);
                         c.mesh.traverse(child => {
                             if (child.isMesh) {
                                 child.material.opacity = shrink;
@@ -250,8 +276,9 @@ export class CoinPool {
                 c.mesh.rotation.y += (15 + ease * 30) * dt;
 
                 // Shrink as it arrives — "absorbed" into the magnet
+                const csMag = c.coinScale || COIN_SCALE;
                 const shrink = 1 - ease * ease * 0.7;
-                c.mesh.scale.setScalar(COIN_SCALE * shrink);
+                c.mesh.scale.setScalar(csMag * shrink);
             }
         }
     }
@@ -412,18 +439,21 @@ export class CoinPool {
 
     _removeCoin(index, scene) {
         const c = this._active[index];
+        // Remove tip jar point light before recycling
+        if (c.tipLight) {
+            c.mesh.remove(c.tipLight);
+            c.tipLight.dispose();
+            c.tipLight = null;
+        }
         scene.remove(c.mesh);
         c.mesh.visible = false;
         c.mesh.traverse(child => {
             if (child.isMesh) {
                 child.material.transparent = false;
                 child.material.opacity = 1;
-                // Reset emissive back to gold (expiry warning shifts it orange/red)
-                child.material.emissive.setHex(
-                    child.material.color.getHex() === 0xffd700 ? 0xffaa00 : 0xcc8800
-                );
-                child.material.emissiveIntensity =
-                    child.material.color.getHex() === 0xffd700 ? 0.6 : 0.4;
+                // Reset emissive back to gold defaults
+                child.material.emissive.setHex(PALETTE.gold);
+                child.material.emissiveIntensity = 0.4;
             }
         });
         c.mesh.scale.set(COIN_SCALE, COIN_SCALE, COIN_SCALE);

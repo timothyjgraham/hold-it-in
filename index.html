@@ -8637,9 +8637,9 @@
                         this.coinPool.spawnCoins(e.x, e.z, drop.value * coinMult, drop.count, this.scene);
                         if (window.SFX) SFX.play('coin_drop');
 
-                        // R13: The Tip Jar — 15% chance to drop golden coin worth 3x
+                        // R13: The Tip Jar — 15% chance to drop big shiny coin worth 3x
                         if (this.upgradeManager && this.upgradeManager.hasUpgrade('R13') && Math.random() < 0.15) {
-                            this.coinPool.spawnCoins(e.x, e.z, drop.value * 3, 1, this.scene);
+                            this.coinPool.spawnCoins(e.x, e.z, drop.value * 3, 1, this.scene, { tipJar: true });
                         }
 
                         // R19: Overkill Bonus — excess damage → coins
