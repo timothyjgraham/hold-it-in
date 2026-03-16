@@ -1538,6 +1538,459 @@ canvas {
     letter-spacing: 1.5px;
 }
 
+/* ===== COLLECTION SCREEN ===== */
+
+#collection-screen {
+    gap: 14px;
+    padding: 24px 0;
+    justify-content: flex-start;
+    padding-top: 30px;
+}
+
+/* --- Progress bar --- */
+.collection-progress-wrap {
+    width: 100%;
+    max-width: 680px;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.collection-progress-bar {
+    width: 100%;
+    height: 18px;
+    background: var(--pal-ink, #1a1a2e);
+    border-radius: 9px;
+    border: 3px solid var(--pal-ink, #1a1a2e);
+    overflow: hidden;
+    box-shadow: 2px 3px 0px rgba(26, 26, 46, 0.4);
+}
+
+.collection-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--pal-cream, #faf5ef) 0%, #9b8ec4 55%, var(--pal-gold, #ffd93d) 100%);
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.collection-progress-text {
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--pal-cream, #fff4d9);
+    text-shadow: 1px 2px 0 var(--pal-ink, #1a1a2e);
+}
+
+/* --- Filter tabs --- */
+.collection-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.collection-filter {
+    font-family: 'Bangers', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    padding: 6px 18px;
+    background: var(--pal-cream, #fff4d9);
+    color: var(--pal-ink, #1a1a2e);
+    border: 3px solid var(--pal-ink, #1a1a2e);
+    border-radius: 10px;
+    box-shadow: 2px 3px 0px var(--pal-ink, #1a1a2e);
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s, box-shadow 0.1s;
+}
+
+.collection-filter:hover {
+    transform: scale(1.06);
+    background: #fff;
+}
+
+.collection-filter.active {
+    background: var(--pal-gold, #ffd93d);
+    box-shadow: 2px 3px 0px var(--pal-ink, #1a1a2e), 0 0 10px rgba(255, 217, 61, 0.4);
+}
+
+/* --- Scroll wrapper --- */
+.collection-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 55vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--pal-charcoal, #2d2b3d) transparent;
+}
+
+/* --- Card grid --- */
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 14px;
+    max-width: 780px;
+    width: 100%;
+    padding: 0 24px;
+}
+
+/* --- Card base --- */
+.collection-card {
+    width: 100%;
+    aspect-ratio: 10 / 13;
+    border: 3px solid var(--pal-cream, #faf5ef);
+    border-radius: 12px;
+    background: rgba(250, 245, 239, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    opacity: 0;
+    transform: scale(0);
+    animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
+}
+
+@keyframes card-pop-in {
+    0% { opacity: 0; transform: scale(0) rotate(-4deg); }
+    60% { opacity: 1; transform: scale(1.08) rotate(1deg); }
+    80% { transform: scale(0.96) rotate(-0.5deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* --- Discovered card --- */
+.collection-card:not(.locked) {
+    cursor: pointer;
+}
+
+.collection-card:not(.locked):hover {
+    transform: scale(1.12) rotate(-2deg);
+    box-shadow: 0 0 16px rgba(255, 217, 61, 0.4);
+    z-index: 2;
+}
+
+/* Rarity-specific glow on discovered cards */
+.collection-card[data-rarity="rare"]:not(.locked) {
+    border-color: #9b8ec4;
+    background: rgba(155, 142, 196, 0.12);
+}
+
+.collection-card[data-rarity="legendary"]:not(.locked) {
+    border-color: var(--pal-gold, #ffd93d);
+    background: rgba(255, 217, 61, 0.12);
+    animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               legendary-card-glow 3s ease-in-out infinite;
+}
+
+@keyframes legendary-card-glow {
+    0%, 100% { box-shadow: 0 0 4px rgba(255, 217, 61, 0.2); }
+    50% { box-shadow: 0 0 14px rgba(255, 217, 61, 0.5); }
+}
+
+.collection-card[data-rarity="rare"]:not(.locked) {
+    animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               rare-card-glow 4s ease-in-out infinite;
+}
+
+@keyframes rare-card-glow {
+    0%, 100% { box-shadow: 0 0 3px rgba(155, 142, 196, 0.2); }
+    50% { box-shadow: 0 0 10px rgba(155, 142, 196, 0.45); }
+}
+
+/* Card icon */
+.cc-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cc-icon img {
+    display: block;
+    image-rendering: auto;
+    filter: drop-shadow(1px 2px 0px rgba(26, 26, 46, 0.25));
+}
+
+/* Card name */
+.cc-name {
+    font-family: 'Bangers', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--pal-cream, #fff4d9);
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 1px 1px 0 var(--pal-ink, #1a1a2e);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Locked card --- */
+.collection-card.locked {
+    background: rgba(45, 43, 61, 0.35);
+    border-color: rgba(26, 26, 46, 0.5);
+    opacity: 0;
+    transform: scale(0);
+    animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.collection-card.locked:hover {
+    transform: scale(1.02);
+}
+
+.collection-card.locked:hover .cc-lock-icon {
+    animation: lock-rattle 0.15s ease-in-out 3;
+}
+
+.collection-card.locked:hover .cc-chains {
+    animation: chain-rattle 0.2s ease-in-out infinite;
+}
+
+@keyframes lock-rattle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-6deg); }
+    75% { transform: rotate(6deg); }
+}
+
+@keyframes chain-rattle {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-1.5px, 0.5px); }
+    50% { transform: translate(1px, -0.5px); }
+    75% { transform: translate(-0.5px, 1px); }
+}
+
+/* Lock icon */
+.cc-lock-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: lock-bounce 2.5s ease-in-out infinite;
+}
+
+@keyframes lock-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* Chain overlay (diagonal lines) */
+.cc-chains {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    animation: chain-sway 3s ease-in-out infinite;
+}
+
+.cc-chains::before,
+.cc-chains::after {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 3px;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(26, 26, 46, 0.35) 0px,
+        rgba(26, 26, 46, 0.35) 6px,
+        transparent 6px,
+        transparent 10px
+    );
+    border-radius: 2px;
+    left: -25%;
+}
+
+.cc-chains::before {
+    top: 35%;
+    transform: rotate(25deg);
+}
+
+.cc-chains::after {
+    bottom: 30%;
+    transform: rotate(-25deg);
+}
+
+@keyframes chain-sway {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(1px); }
+}
+
+/* Mystery text */
+.cc-mystery {
+    font-family: 'Bangers', sans-serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.25);
+    text-shadow: none;
+}
+
+/* --- NEW! badge --- */
+.cc-new-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-family: 'Bangers', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--pal-ink, #1a1a2e);
+    background: var(--pal-gold, #ffd93d);
+    border: 2px solid var(--pal-ink, #1a1a2e);
+    border-radius: 6px;
+    padding: 1px 5px;
+    animation: new-badge-pulse 1s ease-in-out infinite;
+    z-index: 3;
+}
+
+@keyframes new-badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* --- Reveal animation (newly discovered cards) --- */
+
+/* Phase 1: chains fly out, lock spins away */
+.collection-card.revealing .cc-chains::before {
+    animation: chain-break-1 0.4s ease-out forwards;
+}
+
+.collection-card.revealing .cc-chains::after {
+    animation: chain-break-2 0.4s ease-out forwards;
+}
+
+.collection-card.revealing .cc-lock-icon {
+    animation: lock-vanish 0.4s ease-in forwards;
+}
+
+.collection-card.revealing .cc-mystery {
+    animation: mystery-fade 0.3s ease-out forwards;
+}
+
+@keyframes chain-break-1 {
+    0% { transform: rotate(25deg) scale(1); opacity: 1; }
+    100% { transform: rotate(25deg) scale(2) translateX(30px); opacity: 0; }
+}
+
+@keyframes chain-break-2 {
+    0% { transform: rotate(-25deg) scale(1); opacity: 1; }
+    100% { transform: rotate(-25deg) scale(2) translateX(-30px); opacity: 0; }
+}
+
+@keyframes lock-vanish {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: scale(0) rotate(180deg); opacity: 0; }
+}
+
+@keyframes mystery-fade {
+    to { opacity: 0; }
+}
+
+/* Phase 2: card flips and reveals */
+.collection-card.revealing {
+    animation: card-flip-reveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+}
+
+@keyframes card-flip-reveal {
+    0% { transform: perspective(600px) rotateY(0deg); }
+    40% { transform: perspective(600px) rotateY(90deg); }
+    41% { transform: perspective(600px) rotateY(90deg); }
+    100% { transform: perspective(600px) rotateY(0deg) scale(1.05); }
+}
+
+/* Phase 3: revealed card settles with glow */
+.collection-card.revealed {
+    animation: card-reveal-settle 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes card-reveal-settle {
+    0% { transform: scale(1.1); box-shadow: 0 0 30px rgba(255, 217, 61, 0.8); }
+    50% { transform: scale(0.97); }
+    100% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 217, 61, 0.3); }
+}
+
+/* Lock and reveal faces */
+.cc-lock-face,
+.cc-reveal-face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+}
+
+.cc-lock-face {
+    position: relative;
+}
+
+/* --- Collection Tooltip --- */
+#collection-tooltip {
+    position: fixed;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.7) rotate(-2deg);
+    transform-origin: left center;
+    transition: opacity 0.12s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: var(--pal-cream, #fff4d9);
+    color: var(--pal-ink, #1a1a2e);
+    border: 3px solid var(--pal-ink, #1a1a2e);
+    border-radius: 12px;
+    box-shadow: 3px 4px 0px var(--pal-ink, #1a1a2e);
+    padding: 12px 16px;
+    width: 230px;
+    font-family: 'Bangers', 'Impact', 'Arial Black', sans-serif;
+    animation: jitter-slow 5s ease-in-out infinite;
+}
+
+#collection-tooltip.visible {
+    opacity: 1;
+    transform: scale(1) rotate(-1deg);
+}
+
+.coltip-name {
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1.1;
+    margin-bottom: 2px;
+    color: var(--pal-ink, #1a1a2e);
+}
+
+.coltip-rarity {
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    color: var(--pal-charcoal, #2d2b3d);
+    opacity: 0.7;
+}
+
+.coltip-rarity[data-rarity="rare"] {
+    color: #9b8ec4;
+    opacity: 1;
+}
+
+.coltip-rarity[data-rarity="legendary"] {
+    color: var(--pal-gold, #ffd93d);
+    opacity: 1;
+}
+
+.coltip-desc {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    line-height: 1.3;
+    color: var(--pal-charcoal, #2d2b3d);
+    opacity: 0.85;
+}
+
 /* ===== PREFERS REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

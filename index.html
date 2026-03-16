@@ -268,6 +268,7 @@
         <div class="menu-buttons">
             <button class="menu-btn" id="btn-campaign">CAMPAIGN</button>
             <button class="menu-btn" id="btn-endless">ENDLESS MODE</button>
+            <button class="menu-btn menu-btn-small" id="btn-collection">COLLECTION</button>
             <button class="menu-btn menu-btn-small" id="btn-settings">SETTINGS</button>
             <button class="menu-btn menu-btn-small" id="btn-credits">CREDITS</button>
         </div>
@@ -419,6 +420,34 @@
         <button class="menu-btn menu-btn-small" id="btn-credits-back">BACK</button>
     </div>
 
+    <!-- Collection Screen -->
+    <div id="collection-screen" class="menu-screen" style="display:none;">
+        <h2 class="screen-title">COLLECTION</h2>
+        <div class="collection-progress-wrap">
+            <div class="collection-progress-bar">
+                <div class="collection-progress-fill" id="collection-progress-fill"></div>
+            </div>
+            <div class="collection-progress-text" id="collection-progress-text">0 / 0 DISCOVERED</div>
+        </div>
+        <div class="collection-filters" id="collection-filters">
+            <button class="collection-filter active" data-filter="all">ALL</button>
+            <button class="collection-filter" data-filter="common">COMMON</button>
+            <button class="collection-filter" data-filter="rare">RARE</button>
+            <button class="collection-filter" data-filter="legendary">LEGENDARY</button>
+        </div>
+        <div class="collection-scroll">
+            <div class="collection-grid" id="collection-grid"></div>
+        </div>
+        <button class="menu-btn menu-btn-small" id="btn-collection-back">BACK</button>
+    </div>
+
+    <!-- Collection Tooltip (floating, positioned via JS) -->
+    <div id="collection-tooltip">
+        <div class="coltip-name" id="coltip-name"></div>
+        <div class="coltip-rarity" id="coltip-rarity"></div>
+        <div class="coltip-desc" id="coltip-desc"></div>
+    </div>
+
     <!-- Confirmation Dialog -->
     <div id="confirm-dialog" class="menu-screen" style="display:none;">
         <div class="confirm-box">
@@ -530,6 +559,11 @@
 
         // Best stats per scenario (persisted to localStorage)
         _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 }, ocean: { wave: 0, score: 0 }, airplane: { wave: 0, score: 0 } },
+
+        // Collection discovery tracking (persisted to localStorage)
+        _collection: {},          // id → true for discovered upgrades
+        _newlyDiscovered: [],     // IDs discovered since last collection screen view
+        _collectionFilter: 'all', // current filter tab
 
         // Entity arrays
         enemies: [],
@@ -1434,6 +1468,7 @@
             // UI
             this._setupUI();
             this._loadBestStats();
+            this._loadCollection();
 
             // Handle resize
             window.addEventListener('resize', () => {
@@ -2552,6 +2587,11 @@
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
             });
+            document.getElementById('btn-collection').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                showScreen('collection-screen');
+                this._openCollectionScreen();
+            });
             document.getElementById('btn-settings').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 showScreen('settings-screen');
@@ -2573,6 +2613,22 @@
             document.getElementById('btn-credits-back').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 showScreen('title-screen');
+            });
+            document.getElementById('btn-collection-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                this._hideCollectionTooltip();
+                showScreen('title-screen');
+            });
+
+            // Collection filter tabs
+            document.querySelectorAll('.collection-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (window.SFX) SFX.play('ui_click');
+                    document.querySelectorAll('.collection-filter').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this._collectionFilter = btn.dataset.filter;
+                    this._buildCollectionGrid(this._collectionFilter);
+                });
             });
 
             // Scenario cards — office + forest playable
@@ -3736,6 +3792,202 @@
                 if (saved) this._bestStats = JSON.parse(saved);
             } catch(e) { /* ignore */ }
             this._updateBestStats();
+        },
+
+        // ── Collection (upgrade discovery tracking) ──
+
+        _loadCollection() {
+            try {
+                const saved = localStorage.getItem('holditin_collection');
+                if (saved) this._collection = JSON.parse(saved);
+            } catch(e) { /* ignore */ }
+        },
+
+        _saveCollection() {
+            try {
+                localStorage.setItem('holditin_collection', JSON.stringify(this._collection));
+            } catch(e) { /* ignore */ }
+        },
+
+        _markDiscovered(ids) {
+            const newlyFound = [];
+            for (const id of ids) {
+                if (!this._collection[id]) {
+                    this._collection[id] = true;
+                    newlyFound.push(id);
+                }
+            }
+            if (newlyFound.length > 0) {
+                this._saveCollection();
+                this._newlyDiscovered.push(...newlyFound);
+            }
+            return newlyFound;
+        },
+
+        _getCollectionStats() {
+            const allUpgrades = window.ALL_UPGRADES || [];
+            const stats = {
+                common: { found: 0, total: 0 },
+                rare: { found: 0, total: 0 },
+                legendary: { found: 0, total: 0 },
+                total: { found: 0, total: 0 },
+            };
+            for (const u of allUpgrades) {
+                stats[u.rarity].total++;
+                stats.total.total++;
+                if (this._collection[u.id]) {
+                    stats[u.rarity].found++;
+                    stats.total.found++;
+                }
+            }
+            return stats;
+        },
+
+        _openCollectionScreen() {
+            this._buildCollectionGrid(this._collectionFilter || 'all');
+
+            // Trigger reveal animation for newly discovered cards
+            if (this._newlyDiscovered.length > 0) {
+                const newCards = document.querySelectorAll('.collection-card[data-new="true"]');
+                newCards.forEach((card, i) => {
+                    const delay = 500 + i * 200;
+                    setTimeout(() => {
+                        card.classList.add('revealing');
+                        if (window.SFX) SFX.play('upgrade_acquire');
+                        // Swap faces at the midpoint of the flip (when card is edge-on)
+                        setTimeout(() => { if (card._swapFaces) card._swapFaces(); }, 670);
+                    }, delay);
+                });
+                // Clear newly discovered after all animations complete
+                setTimeout(() => {
+                    this._newlyDiscovered = [];
+                }, 500 + newCards.length * 200 + 1500);
+            }
+        },
+
+        _buildCollectionGrid(filter) {
+            const grid = document.getElementById('collection-grid');
+            grid.innerHTML = '';
+            const allUpgrades = window.ALL_UPGRADES || [];
+            const filtered = filter === 'all' ? allUpgrades : allUpgrades.filter(u => u.rarity === filter);
+
+            // Rarity color maps
+            const rarityBorder = { common: 'var(--pal-cream, #faf5ef)', rare: '#9b8ec4', legendary: 'var(--pal-gold, #ffd93d)' };
+            const rarityBg = { common: 'rgba(250,245,239,0.15)', rare: 'rgba(155,142,196,0.15)', legendary: 'rgba(255,217,61,0.15)' };
+
+            filtered.forEach((upgrade, i) => {
+                const discovered = !!this._collection[upgrade.id];
+                const isNew = this._newlyDiscovered.includes(upgrade.id);
+
+                const card = document.createElement('div');
+                card.className = 'collection-card' + (discovered && !isNew ? '' : !discovered ? ' locked' : ' locked new-pending');
+                card.dataset.id = upgrade.id;
+                card.dataset.rarity = upgrade.rarity;
+                if (isNew) card.dataset.new = 'true';
+                card.style.animationDelay = `${i * 30}ms`;
+
+                if (discovered && !isNew) {
+                    // Fully discovered — show card
+                    card.style.borderColor = rarityBorder[upgrade.rarity];
+                    const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', upgrade.rarity, 48, 0) : '';
+                    card.innerHTML =
+                        '<div class="cc-icon"><img src="' + iconURL + '" width="48" height="48" alt=""></div>' +
+                        '<div class="cc-name">' + upgrade.name + '</div>';
+
+                    card.addEventListener('mouseenter', (e) => this._showCollectionTooltip(e, upgrade));
+                    card.addEventListener('mouseleave', () => this._hideCollectionTooltip());
+                } else if (isNew) {
+                    // Newly discovered — starts locked, will reveal
+                    card.innerHTML =
+                        '<div class="cc-lock-face">' +
+                            '<div class="cc-chains"></div>' +
+                            '<div class="cc-lock-icon"><svg viewBox="0 0 24 24" width="28" height="28"><rect x="3" y="11" width="18" height="11" rx="2" fill="var(--pal-charcoal,#2d2b3d)" stroke="var(--pal-ink,#1a1a2e)" stroke-width="1.5"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="var(--pal-ink,#1a1a2e)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="var(--pal-ink,#1a1a2e)"/></svg></div>' +
+                            '<div class="cc-mystery">???</div>' +
+                        '</div>' +
+                        '<div class="cc-reveal-face" style="display:none;">' +
+                            '<div class="cc-icon"></div>' +
+                            '<div class="cc-name"></div>' +
+                            '<div class="cc-new-badge">NEW!</div>' +
+                        '</div>';
+
+                    // Pre-populate the reveal face
+                    const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', upgrade.rarity, 48, 0) : '';
+                    const revealFace = card.querySelector('.cc-reveal-face');
+                    revealFace.querySelector('.cc-icon').innerHTML = '<img src="' + iconURL + '" width="48" height="48" alt="">';
+                    revealFace.querySelector('.cc-name').textContent = upgrade.name;
+
+                    // Bind tooltip for after reveal
+                    card.addEventListener('mouseenter', (e) => {
+                        if (card.classList.contains('revealed')) this._showCollectionTooltip(e, upgrade);
+                    });
+                    card.addEventListener('mouseleave', () => this._hideCollectionTooltip());
+
+                    // Swap faces mid-flip (at 40% of 0.8s animation + 0.35s delay ≈ 670ms)
+                    // Then transition to revealed state on animationend
+                    card._swapFaces = () => {
+                        card.querySelector('.cc-lock-face').style.display = 'none';
+                        revealFace.style.display = '';
+                        card.style.borderColor = rarityBorder[upgrade.rarity];
+                    };
+                    card.addEventListener('animationend', (e) => {
+                        if (e.animationName === 'card-flip-reveal') {
+                            card.classList.remove('locked', 'new-pending', 'revealing');
+                            card.classList.add('revealed');
+                        }
+                    });
+                } else {
+                    // Undiscovered — locked
+                    card.innerHTML =
+                        '<div class="cc-chains"></div>' +
+                        '<div class="cc-lock-icon"><svg viewBox="0 0 24 24" width="28" height="28"><rect x="3" y="11" width="18" height="11" rx="2" fill="var(--pal-charcoal,#2d2b3d)" stroke="var(--pal-ink,#1a1a2e)" stroke-width="1.5"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="var(--pal-ink,#1a1a2e)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="var(--pal-ink,#1a1a2e)"/></svg></div>' +
+                        '<div class="cc-mystery">???</div>';
+                }
+
+                grid.appendChild(card);
+            });
+
+            // Update progress bar
+            const stats = this._getCollectionStats();
+            const total = stats.total;
+            document.getElementById('collection-progress-text').textContent = total.found + ' / ' + total.total + ' DISCOVERED';
+            const pct = total.total > 0 ? (total.found / total.total * 100) : 0;
+            document.getElementById('collection-progress-fill').style.width = pct + '%';
+
+            // Update filter counts
+            document.querySelectorAll('.collection-filter').forEach(btn => {
+                const f = btn.dataset.filter;
+                if (f === 'all') {
+                    btn.textContent = 'ALL (' + stats.total.found + ')';
+                } else {
+                    btn.textContent = f.toUpperCase() + ' (' + stats[f].found + '/' + stats[f].total + ')';
+                }
+                if (f === this._collectionFilter) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        },
+
+        _showCollectionTooltip(e, upgrade) {
+            const tip = document.getElementById('collection-tooltip');
+            document.getElementById('coltip-name').textContent = upgrade.name;
+            document.getElementById('coltip-rarity').textContent = upgrade.rarity.toUpperCase();
+            document.getElementById('coltip-rarity').dataset.rarity = upgrade.rarity;
+            document.getElementById('coltip-desc').textContent = upgrade.description;
+            tip.classList.add('visible');
+
+            // Position near the card
+            const rect = e.currentTarget.getBoundingClientRect();
+            const tipW = 240;
+            let left = rect.right + 12;
+            let top = rect.top;
+            if (left + tipW > window.innerWidth) left = rect.left - tipW - 12;
+            if (top + 160 > window.innerHeight) top = window.innerHeight - 170;
+            if (top < 10) top = 10;
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+        },
+
+        _hideCollectionTooltip() {
+            document.getElementById('collection-tooltip').classList.remove('visible');
         },
 
         // ── Persistent tower unlock helpers ──
@@ -5325,6 +5577,9 @@
                 console.warn('Upgrade drones: rollUpgrades returned no options');
                 return false;
             }
+
+            // Mark all offered upgrades as discovered in collection
+            this._markDiscovered(options.map(o => o.id));
 
             this._upgradePhase = true;
             this._upgradeOptions = options;
