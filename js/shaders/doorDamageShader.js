@@ -40,7 +40,7 @@ void main() {
         for (int i = 0; i < ${MAX_IMPACTS}; i++) {
             if (i >= uImpactCount) break;
             float dist = distance(vDoorUV, uImpacts[i]);
-            float bulge = uImpactStrengths[i] * exp(-dist * dist * 20.0) * 0.06;
+            float bulge = uImpactStrengths[i] * exp(-dist * dist * 8.0) * 0.12;
             displaced.z += bulge;
         }
     }
@@ -119,16 +119,16 @@ float radialCracks(vec2 uv, vec2 center, float strength) {
     float dist = length(delta);
     float angle = atan(delta.y, delta.x);
 
-    // Jagged radial spokes (7 main rays + sine distortion)
-    float rays = abs(sin(angle * 7.0 + dist * 25.0));
-    rays = smoothstep(0.88, 1.0, rays);
+    // Jagged radial spokes (5 main rays — fewer = chunkier)
+    float rays = abs(sin(angle * 5.0 + dist * 12.0));
+    rays = smoothstep(0.82, 1.0, rays);
 
-    // Concentric ring stress lines
-    float rings = abs(sin(dist * 40.0));
-    rings = smoothstep(0.92, 1.0, rings) * 0.5;
+    // Concentric ring stress lines (wider spacing)
+    float rings = abs(sin(dist * 18.0));
+    rings = smoothstep(0.88, 1.0, rings) * 0.6;
 
-    // Fade with distance from impact center
-    float fade = smoothstep(strength * 0.4, 0.0, dist);
+    // Fade with distance from impact center — MUCH wider reach
+    float fade = smoothstep(strength * 0.9, 0.0, dist);
 
     return (rays + rings) * fade;
 }
@@ -161,12 +161,12 @@ void main() {
             if (i >= uImpactCount) break;
 
             float dist = distance(duv, uImpacts[i]);
-            float radius = uImpactStrengths[i] * 0.35;
-            float influence = smoothstep(radius, radius * 0.1, dist);
+            float radius = uImpactStrengths[i] * 0.7;
+            float influence = smoothstep(radius, radius * 0.05, dist);
             damageField = max(damageField, influence);
 
-            // Radial cracks from this impact
-            radialSum += radialCracks(duv, uImpacts[i], uImpactStrengths[i] * 0.5);
+            // Radial cracks from this impact — wide reach
+            radialSum += radialCracks(duv, uImpacts[i], uImpactStrengths[i] * 0.9);
 
             // Fresh impact flash (first 0.35 seconds)
             float age = uTime - uImpactTimes[i];
@@ -181,35 +181,35 @@ void main() {
         damageField = clamp(damageField, 0.0, 1.0);
         radialSum = clamp(radialSum, 0.0, 1.0);
 
-        // ── Voronoi crack pattern (two octaves for detail) ────────────
-        float edge1 = voronoiEdge(duv, 7.0);
-        float edge2 = voronoiEdge(duv * 1.5 + vec2(3.7, 1.3), 13.0);
-        float crackDist = min(edge1, edge2 * 0.8);
+        // ── Voronoi crack pattern (low scale = big chunky cells) ───────
+        float edge1 = voronoiEdge(duv, 3.5);
+        float edge2 = voronoiEdge(duv * 1.3 + vec2(3.7, 1.3), 6.0);
+        float crackDist = min(edge1, edge2 * 0.85);
 
-        // Sharp crack lines (toon style — hard step, not soft gradient)
-        float crackLine = 1.0 - step(0.04, crackDist);
+        // Thick crack lines (toon style — bold and readable)
+        float crackLine = 1.0 - step(0.09, crackDist);
 
         // Cracks only appear where damage field exists
         float crackMask = crackLine * damageField;
 
-        // Merge radial cracks
-        crackMask = max(crackMask, radialSum * damageField * 0.7);
+        // Merge radial cracks (strong contribution)
+        crackMask = max(crackMask, radialSum * damageField * 0.85);
         crackMask = clamp(crackMask, 0.0, 1.0);
 
-        // ── Wider glow along crack edges ──────────────────────────────
-        float glowEdge = smoothstep(0.12, 0.015, crackDist) * damageField;
+        // ── Wide glow halo along crack edges ─────────────────────────
+        float glowEdge = smoothstep(0.22, 0.02, crackDist) * damageField;
         float glowPulse = 0.55 + 0.45 * sin(uTime * 3.5);
 
         // ── Apply crack visual effects ────────────────────────────────
 
         // Dark interior showing through cracks
-        color = mix(color, uDarkColor, crackMask * 0.85);
+        color = mix(color, uDarkColor, crackMask * 0.9);
 
-        // Warm glow along crack edges
-        color += uCrackGlow * glowEdge * glowPulse * 0.55;
+        // Warm glow along crack edges (bright, unmistakable)
+        color += uCrackGlow * glowEdge * glowPulse * 0.8;
 
         // Radial glow near impact centers (ambient heat)
-        color += uCrackGlow * damageField * 0.12;
+        color += uCrackGlow * damageField * 0.2;
 
         // Fresh impact flash — bright white-gold burst
         color = mix(color, vec3(1.0, 0.95, 0.85), freshFlash * 0.9);
@@ -231,12 +231,12 @@ void main() {
             color = mix(color, vec3(0.3, 1.0, 0.55), uHealFlash * 0.6);
         }
 
-        // ── Opacity: damage makes the door more visible ──────────────
-        alpha += damageField * 0.4;
-        alpha += crackMask * 0.35;
-        alpha += glowEdge * glowPulse * 0.15;
-        alpha += freshFlash * 0.5;
-        alpha = min(alpha, 0.92);
+        // ── Opacity: damage makes the door dramatically more visible ──
+        alpha += damageField * 0.55;
+        alpha += crackMask * 0.5;
+        alpha += glowEdge * glowPulse * 0.25;
+        alpha += freshFlash * 0.6;
+        alpha = min(alpha, 0.95);
     }
 
     gl_FragColor = vec4(color, alpha);
@@ -420,8 +420,8 @@ export class DoorDamageSystem {
         const u = Math.max(0.05, Math.min(0.95, (localX + cfg.width / 2) / cfg.width));
         const v = Math.max(0.05, Math.min(0.95, localY / cfg.height));
 
-        // Strength scales with damage
-        const strength = Math.min(1.0, damage / 4.0) * 0.7 + 0.3;
+        // Strength scales with damage — high base so even small hits are visible
+        const strength = Math.min(1.5, damage / 3.0) * 0.6 + 0.6;
 
         // Add to impact list (circular buffer)
         this._impacts.push({ u, v, strength, time, panelIndex });
@@ -700,7 +700,7 @@ export class DoorDamageSystem {
     // ── PRIVATE: Impact ring VFX ──────────────────────────────────────────────
 
     _spawnImpactRing(x, y, z, strength) {
-        const size = 1.5 + strength * 1.5;
+        const size = 2.5 + strength * 2.0;
         const geo = new THREE.PlaneGeometry(size, size);
         const mat = new THREE.ShaderMaterial({
             vertexShader: _ringVertexShader,
