@@ -8256,6 +8256,7 @@
                                 bt.hitShake = 0.2;
                             }
                             this._spawnBarrierChips(bt.gridX, bt.gridZ, dmg);
+                            if (window.SFX) SFX.play('barrier_hit');
 
                             // C6: Prickly Signs — enemies take damage when bashing
                             if (this.upgradeManager) {
