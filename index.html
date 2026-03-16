@@ -2515,6 +2515,10 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'flex';
                 setGameUIVisible(false);
+                // Clear upgrade HUD icons when navigating to menu screens
+                if (this._upgradeHUD) {
+                    this._upgradeHUD.innerHTML = '';
+                }
                 // Clean up tutorial overlay when navigating menus
                 if (this._tutorialActive) {
                     this._tutorialActive = false;
