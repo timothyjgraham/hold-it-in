@@ -12,7 +12,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C1',
         name: 'Overclocked Magnet',
-        description: 'Coin Magnet collection range +12 (8 → 20 units)',
+        description: 'Coin Magnet collection range +12 (8 → 20 units) and +2 HP',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -34,7 +34,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C3',
         name: 'Magnet Durability',
-        description: 'Coin Magnets gain +4 HP',
+        description: 'Coin Magnets gain +5 HP',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -47,7 +47,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C4',
         name: 'Reinforced Signs',
-        description: 'Wet Floor Signs gain +100% HP',
+        description: 'Wet Floor Signs gain +120% HP',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -58,7 +58,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C5',
         name: 'Extra Slippery',
-        description: 'Wet Floor Signs slow enemies to 15% speed (from 40%)',
+        description: 'Wet Floor Signs slow enemies to 15% speed (from 40%). Slow lingers 1s after exiting zone.',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -69,7 +69,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C6',
         name: 'Prickly Signs',
-        description: 'Enemies take 8 damage per bash hit against Wet Floor Signs',
+        description: 'Enemies take 10 damage per bash hit against Wet Floor Signs',
         rarity: 'common',
         icon: 'sign',
         towerRequirement: ['wetfloor'],
@@ -128,7 +128,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C11',
         name: 'Pressure Washer',
-        description: 'Ubik cone halves in width, range doubles, +25% damage. Precision beam.',
+        description: 'Ubik cone halves in width, range doubles, +35% damage. Precision beam.',
         rarity: 'common',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -140,7 +140,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C12',
         name: 'Wide Spray',
-        description: 'Ubik cone 60% wider. Crowd control mode.',
+        description: 'Ubik cone 80% wider. Crowd control mode.',
         rarity: 'common',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -187,12 +187,12 @@ export const COMMON_UPGRADES = [
     {
         id: 'C16',
         name: 'Cactus Pot',
-        description: 'Pot Plants deal 5 damage/sec to adjacent enemies',
+        description: 'Pot Plants deal (2 + 1.5 per pot upgrade) dps to adjacent enemies. Scales with pot archetype.',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
-        stackable: true,
-        maxStacks: 3,  // cap 9 dps
+        stackable: false,
+        maxStacks: 1,
         effectFn: null,
     },
 
@@ -235,12 +235,12 @@ export const COMMON_UPGRADES = [
     {
         id: 'C20',
         name: 'Static Charge',
-        description: 'Coin Magnets zap all enemies in range for 1 damage/sec',
+        description: 'When a Coin Magnet collects a coin, zap the nearest enemy for 3 damage',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
-        stackable: true,
-        maxStacks: 3,  // cap 3 dps
+        stackable: false,
+        maxStacks: 1,
         effectFn: null,
     },
 ];
@@ -664,7 +664,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L4',
         name: 'Rush Hour Pileup',
-        description: 'Enemies knocked into other enemies stun BOTH for 1.5s and deal 10 mutual damage',
+        description: 'Enemy-on-enemy collision stuns both for 0.8s, dealing 4 damage. Per mop upgrade: +0.2s stun, +2 damage.',
         rarity: 'legendary',
         icon: 'star',
         towerRequirement: ['mop'],
@@ -675,7 +675,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L5',
         name: 'Domino Effect',
-        description: 'Tripped enemies that slide into others trip them too, chaining indefinitely (-20% dmg per link)',
+        description: 'Trip chains: enemies slide into others, tripping them. Chain damage scales with pot upgrades, decay reduces per pot upgrade.',
         rarity: 'legendary',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -686,10 +686,10 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L6',
         name: 'Spill Zone',
-        description: 'KO\'d enemies leave a toxic puddle (3-unit radius, 40% slow, 3 dps) that lingers for 5s',
+        description: 'KO\'d enemies leave a puddle (3-unit, 25% slow, 2 dps, 4s). Per sign upgrade: +5% slow, +1 dps, +1s.',
         rarity: 'legendary',
-        icon: 'star',
-        towerRequirement: null,  // general
+        icon: 'sign',
+        towerRequirement: ['wetfloor'],
         stackable: false,
         maxStacks: 1,
         effectFn: null,
@@ -697,7 +697,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L7',
         name: 'Loose Change',
-        description: 'Uncollected coins become trip hazards — enemies stumble (1s stun, 2 damage), coin consumed',
+        description: 'Uncollected coins trip enemies (0.5s stun, 1 damage). Per magnet upgrade: +0.15s stun, +1 damage.',
         rarity: 'legendary',
         icon: 'coin',
         towerRequirement: ['coinmagnet'],
@@ -708,7 +708,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L8',
         name: 'Nuclear Mop',
-        description: 'Mop knockback 4×. Enemies take 15 damage if they hit a wall or tower.',
+        description: 'Mop knockback 3×. Wall/tower collision deals (4 + 3 per mop upgrade) damage.',
         rarity: 'legendary',
         icon: 'mop',
         towerRequirement: ['mop'],
@@ -719,7 +719,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L9',
         name: 'Ubik Flood',
-        description: 'Each Ubik spray leaves a lingering 4-unit damage zone (2 dps, 8s). Max 5 per Ubik.',
+        description: 'Each spray leaves a lingering 4-unit zone (8s). Zone DPS = (1 + 1 per ubik upgrade). Max 5 per Ubik.',
         rarity: 'legendary',
         icon: 'spray',
         towerRequirement: ['ubik'],
@@ -730,7 +730,7 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L10',
         name: 'Golden Magnet',
-        description: 'Coin Magnets passively generate 1 coin every 4 seconds',
+        description: 'Coin Magnets generate 1 coin per (5 - 0.5 per magnet upgrade) seconds. Min 2s.',
         rarity: 'legendary',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -752,10 +752,10 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L12',
         name: 'Overtime',
-        description: 'First 5s of each wave: all towers 3× speed, enemies 0.5× speed',
+        description: 'First 3s of each wave: all towers 2× speed, enemies 0.5× speed. Per sign upgrade: +0.8s duration.',
         rarity: 'legendary',
-        icon: 'star',
-        towerRequirement: null,  // general
+        icon: 'sign',
+        towerRequirement: ['wetfloor'],
         stackable: false,
         maxStacks: 1,
         effectFn: null,
@@ -777,10 +777,10 @@ export const LEGENDARY_UPGRADES = [
     {
         id: 'L14',
         name: 'Hoarder',
-        description: 'Every unspent 50 coins gives all towers +12% damage (max +100%)',
+        description: 'Per (50 - 4 per magnet upgrade, min 25) unspent coins: all towers +10% damage. Max +80%.',
         rarity: 'legendary',
         icon: 'coin',
-        towerRequirement: null,  // general
+        towerRequirement: ['coinmagnet'],
         stackable: false,
         maxStacks: 1,
         effectFn: null,

@@ -10,6 +10,7 @@
 
 const { GAME } = require('../shared/gameData');
 const { enemyHP, enemySpeed, desperateChance, coinDropValue, waveBonus } = require('../shared/formulas');
+const { countUpgradesForTowerSim } = require('../shared/upgradeHelpers');
 
 class CoverageModel {
   constructor() {
@@ -65,7 +66,8 @@ class CoverageModel {
     dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult)) * slowSteadySpeedMult * doubleShiftMult;
 
     // Ubik: damage * (spray_duration / cycle_time) — hits ~2 enemies per spray (AoE)
-    const ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
+    let ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
+    if (upgrades.C11) ubikDmgMult = Math.max(ubikDmgMult, 1.35);
     const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25;
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
     const ubikDPS = (GAME.towers.ubik.damage * ubikDmgMult * GAME.towers.ubik.sprayDuration) / ubikCycle;
@@ -74,11 +76,16 @@ class CoverageModel {
     // Pot plant: trip damage / (stun + re-approach time)
     dps += t.potplant * (GAME.towers.potplant.damage / 4) * doubleShiftMult;
 
-    // Cactus Pot DPS (C16)
-    dps += t.potplant * (upgrades.C16 || 0) * 5;
+    // Cactus Pot DPS (C16) — scales with pot archetype
+    if (upgrades.C16) {
+      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
+      dps += t.potplant * (2 + 1.5 * potCount);
+    }
 
-    // C20: Static Charge (1 dps per stack per magnet)
-    dps += t.coinmagnet * (upgrades.C20 || 0) * 1;
+    // C20: Static Charge — on-collect proc, ~1 proc/2s per magnet ≈ 1.5 effective DPS
+    if (upgrades.C20 && t.coinmagnet > 0) {
+      dps += t.coinmagnet * 1.5;
+    }
 
     // Apply global damage multiplier
     dps *= globalDmgMult;
@@ -172,8 +179,9 @@ class CoverageModel {
     if (upgrades.R29 && towers.wetfloor > 0) slowBonus *= 1.15;
     // R17: Marked for Death (+40% damage to slowed enemies, ~60% slowed)
     const markedBonus = (upgrades.R17 && towers.wetfloor > 0) ? 1.25 : 1.0;
-    // L12: Overtime (first 5s = 3x tower speed)
-    const overtimeBonus = upgrades.L12 ? (1 + 2.0 * Math.min(5, waveDuration) / waveDuration) : 1.0;
+    // L12: Overtime (first Ns = 2x tower speed, duration scales with sign upgrades)
+    const overtimeDur = upgrades.L12 ? (3 + 0.8 * countUpgradesForTowerSim(upgrades, 'wetfloor', 'L12')) : 0;
+    const overtimeBonus = upgrades.L12 ? (1 + 1.0 * Math.min(overtimeDur, waveDuration) / waveDuration) : 1.0;
     // L2: Desperate Measures (2x damage below 50% door HP)
     const desperateBonus = (upgrades.L2 && doorHP < doorMaxHP * 0.5) ? 2.0 : 1.0;
     // R16: Crossfire (estimate 30% of enemies hit by 2+ types)
@@ -186,9 +194,10 @@ class CoverageModel {
       : 1.0;
     // R32: Attrition (+5%/sec cap 80% — average ~40% over typical wave)
     const attritionBonus = upgrades.R32 ? 1.40 : 1.0;
-    // L14: Hoarder (+12% per 50 unspent coins, cap +100%)
+    // L14: Hoarder (+10% per threshold coins, threshold scales with magnet upgrades, cap +80%)
+    const hoarderThreshold = upgrades.L14 ? Math.max(25, 50 - 4 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L14')) : 50;
     const hoarderBonus = upgrades.L14
-      ? (1 + Math.min(Math.floor(coins / 50) * 0.12, 1.0))
+      ? (1 + Math.min(Math.floor(coins / hoarderThreshold) * 0.10, 0.80))
       : 1.0;
     // L17: Assembly Line (+20% per adjacent tower, estimate avg 1.5 adjacents)
     const assemblyBonus = upgrades.L17 ? 1.30 : 1.0;
@@ -196,8 +205,9 @@ class CoverageModel {
     const lastStandBonus = upgrades.L18 ? 1.20 : 1.0;
     // L11: Bladder Burst (25% max HP splash on death, ~15% bonus)
     const burstBonus = upgrades.L11 ? 1.15 : 1.0;
-    // L9: Ubik Flood (lingering damage zones, ~15% bonus per ubik)
-    const floodBonus = (upgrades.L9 && towers.ubik > 0) ? 1.15 : 1.0;
+    // L9: Ubik Flood (DPS scales with ubik upgrades)
+    const floodDPS = upgrades.L9 ? (1 + countUpgradesForTowerSim(upgrades, 'ubik', 'L9')) : 0;
+    const floodBonus = (upgrades.L9 && towers.ubik > 0) ? (1 + floodDPS * 0.05) : 1.0;
     // L15: Chain Reaction (nearest tower fires on kill, ~20% bonus DPS)
     const chainReactionBonus = upgrades.L15 ? 1.20 : 1.0;
     // L3: Plunger Protocol (door hit -> 3x speed 3s, only when leaking)
@@ -241,9 +251,10 @@ class CoverageModel {
     if (upgrades.R11 && towers.ubik > 0) {
       collected += towers.ubik * 2 * 5;
     }
-    // L10: Golden Magnet (1 coin/4s per magnet)
+    // L10: Golden Magnet (interval scales with magnet upgrades)
     if (upgrades.L10) {
-      collected += Math.round(towers.coinmagnet * waveDuration / 4);
+      const gmInterval = Math.max(2, 5 - 0.5 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L10'));
+      collected += Math.round(towers.coinmagnet * waveDuration / gmInterval);
     }
 
     let waveBonusCoins = waveBonus(wave);
@@ -434,9 +445,10 @@ class CoverageModel {
           target.hp -= dmg;
           target.stunned = true;
           target.stunTimer = tw.stunDuration;
-          // Cactus DPS applied during stun
+          // Cactus DPS applied during stun (scales with pot archetype)
           if (upgrades.C16) {
-            target.hp -= (upgrades.C16 || 0) * 5 * tw.stunDuration;
+            const potDPS = 2 + 1.5 * countUpgradesForTowerSim(upgrades, 'potplant');
+            target.hp -= potDPS * tw.stunDuration;
           }
           tw.cooldownTimer = tw.stunDuration + 2.0; // can't re-trip immediately
         } else if (tw.type === 'mop') {
@@ -444,7 +456,7 @@ class CoverageModel {
           // Knockback
           if (!target.def.knockbackImmune && tw.knockback > 0) {
             const kbMult = 1 + (upgrades.C9 || 0) * 0.75;
-            const nuclearMult = upgrades.L8 ? 4 : 1;
+            const nuclearMult = upgrades.L8 ? 3 : 1;
             target.z += tw.knockback * kbMult * nuclearMult;
           }
           tw.cooldownTimer = tw.cooldown;
@@ -513,7 +525,8 @@ class CoverageModel {
     }
     const waveDuration = tick * dt;
     if (upgrades.L10) {
-      collected += Math.round(towers.coinmagnet * waveDuration / 4);
+      const gmInterval = Math.max(2, 5 - 0.5 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L10'));
+      collected += Math.round(towers.coinmagnet * waveDuration / gmInterval);
     }
 
     let waveBonusCoins = waveBonus(wave);

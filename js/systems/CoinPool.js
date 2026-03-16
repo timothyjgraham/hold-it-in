@@ -299,9 +299,11 @@ export class CoinPool {
 
     /**
      * L7: Loose Change — check if hovering coins collide with enemies.
+     * @param {number} [stunDur=0.5] - stun duration (scales with magnet upgrades)
+     * @param {number} [dmg=1] - damage (scales with magnet upgrades)
      * Returns number of coins consumed.
      */
-    checkLooseChangeTrap(enemies, scene) {
+    checkLooseChangeTrap(enemies, scene, stunDur = 0.5, dmg = 1) {
         const toRemove = [];
         for (let i = this._active.length - 1; i >= 0; i--) {
             const c = this._active[i];
@@ -311,9 +313,9 @@ export class CoinPool {
                 const dx = e.x - c.x;
                 const dz = e.z - c.z;
                 if (dx * dx + dz * dz < 1.44) { // 1.2 unit radius
-                    e.stunTimer = 1.0;
-                    e.tripFallDuration = 1.0;
-                    e.hp -= 2;
+                    e.stunTimer = stunDur;
+                    e.tripFallDuration = stunDur;
+                    e.hp -= dmg;
                     e.hitFlash = 0.15;
                     if (e.bashing) { e.bashing = false; e.bashingBarrier = null; }
                     if (e.animController) {

@@ -42,6 +42,26 @@ export class UpgradeManager {
     }
 
     /**
+     * Count total stacks of upgrades associated with a tower type.
+     * Cross-tower rares (e.g. ['mop','ubik']) count for BOTH types.
+     * @param {string} towerType - e.g. 'mop', 'ubik', 'coinmagnet', 'wetfloor', 'potplant'
+     * @param {string} [excludeId] - upgrade id to exclude (so anchor doesn't count itself)
+     * @returns {number} total stacks
+     */
+    countUpgradesForTower(towerType, excludeId) {
+        let count = 0;
+        for (const id of this._acquired) {
+            if (id === excludeId) continue;
+            const upgrade = UPGRADE_MAP[id];
+            if (!upgrade || !upgrade.towerRequirement) continue;
+            if (upgrade.towerRequirement.includes(towerType)) {
+                count += this._stacks[id] || 0;
+            }
+        }
+        return count;
+    }
+
+    /**
      * Get cumulative modifier for a stat.
      * Returns a multiplier or additive value depending on the stat.
      *
@@ -66,13 +86,13 @@ export class UpgradeManager {
                 return 1.0 + this.getStacks('C9') * 0.75;     // C9: +75% per stack
             case 'ubikWidthMult':
                 if (this.hasUpgrade('C11')) return 0.5;        // C11: Pressure Washer halves width
-                if (this.hasUpgrade('C12')) return 1.6;        // C12: Wide Spray +60% width
+                if (this.hasUpgrade('C12')) return 1.8;        // C12: Wide Spray +80% width (was 60%)
                 return 1.0;
             case 'ubikRangeMult':
                 return this.hasUpgrade('C11') ? 2.0 : 1.0;    // C11: Pressure Washer doubles range
             case 'ubikDamageMult': {
                 let base = 1.0;                                // C12: Wide Spray no longer penalizes damage
-                if (this.hasUpgrade('C11')) base = 1.25;       // C11: Pressure Washer +25% damage
+                if (this.hasUpgrade('C11')) base = 1.35;       // C11: Pressure Washer +35% damage (was 25%)
                 return base + this.getStacks('C13') * 0.4;    // C13: +40% per stack
             }
             case 'ubikCooldownMult':
@@ -83,12 +103,16 @@ export class UpgradeManager {
             // ─── Additive stats (return 0 = no change) ───
             case 'magnetRange':
                 return this.hasUpgrade('C1') ? 12 : 0;        // C1: +12 units (8→20)
+            case 'magnetBonusHP':
+                return this.hasUpgrade('C1') ? 2 : 0;         // C1: also +2 HP to magnets
             case 'magnetHP':
-                return this.getStacks('C3') * 4;               // C3: +4 per stack
+                return this.getStacks('C3') * 5;               // C3: +5 per stack (was 4)
             case 'signHP':
-                return this.getStacks('C4') * 1.0;             // C4: +100% per stack (mult on base)
+                return this.getStacks('C4') * 1.2;             // C4: +120% per stack (was 100%)
+            case 'signSlowLinger':
+                return this.hasUpgrade('C5') ? 1.0 : 0;       // C5: slow lingers 1s after exiting
             case 'signBashDamage':
-                return this.getStacks('C6') * 8;               // C6: +8 per stack
+                return this.getStacks('C6') * 10;              // C6: +10 per stack (was 8)
             case 'mopMinArc':
                 return this.hasUpgrade('C7') ? Math.PI : 1.05; // C7: 180° (base ~60°) + 15% mop damage
             case 'mopDamageMult':
@@ -96,7 +120,10 @@ export class UpgradeManager {
             case 'mopHP':
                 return this.getStacks('C10') * 4;              // C10: +4 per stack
             case 'potContactDPS':
-                return this.getStacks('C16') * 5;              // C16: +5 dps per stack
+                // C16: Cactus Pot rework — scales with pot archetype, non-stackable
+                return this.hasUpgrade('C16')
+                    ? 2 + 1.5 * this.countUpgradesForTower('potplant')
+                    : 0;
             case 'potStunBonus':
                 return this.hasUpgrade('C15') ? 0.5 : 0;      // C15: Spring-Loaded +0.5s stun
             case 'doorMaxHP':
@@ -117,8 +144,8 @@ export class UpgradeManager {
                 return this.hasUpgrade('C18') ? 1.4 : 1.0;    // 40% slower = 1.4× cooldown
             case 'bargainBinCost':
                 return this.hasUpgrade('C19') ? 1 : 0;        // C19: Pot Plants cost 0, 2 HP
-            case 'staticChargeDPS':
-                return this.getStacks('C20') * 1;              // C20: +1 dps per stack
+            case 'staticChargeOnCollect':
+                return this.hasUpgrade('C20') ? 3 : 0;        // C20: rework — 3 dmg on coin collect
             case 'markedForDeathMult':
                 return this.hasUpgrade('R17') ? 1.4 : 1.0;    // R17: slowed enemies +40% dmg
             case 'crowdSurfingMult':
@@ -138,7 +165,13 @@ export class UpgradeManager {
             case 'minimalistThreshold':
                 return this.hasUpgrade('L13') ? 4 : 0;        // L13: tower count cap
             case 'hoarderPer50':
-                return this.hasUpgrade('L14') ? 0.12 : 0;     // L14: +12% per 50 coins, cap +100%
+                return this.hasUpgrade('L14') ? 0.10 : 0;     // L14: +10% per threshold (was +12%)
+            case 'hoarderThreshold':
+                return this.hasUpgrade('L14')
+                    ? Math.max(25, 50 - 4 * this.countUpgradesForTower('coinmagnet', 'L14'))
+                    : 50;
+            case 'hoarderCap':
+                return this.hasUpgrade('L14') ? 0.80 : 0;     // L14: cap +80% (was +100%)
             case 'chainReactionRange':
                 return this.hasUpgrade('L15') ? 12 : 0;       // L15: 12 unit trigger range
             case 'loanSharkBonus':
@@ -151,6 +184,43 @@ export class UpgradeManager {
                 return this.hasUpgrade('L18') ? 3.0 : 1.0;    // L18: 3× dmg at 1 HP
             case 'lastStandSpeedMult':
                 return this.hasUpgrade('L18') ? 1.5 : 1.0;    // L18: +50% attack speed
+
+            // ─── Conditional Legendary Stats (archetype scaling) ───
+
+            // L8: Nuclear Mop — collision damage scales with mop upgrades
+            case 'nuclearMopCollisionDmg':
+                return 4 + 3 * this.countUpgradesForTower('mop', 'L8');
+            // L4: Rush Hour Pileup — stun/damage scale with mop upgrades
+            case 'rushHourStun':
+                return 0.8 + 0.2 * this.countUpgradesForTower('mop', 'L4');
+            case 'rushHourDmg':
+                return 4 + 2 * this.countUpgradesForTower('mop', 'L4');
+            // L9: Ubik Flood — DPS scales with ubik upgrades
+            case 'ubikFloodDPS':
+                return 1 + 1 * this.countUpgradesForTower('ubik', 'L9');
+            // L10: Golden Magnet — interval scales with magnet upgrades
+            case 'goldenMagnetInterval':
+                return Math.max(2, 5 - 0.5 * this.countUpgradesForTower('coinmagnet', 'L10'));
+            // L7: Loose Change — stun/damage scale with magnet upgrades
+            case 'looseChangeStun':
+                return 0.5 + 0.15 * this.countUpgradesForTower('coinmagnet', 'L7');
+            case 'looseChangeDmg':
+                return 1 + 1 * this.countUpgradesForTower('coinmagnet', 'L7');
+            // L6: Spill Zone — slow/dps/duration scale with sign upgrades
+            case 'spillZoneSlow':
+                return 0.25 + 0.05 * this.countUpgradesForTower('wetfloor', 'L6');
+            case 'spillZoneDPS':
+                return 2 + 1 * this.countUpgradesForTower('wetfloor', 'L6');
+            case 'spillZoneDuration':
+                return 4 + 1 * this.countUpgradesForTower('wetfloor', 'L6');
+            // L12: Overtime — duration scales with sign upgrades
+            case 'overtimeDuration':
+                return 3 + 0.8 * this.countUpgradesForTower('wetfloor', 'L12');
+            // L5: Domino Effect — chain damage/decay scale with pot upgrades
+            case 'dominoChainDmg':
+                return 8 + 4 * this.countUpgradesForTower('potplant', 'L5');
+            case 'dominoDecayPct':
+                return Math.max(0.02, 0.22 - 0.03 * this.countUpgradesForTower('potplant', 'L5'));
 
             // ─── Boolean-like stats ───
             case 'potReturnToOrigin':

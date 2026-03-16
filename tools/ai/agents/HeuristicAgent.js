@@ -6,6 +6,7 @@
  */
 
 const { GAME } = require('../shared/gameData');
+const { countUpgradesForTowerSim } = require('../shared/upgradeHelpers');
 
 class HeuristicAgent {
   constructor() {}
@@ -146,15 +147,36 @@ class HeuristicAgent {
       // ── HP / durability ──
       if (['magnetHP', 'signHP', 'mopHP'].includes(opt.effect)) score += 3;
 
-      // ── Static Charge ──
-      if (opt.effect === 'staticCharge') score += 5 + towers.coinmagnet * 3;
+      // ── Static Charge (reworked — on-collect proc) ──
+      if (opt.effect === 'staticChargeOnCollect') score += 5 + towers.coinmagnet * 3;
 
       // ── Strong legendaries ──
       if (['chainReaction', 'assemblyLine', 'lastStand'].includes(opt.effect)) score += 12;
-      if (opt.effect === 'hoarder') score += 10;
+
+      // ── Conditional legendaries — score higher with tower-type investment ──
+      if (opt.effect === 'nuclearMop' || opt.effect === 'pileup') {
+        const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
+        score += 6 + mopCount * 5;
+      }
+      if (opt.effect === 'ubikFlood') {
+        const ubikCount = countUpgradesForTowerSim(upgrades, 'ubik');
+        score += 6 + ubikCount * 5;
+      }
+      if (opt.effect === 'goldenMagnet' || opt.effect === 'hoarder' || opt.effect === 'looseChange') {
+        const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
+        score += 6 + magCount * 5;
+      }
+      if (opt.effect === 'spillZone' || opt.effect === 'overtime') {
+        const signCount = countUpgradesForTowerSim(upgrades, 'wetfloor');
+        score += 6 + signCount * 5;
+      }
+      if (opt.effect === 'domino') {
+        const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
+        score += 6 + potCount * 5;
+      }
 
       // ── AoE legendaries ──
-      if (['bladderBurst', 'spillZone', 'ubikFlood'].includes(opt.effect)) score += 10;
+      if (opt.effect === 'bladderBurst') score += 10;
 
       // ── Door upgrades ──
       if (opt.effect === 'doorHPBoost') score += 8;

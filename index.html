@@ -6368,10 +6368,10 @@
                 }
             }
 
-            // C3/C4/C10: Apply HP bonuses from upgrades
+            // C1/C3/C4/C10: Apply HP bonuses from upgrades
             let towerHP = def.hp;
             if (this.upgradeManager) {
-                if (type === 'coinmagnet') towerHP += this.upgradeManager.getModifier('magnetHP');
+                if (type === 'coinmagnet') towerHP += this.upgradeManager.getModifier('magnetHP') + this.upgradeManager.getModifier('magnetBonusHP');
                 if (type === 'wetfloor')  towerHP = Math.round(towerHP * (1 + this.upgradeManager.getModifier('signHP')));
                 if (type === 'mop')       towerHP += this.upgradeManager.getModifier('mopHP');
                 // C17: Glass Cannon — all towers -50% HP
@@ -6508,8 +6508,9 @@
             this.enemiesPerWave = this._spawnQueue.length;
             this.spawnTimer = 0;
 
-            // L12: Overtime — first 5s speed buffs
-            this._overtimeTimer = (this.upgradeManager && this.upgradeManager.hasUpgrade('L12')) ? 5.0 : 0;
+            // L12: Overtime — speed buffs (duration scales with sign upgrades)
+            this._overtimeTimer = (this.upgradeManager && this.upgradeManager.hasUpgrade('L12'))
+                ? this.upgradeManager.getModifier('overtimeDuration') : 0;
 
             // R31: Rush Defense — 3s burst at wave start
             this._rushDefenseTimer = (this.upgradeManager && this.upgradeManager.hasUpgrade('R31')) ? 3.0 : 0;
@@ -7145,6 +7146,7 @@
 
                 // Wet Floor Sign slow zone — enemies near barriers move slower
                 if (!e.slowImmune) {
+                    let inWetFloorZone = false;
                     for (const wt of this.towers) {
                         if (wt.type !== 'wetfloor' || wt.dying || wt.delivering) continue;
                         const gs = CONFIG.grid;
@@ -7153,12 +7155,22 @@
                         // Slow zone: barrier width + 1 unit margin, 3 units in front + 1 behind
                         if (e.x >= wt.gridX - halfSpan - 1 && e.x <= wt.gridX + halfSpan + 1 &&
                             e.z >= wt.gridZ - 1 && e.z <= wt.gridZ + 3) {
-                            // C5: Extra Slippery — 20% speed (base 40%)
+                            // C5: Extra Slippery — 15% speed (base 40%)
                             const signSlow = this.upgradeManager ? this.upgradeManager.getModifier('signSlowMult') : 0.4;
                             slowMult = Math.min(slowMult, signSlow);
                             e._inSlowZone = true; // R1: mark as slowed by barrier
+                            inWetFloorZone = true;
+                            // C5: track linger timer
+                            e._slowLingerTimer = this.upgradeManager ? this.upgradeManager.getModifier('signSlowLinger') : 0;
                             break;
                         }
+                    }
+                    // C5: Extra Slippery — slow lingers 1s after exiting wet floor zone
+                    if (!inWetFloorZone && e._slowLingerTimer > 0) {
+                        e._slowLingerTimer -= dt;
+                        const signSlow = this.upgradeManager ? this.upgradeManager.getModifier('signSlowMult') : 0.4;
+                        slowMult = Math.min(slowMult, signSlow);
+                        e._inSlowZone = true;
                     }
 
                     // R9: Sticky Mop puddle slow zones
@@ -7174,32 +7186,35 @@
                         }
                     }
 
-                    // L6: Spill Zone — toxic puddle slow + damage
+                    // L6: Spill Zone — toxic puddle slow + damage (scales with sign upgrades)
                     if (this._spillZones.length > 0) {
+                        const szSlowFactor = this.upgradeManager ? (1.0 - this.upgradeManager.getModifier('spillZoneSlow')) : 0.75;
+                        const szDPS = this.upgradeManager ? this.upgradeManager.getModifier('spillZoneDPS') : 2;
                         for (const sz of this._spillZones) {
                             const sdx = e.x - sz.x;
                             const sdz = e.z - sz.z;
                             if (sdx * sdx + sdz * sdz < sz.radius * sz.radius) {
-                                slowMult = Math.min(slowMult, 0.6); // 40% slow
+                                slowMult = Math.min(slowMult, szSlowFactor);
                                 e._inSlowZone = true;
-                                e.hp -= 3 * dt; // 3 dps
+                                e.hp -= szDPS * dt;
                                 e._killSource = 'zone';
-                                e._dotAccum = (e._dotAccum || 0) + 3 * dt;
+                                e._dotAccum = (e._dotAccum || 0) + szDPS * dt;
                                 break;
                             }
                         }
                     }
 
-                    // L9: Ubik Flood — lingering spray damage zones
+                    // L9: Ubik Flood — lingering spray damage zones (scales with ubik upgrades)
                     if (this._ubikFloodZones.length > 0) {
                         const floodDef = this.ENEMY_TYPES[e.type] || {};
                         const floodSprayMult = 1.0 - (floodDef.sprayResist || 0);
+                        const floodBaseDPS = this.upgradeManager ? this.upgradeManager.getModifier('ubikFloodDPS') : 1;
                         for (const fz of this._ubikFloodZones) {
                             const fdx = e.x - fz.x;
                             const fdz = e.z - fz.z;
                             if (fdx * fdx + fdz * fdz < fz.radius * fz.radius) {
-                                const floodDmg = 2 * floodSprayMult * dt;
-                                e.hp -= floodDmg; // 2 dps (reduced by sprayResist)
+                                const floodDmg = floodBaseDPS * floodSprayMult * dt;
+                                e.hp -= floodDmg;
                                 e._killSource = 'zone';
                                 e._dotAccum = (e._dotAccum || 0) + floodDmg;
                                 break;
@@ -7262,20 +7277,22 @@
                             const collisionR = (e.size + other.size) * 0.4;
                             if (pdx * pdx + pdz * pdz < collisionR * collisionR) {
                                 if (window.SFX) SFX.play('knockback_collision');
-                                e.stunTimer = 1.5;
-                                other.stunTimer = 1.5;
-                                e.tripFallDuration = 1.5;
-                                other.tripFallDuration = 1.5;
-                                e.hp -= 10;
+                                const rhStun = this.upgradeManager.getModifier('rushHourStun');
+                                const rhDmg = this.upgradeManager.getModifier('rushHourDmg');
+                                e.stunTimer = rhStun;
+                                other.stunTimer = rhStun;
+                                e.tripFallDuration = rhStun;
+                                other.tripFallDuration = rhStun;
+                                e.hp -= rhDmg;
                                 e._killSource = 'pileup';
-                                other.hp -= 10;
+                                other.hp -= rhDmg;
                                 other._killSource = 'pileup';
                                 e.hitFlash = 0.15;
                                 other.hitFlash = 0.15;
-                                this._spawnDamageNumber(e.x, e.z, 10, '#faf5ef');
-                                this._spawnDamageNumber(other.x, other.z, 10, '#faf5ef');
-                                e._pileupCooldown = 1.5;
-                                other._pileupCooldown = 1.5;
+                                this._spawnDamageNumber(e.x, e.z, Math.round(rhDmg), '#faf5ef');
+                                this._spawnDamageNumber(other.x, other.z, Math.round(rhDmg), '#faf5ef');
+                                e._pileupCooldown = rhStun;
+                                other._pileupCooldown = rhStun;
                                 e._nuclearMop = false; // L8: wall check no longer needed
                                 e.knockbackVX = 0;
                                 e.knockbackVZ = 0;
@@ -7296,10 +7313,11 @@
                             const tdx = e.x - t.gridX;
                             const tdz = e.z - t.gridZ;
                             if (tdx * tdx + tdz * tdz < 2.25) { // 1.5 unit radius
-                                e.hp -= 15;
+                                const collDmg = this.upgradeManager ? this.upgradeManager.getModifier('nuclearMopCollisionDmg') : 4;
+                                e.hp -= collDmg;
                                 e._killSource = 'knockback';
                                 e.hitFlash = 0.15;
-                                this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
+                                this._spawnDamageNumber(e.x, e.z, Math.round(collDmg), '#9b59b6');
                                 e._nuclearMop = false;
                                 this._spawnMopImpact(e.x, e.z);
                                 break;
@@ -7327,10 +7345,11 @@
                     e.z = Math.max(CONFIG.toiletPos.z + 1, Math.min(CONFIG.spawnZoneZ + 2, e.z));
                     // L8: Nuclear Mop — wall/boundary collision damage
                     if (e._nuclearMop && (e.x !== preClampX || e.z !== preClampZ)) {
-                        e.hp -= 15;
+                        const wallDmg = this.upgradeManager ? this.upgradeManager.getModifier('nuclearMopCollisionDmg') : 4;
+                        e.hp -= wallDmg;
                         e._killSource = 'knockback';
                         e.hitFlash = 0.15;
-                        this._spawnDamageNumber(e.x, e.z, 15, '#9b59b6');
+                        this._spawnDamageNumber(e.x, e.z, Math.round(wallDmg), '#9b59b6');
                         e._nuclearMop = false;
                         this._spawnMopImpact(e.x, e.z);
                     }
@@ -7445,11 +7464,12 @@
                             other.tripFallDuration = 1.2;
                             if (other.bashing) { other.bashing = false; other.bashingBarrier = null; }
                             if (other.animController) { other.animController.playOneShot('hit_react'); other.animController.setTimeScale(0); }
-                            // Chain continues with diminished damage
+                            // Chain continues with diminished damage (decay from getModifier)
+                            const cDecay = (this.upgradeManager ? this.upgradeManager.getModifier('dominoDecayPct') : 0.22);
                             other._dominoSlideVX = e._dominoSlideVX * 0.6;
                             other._dominoSlideVZ = e._dominoSlideVZ * 0.6;
                             other._dominoChain = (e._dominoChain || 0) + 1;
-                            other._dominoDamage = Math.round((e._dominoDamage || 1) * 0.8);
+                            other._dominoDamage = Math.round((e._dominoDamage || 1) * (1 - cDecay));
                             other._dominoLife = 0.4;
                             other._dominoHitEnemies = new Set(e._dominoHitEnemies || []);
                             other._dominoHitEnemies.add(other);
@@ -8584,40 +8604,44 @@
                                         }
                                     }
                                 }
+
+                                // C20: Static Charge — zap nearest enemy on coin collect
+                                if (this.upgradeManager) {
+                                    const zapDmg = this.upgradeManager.getModifier('staticChargeOnCollect');
+                                    if (zapDmg > 0) {
+                                        let nearest = null;
+                                        let nearDist2 = magnetRange * magnetRange;
+                                        for (const e of this.enemies) {
+                                            if (e.dying) continue;
+                                            const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
+                                            if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
+                                        }
+                                        if (nearest) {
+                                            const finalZap = zapDmg * (this._desperateMeasures ? 2 : 1) * this._getTowerDamageMult(t, nearest);
+                                            nearest.hp -= finalZap;
+                                            nearest._killSource = 'tower';
+                                            nearest.hitFlash = 0.1;
+                                            this._spawnDamageNumber(nearest.x, nearest.z, Math.round(finalZap), '#f0a030');
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // L10: Golden Magnet — passive coin generation
+                    // L10: Golden Magnet — passive coin generation (interval scales with magnet upgrades)
                     if (this.upgradeManager && this.upgradeManager.hasUpgrade('L10')) {
                         t._goldenMagnetTimer = (t._goldenMagnetTimer || 0) - dt;
                         if (t._goldenMagnetTimer <= 0) {
-                            t._goldenMagnetTimer = 4.0;
+                            t._goldenMagnetTimer = this.upgradeManager.getModifier('goldenMagnetInterval');
                             this.coins += 1;
                             this._spawnCoinText(t.gridX, t.gridZ, 1);
                             this.updateHUD();
                         }
                     }
 
-                    // C20: Static Charge — zap all enemies in range for DPS
-                    if (this.upgradeManager) {
-                        const staticDPS = this.upgradeManager.getModifier('staticChargeDPS');
-                        if (staticDPS > 0) {
-                            const magnetRange = t.def.range + (this.upgradeManager.getModifier('magnetRange') || 0);
-                            const mr2 = magnetRange * magnetRange;
-                            for (const e of this.enemies) {
-                                if (e.dying) continue;
-                                const sdx = e.x - t.gridX, sdz = e.z - t.gridZ;
-                                if (sdx * sdx + sdz * sdz < mr2) {
-                                    const zapDmg = staticDPS * dt * (this._desperateMeasures ? 2 : 1) * this._getTowerDamageMult(t, e);
-                                    e.hp -= zapDmg;
-                                    e._killSource = 'tower';
-                                    e._dotAccum = (e._dotAccum || 0) + zapDmg;
-                                    if (Math.random() < dt * 2) e.hitFlash = 0.06;
-                                }
-                            }
-                        }
-                    }
+                    // C20: Static Charge — zap nearest enemy on coin collect
+                    // (proc logic is in the magnet collect section above via _staticChargeZap)
 
                     // Animate magnet rotation — juicy spin
                     const magnetHead = t.mesh.getObjectByName('magnetHead');
@@ -8686,7 +8710,7 @@
                         // L2/L3/L12: combined tower speed divisor
                         const ubikSpeedDiv = (this._desperateMeasures ? 0.7 : 1.0)
                             * (t._plungerProtocolTimer > 0 ? (1/3) : 1.0)
-                            * (_overtimeActive ? (1/3) : 1.0);
+                            * (_overtimeActive ? 0.5 : 1.0);
                         let ubikCdFinal = t.def.attackRate * ubikCdMult * ubikSpeedDiv * this._getTowerSpeedMult(t);
                         this._fireSpray(t, ubikTarget);
                         // R27: Double Shift — cooldown ×0.625 (1.6× attack rate), 2 self-damage per attack
@@ -8731,7 +8755,7 @@
                             // L2/L3/L12: combined tower speed divisor
                             const mopSpeedDiv = (this._desperateMeasures ? 0.7 : 1.0)
                                 * (t._plungerProtocolTimer > 0 ? (1/3) : 1.0)
-                                * (_overtimeActive ? (1/3) : 1.0);
+                                * (_overtimeActive ? 0.5 : 1.0);
                             let mopCdFinal = t.def.attackRate * mopCdMult * mopSpeedDiv * this._getTowerSpeedMult(t) / mopMagnetBonus;
                             // R27: Double Shift — cooldown ×0.625 (1.6× attack rate), 2 self-damage per cycle
                             if (this.upgradeManager && this.upgradeManager.hasUpgrade('R27')) {
@@ -8818,8 +8842,8 @@
                                     const KNOCKBACK_DECAY = 12;
                                     // C9: Heavy Mop — increased knockback
                                     const kbMult = this.upgradeManager ? this.upgradeManager.getModifier('mopKnockbackMult') : 1.0;
-                                    // L8: Nuclear Mop — 4x knockback
-                                    const nuclearMopMult = (this.upgradeManager && this.upgradeManager.hasUpgrade('L8')) ? 4 : 1;
+                                    // L8: Nuclear Mop — 3x knockback (was 4x)
+                                    const nuclearMopMult = (this.upgradeManager && this.upgradeManager.hasUpgrade('L8')) ? 3 : 1;
                                     const kbForce = t.def.knockback * kbMult * nuclearMopMult * leverScale * KNOCKBACK_DECAY;
                                     // knockbackImmune enemies (business class) resist knockback entirely
                                     const eDef = this.ENEMY_TYPES[e.type];
@@ -9396,9 +9420,12 @@
                 const active = this.towers.filter(t => !t.dying && !t.delivering).length;
                 if (active <= 4) mult *= 2.0;
             }
-            // L14: Hoarder — +12% per 50 unspent coins, cap +100%
+            // L14: Hoarder — +10% per threshold coins, threshold scales with magnet upgrades, cap +80%
             if (um.hasUpgrade('L14')) {
-                mult *= 1 + Math.min(Math.floor(this.coins / 50) * 0.12, 1.0);
+                const hThresh = um.getModifier('hoarderThreshold');
+                const hPer = um.getModifier('hoarderPer50');
+                const hCap = um.getModifier('hoarderCap');
+                mult *= 1 + Math.min(Math.floor(this.coins / hThresh) * hPer, hCap);
             }
             // L17: Assembly Line — +20% per adjacent tower in a straight row
             if (tower && um.hasUpgrade('L17')) {
@@ -9472,7 +9499,8 @@
             ring.position.y = 0.01;
             group.add(ring);
             this.scene.add(group);
-            this._spillZones.push({ x, z, group, disc, ring, discMat: mat, ringMat, life: 5.0, radius: 3.0, age: 0 });
+            const spillLife = (this.upgradeManager ? this.upgradeManager.getModifier('spillZoneDuration') : 4);
+            this._spillZones.push({ x, z, group, disc, ring, discMat: mat, ringMat, life: spillLife, radius: 3.0, age: 0 });
         },
 
         _updateSpillZones(dt) {
@@ -9480,7 +9508,7 @@
                 const sz = this._spillZones[i];
                 sz.life -= dt;
                 sz.age += dt;
-                const fade = Math.max(0, sz.life / 5.0);
+                const fade = Math.max(0, sz.life / (sz.life + sz.age));
                 // Pulsing opacity
                 const pulse = 1 + 0.2 * Math.sin(sz.age * 4);
                 sz.discMat.opacity = Math.max(0, 0.35 * fade * pulse);
@@ -10926,12 +10954,14 @@
                                 }
                             }
 
-                            // L5: Domino Effect — tripped enemy becomes a chain projectile
+                            // L5: Domino Effect — tripped enemy becomes a chain projectile (scales with pot upgrades)
                             if (this.upgradeManager && this.upgradeManager.hasUpgrade('L5')) {
+                                const dominoBaseDmg = this.upgradeManager.getModifier('dominoChainDmg');
+                                const dominoDecay = this.upgradeManager.getModifier('dominoDecayPct');
                                 e._dominoSlideVX = sp.vx * 0.4;
                                 e._dominoSlideVZ = sp.vz * 0.4;
                                 e._dominoChain = (sp._dominoChain || 0) + 1;
-                                e._dominoDamage = Math.round(sp.tripDamage * Math.pow(0.8, e._dominoChain));
+                                e._dominoDamage = Math.round(dominoBaseDmg * Math.pow(1 - dominoDecay, e._dominoChain));
                                 e._dominoLife = 0.5;
                                 e._dominoHitEnemies = new Set(sp.hitEnemies || []);
                                 e._dominoHitEnemies.add(e);
@@ -10968,9 +10998,11 @@
             if (this.coinPool) {
                 this.coinPool.update(dt, this.clock.elapsedTime, this.scene);
 
-                // L7: Loose Change — uncollected coins trip enemies
+                // L7: Loose Change — uncollected coins trip enemies (scales with magnet upgrades)
                 if (this.upgradeManager && this.upgradeManager.hasUpgrade('L7')) {
-                    this.coinPool.checkLooseChangeTrap(this.enemies, this.scene);
+                    const lcStun = this.upgradeManager.getModifier('looseChangeStun');
+                    const lcDmg = this.upgradeManager.getModifier('looseChangeDmg');
+                    this.coinPool.checkLooseChangeTrap(this.enemies, this.scene, lcStun, lcDmg);
                 }
             }
 
