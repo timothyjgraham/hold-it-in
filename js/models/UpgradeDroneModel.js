@@ -39,14 +39,19 @@ function createPlacardTexture(upgrade, rarity) {
     const ctx = canvas.getContext('2d');
     const cW = 800, cH = 500;
 
-    // Background
+    // ── Background with subtle gradient ──
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, cH);
     if (rarity === 'legendary') {
-        ctx.fillStyle = '#ffd93d';
+        bgGrad.addColorStop(0, '#ffe066');
+        bgGrad.addColorStop(1, '#ffd93d');
     } else if (rarity === 'rare') {
-        ctx.fillStyle = '#fff4d9';
+        bgGrad.addColorStop(0, '#fff8ed');
+        bgGrad.addColorStop(1, '#fff4d9');
     } else {
-        ctx.fillStyle = '#ffffff';
+        bgGrad.addColorStop(0, '#ffffff');
+        bgGrad.addColorStop(1, '#faf5ef');
     }
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, cW, cH);
 
     // Legendary: diagonal shimmer lines across gold background
@@ -64,27 +69,27 @@ function createPlacardTexture(upgrade, rarity) {
     // Rare: inner glow border in violet
     if (rarity === 'rare') {
         ctx.strokeStyle = '#9b8ec4';
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 10;
         ctx.strokeRect(6, 6, cW - 12, cH - 12);
-        const glowW = 18;
+        const glowW = 24;
         let grad;
         grad = ctx.createLinearGradient(10, 0, 10 + glowW, 0);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
         grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
         ctx.fillStyle = grad;
         ctx.fillRect(10, 10, glowW, cH - 20);
         grad = ctx.createLinearGradient(cW - 10, 0, cW - 10 - glowW, 0);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
         grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
         ctx.fillStyle = grad;
         ctx.fillRect(cW - 10 - glowW, 10, glowW, cH - 20);
         grad = ctx.createLinearGradient(0, 10, 0, 10 + glowW);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
         grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
         ctx.fillStyle = grad;
         ctx.fillRect(10, 10, cW - 20, glowW);
         grad = ctx.createLinearGradient(0, cH - 10, 0, cH - 10 - glowW);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
         grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
         ctx.fillStyle = grad;
         ctx.fillRect(10, cH - 10 - glowW, cW - 20, glowW);
@@ -93,19 +98,19 @@ function createPlacardTexture(upgrade, rarity) {
     // Border (common + legendary)
     if (rarity === 'legendary') {
         ctx.strokeStyle = '#1a1a2e';
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 10;
         ctx.strokeRect(4, 4, cW - 8, cH - 8);
     } else if (rarity === 'common') {
-        ctx.strokeStyle = 'rgba(26, 26, 46, 0.3)';
+        ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
         ctx.lineWidth = 4;
         ctx.strokeRect(4, 4, cW - 8, cH - 8);
     }
 
-    // ── RARITY BANNER (0-55px) ──
-    const bannerH = 55;
+    // ── RARITY BANNER (0-50px) ──
+    const bannerH = 50;
     const bannerFill = rarity === 'legendary' ? '#e6b800'
                      : rarity === 'rare' ? '#9b8ec4'
-                     : '#fff4d9';
+                     : '#f0ebe0';
     ctx.fillStyle = bannerFill;
     ctx.fillRect(0, 0, cW, bannerH);
 
@@ -119,19 +124,22 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
-    ctx.font = "28px 'Bangers', sans-serif";
+    ctx.font = "bold 30px 'Bangers', sans-serif";
     ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
-    // ── ICON + NAME (55-250px) ──
-    ctx.fillStyle = '#1a1a2e';
-    draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, 120, 155, 110, 0);
+    // ── ICON — centered, prominent (55-230px) ──
+    const iconSize = 170;
+    const iconCX = cW / 2;
+    const iconCY = 148;
+    draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
-    const nameFontSize = upgrade.name.length > 14 ? 48 : upgrade.name.length > 10 ? 52 : 60;
+    // ── NAME — centered below icon ──
+    const nameFontSize = upgrade.name.length > 18 ? 42 : upgrade.name.length > 12 ? 48 : 56;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const nameMaxW = 400;
+    const nameMaxW = 680;
     const nameWords = upgrade.name.split(' ');
     const nameLines = [];
     let currentLine = nameWords[0];
@@ -146,55 +154,75 @@ function createPlacardTexture(upgrade, rarity) {
     }
     nameLines.push(currentLine);
 
-    const nameLineH = nameFontSize + 4;
-    const nameStartY = 155 - (nameLines.length - 1) * nameLineH / 2;
+    const nameLineH = nameFontSize + 6;
+    const nameStartY = 268 - (nameLines.length - 1) * nameLineH / 2;
     for (let i = 0; i < nameLines.length; i++) {
-        if (rarity !== 'common') {
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
-            ctx.fillText(nameLines[i], 460 + 2, nameStartY + i * nameLineH + 2);
-        }
+        // Drop shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fillText(nameLines[i], cW / 2 + 2, nameStartY + i * nameLineH + 2);
+        // Main text
         ctx.fillStyle = '#1a1a2e';
-        ctx.fillText(nameLines[i], 460, nameStartY + i * nameLineH);
+        ctx.fillText(nameLines[i], cW / 2, nameStartY + i * nameLineH);
     }
 
-    // ── DIVIDER (250-255px) ──
-    ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
+    // ── DIVIDER with decorative diamond ──
+    const dividerY = nameStartY + (nameLines.length - 1) * nameLineH + nameLineH / 2 + 12;
+    ctx.strokeStyle = 'rgba(26, 26, 46, 0.15)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(40, 252);
-    ctx.lineTo(cW - 40, 252);
+    ctx.moveTo(80, dividerY);
+    ctx.lineTo(cW - 80, dividerY);
     ctx.stroke();
 
-    // ── DESCRIPTION (255-470px) ──
+    ctx.fillStyle = 'rgba(26, 26, 46, 0.2)';
+    ctx.save();
+    ctx.translate(cW / 2, dividerY);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-4, -4, 8, 8);
+    ctx.restore();
+
+    // ── DESCRIPTION (auto-scaling font) ──
     if (upgrade.description) {
+        const descMaxW = 700;
+        const descAreaTop = dividerY + 16;
+        const descAreaBot = cH - 16;
+        const descAreaH = descAreaBot - descAreaTop;
+
+        let descFontSize = 38;
+        let descLines, descLineH;
+
+        // Shrink font until description fits available area
+        for (; descFontSize >= 24; descFontSize -= 2) {
+            ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
+            descLineH = descFontSize + 10;
+
+            const words = upgrade.description.split(' ');
+            descLines = [];
+            let line = words[0] || '';
+            for (let w = 1; w < words.length; w++) {
+                const word = words[w];
+                if (word.startsWith('(')) {
+                    descLines.push(line);
+                    line = word;
+                    continue;
+                }
+                const test = line + ' ' + word;
+                if (ctx.measureText(test).width > descMaxW) {
+                    descLines.push(line);
+                    line = word;
+                } else {
+                    line = test;
+                }
+            }
+            descLines.push(line);
+
+            if (descLines.length * descLineH <= descAreaH) break;
+        }
+
         ctx.fillStyle = '#3a3a4a';
-        ctx.font = "40px 'Bangers', sans-serif";
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-
-        const descWords = upgrade.description.split(' ');
-        const descLines = [];
-        let descLine = descWords[0] || '';
-        for (let i = 1; i < descWords.length; i++) {
-            const word = descWords[i];
-            // Force line break before words starting with '('
-            if (word.startsWith('(')) {
-                descLines.push(descLine);
-                descLine = word;
-                continue;
-            }
-            const test = descLine + ' ' + word;
-            if (ctx.measureText(test).width > 660) {
-                descLines.push(descLine);
-                descLine = word;
-            } else {
-                descLine = test;
-            }
-        }
-        descLines.push(descLine);
-
-        const descLineH = 50;
-        const descCenter = (260 + 470) / 2;
+        const descCenter = (descAreaTop + descAreaBot) / 2;
         const descStartY = descCenter - (descLines.length - 1) * descLineH / 2;
         for (let i = 0; i < descLines.length; i++) {
             ctx.fillText(descLines[i], cW / 2, descStartY + i * descLineH);
@@ -716,17 +744,17 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud._iconFrame % 3 === 0) {
             const tex = ud.placardTexture;
             const ctx = tex._iconCtx;
-            const cx = 120, cy = 155, half = 60;
+            const cx = 400, cy = 148, half = 90;
 
             // Clear icon region and fill with placard background color
             const bgColor = tex._iconRarity === 'legendary' ? '#ffd93d'
                           : tex._iconRarity === 'rare' ? '#fff4d9'
-                          : '#ffffff';
+                          : '#faf5ef';
             ctx.fillStyle = bgColor;
             ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
 
             // Re-draw rotating 3D icon
-            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 110, performance.now() / 1000);
+            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 170, performance.now() / 1000);
             tex.needsUpdate = true;
         }
     }

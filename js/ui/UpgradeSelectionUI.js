@@ -777,12 +777,25 @@ export class UpgradeSelectionUI {
         canvas.height = cH;
         const ctx = canvas.getContext('2d');
 
-        // Rounded-rect background
-        const bgColors = { legendary: '#ffd93d', rare: '#fff4d9', common: '#ffffff' };
-        ctx.fillStyle = bgColors[rarity] || bgColors.common;
+        // Rounded-rect background with subtle gradient
+        ctx.save();
         ctx.beginPath();
         ctx.roundRect(0, 0, cW, cH, 20);
-        ctx.fill();
+        ctx.clip();
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, cH);
+        if (rarity === 'legendary') {
+            bgGrad.addColorStop(0, '#ffe066');
+            bgGrad.addColorStop(1, '#ffd93d');
+        } else if (rarity === 'rare') {
+            bgGrad.addColorStop(0, '#fff8ed');
+            bgGrad.addColorStop(1, '#fff4d9');
+        } else {
+            bgGrad.addColorStop(0, '#ffffff');
+            bgGrad.addColorStop(1, '#faf5ef');
+        }
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, cW, cH);
+        ctx.restore();
 
         // Legendary: diagonal shimmer lines
         if (rarity === 'legendary') {
@@ -804,29 +817,29 @@ export class UpgradeSelectionUI {
         // Rare: inner glow border in violet
         if (rarity === 'rare') {
             ctx.strokeStyle = '#9b8ec4';
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 10;
             ctx.beginPath();
             ctx.roundRect(6, 6, cW - 12, cH - 12, 16);
             ctx.stroke();
-            const glowW = 18;
+            const glowW = 24;
             let grad;
             grad = ctx.createLinearGradient(10, 0, 10 + glowW, 0);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
             grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(10, 10, glowW, cH - 20);
             grad = ctx.createLinearGradient(cW - 10, 0, cW - 10 - glowW, 0);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
             grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(cW - 10 - glowW, 10, glowW, cH - 20);
             grad = ctx.createLinearGradient(0, 10, 0, 10 + glowW);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
             grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(10, 10, cW - 20, glowW);
             grad = ctx.createLinearGradient(0, cH - 10, 0, cH - 10 - glowW);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.35)');
+            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
             grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(10, cH - 10 - glowW, cW - 20, glowW);
@@ -835,23 +848,23 @@ export class UpgradeSelectionUI {
         // Border
         if (rarity === 'legendary') {
             ctx.strokeStyle = '#1a1a2e';
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 10;
             ctx.beginPath();
             ctx.roundRect(4, 4, cW - 8, cH - 8, 18);
             ctx.stroke();
         } else if (rarity === 'common') {
-            ctx.strokeStyle = 'rgba(26, 26, 46, 0.3)';
+            ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.roundRect(4, 4, cW - 8, cH - 8, 18);
             ctx.stroke();
         }
 
-        // ── Rarity banner (0-55px) ──
-        const bannerH = 55;
+        // ── Rarity banner (0-50px) ──
+        const bannerH = 50;
         const bannerFill = rarity === 'legendary' ? '#e6b800'
                          : rarity === 'rare' ? '#9b8ec4'
-                         : '#fff4d9';
+                         : '#f0ebe0';
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(0, 0, cW, cH, 20);
@@ -870,19 +883,22 @@ export class UpgradeSelectionUI {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
-        ctx.font = "28px 'Bangers', sans-serif";
+        ctx.font = "bold 30px 'Bangers', sans-serif";
         ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
-        // ── Icon + Name (55-250px) ──
-        ctx.fillStyle = '#1a1a2e';
-        draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, 120, 155, 110, 0);
+        // ── Icon — centered, prominent (55-230px) ──
+        const iconSize = 170;
+        const iconCX = cW / 2;
+        const iconCY = 148;
+        draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
-        const nameFontSize = upgrade.name.length > 14 ? 48 : upgrade.name.length > 10 ? 52 : 60;
+        // ── Name — centered below icon ──
+        const nameFontSize = upgrade.name.length > 18 ? 42 : upgrade.name.length > 12 ? 48 : 56;
         ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        const nameMaxW = 400;
+        const nameMaxW = 680;
         const nameWords = upgrade.name.split(' ');
         const nameLines = [];
         let curLine = nameWords[0];
@@ -897,56 +913,78 @@ export class UpgradeSelectionUI {
         }
         nameLines.push(curLine);
 
-        const nLineH = nameFontSize + 4;
-        const nStartY = 155 - (nameLines.length - 1) * nLineH / 2;
+        const nLineH = nameFontSize + 6;
+        const nStartY = 268 - (nameLines.length - 1) * nLineH / 2;
         for (let i = 0; i < nameLines.length; i++) {
-            if (rarity !== 'common') {
-                ctx.fillStyle = 'rgba(0,0,0,0.15)';
-                ctx.fillText(nameLines[i], 460 + 2, nStartY + i * nLineH + 2);
-            }
+            // Drop shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.fillText(nameLines[i], cW / 2 + 2, nStartY + i * nLineH + 2);
+            // Main text
             ctx.fillStyle = '#1a1a2e';
-            ctx.fillText(nameLines[i], 460, nStartY + i * nLineH);
+            ctx.fillText(nameLines[i], cW / 2, nStartY + i * nLineH);
         }
 
-        // ── Divider (250-255px) ──
-        ctx.strokeStyle = 'rgba(26, 26, 46, 0.2)';
+        // ── Divider with decorative diamond ──
+        const dividerY = nStartY + (nameLines.length - 1) * nLineH + nLineH / 2 + 12;
+        ctx.strokeStyle = 'rgba(26, 26, 46, 0.15)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(40, 252);
-        ctx.lineTo(cW - 40, 252);
+        ctx.moveTo(80, dividerY);
+        ctx.lineTo(cW - 80, dividerY);
         ctx.stroke();
 
-        // ── Description (255-470px) ──
+        ctx.fillStyle = 'rgba(26, 26, 46, 0.2)';
+        ctx.save();
+        ctx.translate(cW / 2, dividerY);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-4, -4, 8, 8);
+        ctx.restore();
+
+        // ── Description (auto-scaling font) ──
         if (upgrade.description) {
+            const descMaxW = 700;
+            const descAreaTop = dividerY + 16;
+            const descAreaBot = cH - 16;
+            const descAreaH = descAreaBot - descAreaTop;
+
+            let descFontSize = 38;
+            let dLines, descLineH;
+
+            // Shrink font until description fits available area
+            for (; descFontSize >= 24; descFontSize -= 2) {
+                ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
+                descLineH = descFontSize + 10;
+
+                const dWords = upgrade.description.split(' ');
+                dLines = [];
+                let dLine = dWords[0] || '';
+                for (let w = 1; w < dWords.length; w++) {
+                    const word = dWords[w];
+                    if (word.startsWith('(')) {
+                        dLines.push(dLine);
+                        dLine = word;
+                        continue;
+                    }
+                    const test = dLine + ' ' + word;
+                    if (ctx.measureText(test).width > descMaxW) {
+                        dLines.push(dLine);
+                        dLine = word;
+                    } else {
+                        dLine = test;
+                    }
+                }
+                dLines.push(dLine);
+
+                if (dLines.length * descLineH <= descAreaH) break;
+            }
+
             ctx.fillStyle = '#3a3a4a';
-            ctx.font = "40px 'Bangers', sans-serif";
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const dWords = upgrade.description.split(' ');
-            const dLines = [];
-            let dLine = dWords[0] || '';
-            for (let w = 1; w < dWords.length; w++) {
-                const word = dWords[w];
-                // Force line break before words starting with '('
-                if (word.startsWith('(')) {
-                    dLines.push(dLine);
-                    dLine = word;
-                    continue;
-                }
-                const test = dLine + ' ' + word;
-                if (ctx.measureText(test).width > 660) {
-                    dLines.push(dLine);
-                    dLine = word;
-                } else {
-                    dLine = test;
-                }
-            }
-            dLines.push(dLine);
-            const dLineH = 50;
-            const dCenter = (260 + 470) / 2;
-            const dStartY = dCenter - (dLines.length - 1) * dLineH / 2;
+            const dCenter = (dividerY + 16 + cH - 16) / 2;
+            const dStartY = dCenter - (dLines.length - 1) * descLineH / 2;
             for (let i = 0; i < dLines.length; i++) {
-                ctx.fillText(dLines[i], cW / 2, dStartY + i * dLineH);
+                ctx.fillText(dLines[i], cW / 2, dStartY + i * descLineH);
             }
         }
 
