@@ -10,7 +10,7 @@
 
 const { GAME } = require('../shared/gameData');
 const { enemyHP, enemySpeed, desperateChance, coinDropValue, waveBonus } = require('../shared/formulas');
-const { countUpgradesForTowerSim } = require('../shared/upgradeHelpers');
+const { countUpgradesForTowerSim, conditionalScale } = require('../shared/upgradeHelpers');
 
 class CoverageModel {
   constructor() {
@@ -63,23 +63,38 @@ class CoverageModel {
 
     // Mop: damage / cooldown
     const mopCdMult = 1 - (upgrades.C8 || 0) * 0.3;
-    dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult)) * slowSteadySpeedMult * doubleShiftMult;
+    // C7: Industrial Mop Head (+20% mop damage, +15% range — wider sweep)
+    const mopHeadMult = upgrades.C7 ? 1.20 : 1.0;
+    // C9: Heavy Mop (+75% knockback — more repositioning time ≈ +10% effective DPS)
+    const heavyMopMult = upgrades.C9 ? 1.10 : 1.0;
+    // C10: Extra Absorbent (+15% mop damage from soaking — stacks)
+    const absorbentMult = 1 + (upgrades.C10 || 0) * 0.15;
+    dps += t.mop * (GAME.towers.mop.damage / (GAME.towers.mop.cooldown * mopCdMult))
+      * mopHeadMult * heavyMopMult * absorbentMult * slowSteadySpeedMult * doubleShiftMult;
 
     // Ubik: damage * (spray_duration / cycle_time) — hits ~2 enemies per spray (AoE)
     let ubikDmgMult = 1 + (upgrades.C13 || 0) * 0.4;
-    if (upgrades.C11) ubikDmgMult = Math.max(ubikDmgMult, 1.35);
+    // C11: Pressure Washer — multiplicative +35% damage (no longer clobbered by C13)
+    if (upgrades.C11) ubikDmgMult *= 1.35;
     const ubikCdMult = 1 - (upgrades.C14 || 0) * 0.25;
     const ubikCycle = GAME.towers.ubik.cooldown * ubikCdMult + GAME.towers.ubik.sprayDuration;
     const ubikDPS = (GAME.towers.ubik.damage * ubikDmgMult * GAME.towers.ubik.sprayDuration) / ubikCycle;
-    dps += t.ubik * ubikDPS * 2.0 * slowSteadySpeedMult * doubleShiftMult;
+    // C12: Wide Spray — 80% wider cone → hits ~50% more enemies (AoE 2.0 → 3.0)
+    const ubikAoeMult = upgrades.C12 ? 3.0 : 2.0;
+    dps += t.ubik * ubikDPS * ubikAoeMult * slowSteadySpeedMult * doubleShiftMult;
 
     // Pot plant: trip damage / (stun + re-approach time)
     dps += t.potplant * (GAME.towers.potplant.damage / 4) * doubleShiftMult;
 
-    // Cactus Pot DPS (C16) — scales with pot archetype
+    // C16: Cactus Pot DPS — scales with pot archetype + 5% global thorn bonus
     if (upgrades.C16) {
       const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
-      dps += t.potplant * (2 + 1.5 * potCount);
+      dps += t.potplant * (3 + 2.5 * potCount);
+    }
+
+    // C6: Prickly Signs — enemies take damage bashing into signs (~2 DPS per sign per stack)
+    if (upgrades.C6 && t.wetfloor > 0) {
+      dps += t.wetfloor * (upgrades.C6) * 2.0;
     }
 
     // C20: Static Charge — on-collect proc, ~1 proc/2s per magnet ≈ 1.5 effective DPS
@@ -175,13 +190,18 @@ class CoverageModel {
 
     // Slow towers add effective time
     let slowBonus = towers.wetfloor > 0 ? 1.25 : 1.0;
+    // C5: Extra Slippery — slow to 15% (from 40%), massive slow improvement
+    if (upgrades.C5 && towers.wetfloor > 0) slowBonus *= 1.30;
+    // C4: Reinforced Signs — +120% HP per stack, signs survive longer = more slowing
+    if (upgrades.C4 && towers.wetfloor > 0) slowBonus *= (1 + (upgrades.C4) * 0.06);
     // R29: Contagion (slow spreads — ~30% more enemies slowed)
     if (upgrades.R29 && towers.wetfloor > 0) slowBonus *= 1.15;
     // R17: Marked for Death (+40% damage to slowed enemies, ~60% slowed)
     const markedBonus = (upgrades.R17 && towers.wetfloor > 0) ? 1.25 : 1.0;
-    // L12: Overtime (first Ns = 2x tower speed, duration scales with sign upgrades)
+    // L12: Overtime — conditional: scales with sign upgrades, gated by conditionalScale
+    const overtimeScale = upgrades.L12 ? conditionalScale(upgrades, 'wetfloor', 'L12') : 0;
     const overtimeDur = upgrades.L12 ? (3 + 0.8 * countUpgradesForTowerSim(upgrades, 'wetfloor', 'L12')) : 0;
-    const overtimeBonus = upgrades.L12 ? (1 + 1.0 * Math.min(overtimeDur, waveDuration) / waveDuration) : 1.0;
+    const overtimeBonus = upgrades.L12 ? (1 + overtimeScale * 1.0 * Math.min(overtimeDur, waveDuration) / waveDuration) : 1.0;
     // L2: Desperate Measures (2x damage below 50% door HP)
     const desperateBonus = (upgrades.L2 && doorHP < doorMaxHP * 0.5) ? 2.0 : 1.0;
     // R16: Crossfire (estimate 30% of enemies hit by 2+ types)
@@ -194,10 +214,11 @@ class CoverageModel {
       : 1.0;
     // R32: Attrition (+5%/sec cap 80% — average ~40% over typical wave)
     const attritionBonus = upgrades.R32 ? 1.40 : 1.0;
-    // L14: Hoarder (+10% per threshold coins, threshold scales with magnet upgrades, cap +80%)
+    // L14: Hoarder — conditional: threshold scales with magnet upgrades, gated by conditionalScale
+    const hoarderScale = upgrades.L14 ? conditionalScale(upgrades, 'coinmagnet', 'L14') : 0;
     const hoarderThreshold = upgrades.L14 ? Math.max(25, 50 - 4 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L14')) : 50;
     const hoarderBonus = upgrades.L14
-      ? (1 + Math.min(Math.floor(coins / hoarderThreshold) * 0.10, 0.80))
+      ? (1 + hoarderScale * Math.min(Math.floor(coins / hoarderThreshold) * 0.10, 0.80))
       : 1.0;
     // L17: Assembly Line (+20% per adjacent tower, estimate avg 1.5 adjacents)
     const assemblyBonus = upgrades.L17 ? 1.30 : 1.0;
@@ -205,17 +226,51 @@ class CoverageModel {
     const lastStandBonus = upgrades.L18 ? 1.20 : 1.0;
     // L11: Bladder Burst (25% max HP splash on death, ~15% bonus)
     const burstBonus = upgrades.L11 ? 1.15 : 1.0;
-    // L9: Ubik Flood (DPS scales with ubik upgrades)
+    // L9: Ubik Flood — conditional: DPS scales with ubik upgrades, gated by conditionalScale
+    const ubikFloodScale = upgrades.L9 ? conditionalScale(upgrades, 'ubik', 'L9') : 0;
     const floodDPS = upgrades.L9 ? (1 + countUpgradesForTowerSim(upgrades, 'ubik', 'L9')) : 0;
-    const floodBonus = (upgrades.L9 && towers.ubik > 0) ? (1 + floodDPS * 0.05) : 1.0;
+    const floodBonus = (upgrades.L9 && towers.ubik > 0) ? (1 + ubikFloodScale * floodDPS * 0.05) : 1.0;
     // L15: Chain Reaction (nearest tower fires on kill, ~20% bonus DPS)
     const chainReactionBonus = upgrades.L15 ? 1.20 : 1.0;
     // L3: Plunger Protocol (door hit -> 3x speed 3s, only when leaking)
     const plungerBonus = (upgrades.L3 && doorHP < doorMaxHP) ? 1.10 : 1.0;
 
+    // ── Conditional legendaries: fast-mode approximations (L4, L5, L6, L7, L8) ──
+
+    // L4: Rush Hour Pileup (mop) — collision stun + damage, scales with mop investment
+    const pileupScale = upgrades.L4 ? conditionalScale(upgrades, 'mop', 'L4') : 0;
+    const pileupBonus = upgrades.L4 ? (1 + pileupScale * 0.12) : 1.0;
+
+    // L5: Domino Effect (pot) — chain tripping, scales with pot investment
+    const dominoScale = upgrades.L5 ? conditionalScale(upgrades, 'potplant', 'L5') : 0;
+    const dominoBonus = (upgrades.L5 && towers.potplant > 0) ? (1 + dominoScale * 0.10) : 1.0;
+
+    // L6: Spill Zone (wetfloor) — death puddles slow+damage, scales with sign investment
+    const spillScale = upgrades.L6 ? conditionalScale(upgrades, 'wetfloor', 'L6') : 0;
+    const spillBonus = upgrades.L6 ? (1 + spillScale * 0.12) : 1.0;
+
+    // L7: Loose Change (coinmagnet) — coin trips stun+damage, scales with magnet investment
+    const looseScale = upgrades.L7 ? conditionalScale(upgrades, 'coinmagnet', 'L7') : 0;
+    const looseBonus = (upgrades.L7 && towers.coinmagnet > 0) ? (1 + looseScale * 0.10) : 1.0;
+
+    // L8: Nuclear Mop (mop) — 3x knockback + collision damage, scales with mop investment
+    const nuclearScale = upgrades.L8 ? conditionalScale(upgrades, 'mop', 'L8') : 0;
+    const nuclearBonus = upgrades.L8 ? (1 + nuclearScale * 0.15) : 1.0;
+
+    // C1: Overclocked Magnet — wider collection ≈ +8% effective tower uptime from economy
+    const overclockBonus = (upgrades.C1 && towers.coinmagnet > 0) ? 1.04 : 1.0;
+
+    // C3: Magnet Durability — +5 HP/stack, magnets survive longer ≈ +3% uptime per stack
+    const magDurBonus = (upgrades.C3 && towers.coinmagnet > 0) ? (1 + (upgrades.C3) * 0.03) : 1.0;
+
+    // C16: Cactus Pot thorn bonus — enemies weakened by thorns take 3% more global damage
+    const thornBonus = (upgrades.C16 && towers.potplant > 0) ? 1.03 : 1.0;
+
     const effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
       crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
-      assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus;
+      assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus *
+      pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
+      overclockBonus * magDurBonus * thornBonus;
 
     const totalDamageCapacity = effectiveDPS * waveDuration;
 
@@ -228,7 +283,9 @@ class CoverageModel {
     const doorDamage = Math.round(totalDoorDmgIfAllLeak * (1 - killRatio));
 
     // Coin collection: 30% base + 25% per magnet, cap 100%
-    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25);
+    // C1: Overclocked Magnet — +12 range, improves collection by ~15%
+    const overclockCollect = upgrades.C1 ? 0.15 : 0;
+    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25 + overclockCollect);
     const coinValueMult = 1 + (upgrades.C2 || 0) * 0.5;
     let collected = Math.round(totalCoins * collectionRate * coinValueMult);
 
@@ -251,10 +308,11 @@ class CoverageModel {
     if (upgrades.R11 && towers.ubik > 0) {
       collected += towers.ubik * 2 * 5;
     }
-    // L10: Golden Magnet (interval scales with magnet upgrades)
+    // L10: Golden Magnet — conditional: interval scales with magnet upgrades, gated by conditionalScale
     if (upgrades.L10) {
+      const gmScale = conditionalScale(upgrades, 'coinmagnet', 'L10');
       const gmInterval = Math.max(2, 5 - 0.5 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L10'));
-      collected += Math.round(towers.coinmagnet * waveDuration / gmInterval);
+      collected += Math.round(gmScale * towers.coinmagnet * waveDuration / gmInterval);
     }
 
     let waveBonusCoins = waveBonus(wave);
@@ -445,9 +503,9 @@ class CoverageModel {
           target.hp -= dmg;
           target.stunned = true;
           target.stunTimer = tw.stunDuration;
-          // Cactus DPS applied during stun (scales with pot archetype)
+          // C16: Cactus Pot DPS during stun (buffed, scales with pot archetype)
           if (upgrades.C16) {
-            const potDPS = 2 + 1.5 * countUpgradesForTowerSim(upgrades, 'potplant');
+            const potDPS = 3 + 2.5 * countUpgradesForTowerSim(upgrades, 'potplant');
             target.hp -= potDPS * tw.stunDuration;
           }
           tw.cooldownTimer = tw.stunDuration + 2.0; // can't re-trip immediately
@@ -456,7 +514,8 @@ class CoverageModel {
           // Knockback
           if (!target.def.knockbackImmune && tw.knockback > 0) {
             const kbMult = 1 + (upgrades.C9 || 0) * 0.75;
-            const nuclearMult = upgrades.L8 ? 3 : 1;
+            // L8: Nuclear Mop — knockback gated by conditionalScale
+            const nuclearMult = upgrades.L8 ? (1 + 2 * conditionalScale(upgrades, 'mop', 'L8')) : 1;
             target.z += tw.knockback * kbMult * nuclearMult;
           }
           tw.cooldownTimer = tw.cooldown;
@@ -524,9 +583,11 @@ class CoverageModel {
       collected += towers.ubik * 2 * 5;
     }
     const waveDuration = tick * dt;
+    // L10: Golden Magnet — conditional: gated by conditionalScale in tick mode too
     if (upgrades.L10) {
+      const gmScale = conditionalScale(upgrades, 'coinmagnet', 'L10');
       const gmInterval = Math.max(2, 5 - 0.5 * countUpgradesForTowerSim(upgrades, 'coinmagnet', 'L10'));
-      collected += Math.round(towers.coinmagnet * waveDuration / gmInterval);
+      collected += Math.round(gmScale * towers.coinmagnet * waveDuration / gmInterval);
     }
 
     let waveBonusCoins = waveBonus(wave);

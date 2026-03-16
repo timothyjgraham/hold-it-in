@@ -39,4 +39,24 @@ function countUpgradesForTowerSim(upgrades, towerType, excludeId) {
   return count;
 }
 
-module.exports = { UPGRADE_TOWER_MAP, countUpgradesForTowerSim };
+/**
+ * Conditional scaling multiplier for tower-type legendaries.
+ * Makes legendaries weak without same-type support, strong with it.
+ *
+ * 0 supports: 0.3x  (nearly useless without investment)
+ * 1 support:  0.6x
+ * 2 supports: 0.9x  (roughly break-even)
+ * 3 supports: 1.2x
+ * 4+ supports: 1.5x (rewarding deep specialization)
+ *
+ * @param {object} upgrades - { upgradeId: stackCount }
+ * @param {string} towerType - e.g. 'mop', 'ubik', 'coinmagnet', 'wetfloor', 'potplant'
+ * @param {string} [excludeId] - upgrade id to exclude (the legendary itself)
+ * @returns {number} scaling multiplier
+ */
+function conditionalScale(upgrades, towerType, excludeId) {
+  const count = countUpgradesForTowerSim(upgrades, towerType, excludeId);
+  return Math.min(1.5, 0.3 + count * 0.3);
+}
+
+module.exports = { UPGRADE_TOWER_MAP, countUpgradesForTowerSim, conditionalScale };

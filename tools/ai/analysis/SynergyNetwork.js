@@ -452,7 +452,7 @@ class SynergyNetwork {
   detectCommunities(graph) {
     const { nodes, edges } = graph;
     const nodeIds = Object.keys(nodes);
-    if (nodeIds.length === 0) return [];
+    if (nodeIds.length === 0) return { communities: [], bridges: [] };
 
     // Only use positive edges (synergy)
     const positiveEdges = edges.filter(e => e.weight > 0);
@@ -473,11 +473,15 @@ class SynergyNetwork {
     const m2 = totalWeight; // sum of all weights (each edge counted once)
     if (m2 === 0) {
       // No positive edges — each node is its own community
-      return nodeIds.map(id => ({
-        id: 0,
-        members: [{ id, name: nodes[id].name }],
-        density: 0,
-      }));
+      return {
+        communities: nodeIds.map((id, i) => ({
+          id: i,
+          members: [{ id, name: nodes[id].name, rarity: nodes[id].rarity, pickRate: nodes[id].pickRate }],
+          density: 0,
+          size: 1,
+        })),
+        bridges: [],
+      };
     }
 
     // Node degree (weighted)

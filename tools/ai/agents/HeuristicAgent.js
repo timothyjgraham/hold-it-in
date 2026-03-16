@@ -6,7 +6,7 @@
  */
 
 const { GAME } = require('../shared/gameData');
-const { countUpgradesForTowerSim } = require('../shared/upgradeHelpers');
+const { UPGRADE_TOWER_MAP, countUpgradesForTowerSim } = require('../shared/upgradeHelpers');
 
 class HeuristicAgent {
   constructor() {}
@@ -144,8 +144,8 @@ class HeuristicAgent {
       if (opt.effect === 'sympatheticDmg') score += 12;
       if (opt.effect === 'dangerPay') score += 10;
 
-      // ── HP / durability ──
-      if (['magnetHP', 'signHP', 'mopHP'].includes(opt.effect)) score += 3;
+      // ── HP / durability — buffed: tower survival matters ──
+      if (['magnetHP', 'signHP', 'mopHP'].includes(opt.effect)) score += 6;
 
       // ── Static Charge (reworked — on-collect proc) ──
       if (opt.effect === 'staticChargeOnCollect') score += 5 + towers.coinmagnet * 3;
@@ -153,26 +153,28 @@ class HeuristicAgent {
       // ── Strong legendaries ──
       if (['chainReaction', 'assemblyLine', 'lastStand'].includes(opt.effect)) score += 12;
 
-      // ── Conditional legendaries — score higher with tower-type investment ──
+      // ── Conditional legendaries — LOW base, HIGH scaling with investment ──
+      // Without tower-type support these should score poorly (skip the legendary).
+      // With 2-3 same-type upgrades, they become very attractive.
       if (opt.effect === 'nuclearMop' || opt.effect === 'pileup') {
         const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
-        score += 6 + mopCount * 5;
+        score += mopCount >= 2 ? 8 + mopCount * 7 : -5 + mopCount * 5;
       }
       if (opt.effect === 'ubikFlood') {
         const ubikCount = countUpgradesForTowerSim(upgrades, 'ubik');
-        score += 6 + ubikCount * 5;
+        score += ubikCount >= 2 ? 8 + ubikCount * 7 : -5 + ubikCount * 5;
       }
       if (opt.effect === 'goldenMagnet' || opt.effect === 'hoarder' || opt.effect === 'looseChange') {
         const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
-        score += 6 + magCount * 5;
+        score += magCount >= 2 ? 8 + magCount * 7 : -5 + magCount * 5;
       }
       if (opt.effect === 'spillZone' || opt.effect === 'overtime') {
         const signCount = countUpgradesForTowerSim(upgrades, 'wetfloor');
-        score += 6 + signCount * 5;
+        score += signCount >= 2 ? 8 + signCount * 7 : -5 + signCount * 5;
       }
       if (opt.effect === 'domino') {
         const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
-        score += 6 + potCount * 5;
+        score += potCount >= 2 ? 8 + potCount * 7 : -5 + potCount * 5;
       }
 
       // ── AoE legendaries ──
@@ -181,6 +183,17 @@ class HeuristicAgent {
       // ── Door upgrades ──
       if (opt.effect === 'doorHPBoost') score += 8;
       if (opt.effect === 'plungerProtocol') score += 6;
+
+      // ── Tower specialization bonus ──
+      // When agent already has 2+ upgrades of a tower type, bias toward more of that type.
+      // Creates focused builds that exercise the conditional scaling system.
+      const types = UPGRADE_TOWER_MAP[opt.id];
+      if (types) {
+        for (const type of types) {
+          const typeCount = countUpgradesForTowerSim(upgrades, type);
+          if (typeCount >= 2) score += typeCount * 3;
+        }
+      }
 
       if (score > bestScore) {
         bestScore = score;
