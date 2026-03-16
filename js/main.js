@@ -30,6 +30,7 @@ import {
     matRangeCircle,
 } from './shaders/toonMaterials.js';
 import { setupPostProcessing } from './shaders/postProcessing.js';
+import { DoorDamageSystem } from './shaders/doorDamageShader.js';
 import {
     createBathroomStalls,
     createSinks,
@@ -174,6 +175,7 @@ window.createIconDataURL = function(iconKey, rarityOrSize, size, time) {
 window.createIconModel = createIconModel;
 window.disposeIconRenderer = disposeIconRenderer;
 window.outlineMatStatic = outlineMatStatic;
+window.DoorDamageSystem = DoorDamageSystem;
 window.SFX = SFX;
 window.Music = Music;
 window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;

@@ -582,6 +582,7 @@
         _floatingTexts: [],
         _doorParticles: [],
         _crackPulses: [],
+        _doorDamageSystem: null,
         _mopImpacts: [],
         _knockoutRings: [],
         _slidingPots: [],
@@ -1694,6 +1695,10 @@
             this.doorGroup = createBathroomDoor();
             this._environmentGroup.add(this.doorGroup);
 
+            // Initialize door damage shader system
+            this._doorDamageSystem = new DoorDamageSystem();
+            this._doorDamageSystem.init(this.doorGroup, this.scene);
+
             // Bathroom overhead light (actual illumination for the room)
             const bathroomLight = new THREE.PointLight(PALETTE.fillWarm, 0.4, 20, 2);
             bathroomLight.position.set(0, 4.0, 4);
@@ -1762,6 +1767,10 @@
             });
             // Null out references
             this.toilet = null;
+            if (this._doorDamageSystem) {
+                this._doorDamageSystem.dispose();
+                this._doorDamageSystem = null;
+            }
             this.doorGroup = null;
             this.officeGroup = null;
             this._oceanRaft = null;
@@ -1926,6 +1935,10 @@
             this.doorGroup = createOuthouseDoor();
             this._environmentGroup.add(this.doorGroup);
 
+            // Initialize door damage shader system
+            this._doorDamageSystem = new DoorDamageSystem();
+            this._doorDamageSystem.init(this.doorGroup, this.scene);
+
             // Grass tufts (Zelda-style, wind animated)
             const grassTufts = createForestGrassTufts();
             this._environmentGroup.add(grassTufts);
@@ -2059,6 +2072,10 @@
             // Boat door (bow that enemies attack)
             this.doorGroup = createOceanOuthouseDoor();
             this._environmentGroup.add(this.doorGroup);
+
+            // Initialize door damage shader system
+            this._doorDamageSystem = new DoorDamageSystem();
+            this._doorDamageSystem.init(this.doorGroup, this.scene);
 
             // Ocean props — floating barrels, crates, debris
             const oceanProps = createOceanProps();
@@ -2270,6 +2287,10 @@
             // Dual door (left + right, shared HP)
             this.doorGroup = createAirplaneDoor();
             this._environmentGroup.add(this.doorGroup);
+
+            // Initialize door damage shader system
+            this._doorDamageSystem = new DoorDamageSystem();
+            this._doorDamageSystem.init(this.doorGroup, this.scene);
 
             // Props
             this._environmentGroup.add(createAirplaneProps());
@@ -3453,20 +3474,14 @@
                 const ud = this.doorGroup.userData;
                 ud.maxDoorHP = 100; // Reset to base (L1 modifies on acquire)
                 ud.doorHP = ud.maxDoorHP;
-                // Reset door color (all panels for dual-door)
+                // Reset door panels visibility
                 const panels = ud.doorPanels || (ud.door ? [ud.door] : []);
                 for (const panel of panels) {
-                    panel.material.color.setHex(ud.originalColor);
-                    panel.material.emissive.setHex(0x000000);
-                    panel.material.emissiveIntensity = 0;
                     panel.visible = true;
                 }
-                // Hide all cracks and reset scales (both doors)
-                if (ud.cracks) {
-                    ud.cracks.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
-                }
-                if (ud.cracksRight) {
-                    ud.cracksRight.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
+                // Reset door damage shader system (clears cracks, particles, VFX)
+                if (this._doorDamageSystem) {
+                    this._doorDamageSystem.reset();
                 }
                 this._crackPulses = [];
             }
@@ -4228,34 +4243,10 @@
                     const ud = this.doorGroup.userData;
                     ud.maxDoorHP = data.maxDoorHP;
                     ud.doorHP = data.doorHP;
-                    // Update door crack visuals
-                    if (ud.cracks) {
-                        const pct = ud.doorHP / ud.maxDoorHP;
-                        ud.cracks[0].visible = pct <= 0.80;
-                        ud.cracks[1].visible = pct <= 0.60;
-                        ud.cracks[2].visible = pct <= 0.40;
-                        ud.cracks[3].visible = pct <= 0.20;
-                        ud.cracks[4].visible = pct <= 0.10;
-                        if (ud.cracksRight) {
-                            ud.cracksRight[0].visible = pct <= 0.80;
-                            ud.cracksRight[1].visible = pct <= 0.60;
-                            ud.cracksRight[2].visible = pct <= 0.40;
-                            ud.cracksRight[3].visible = pct <= 0.20;
-                            ud.cracksRight[4].visible = pct <= 0.10;
-                        }
-                    }
-                    // Update door color tint (all panels for dual-door)
-                    const restorePanels = ud.doorPanels || (ud.door ? [ud.door] : []);
-                    const pctRestore = ud.doorHP / ud.maxDoorHP;
-                    if (pctRestore < 1.0) {
-                        const r = Math.min(1.0, 0.55 + (1 - pctRestore) * 0.45);
-                        const g = 0.41 * pctRestore;
-                        const b = 0.08 * pctRestore;
-                        for (const panel of restorePanels) {
-                            panel.material.color.setRGB(r, g, b);
-                            panel.material.emissive.setHex(0xff0000);
-                            panel.material.emissiveIntensity = (1 - pctRestore) * 0.3;
-                        }
+                    // Restore door damage level via shader system
+                    if (this._doorDamageSystem) {
+                        const pctRestore = ud.doorHP / ud.maxDoorHP;
+                        this._doorDamageSystem.setDamageLevel(1 - pctRestore);
                     }
                 }
 
@@ -5867,29 +5858,11 @@
                 ud.maxDoorHP += 4;
                 ud.doorHP = ud.maxDoorHP; // Full heal!
 
-                // Reset door color to healthy state
-                const panels = ud.doorPanels || (ud.door ? [ud.door] : []);
-                for (const panel of panels) {
-                    panel.material.color.setHex(ud.originalColor);
-                    panel.material.emissive.setHex(0x00ff88);
-                    panel.material.emissiveIntensity = 0.6;
+                // Reset door damage system + trigger heal flash
+                if (this._doorDamageSystem) {
+                    this._doorDamageSystem.reset();
+                    this._doorDamageSystem.triggerHealFlash();
                 }
-                // Fade emissive glow out over 1.2s
-                const healStart = performance.now();
-                const fadeGlow = () => {
-                    const t = Math.min(1, (performance.now() - healStart) / 1200);
-                    const intensity = 0.6 * (1 - t);
-                    for (const panel of panels) {
-                        panel.material.emissiveIntensity = intensity;
-                        if (t >= 1) panel.material.emissive.setHex(0x000000);
-                    }
-                    if (t < 1) requestAnimationFrame(fadeGlow);
-                };
-                requestAnimationFrame(fadeGlow);
-
-                // Hide all cracks (door is fully healed)
-                if (ud.cracks) ud.cracks.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
-                if (ud.cracksRight) ud.cracksRight.forEach(c => { c.visible = false; c.scale.set(1, 1, 1); });
 
                 // Juicy HUD feedback — green flash + floating delta
                 const stat = document.getElementById('door-hp-stat');
@@ -8462,55 +8435,30 @@
                             }
                         }
 
-                        // Spawn wood chip particles at knock impact point
-                        if (e.type === 'polite' && e.knockSide) {
-                            const armOffset = e.knockSide === 'L' ? -0.3 : 0.3;
-                            this._spawnDoorChips(e.x + armOffset, doorZ, 1.8);
-                        } else {
-                            this._spawnDoorChips(e.x, doorZ);
+                        // Door Damage VFX — shader-based cracks, impact ring, particles, flash
+                        if (this._doorDamageSystem) {
+                            let impactX, impactY;
+                            if (e.type === 'polite' && e.knockSide) {
+                                const armOffset = e.knockSide === 'L' ? -0.3 : 0.3;
+                                impactX = e.x + armOffset;
+                                impactY = 1.8;
+                            } else {
+                                impactX = e.x + (Math.random() - 0.5) * 0.5;
+                                impactY = 1.0 + Math.random() * 1.5;
+                            }
+                            this._doorDamageSystem.addImpact(impactX, impactY, dmg, this.time);
+                            this._doorDamageSystem.setDamageLevel(1 - ud.doorHP / ud.maxDoorHP);
                         }
 
-                        // Screen shake (subtle)
-                        this.camera.position.x += (Math.random() - 0.5) * 0.15;
-                        this.camera.position.y += (Math.random() - 0.5) * 0.1;
-                        setTimeout(() => {
-                            this.camera.position.x = CONFIG.cameraPos.x;
-                            this.camera.position.y = CONFIG.cameraPos.y;
-                        }, 80);
-
-                        // Update crack visibility at thresholds (with scale punch on reveal)
-                        if (ud.cracks) {
-                            const pct = ud.doorHP / ud.maxDoorHP;
-                            const thresholds = [0.80, 0.60, 0.40, 0.20, 0.10];
-                            for (let ci = 0; ci < 5; ci++) {
-                                const shouldShow = pct <= thresholds[ci];
-                                if (shouldShow && !ud.cracks[ci].visible) {
-                                    // New crack revealed — Fortnite-style scale punch!
-                                    ud.cracks[ci].scale.set(1.5, 1.5, 1);
-                                    this._crackPulses.push({ group: ud.cracks[ci], scale: 1.5 });
-                                    if (ud.cracksRight) {
-                                        ud.cracksRight[ci].scale.set(1.5, 1.5, 1);
-                                        this._crackPulses.push({ group: ud.cracksRight[ci], scale: 1.5 });
-                                    }
-                                }
-                                ud.cracks[ci].visible = shouldShow;
-                                if (ud.cracksRight) ud.cracksRight[ci].visible = shouldShow;
-                            }
-                        }
-
-                        // Tint door color toward red as HP decreases
-                        if (ud.door) {
-                            const pct = ud.doorHP / ud.maxDoorHP;
-                            const r = Math.min(1.0, 0.55 + (1 - pct) * 0.45);
-                            const g = 0.41 * pct;
-                            const b = 0.08 * pct;
-                            // Apply tint to all door panels (dual-door: both left + right)
-                            const panels = ud.doorPanels || [ud.door];
-                            for (const panel of panels) {
-                                panel.material.color.setRGB(r, g, b);
-                                panel.material.emissive.setHex(0xff0000);
-                                panel.material.emissiveIntensity = (1 - pct) * 0.3;
-                            }
+                        // Screen shake (spring-style with proportional intensity)
+                        {
+                            const shakeIntensity = Math.min(0.4, dmg * 0.06);
+                            this.camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                            this.camera.position.y += (Math.random() - 0.5) * shakeIntensity * 0.7;
+                            setTimeout(() => {
+                                this.camera.position.x = CONFIG.cameraPos.x;
+                                this.camera.position.y = CONFIG.cameraPos.y;
+                            }, 100);
                         }
 
                         this.updateHUD();
@@ -11429,6 +11377,11 @@
                     p.mesh.material.dispose();
                     this._doorParticles.splice(i, 1);
                 }
+            }
+
+            // Update door damage shader system (rings, particles, flash lights)
+            if (this._doorDamageSystem) {
+                this._doorDamageSystem.update(dt, this.time);
             }
 
             // Animate crack reveal pulses (scale back to 1.0)
