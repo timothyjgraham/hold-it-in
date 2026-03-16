@@ -1691,6 +1691,11 @@
             this.officeGroup = createOfficePeek();
             this._environmentGroup.add(this.officeGroup);
 
+            // Now that officeGroup exists, grab window positions for drone delivery
+            if (this.officeGroup && this.officeGroup.userData.windowPositions) {
+                this.windowPositions = this.officeGroup.userData.windowPositions;
+            }
+
             // Bathroom door — enemies must beat it down
             this.doorGroup = createBathroomDoor();
             this._environmentGroup.add(this.doorGroup);
