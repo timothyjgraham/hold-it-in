@@ -31,6 +31,7 @@ import {
 } from './shaders/toonMaterials.js';
 import { setupPostProcessing } from './shaders/postProcessing.js';
 import { DoorDamageSystem } from './shaders/doorDamageShader.js';
+import { enhanceTowerWithDamageShader, updateTowerDamage } from './shaders/towerDamageShader.js';
 import {
     createBathroomStalls,
     createSinks,
@@ -176,6 +177,8 @@ window.createIconModel = createIconModel;
 window.disposeIconRenderer = disposeIconRenderer;
 window.outlineMatStatic = outlineMatStatic;
 window.DoorDamageSystem = DoorDamageSystem;
+window.enhanceTowerWithDamageShader = enhanceTowerWithDamageShader;
+window.updateTowerDamage = updateTowerDamage;
 window.SFX = SFX;
 window.Music = Music;
 window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;

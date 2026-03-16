@@ -4277,6 +4277,7 @@
                     const def = this.TOWERS[td.type];
                     if (!def) continue;
                     const tower = this._createTowerMesh(td.type, def);
+                    enhanceTowerWithDamageShader(tower);
                     tower.gridX = td.gridX;
                     tower.gridZ = td.gridZ;
                     tower.tileWidth = td.tileWidth || 1;
@@ -4728,6 +4729,7 @@
 
             // Create tower mesh
             const tower = this._createTowerMesh(this.selectedTower, def);
+            enhanceTowerWithDamageShader(tower);
             tower.gridX = pos.x;
             tower.gridZ = pos.z;
             tower.tileWidth = tw;
@@ -4839,10 +4841,15 @@
                 mesh.position.y = -p * 0.5;
 
                 // Fade out all materials
+                const fadeOpacity = Math.max(0, 1 - p * 1.5);
                 mesh.traverse(child => {
                     if (child.isMesh && child.material) {
                         child.material.transparent = true;
-                        child.material.opacity = Math.max(0, 1 - p * 1.5);
+                        if (child.material.uniforms && child.material.uniforms.uOpacity) {
+                            child.material.uniforms.uOpacity.value = fadeOpacity;
+                        } else {
+                            child.material.opacity = fadeOpacity;
+                        }
                     }
                 });
 
@@ -8836,47 +8843,15 @@
                     t.mesh.position.z = t.gridZ;
                 }
 
-                // Fortnite-style progressive damage — cracks, lean, deformation
-                if (t.hitShake > 0.1) {
-                    // Immediate hit flash — white burst
-                    t.mesh.traverse(child => {
-                        if (child.isMesh && child.material.emissive) {
-                            child.material.emissive.setHex(0xffffff);
-                            child.material.emissiveIntensity = 0.6;
-                        }
-                    });
-                } else if (t.hp < t.maxHp) {
-                    const dmgPct = 1 - t.hp / t.maxHp; // 0 = pristine, 1 = about to break
+                // Shader-based progressive damage — Voronoi cracks + physical deformation
+                updateTowerDamage(t, this.time);
 
-                    // Stage 1 (>50% HP): light scuffs — subtle darkening
-                    // Stage 2 (25-50%): visible cracks — orange tint, slight lean
-                    // Stage 3 (<25%): critically damaged — red glow, heavy lean, jitter
-                    t.mesh.traverse(child => {
-                        if (child.isMesh && child.material.emissive) {
-                            if (dmgPct < 0.5) {
-                                // Light damage — warm tint
-                                child.material.emissive.setHex(0xff6600);
-                                child.material.emissiveIntensity = dmgPct * 0.3;
-                            } else if (dmgPct < 0.8) {
-                                // Heavy damage — orange-red, cracks darkening
-                                child.material.emissive.setHex(0xff3300);
-                                child.material.emissiveIntensity = 0.15 + dmgPct * 0.25;
-                            } else {
-                                // Critical — angry red pulse
-                                const pulse = 0.3 + Math.sin(this.time * 8) * 0.15;
-                                child.material.emissive.setHex(0xff1100);
-                                child.material.emissiveIntensity = pulse + dmgPct * 0.2;
-                            }
-                            // Progressive desaturation — darken base color when damaged
-                            if (!child.material._origColor) child.material._origColor = child.material.color.clone();
-                            const darkFactor = 1 - dmgPct * 0.3; // up to 30% darker
-                            child.material.color.copy(child.material._origColor).multiplyScalar(darkFactor);
-                        }
-                    });
+                if (t.hp < t.maxHp) {
+                    const dmgPct = 1 - t.hp / t.maxHp;
 
                     // Physical deformation — lean increases with damage
                     const leanDir = t._dmgLeanDir ?? (t._dmgLeanDir = (Math.random() - 0.5) * 2);
-                    t.mesh.rotation.z = leanDir * dmgPct * 0.15; // subtle tilt
+                    t.mesh.rotation.z = leanDir * dmgPct * 0.15;
                     t.mesh.rotation.x = dmgPct * 0.08;
 
                     // Critical jitter — tower shudders when near death
