@@ -12,7 +12,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C1',
         name: 'Overclocked Magnet',
-        description: 'Coin Magnet collection range +12 (8 → 20 units) and +2 HP',
+        description: 'Coin Magnet collection range +12 (8 → 20 units), +2 HP, and +8% tower uptime from economy',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -34,7 +34,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C3',
         name: 'Magnet Durability',
-        description: 'Coin Magnets gain +5 HP',
+        description: 'Coin Magnets gain +5 HP and pull 5% faster per stack',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],
@@ -187,7 +187,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C16',
         name: 'Cactus Pot',
-        description: 'Pot Plants deal (2 + 1.5 per pot upgrade) dps to adjacent enemies. Scales with pot archetype.',
+        description: 'Pot Plants deal (3 + 2.5 per pot upgrade) dps to adjacent enemies and slow them by 15%. Scales with pot archetype.',
         rarity: 'common',
         icon: 'pot',
         towerRequirement: ['potplant'],
@@ -621,6 +621,48 @@ export const RARE_UPGRADES = [
         maxStacks: 1,
         buildDefining: true,
         exclusive: 'R31',  // mutually exclusive with Rush Defense
+        effectFn: null,
+    },
+
+    // ── Chase Cards — Specialist Upgrades (dormant → active at threshold) ──────
+
+    {
+        id: 'R33',
+        name: "Plumber's Union",
+        description: 'Mop hits soak enemies — soaked enemies take 2× damage from all sources (4s). Requires 3+ mop upgrades.',
+        rarity: 'rare',
+        icon: 'mop',
+        towerRequirement: ['mop'],
+        stackable: false,
+        maxStacks: 1,
+        chaseThreshold: 3,
+        chaseTowerType: 'mop',
+        effectFn: null,
+    },
+    {
+        id: 'R34',
+        name: 'Terracotta Army',
+        description: 'Pot trip damage ×(pot count on field). Destroyed pots shatter into 3 damaging shards. Requires 3+ pot upgrades.',
+        rarity: 'rare',
+        icon: 'pot',
+        towerRequirement: ['potplant'],
+        stackable: false,
+        maxStacks: 1,
+        chaseThreshold: 3,
+        chaseTowerType: 'potplant',
+        effectFn: null,
+    },
+    {
+        id: 'R35',
+        name: 'Money Printer',
+        description: 'Each coin collected by magnets buffs all tower damage +1% for 4s (stacks to +30%). Requires 3+ magnet upgrades.',
+        rarity: 'rare',
+        icon: 'magnet',
+        towerRequirement: ['coinmagnet'],
+        stackable: false,
+        maxStacks: 1,
+        chaseThreshold: 3,
+        chaseTowerType: 'coinmagnet',
         effectFn: null,
     },
 ];

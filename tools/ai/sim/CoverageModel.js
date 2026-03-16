@@ -121,6 +121,44 @@ class CoverageModel {
       dps *= 1 + emptySlots * 0.25;
     }
 
+    // ── Chase Cards ──
+
+    // R33: Plumber's Union — soaked enemies take 2× damage (mop specialist)
+    // Only active at 3+ mop-type upgrades. Estimate ~40% of enemies soaked with 1 mop,
+    // ~70% with 2 mops + C8, near-full with 3+ mops.
+    if (upgrades.R33) {
+      const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
+      if (mopCount >= 3) {
+        const soakedFraction = Math.min(1.0, 0.25 * t.mop + (upgrades.C7 ? 0.15 : 0));
+        dps *= 1 + soakedFraction;  // 2× on soaked portion
+      }
+    }
+
+    // R34: Terracotta Army — trip damage × pot count + shatter on death (pot specialist)
+    // Only active at 3+ pot-type upgrades. Multiplicative pot scaling.
+    if (upgrades.R34) {
+      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
+      if (potCount >= 3) {
+        // Trip damage scaled by pot count + shatter shards on death
+        const potTowerCount = t.potplant;
+        const tripScaling = Math.max(1, potTowerCount); // trip damage × pot count
+        const shatterBonus = potTowerCount * 3 * 0.5;   // 3 shards × 50% trip damage each
+        dps += t.potplant * (GAME.towers.potplant.damage / 4) * (tripScaling - 1 + shatterBonus * 0.1);
+      }
+    }
+
+    // R35: Money Printer — coins collected buff all tower damage (magnet specialist)
+    // Only active at 3+ magnet-type upgrades. Estimate steady-state buff.
+    if (upgrades.R35) {
+      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
+      if (magCount >= 3) {
+        // Estimate coins/sec × duration = steady-state stacks, capped at 30
+        const coinsPerSec = t.coinmagnet * (upgrades.C1 ? 2.5 : 1.5);
+        const steadyState = Math.min(30, coinsPerSec * 4);
+        dps *= 1 + steadyState / 100;
+      }
+    }
+
     return dps;
   }
 
@@ -257,20 +295,55 @@ class CoverageModel {
     const nuclearScale = upgrades.L8 ? conditionalScale(upgrades, 'mop', 'L8') : 0;
     const nuclearBonus = upgrades.L8 ? (1 + nuclearScale * 0.15) : 1.0;
 
+    // ── Chase Cards (fast-mode approximations) ──
+
+    // R33: Plumber's Union — soaked enemies take 2× from all sources
+    let plumbersUnionBonus = 1.0;
+    if (upgrades.R33) {
+      const mopCount = countUpgradesForTowerSim(upgrades, 'mop');
+      if (mopCount >= 3) {
+        const soakedFraction = Math.min(1.0, 0.25 * towers.mop + (upgrades.C7 ? 0.15 : 0));
+        plumbersUnionBonus = 1 + soakedFraction;
+      }
+    }
+
+    // R34: Terracotta Army — trip damage × pot count + shatter on death
+    let terracottaBonus = 1.0;
+    if (upgrades.R34) {
+      const potCount = countUpgradesForTowerSim(upgrades, 'potplant');
+      if (potCount >= 3 && towers.potplant > 0) {
+        terracottaBonus = 1 + towers.potplant * 0.08; // approximate scaling
+      }
+    }
+
+    // R35: Money Printer — coins collected buff all tower damage
+    let moneyPrinterBonus = 1.0;
+    if (upgrades.R35) {
+      const magCount = countUpgradesForTowerSim(upgrades, 'coinmagnet');
+      if (magCount >= 3 && towers.coinmagnet > 0) {
+        const coinsPerSec = towers.coinmagnet * (upgrades.C1 ? 2.5 : 1.5);
+        const steadyState = Math.min(30, coinsPerSec * 4);
+        moneyPrinterBonus = 1 + steadyState / 100;
+      }
+    }
+
     // C1: Overclocked Magnet — wider collection ≈ +8% effective tower uptime from economy
-    const overclockBonus = (upgrades.C1 && towers.coinmagnet > 0) ? 1.04 : 1.0;
+    const overclockBonus = (upgrades.C1 && towers.coinmagnet > 0) ? 1.08 : 1.0;
 
-    // C3: Magnet Durability — +5 HP/stack, magnets survive longer ≈ +3% uptime per stack
-    const magDurBonus = (upgrades.C3 && towers.coinmagnet > 0) ? (1 + (upgrades.C3) * 0.03) : 1.0;
+    // C3: Magnet Durability — +5 HP/stack + 5% pull speed/stack, magnets survive longer + collect faster
+    const magDurBonus = (upgrades.C3 && towers.coinmagnet > 0) ? (1 + (upgrades.C3) * 0.05) : 1.0;
 
-    // C16: Cactus Pot thorn bonus — enemies weakened by thorns take 3% more global damage
+    // C16: Cactus Pot thorn bonus — enemies weakened by thorns take 3% more damage + 15% slow
     const thornBonus = (upgrades.C16 && towers.potplant > 0) ? 1.03 : 1.0;
+    // C16: Cactus Pot slow — 15% slow on enemies in thorn aura ≈ +5% effective DPS
+    const cactusSlowBonus = (upgrades.C16 && towers.potplant > 0) ? 1.05 : 1.0;
 
     const effectiveDPS = dps * slowBonus * markedBonus * overtimeBonus * desperateBonus *
       crossfireBonus * crowdBonus * rushBonus * attritionBonus * hoarderBonus *
       assemblyBonus * lastStandBonus * burstBonus * floodBonus * chainReactionBonus * plungerBonus *
       pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
-      overclockBonus * magDurBonus * thornBonus;
+      overclockBonus * magDurBonus * thornBonus * cactusSlowBonus *
+      plumbersUnionBonus * terracottaBonus * moneyPrinterBonus;
 
     const totalDamageCapacity = effectiveDPS * waveDuration;
 
@@ -503,10 +576,11 @@ class CoverageModel {
           target.hp -= dmg;
           target.stunned = true;
           target.stunTimer = tw.stunDuration;
-          // C16: Cactus Pot DPS during stun (buffed, scales with pot archetype)
+          // C16: Cactus Pot DPS during stun (buffed, scales with pot archetype) + 15% slow
           if (upgrades.C16) {
             const potDPS = 3 + 2.5 * countUpgradesForTowerSim(upgrades, 'potplant');
             target.hp -= potDPS * tw.stunDuration;
+            target.slowed = true; // C16: cactus thorn slow
           }
           tw.cooldownTimer = tw.stunDuration + 2.0; // can't re-trip immediately
         } else if (tw.type === 'mop') {

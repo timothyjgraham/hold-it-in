@@ -42,6 +42,21 @@ export class UpgradeManager {
     }
 
     /**
+     * Check if a chase card's threshold is met (i.e. the mechanic is active).
+     * The chase card itself counts toward its own tower type total.
+     * @param {string} id - upgrade id (e.g. 'R33')
+     * @returns {boolean}
+     */
+    isChaseActive(id) {
+        const upgrade = UPGRADE_MAP[id];
+        if (!upgrade || !upgrade.chaseThreshold || !upgrade.chaseTowerType) return false;
+        if (!this.hasUpgrade(id)) return false;
+        // Count all upgrades for the tower type (including this chase card itself)
+        const count = this.countUpgradesForTower(upgrade.chaseTowerType);
+        return count >= upgrade.chaseThreshold;
+    }
+
+    /**
      * Count total stacks of upgrades associated with a tower type.
      * Cross-tower rares (e.g. ['mop','ubik']) count for BOTH types.
      * @param {string} towerType - e.g. 'mop', 'ubik', 'coinmagnet', 'wetfloor', 'potplant'
@@ -107,6 +122,8 @@ export class UpgradeManager {
                 return this.hasUpgrade('C1') ? 2 : 0;         // C1: also +2 HP to magnets
             case 'magnetHP':
                 return this.getStacks('C3') * 5;               // C3: +5 per stack (was 4)
+            case 'magnetPullSpeedMult':
+                return 1.0 - this.getStacks('C3') * 0.05;      // C3: 5% faster pull per stack
             case 'signHP':
                 return this.getStacks('C4') * 1.2;             // C4: +120% per stack (was 100%)
             case 'signSlowLinger':
@@ -122,8 +139,10 @@ export class UpgradeManager {
             case 'potContactDPS':
                 // C16: Cactus Pot rework — scales with pot archetype, non-stackable
                 return this.hasUpgrade('C16')
-                    ? 2 + 1.5 * this.countUpgradesForTower('potplant')
+                    ? 3 + 2.5 * this.countUpgradesForTower('potplant')
                     : 0;
+            case 'potCactusSlowFactor':
+                return this.hasUpgrade('C16') ? 0.85 : 1.0;   // C16: Cactus Pot 15% slow on hit
             case 'potStunBonus':
                 return this.hasUpgrade('C15') ? 0.5 : 0;      // C15: Spring-Loaded +0.5s stun
             case 'doorMaxHP':
@@ -221,6 +240,34 @@ export class UpgradeManager {
                 return 8 + 4 * this.countUpgradesForTower('potplant', 'L5');
             case 'dominoDecayPct':
                 return Math.max(0.02, 0.22 - 0.03 * this.countUpgradesForTower('potplant', 'L5'));
+
+            // ─── Chase Card Stats (R33, R34, R35) ───
+
+            // R33: Plumber's Union — soaked enemies take 2× damage (4s debuff)
+            case 'soakedActive':
+                return this.isChaseActive('R33') ? 1 : 0;
+            case 'soakedDamageMult':
+                return this.isChaseActive('R33') ? 2.0 : 1.0;
+            case 'soakedDuration':
+                return this.isChaseActive('R33') ? 4.0 : 0;
+
+            // R34: Terracotta Army — trip damage × pot count, shatter on death
+            case 'terracottaActive':
+                return this.isChaseActive('R34') ? 1 : 0;
+            case 'terracottaShardCount':
+                return this.isChaseActive('R34') ? 3 : 0;
+            case 'terracottaShardDamagePct':
+                return this.isChaseActive('R34') ? 0.5 : 0;    // 50% of trip damage
+
+            // R35: Money Printer — +1% tower damage per coin collected (4s, cap +30%)
+            case 'moneyPrinterActive':
+                return this.isChaseActive('R35') ? 1 : 0;
+            case 'moneyPrinterBuffPerCoin':
+                return this.isChaseActive('R35') ? 0.01 : 0;   // +1% per coin
+            case 'moneyPrinterCap':
+                return this.isChaseActive('R35') ? 0.30 : 0;   // cap +30%
+            case 'moneyPrinterDuration':
+                return this.isChaseActive('R35') ? 4.0 : 0;    // 4s
 
             // ─── Boolean-like stats ───
             case 'potReturnToOrigin':

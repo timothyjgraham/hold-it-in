@@ -177,6 +177,17 @@ class HeuristicAgent {
         score += potCount >= 2 ? 8 + potCount * 7 : -5 + potCount * 5;
       }
 
+      // ── Chase Cards — high base score + big conditional bonus near threshold ──
+      if (opt.chaseThreshold && opt.chaseTowerType) {
+        const typeCount = countUpgradesForTowerSim(upgrades, opt.chaseTowerType);
+        // Base: attractive if player is committed to the tower type
+        score += 20;
+        // Conditional: bonus scales with how close to threshold
+        score += typeCount * 5;
+        // Extra bonus if threshold already met or will be met (typeCount >= threshold - 1)
+        if (typeCount >= opt.chaseThreshold - 1) score += 15;
+      }
+
       // ── AoE legendaries ──
       if (opt.effect === 'bladderBurst') score += 10;
 

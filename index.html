@@ -556,6 +556,8 @@
         _controlledDemolitionBuff: 0,  // R26: cumulative +8% per sell
         _devotionTypes: null,          // R23: Set of locked tower types (max 2)
         _attritionTimer: 0,            // R32: seconds enemies have been alive this wave
+        _moneyPrinterStacks: 0,        // R35: Money Printer — current buff stacks (0-30)
+        _moneyPrinterDecayTimer: 0,    // R35: Money Printer — time until stacks start decaying
         _sellMode: false,              // Sell mode toggle
         _wallGroupCounter: 0,   // Coordinated wall formation ID counter
         _swarmGroupCounter: 0,  // Swarm group (girls/raccoons/etc.) ID counter
@@ -3548,13 +3550,15 @@
 
             // Clear sliding pots
             this._slidingPots.forEach(sp => {
-                this.scene.remove(sp.mesh);
-                sp.mesh.traverse(child => {
-                    if (child.isMesh) {
-                        child.geometry.dispose();
-                        child.material.dispose();
-                    }
-                });
+                if (sp.mesh) {
+                    this.scene.remove(sp.mesh);
+                    sp.mesh.traverse(child => {
+                        if (child.isMesh) {
+                            child.geometry.dispose();
+                            child.material.dispose();
+                        }
+                    });
+                }
             });
             this._slidingPots = [];
 
@@ -4500,6 +4504,35 @@
                 this.updateHUD();
             }
 
+            // R34: Terracotta Army — pot death spawns 3 damaging shards
+            if (t.type === 'potplant' && this.upgradeManager && this.upgradeManager.getModifier('terracottaActive')) {
+                const shardCount = this.upgradeManager.getModifier('terracottaShardCount');
+                const shardDmgPct = this.upgradeManager.getModifier('terracottaShardDamagePct');
+                const baseTripDmg = t.def.tripDamage || 6;
+                const shardDmg = Math.round(baseTripDmg * shardDmgPct);
+                const shardRadius = 3;
+                for (let s = 0; s < shardCount; s++) {
+                    const angle = (s / shardCount) * Math.PI * 2 + Math.random() * 0.5;
+                    const speed = 8 + Math.random() * 4;
+                    this._slidingPots.push({
+                        mesh: null,  // shards are invisible projectiles with damage numbers
+                        x: t.gridX, z: t.gridZ, y: 0.5,
+                        origX: t.gridX, origZ: t.gridZ,
+                        vx: Math.sin(angle) * speed,
+                        vz: Math.cos(angle) * speed,
+                        vy: 2,
+                        spin: 10,
+                        life: 0.6,
+                        hitEnemies: new Set(),
+                        tripDamage: shardDmg,
+                        stunDuration: 0.3,
+                        hp: 0,
+                        _isShard: true,
+                    });
+                }
+                this._spawnDamageNumber(t.gridX, t.gridZ, 0, '#c4663a');
+            }
+
             // Release all enemies bashing this barrier
             if (t.type === 'wetfloor') {
                 for (const e of this.enemies) {
@@ -4700,14 +4733,20 @@
 
             // Trip the kicker — face-plant stun (skipped for tripImmune enemies)
             const kickerDef = this.ENEMY_TYPES[kicker.type];
+            // R34: Terracotta Army — trip damage × active pot count
+            let kickTerracottaMult = 1;
+            if (this.upgradeManager && this.upgradeManager.getModifier('terracottaActive')) {
+                kickTerracottaMult = Math.max(1, this.towers.filter(pt => pt.type === 'potplant' && !pt.dying && !pt.delivering).length);
+            }
+            const kickTripDmg = def.tripDamage * kickTerracottaMult;
             if (kickerDef && kickerDef.tripImmune) {
                 // tripImmune: takes damage but no stun
-                kicker.hp -= def.tripDamage;
+                kicker.hp -= kickTripDmg;
                 kicker._killSource = 'trip';
                 kicker.hitFlash = 0.15;
             } else {
                 if (window.SFX) { SFX.play('pot_trip'); SFX.play('stun_impact'); }
-                kicker.hp -= def.tripDamage;
+                kicker.hp -= kickTripDmg;
                 kicker._killSource = 'trip';
                 kicker.hitFlash = 0.15;
                 const potStunBonus = this.upgradeManager ? this.upgradeManager.getModifier('potStunBonus') : 0;
@@ -7033,6 +7072,15 @@
                 this._attritionTimer += dt;
             }
 
+            // R35: Money Printer — decay stacks over time
+            if (this._moneyPrinterStacks > 0) {
+                this._moneyPrinterDecayTimer -= dt;
+                if (this._moneyPrinterDecayTimer <= 0) {
+                    this._moneyPrinterStacks = Math.max(0, this._moneyPrinterStacks - 1);
+                    this._moneyPrinterDecayTimer = 1.0; // lose 1 stack per second when timer expires
+                }
+            }
+
             // L2: Desperate Measures — cache door HP ratio check for this frame
             this._desperateMeasures = false;
             if (this.upgradeManager && this.upgradeManager.hasUpgrade('L2') && this.doorGroup) {
@@ -7117,6 +7165,11 @@
 
                 let slowMult = 1.0;
                 e._inSlowZone = false; // R1: track per frame for Wet & Soapy
+                // R33: Plumber's Union — decrement soaked timer
+                if (e._soakedTimer > 0) {
+                    e._soakedTimer -= dt;
+                    if (e._soakedTimer <= 0) e._soaked = false;
+                }
                 // R30: Sympathetic Damage — snapshot HP for delta tracking
                 if (e._hpLastFrame === undefined) e._hpLastFrame = e.hp;
 
@@ -7221,6 +7274,14 @@
                             }
                         }
                     }
+                    // C16: Cactus Pot — 15% slow from thorn aura (lingers 0.5s)
+                    if (e._cactusSlowTimer > 0) {
+                        e._cactusSlowTimer -= dt;
+                        const cactusSlowFactor = this.upgradeManager ? this.upgradeManager.getModifier('potCactusSlowFactor') : 1.0;
+                        slowMult = Math.min(slowMult, cactusSlowFactor);
+                        e._inSlowZone = true;
+                    }
+
                     // R29: Contagion — only spread from DIRECTLY slowed enemies (not contagion-slowed)
                     if (e._inSlowZone && !e._contagionSlowed && this.upgradeManager && this.upgradeManager.hasUpgrade('R29')) {
                         for (const other of this.enemies) {
@@ -8564,7 +8625,9 @@
                     }
                     t.magnetTimer = (t.magnetTimer || 0) - dt;
                     if (t.magnetTimer <= 0 && !magnetJammed) {
-                        t.magnetTimer = t.def.magnetInterval;
+                        // C3: Magnet Durability — 5% faster pull per stack
+                        const pullSpeedMult = this.upgradeManager ? this.upgradeManager.getModifier('magnetPullSpeedMult') : 1.0;
+                        t.magnetTimer = t.def.magnetInterval * pullSpeedMult;
                         if (this.coinPool) {
                             // C1: Overclocked Magnet — extended range
                             const magnetRange = t.def.range + (this.upgradeManager ? this.upgradeManager.getModifier('magnetRange') : 0);
@@ -8580,6 +8643,14 @@
                                 this._animateCoinGain(collected);
                                 this._spawnCoinText(t.gridX, t.gridZ, collected);
                                 this.updateHUD();
+
+                                // R35: Money Printer — each coin collected buffs all tower damage
+                                if (this.upgradeManager && this.upgradeManager.getModifier('moneyPrinterActive')) {
+                                    const cap = this.upgradeManager.getModifier('moneyPrinterCap') * 100; // 30
+                                    const approxCoins = Math.max(1, Math.round(rawCollected / 5));
+                                    this._moneyPrinterStacks = Math.min(cap, this._moneyPrinterStacks + approxCoins);
+                                    this._moneyPrinterDecayTimer = this.upgradeManager.getModifier('moneyPrinterDuration');
+                                }
 
                                 // R5: Coin Shrapnel — 15% chance per coin to bonk nearest enemy
                                 if (this.upgradeManager && this.upgradeManager.hasUpgrade('R5')) {
@@ -8668,6 +8739,8 @@
                                     e._killSource = 'tower';
                                     e._dotAccum = (e._dotAccum || 0) + cactusDmg;
                                     if (Math.random() < dt * 2) e.hitFlash = 0.08;
+                                    // C16: Cactus Pot — 15% slow on enemies in thorn aura
+                                    if (!e.slowImmune) e._cactusSlowTimer = 0.5;
                                 }
                             }
                         }
@@ -8818,6 +8891,12 @@
                                     e._killSource = 'tower';
                                     e.hitFlash = 0.15;
                                     this._spawnDamageNumber(e.x, e.z, mopDmg, '#9b59b6');
+
+                                    // R33: Plumber's Union — apply soaked debuff (mop specialist chase card)
+                                    if (this.upgradeManager && this.upgradeManager.getModifier('soakedActive')) {
+                                        e._soaked = true;
+                                        e._soakedTimer = this.upgradeManager.getModifier('soakedDuration');
+                                    }
 
                                     // Directional knockback — tangential to sweep arc
                                     const angleToEnemy = Math.atan2(e.x - t.gridX, e.z - t.gridZ);
@@ -9376,6 +9455,8 @@
                 }
                 if (nearby >= 2) mult *= 1.3;
             }
+            // R33: Plumber's Union — soaked enemies take 2× damage from all sources
+            if (enemy && enemy._soaked && um.hasUpgrade('R33')) mult *= 2.0;
             // R21: Specialist — +15% per tower type NOT owned
             if (um.hasUpgrade('R21')) {
                 const ownedTypes = new Set();
@@ -9415,6 +9496,8 @@
             }
             // R26: Controlled Demolition — cumulative permanent buff
             if (this._controlledDemolitionBuff > 0) mult *= (1 + this._controlledDemolitionBuff);
+            // R35: Money Printer — +1% per stack from coin collection
+            if (this._moneyPrinterStacks > 0) mult *= (1 + this._moneyPrinterStacks * 0.01);
             // L13: Minimalist — ≤4 towers = 2.5× damage
             if (um.hasUpgrade('L13')) {
                 const active = this.towers.filter(t => !t.dying && !t.delivering).length;
@@ -10886,10 +10969,12 @@
                     }
                 }
 
-                // Update mesh position + tumble
-                sp.mesh.position.set(sp.x, sp.y, sp.z);
-                sp.mesh.rotation.x += sp.spin * dt;
-                sp.mesh.rotation.z += sp.spin * 0.6 * dt;
+                // Update mesh position + tumble (shards have no mesh)
+                if (sp.mesh) {
+                    sp.mesh.position.set(sp.x, sp.y, sp.z);
+                    sp.mesh.rotation.x += sp.spin * dt;
+                    sp.mesh.rotation.z += sp.spin * 0.6 * dt;
+                }
 
                 // Check collision with enemies (pot keeps sliding, trips anyone it hits)
                 const speed2 = sp.vx * sp.vx + sp.vz * sp.vz;
@@ -10904,7 +10989,12 @@
                             sp.hitEnemies.add(e);
                             if (window.SFX) { SFX.play('pot_kick'); SFX.play('stun_impact'); }
                             // L2: Desperate Measures — 2x damage when door HP < 50%
-                            const tripDmg = sp.tripDamage * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(null, e);
+                            // R34: Terracotta Army — trip damage × active pot count
+                            let terracottaMult = 1;
+                            if (this.upgradeManager && this.upgradeManager.getModifier('terracottaActive')) {
+                                terracottaMult = Math.max(1, this.towers.filter(pt => pt.type === 'potplant' && !pt.dying && !pt.delivering).length);
+                            }
+                            const tripDmg = sp.tripDamage * terracottaMult * (this._desperateMeasures ? 2 : 1) * this._crossfireMult(e, 'potplant') * this._getTowerDamageMult(null, e);
                             e.hp -= tripDmg;
                             e._killSource = 'trip';
                             e.hitFlash = 0.15;
@@ -10974,7 +11064,10 @@
                 const stopped = speed2 < 0.5 && sp.y < 0.05;
                 const outOfBounds = sp.x > 16 || sp.x < -16 || sp.z < 2 || sp.z > 71;
                 if (sp.life <= 0 || stopped || outOfBounds) {
-                    if (sp.hp > 0 && !outOfBounds) {
+                    if (sp._isShard) {
+                        // R34: Terracotta Army shard — just remove (no mesh to clean up)
+                        this._slidingPots.splice(i, 1);
+                    } else if (sp.hp > 0 && !outOfBounds) {
                         // C15: Spring-Loaded Pot — return to original position (if unoccupied)
                         if (this.upgradeManager && this.upgradeManager.getModifier('potReturnToOrigin') &&
                             !this._isCellOccupied(sp.origX, sp.origZ)) {

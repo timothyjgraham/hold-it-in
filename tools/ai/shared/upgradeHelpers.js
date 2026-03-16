@@ -17,6 +17,7 @@ const UPGRADE_TOWER_MAP = {
   L4: ['mop'], L5: ['potplant'], L6: ['wetfloor'], L7: ['coinmagnet'],
   L8: ['mop'], L9: ['ubik'], L10: ['coinmagnet'], L12: ['wetfloor'],
   L14: ['coinmagnet'],
+  R33: ['mop'], R34: ['potplant'], R35: ['coinmagnet'],
 };
 
 /**
