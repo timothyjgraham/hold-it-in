@@ -532,6 +532,403 @@ class Reporter {
     return JSON.stringify(data, null, 2);
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // SYNERGY NETWORK REPORTS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Main entry point for synergy network reporting.
+   * @param {object} data - Output of SynergyNetwork.analyze()
+   * @returns {string}
+   */
+  reportSynergyNetwork(data) {
+    if (this.format === 'json') return this.toJSON(data) + '\n';
+
+    let out = '';
+    out += this.reportInteractionEffects(data.interactions);
+    out += this.reportFrequentItemsets(data.itemsets);
+    out += this.reportBuildCommunities(data.communities);
+    out += this.reportBridgeUpgrades(data.centrality);
+    out += this.reportIslands(data.islands);
+    if (data.rejections) out += this.reportRejections(data.rejections);
+    out += this.reportDesignInsights(data.summary);
+    return out;
+  }
+
+  /**
+   * Format interaction effects table — top 30 synergies + top 10 anti-synergies.
+   * @param {object[]} interactions
+   * @returns {string}
+   */
+  reportInteractionEffects(interactions) {
+    if (this.format === 'json') return this.toJSON(interactions) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  INTERACTION EFFECTS (True Synergy / Anti-Synergy)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    if (interactions.length === 0) {
+      out += '  No significant interaction effects found.\n\n';
+      return out;
+    }
+
+    // Top 30 synergies (positive interaction)
+    const synergies = interactions.filter(ix => ix.interaction > 0).slice(0, 30);
+    if (synergies.length > 0) {
+      out += '  TOP SYNERGIES (superadditive — combo is better than sum of parts)\n';
+      out += '  ' + '-'.repeat(96) + '\n';
+
+      const header = `  ${this._lpad('#', 3)} ${this.pad('Upgrade A', 22)} ${this.pad('Upgrade B', 22)} ${this._lpad('Effect', 8)} ${this._lpad('Lift', 6)} ${this._lpad('Chi2', 7)} ${this._lpad('n(AB)', 6)} ${this._lpad('E[AB]', 6)} ${this._lpad('E[A]', 6)} ${this._lpad('E[B]', 6)}`;
+      out += header + '\n';
+      out += '  ' + '-'.repeat(96) + '\n';
+
+      for (let i = 0; i < synergies.length; i++) {
+        const ix = synergies[i];
+        out += `  ${this._lpad(i + 1, 3)} ${this.pad(ix.nameA, 22)} ${this.pad(ix.nameB, 22)} ${this._lpad('+' + ix.interaction.toFixed(1) + 'w', 8)} ${this._lpad(ix.lift.toFixed(2), 6)} ${this._lpad(ix.chi2.toFixed(1), 7)} ${this._lpad(ix.nBoth, 6)} ${this._lpad(ix.meanBoth.toFixed(1), 6)} ${this._lpad(ix.meanAonly.toFixed(1), 6)} ${this._lpad(ix.meanBonly.toFixed(1), 6)}\n`;
+      }
+      out += '\n';
+    }
+
+    // Top 10 anti-synergies (negative interaction)
+    const antis = interactions.filter(ix => ix.interaction < 0);
+    antis.sort((a, b) => a.interaction - b.interaction);
+    const topAntis = antis.slice(0, 10);
+
+    if (topAntis.length > 0) {
+      out += '  TOP ANTI-SYNERGIES (subadditive — combo is worse than expected)\n';
+      out += '  ' + '-'.repeat(96) + '\n';
+
+      for (let i = 0; i < topAntis.length; i++) {
+        const ix = topAntis[i];
+        out += `  ${this._lpad(i + 1, 3)} ${this.pad(ix.nameA, 22)} ${this.pad(ix.nameB, 22)} ${this._lpad(ix.interaction.toFixed(1) + 'w', 8)} ${this._lpad(ix.lift.toFixed(2), 6)} ${this._lpad(ix.chi2.toFixed(1), 7)} ${this._lpad(ix.nBoth, 6)}\n`;
+      }
+      out += '\n';
+    }
+
+    return out;
+  }
+
+  /**
+   * Format frequent itemsets grouped by size (2/3/4-wise).
+   * @param {object} itemsets - { L1, L2, L3, L4 }
+   * @returns {string}
+   */
+  reportFrequentItemsets(itemsets) {
+    if (this.format === 'json') return this.toJSON(itemsets) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  FREQUENT UPGRADE COMBOS (Apriori Itemsets)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    out += `  L1 (singles): ${itemsets.L1.length} upgrades with sufficient support in success runs\n\n`;
+
+    // L2: pairs
+    if (itemsets.L2.length > 0) {
+      out += `  L2 PAIRS (${itemsets.L2.length} significant combos):\n`;
+      out += '  ' + '-'.repeat(80) + '\n';
+      const header2 = `  ${this._lpad('#', 3)} ${this.pad('Upgrade A', 22)} ${this.pad('Upgrade B', 22)} ${this._lpad('Sup%', 6)} ${this._lpad('Lift', 6)} ${this._lpad('Effect', 8)}`;
+      out += header2 + '\n';
+      out += '  ' + '-'.repeat(80) + '\n';
+
+      const show2 = itemsets.L2.slice(0, 30);
+      for (let i = 0; i < show2.length; i++) {
+        const l = show2[i];
+        out += `  ${this._lpad(i + 1, 3)} ${this.pad(l.names[0], 22)} ${this.pad(l.names[1], 22)} ${this._lpad((l.support * 100).toFixed(1), 6)} ${this._lpad(l.lift.toFixed(2), 6)} ${this._lpad('+' + l.interaction.toFixed(1) + 'w', 8)}\n`;
+      }
+      if (itemsets.L2.length > 30) {
+        out += `  ... and ${itemsets.L2.length - 30} more\n`;
+      }
+      out += '\n';
+    }
+
+    // L3: triples
+    if (itemsets.L3.length > 0) {
+      out += `  L3 TRIPLES (${itemsets.L3.length} significant combos):\n`;
+      out += '  ' + '-'.repeat(80) + '\n';
+      const header3 = `  ${this._lpad('#', 3)} ${this.pad('Upgrades', 60)} ${this._lpad('Sup%', 6)} ${this._lpad('3-way', 8)}`;
+      out += header3 + '\n';
+      out += '  ' + '-'.repeat(80) + '\n';
+
+      const show3 = itemsets.L3.slice(0, 20);
+      for (let i = 0; i < show3.length; i++) {
+        const l = show3[i];
+        const nameStr = l.names.join(' + ');
+        out += `  ${this._lpad(i + 1, 3)} ${this.pad(nameStr, 60)} ${this._lpad((l.support * 100).toFixed(1), 6)} ${this._lpad(l.interaction.toFixed(1) + 'w', 8)}\n`;
+      }
+      if (itemsets.L3.length > 20) {
+        out += `  ... and ${itemsets.L3.length - 20} more\n`;
+      }
+      out += '\n';
+    }
+
+    // L4: quads
+    if (itemsets.L4.length > 0) {
+      out += `  L4 QUADS (${itemsets.L4.length} significant combos):\n`;
+      out += '  ' + '-'.repeat(80) + '\n';
+
+      for (let i = 0; i < itemsets.L4.length; i++) {
+        const l = itemsets.L4[i];
+        out += `  ${this._lpad(i + 1, 3)} ${l.names.join(' + ')}  (sup: ${(l.support * 100).toFixed(1)}%)\n`;
+      }
+      out += '\n';
+    }
+
+    if (itemsets.L2.length === 0 && itemsets.L3.length === 0 && itemsets.L4.length === 0) {
+      out += '  No significant multi-upgrade combos found at current thresholds.\n\n';
+    }
+
+    return out;
+  }
+
+  /**
+   * Format build communities — members, density, bridges.
+   * @param {object} communityData - { communities, bridges }
+   * @returns {string}
+   */
+  reportBuildCommunities(communityData) {
+    if (this.format === 'json') return this.toJSON(communityData) + '\n';
+
+    const { communities, bridges } = communityData;
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  BUILD ARCHETYPES (Louvain Communities)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    if (communities.length === 0) {
+      out += '  No communities detected.\n\n';
+      return out;
+    }
+
+    for (const c of communities) {
+      if (c.size < 2) continue; // Skip singletons
+
+      out += `  Community ${c.id} — ${c.size} upgrades, density: ${c.density}\n`;
+      out += '  ' + '~'.repeat(50) + '\n';
+
+      // Group members by rarity
+      const byRarity = { common: [], rare: [], legendary: [], unknown: [] };
+      for (const m of c.members) {
+        const bucket = byRarity[m.rarity] || byRarity.unknown;
+        bucket.push(m);
+      }
+
+      for (const [rarity, members] of Object.entries(byRarity)) {
+        if (members.length === 0) continue;
+        const names = members.map(m => `${m.name} (${(m.pickRate * 100).toFixed(0)}%)`).join(', ');
+        out += `    ${rarity}: ${names}\n`;
+      }
+      out += '\n';
+    }
+
+    // Bridges between communities
+    if (bridges.length > 0) {
+      out += '  INTER-COMMUNITY BRIDGES:\n';
+      out += '  ' + '-'.repeat(70) + '\n';
+      const showBridges = bridges.slice(0, 15);
+      for (const b of showBridges) {
+        out += `    ${this.pad(b.sourceName, 22)} <-> ${this.pad(b.targetName, 22)} (comm ${b.fromComm} <-> ${b.toComm}, +${b.weight.toFixed(1)}w)\n`;
+      }
+      out += '\n';
+    }
+
+    return out;
+  }
+
+  /**
+   * Format bridge upgrades — top 15 by betweenness centrality.
+   * @param {object[]} centrality
+   * @returns {string}
+   */
+  reportBridgeUpgrades(centrality) {
+    if (this.format === 'json') return this.toJSON(centrality) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  BRIDGE / PIVOT UPGRADES (Betweenness Centrality)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    if (centrality.length === 0) {
+      out += '  No centrality data.\n\n';
+      return out;
+    }
+
+    out += '  High betweenness = upgrade that connects separate archetypes (pivot point)\n\n';
+
+    const header = `  ${this._lpad('#', 3)} ${this.pad('Upgrade', 24)} ${this.pad('Rarity', 10)} ${this._lpad('Betweenness', 12)} ${this._lpad('Pick%', 6)}  Bar`;
+    out += header + '\n';
+    out += '  ' + '-'.repeat(header.length - 2) + '\n';
+
+    const top = centrality.filter(c => c.betweenness > 0).slice(0, 15);
+    const maxBet = top.length > 0 ? top[0].betweenness : 1;
+
+    for (let i = 0; i < top.length; i++) {
+      const c = top[i];
+      const bar = this._bar(c.betweenness, maxBet, 20);
+      out += `  ${this._lpad(i + 1, 3)} ${this.pad(c.name, 24)} ${this.pad(c.rarity, 10)} ${this._lpad(c.betweenness.toFixed(4), 12)} ${this._lpad((c.pickRate * 100).toFixed(0) + '%', 6)}  ${bar}\n`;
+    }
+
+    out += '\n';
+    return out;
+  }
+
+  /**
+   * Format disconnected components + design suggestions.
+   * @param {object} islandData - { components, fragileConnections, suggestions }
+   * @returns {string}
+   */
+  reportIslands(islandData) {
+    if (this.format === 'json') return this.toJSON(islandData) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  CONNECTIVITY ANALYSIS (Islands & Fragile Links)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    const { components, fragileConnections, suggestions } = islandData;
+
+    const multiComponents = components.filter(c => c.size >= 2);
+    const singletonCount = components.filter(c => c.size === 1).length;
+
+    out += `  Connected components: ${components.length} (${multiComponents.length} clusters, ${singletonCount} singletons)\n`;
+    for (let i = 0; i < multiComponents.length; i++) {
+      const c = multiComponents[i];
+      const names = c.members.slice(0, 8).map(m => m.name).join(', ');
+      const suffix = c.members.length > 8 ? ` ... (+${c.members.length - 8} more)` : '';
+      out += `    Cluster ${i + 1} (${c.size}): ${names}${suffix}\n`;
+    }
+    out += '\n';
+
+    if (fragileConnections.length > 0) {
+      out += `  Fragile connections (0-2 bridges between communities):\n`;
+      for (const fc of fragileConnections) {
+        const bridgeStr = fc.bridges.length > 0 ? fc.bridges.join(', ') : 'none';
+        out += `    Comm ${fc.commA} (${fc.commASize}) <-> Comm ${fc.commB} (${fc.commBSize}): ${fc.bridgeCount} bridge(s) [${bridgeStr}]\n`;
+      }
+      out += '\n';
+    }
+
+    if (suggestions.length > 0) {
+      out += '  DESIGN SUGGESTIONS:\n';
+      for (const s of suggestions) {
+        out += `    * ${s}\n`;
+      }
+      out += '\n';
+    }
+
+    return out;
+  }
+
+  /**
+   * Format most-rejected upgrades.
+   * @param {object[]} rejections
+   * @returns {string}
+   */
+  reportRejections(rejections) {
+    if (this.format === 'json') return this.toJSON(rejections) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  REJECTION ANALYSIS (Most Rejected Upgrades)\n';
+    out += '='.repeat(100) + '\n\n';
+
+    if (!rejections || rejections.length === 0) {
+      out += '  No rejection data available (need build traces).\n\n';
+      return out;
+    }
+
+    const header = `  ${this._lpad('#', 3)} ${this.pad('Upgrade', 22)} ${this.pad('Rarity', 10)} ${this._lpad('Rej%', 6)} ${this._lpad('Offers', 7)} ${this._lpad('Picks', 6)}  Beaten By`;
+    out += header + '\n';
+    out += '  ' + '-'.repeat(95) + '\n';
+
+    const top = rejections.slice(0, 20);
+    for (let i = 0; i < top.length; i++) {
+      const r = top[i];
+      const beatenBy = r.topWinners.slice(0, 2).map(w => w.name).join(', ') || '-';
+      out += `  ${this._lpad(i + 1, 3)} ${this.pad(r.name, 22)} ${this.pad(r.rarity, 10)} ${this._lpad((r.rejectionRate * 100).toFixed(0) + '%', 6)} ${this._lpad(r.offers, 7)} ${this._lpad(r.picks, 6)}  ${beatenBy}\n`;
+    }
+
+    out += '\n';
+    return out;
+  }
+
+  /**
+   * Format actionable design insights summary.
+   * @param {object} summary
+   * @returns {string}
+   */
+  reportDesignInsights(summary) {
+    if (this.format === 'json') return this.toJSON(summary) + '\n';
+
+    let out = '';
+    out += '\n';
+    out += '='.repeat(100) + '\n';
+    out += '  DESIGN INSIGHTS SUMMARY\n';
+    out += '='.repeat(100) + '\n\n';
+
+    out += `  Data: ${summary.totalRuns} runs, ${summary.successRuns} success runs (top ${Math.round((1 - 0.75) * 100)}%)\n`;
+    out += `  Upgrades: ${summary.uniqueUpgradesUsed} / ${summary.totalUpgrades} used\n`;
+    out += `  Graph: ${summary.graphNodes} nodes, ${summary.graphEdges} edges (${summary.positiveEdges} synergy, ${summary.negativeEdges} anti-synergy)\n`;
+    out += `  Communities: ${summary.communities}, Connected components: ${summary.connectedComponents}\n`;
+    out += `  Frequent combos: ${summary.itemsetsL2} pairs, ${summary.itemsetsL3} triples, ${summary.itemsetsL4} quads\n`;
+    if (summary.pivotWave != null) {
+      out += `  Build identity crystallizes around wave ${summary.pivotWave}\n`;
+    }
+    out += '\n';
+
+    if (summary.topSynergies.length > 0) {
+      out += '  KEY FINDINGS:\n';
+      out += '  Strongest synergies:\n';
+      for (const s of summary.topSynergies) {
+        out += `    + ${s}\n`;
+      }
+    }
+
+    if (summary.topAntiSynergies.length > 0) {
+      out += '  Strongest anti-synergies:\n';
+      for (const s of summary.topAntiSynergies) {
+        out += `    - ${s}\n`;
+      }
+    }
+
+    out += '\n';
+
+    // Actionable bullets
+    const bullets = [];
+    if (summary.connectedComponents > 1) {
+      bullets.push('Multiple disconnected upgrade clusters — some build paths never interact. Consider bridge upgrades.');
+    }
+    if (summary.itemsetsL3 > 10) {
+      bullets.push(`${summary.itemsetsL3} three-way combos found — players have meaningful multi-upgrade synergy chains.`);
+    } else if (summary.itemsetsL3 === 0) {
+      bullets.push('No three-way combos detected — upgrades may be too independent. Consider adding chain synergies.');
+    }
+    if (summary.negativeEdges > summary.positiveEdges * 0.5) {
+      bullets.push('High anti-synergy count — many upgrades conflict. Check if this creates meaningful trade-offs or just feels bad.');
+    }
+    if (summary.pivotWave && summary.pivotWave < 10) {
+      bullets.push(`Build identity locks in early (wave ${summary.pivotWave}) — consider delaying key synergy upgrades to later waves.`);
+    }
+
+    if (bullets.length > 0) {
+      out += '  ACTIONABLE:\n';
+      for (const b of bullets) {
+        out += `    * ${b}\n`;
+      }
+      out += '\n';
+    }
+
+    return out;
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   /**

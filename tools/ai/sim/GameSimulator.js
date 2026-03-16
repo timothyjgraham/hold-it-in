@@ -28,6 +28,7 @@ class GameSimulator {
     this.maxWaves = options.maxWaves || 50;
     this.seed = options.seed != null ? options.seed : null;
     this.combatMode = options.combatMode || 'fast';
+    this.traceBuild = options.traceBuild || false;
   }
 
   /**
@@ -51,6 +52,7 @@ class GameSimulator {
 
     const waveResults = [];
     const towerHistory = [];
+    const buildTrace = [];
     let totalCoinsEarned = 0;
     let score = 0;
     let wavesReached = 0;
@@ -121,6 +123,16 @@ class GameSimulator {
           const pickIdx = agent.pickUpgrade(options, upgradeState);
           const idx = Math.max(0, Math.min(options.length - 1, pickIdx));
           const chosen = options[idx];
+
+          if (this.traceBuild) {
+            buildTrace.push({
+              wave,
+              offeredIds: options.map(o => o.id),
+              chosenId: chosen.id,
+              rejectedIds: options.filter((_, i) => i !== idx).map(o => o.id),
+              state: { coins, doorHP, towers: towerCtrl.snapshot(), upgrades: upgradeCtrl.snapshot() },
+            });
+          }
 
           upgradeCtrl.pick(chosen);
 
@@ -218,7 +230,7 @@ class GameSimulator {
     // fitness = wavesReached * 100 + score * 0.1 + doorHP * 2 + totalCoinsEarned * 0.05
     const fitness = wavesReached * 100 + score * 0.1 + doorHP * 2 + totalCoinsEarned * 0.05;
 
-    return {
+    const result = {
       wavesReached,
       score: Math.round(score),
       doorHP,
@@ -231,6 +243,12 @@ class GameSimulator {
       seed: this.seed,
       combatMode: this.combatMode,
     };
+
+    if (this.traceBuild) {
+      result.buildTrace = buildTrace;
+    }
+
+    return result;
   }
 }
 

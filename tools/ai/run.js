@@ -21,6 +21,7 @@ const { GeneticAgent } = require('./agents/GeneticAgent');
 const { QLearningAgent } = require('./agents/QLearningAgent');
 const { Analyzer } = require('./analysis/Analyzer');
 const { Reporter } = require('./analysis/Reporter');
+const { SynergyNetwork } = require('./analysis/SynergyNetwork');
 const fs = require('fs');
 const path = require('path');
 
@@ -72,6 +73,39 @@ function runGames(agent, n, label) {
         scenario: sc,
         maxWaves,
         seed: gameSeed,
+      });
+      const result = sim.run(agent);
+      results.push(result);
+
+      // Progress
+      const total = scenarios.length * gamesPerScenario;
+      const done = results.length;
+      if (done % Math.max(1, Math.floor(total / 20)) === 0 || done === total) {
+        const pct = Math.round((done / total) * 100);
+        process.stderr.write(`\r  [${label}] ${progressBar(pct, 30)} ${pct}% (${done}/${total})`);
+      }
+    }
+  }
+  process.stderr.write('\n');
+  return results;
+}
+
+/**
+ * Run N games with a given agent and collect GameResults with build traces.
+ */
+function runGamesWithTrace(agent, n, label) {
+  const results = [];
+  const scenarios = getScenarios();
+  const gamesPerScenario = Math.ceil(n / scenarios.length);
+
+  for (const sc of scenarios) {
+    for (let i = 0; i < gamesPerScenario; i++) {
+      const gameSeed = seed !== null ? seed + i : null;
+      const sim = new GameSimulator({
+        scenario: sc,
+        maxWaves,
+        seed: gameSeed,
+        traceBuild: true,
       });
       const result = sim.run(agent);
       results.push(result);
@@ -150,6 +184,7 @@ Commands:
   baseline                Run Random + Heuristic agents (1000 games each)
   ga                      Run Genetic Algorithm optimization
   qlearn                  Run Q-learning training
+  synergy                 Synergy network analysis (interaction effects, combos, communities)
   analyze                 Analyze saved results from file
   compare                 Head-to-head comparison of all agents
   help                    Show this help message
@@ -163,7 +198,8 @@ Options:
   --gen <n>               GA generations (default: 100)
   --eval-runs <n>         GA evaluation runs per genome (default: 3)
   --episodes <n>          Q-learning episodes (default: 10000)
-  --runs <n>              Number of runs for baseline/compare (default: 1000)
+  --runs <n>              Number of runs for baseline/compare/synergy (default: 1000)
+  --top-pct <f>           Success percentile for synergy analysis (default: 0.25)
   --input <file>          Load results from JSON file (for analyze)
   --output <file>         Save results to JSON file
   --csv                   Output in CSV format
@@ -174,6 +210,7 @@ Examples:
   node run.js baseline --scenario office --waves 40
   node run.js ga --pop 300 --gen 150 --output ga_results.json
   node run.js analyze --input ga_results.json --csv
+  node run.js synergy --runs 5000 --waves 50 --scenario office
   node run.js compare --scenario all --waves 50
 `);
 }
@@ -532,6 +569,67 @@ function cmdCompare() {
   process.stderr.write(`\n  Completed in ${elapsed}s\n`);
 }
 
+function cmdSynergy() {
+  const numRuns = parseInt(getArg('runs', '5000'));
+  const topPct = parseFloat(getArg('top-pct', '0.25'));
+  const startTime = Date.now();
+
+  process.stderr.write('\n  Synergy Network Analysis\n');
+  process.stderr.write(`  Scenario: ${scenario}, Max waves: ${maxWaves}, Runs: ${numRuns}\n\n`);
+
+  // Run 50% Heuristic + 50% Random with build traces
+  const halfRuns = Math.ceil(numRuns / 2);
+
+  process.stderr.write('  HeuristicAgent (with traces):\n');
+  const heuristicAgent = new HeuristicAgent({ rng: seed !== null ? _seededRng(seed + 999999) : undefined });
+  const heuristicResults = runGamesWithTrace(heuristicAgent, halfRuns, 'Heuristic');
+
+  process.stderr.write('  RandomAgent (with traces):\n');
+  const randomAgent = new RandomAgent({ rng: seed !== null ? _seededRng(seed) : undefined });
+  const randomResults = runGamesWithTrace(randomAgent, halfRuns, 'Random');
+
+  const allResults = [...heuristicResults, ...randomResults];
+
+  // Run synergy network analysis
+  process.stderr.write('\n  Computing synergy network...\n');
+  const network = new SynergyNetwork(allResults, {
+    successPctile: topPct,
+    metric: 'wavesReached',
+  });
+  const synergyData = network.analyze();
+
+  // Also run standard tier list for context
+  const analyzer = new Analyzer(allResults);
+
+  // Print reports
+  console.log(reporter.reportTierList(analyzer.tierList()));
+  console.log(reporter.reportSynergyNetwork(synergyData));
+
+  // Save if requested
+  if (outputFile) {
+    const saveData = {
+      command: 'synergy',
+      scenario,
+      maxWaves,
+      seed,
+      numRuns,
+      topPct,
+      summary: synergyData.summary,
+      interactions: synergyData.interactions.slice(0, 50),
+      itemsets: synergyData.itemsets,
+      communities: synergyData.communities,
+      centrality: synergyData.centrality.slice(0, 20),
+      islands: synergyData.islands,
+      rejections: synergyData.rejections ? synergyData.rejections.slice(0, 30) : null,
+      timing: synergyData.timing,
+    };
+    saveResults(saveData, outputFile);
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  process.stderr.write(`\n  Completed in ${elapsed}s\n`);
+}
+
 // ── Seeded RNG Helper ────────────────────────────────────────────────────
 
 function _seededRng(seed) {
@@ -558,6 +656,9 @@ switch (command) {
     break;
   case 'qlearn':
     cmdQLearning();
+    break;
+  case 'synergy':
+    cmdSynergy();
     break;
   case 'analyze':
     cmdAnalyze();
