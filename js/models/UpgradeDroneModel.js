@@ -6,7 +6,7 @@
 
 import { PALETTE, OUTLINE_WIDTH } from '../data/palette.js';
 import { toonMat, outlineMatStatic, outlineMatJittery } from '../shaders/toonMaterials.js';
-import { drawUpgradeIcon } from '../data/upgradeIcons.js';
+import { draw3DUpgradeIcon } from '../ui/UpgradeIconRenderer.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ function createPlacardTexture(upgrade, rarity) {
 
     // ── ICON + NAME (55-250px) ──
     ctx.fillStyle = '#1a1a2e';
-    drawUpgradeIcon(ctx, upgrade.icon || 'star', 120, 155, 110);
+    draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, 120, 155, 110, 0);
 
     const nameFontSize = upgrade.name.length > 14 ? 48 : upgrade.name.length > 10 ? 52 : 60;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
@@ -203,6 +203,13 @@ function createPlacardTexture(upgrade, rarity) {
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
+
+    // Store refs for animated 3D icon re-rendering
+    texture._iconCanvas = canvas;
+    texture._iconCtx = ctx;
+    texture._iconKey = upgrade.icon || 'star';
+    texture._iconRarity = rarity;
+
     return texture;
 }
 
@@ -598,6 +605,10 @@ export function createUpgradeDrone(upgrade, slotIndex) {
         bodyGroup: bodyGroup,
         placard: placard,
 
+        // Placard texture (for animated icon re-rendering)
+        placardTexture: placardTexture,
+        _iconFrame: slotIndex, // Stagger updates across drones
+
         // Pendulum physics state
         pendulumAngle: 0,
         pendulumVelocity: 0,
@@ -696,6 +707,27 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud.jitterMats) {
             ud.jitterMats[0].uniforms.uTime.value += dt;
             if (ud.jitterMats[1]) ud.jitterMats[1].uniforms.uTime.value += dt * 1.3;
+        }
+    }
+
+    // ── ANIMATED 3D ICON on placard (throttled to every 3rd frame) ─────
+    if (ud.placardTexture && ud.placardTexture._iconCanvas) {
+        ud._iconFrame++;
+        if (ud._iconFrame % 3 === 0) {
+            const tex = ud.placardTexture;
+            const ctx = tex._iconCtx;
+            const cx = 120, cy = 155, half = 60;
+
+            // Clear icon region and fill with placard background color
+            const bgColor = tex._iconRarity === 'legendary' ? '#ffd93d'
+                          : tex._iconRarity === 'rare' ? '#fff4d9'
+                          : '#ffffff';
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
+
+            // Re-draw rotating 3D icon
+            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 110, performance.now() / 1000);
+            tex.needsUpdate = true;
         }
     }
 

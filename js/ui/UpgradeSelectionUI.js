@@ -7,7 +7,7 @@
 
 import { PALETTE } from '../data/palette.js';
 import { toonMat } from '../shaders/toonMaterials.js';
-import { drawUpgradeIcon } from '../data/upgradeIcons.js';
+import { draw3DUpgradeIcon } from './UpgradeIconRenderer.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -875,7 +875,7 @@ export class UpgradeSelectionUI {
 
         // ── Icon + Name (55-250px) ──
         ctx.fillStyle = '#1a1a2e';
-        drawUpgradeIcon(ctx, upgrade.icon || 'star', 120, 155, 110);
+        draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, 120, 155, 110, 0);
 
         const nameFontSize = upgrade.name.length > 14 ? 48 : upgrade.name.length > 10 ? 52 : 60;
         ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;

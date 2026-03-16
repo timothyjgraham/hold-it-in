@@ -13,8 +13,9 @@ import { UPGRADE_MAP } from './data/upgradeRegistry.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
 import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
-import { createIconDataURL } from './data/upgradeIcons.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
+import { createIconModel } from './models/UpgradeIconFactory.js';
+import { initIconRenderer, create3DIconDataURL, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
@@ -73,6 +74,9 @@ import {
 
 // Inject CSS palette variables
 injectCSSPalette();
+
+// Initialize 3D icon offscreen renderer
+initIconRenderer();
 
 // Expose to window for Game object in index.html
 window.PALETTE = PALETTE;
@@ -159,7 +163,15 @@ window.UpgradeSelectionUI = UpgradeSelectionUI;
 window.EnemyIntroUI = EnemyIntroUI;
 window.TowerIntroUI = TowerIntroUI;
 window.MedicDroneSystem = MedicDroneSystem;
-window.createIconDataURL = createIconDataURL;
+// Backward-compatible wrapper: old API was (iconKey, size), new adds rarity + time
+window.createIconDataURL = function(iconKey, rarityOrSize, size, time) {
+    if (typeof rarityOrSize === 'number') {
+        return create3DIconDataURL(iconKey, 'common', rarityOrSize, 0);
+    }
+    return create3DIconDataURL(iconKey, rarityOrSize || 'common', size || 64, time || 0);
+};
+window.createIconModel = createIconModel;
+window.disposeIconRenderer = disposeIconRenderer;
 window.outlineMatStatic = outlineMatStatic;
 window.SFX = SFX;
 window.Music = Music;
