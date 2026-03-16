@@ -774,7 +774,7 @@ function analyzeDPS(maxWaves, scenario) {
       const dps = ai.estimateDPS();
 
       // Total wave duration estimate
-      const avgSpeed = 3.5 * (1 + wave * 0.02);
+      const avgSpeed = 3.5 * (1 + wave * 0.04);
       const traverseTime = GAME.traverseDistance / avgSpeed;
       const totalKillCapacity = dps * (waveData.enemies.length * waveData.interval + traverseTime);
       const killPct = Math.min(100, Math.round(totalKillCapacity / totalHP * 100));
@@ -784,7 +784,7 @@ function analyzeDPS(maxWaves, scenario) {
     }
 
     // Ratio: balanced DPS relative to wave HP per second
-    const avgSpeed = 3.5 * (1 + wave * 0.02);
+    const avgSpeed = 3.5 * (1 + wave * 0.04);
     const waveTime = waveData.enemies.length * waveData.interval + GAME.traverseDistance / avgSpeed;
     const hpPerSec = totalHP / waveTime;
     const ratio = (balancedDPS / hpPerSec).toFixed(2);
@@ -875,7 +875,7 @@ function runMonteCarlo(numRuns, maxWaves, scenario) {
         const dps = towerAI.estimateDPS(upgrader.acquired);
 
         // Wave timing: spawn duration + traverse time
-        const avgSpeed = 3.5 * (1 + wave * 0.02) * (waveData.eventSpeedMult || 1.0);
+        const avgSpeed = 3.5 * (1 + wave * 0.04) * (waveData.eventSpeedMult || 1.0);
         const traverseTime = GAME.traverseDistance / avgSpeed;
         const spawnDuration_ = enemies.length * waveData.interval;
         const waveDuration_ = spawnDuration_ + traverseTime;

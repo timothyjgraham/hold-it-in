@@ -12,6 +12,18 @@ const GAME = {
   laneLength: 70,
   spawnZoneZ: 69,
   toiletZ: 3,
+  // Per-scenario layout — door Z varies by scenario (enemies stop at doorZ + 1.5)
+  scenarioLayout: {
+    office:   { doorZ: 9,   wallEnemyCount: 7, wallType: 'polite' },
+    forest:   { doorZ: 5.5, wallEnemyCount: 7, wallType: 'deer' },
+    ocean:    { doorZ: 5.5, wallEnemyCount: 7, wallType: 'dolphin' },
+    airplane: { doorZ: 8,   wallEnemyCount: 6, wallType: 'nervous' },
+  },
+  // Per-scenario traversal distance (spawnZoneZ - (doorZ + 1.5))
+  traverseDistanceForScenario(scenario) {
+    const layout = this.scenarioLayout[scenario] || this.scenarioLayout.office;
+    return this.spawnZoneZ - (layout.doorZ + 1.5);
+  },
   // Effective traversal distance
   get traverseDistance() { return this.spawnZoneZ - this.toiletZ; }, // 66 units
 
@@ -82,6 +94,7 @@ const GAME = {
 
   trainSizes: { drunk: [6,8], ant: [8,10], seahorse: [6,8], trolley: [3,4] },
   swarmSize: [5, 7], // min, max
+  wallSpawn: { startWave: 5, chanceBase: 0.08, chancePerWave: 0.03, chanceCap: 0.8, maxWallsFormula: 'Math.min(3, 1 + Math.floor((wave - 5) / 10))' },
 
   // ── CURATED WAVES ───────────────────────────────────────────────────────
   curatedWaves: {
@@ -216,6 +229,49 @@ const GAME = {
   },
 
   fallbackType: { office: 'polite', forest: 'deer', ocean: 'dolphin', airplane: 'nervous' },
+
+  // Curated wave draw pool — weighted random draws (mirrors game's ENEMY_DRAW_POOL)
+  enemyDrawPool: {
+    office: [
+      { type: 'polite',       weight: 1.0,  unlocksAt: 1 },
+      { type: 'dancer',       weight: 0.8,  unlocksAt: 3 },
+      { type: 'waddle',       weight: 0.4,  unlocksAt: 5 },
+      { type: 'panicker',     weight: 0.3,  unlocksAt: 7 },
+      { type: 'drunk_train',  weight: 0.1,  unlocksAt: 8 },
+      { type: 'powerwalker',  weight: 0.45, unlocksAt: 9 },
+      { type: 'girls_group',  weight: 0.12, unlocksAt: 10 },
+    ],
+    forest: [
+      { type: 'deer',           weight: 1.0,  unlocksAt: 1 },
+      { type: 'squirrel',       weight: 0.8,  unlocksAt: 3 },
+      { type: 'bear',           weight: 0.4,  unlocksAt: 5 },
+      { type: 'fox',            weight: 0.3,  unlocksAt: 7 },
+      { type: 'ant_train',      weight: 0.1,  unlocksAt: 8 },
+      { type: 'moose',          weight: 0.45, unlocksAt: 9 },
+      { type: 'raccoon_group',  weight: 0.12, unlocksAt: 10 },
+    ],
+    ocean: [
+      { type: 'dolphin',          weight: 1.0,  unlocksAt: 1 },
+      { type: 'flyfish',          weight: 0.8,  unlocksAt: 3 },
+      { type: 'shark',            weight: 0.4,  unlocksAt: 5 },
+      { type: 'pirate',           weight: 0.3,  unlocksAt: 7 },
+      { type: 'seahorse_train',   weight: 0.1,  unlocksAt: 8 },
+      { type: 'seaturtle',        weight: 0.45, unlocksAt: 9 },
+      { type: 'jellyfish_group',  weight: 0.12, unlocksAt: 10 },
+    ],
+    airplane: [
+      { type: 'nervous',        weight: 1.0,  unlocksAt: 1 },
+      { type: 'business',       weight: 0.8,  unlocksAt: 3 },
+      { type: 'stumbler',       weight: 0.4,  unlocksAt: 5 },
+      { type: 'attendant',      weight: 0.3,  unlocksAt: 7 },
+      { type: 'trolley_train',  weight: 0.1,  unlocksAt: 8 },
+      { type: 'marshal',        weight: 0.45, unlocksAt: 9 },
+      { type: 'unruly_group',   weight: 0.12, unlocksAt: 10 },
+    ],
+  },
+
+  // Last Straw mechanic — 20% chance of desperate final lunge when killed near toilet
+  lastStraw: { chance: 0.2, zThreshold: 25, speedMult: 3.0, duration: 1.0 },
 
   // ── UPGRADES ────────────────────────────────────────────────────────────
   upgrades: [

@@ -181,6 +181,7 @@ class GameSimulator {
         coins,
         doorHP,
         doorMaxHP,
+        scenario: this.scenario,
       };
 
       let result;
@@ -195,14 +196,6 @@ class GameSimulator {
       totalCoinsEarned += result.coinIncome;
       doorHP -= result.doorDamage;
 
-      // Endless mode: wave bonus halved after wave 20 (matches game's _endWave logic)
-      if (wave > 20) {
-        // The game halves wave bonus in endless mode after wave 20.
-        // Since sim runs beyond campaign (20 waves), apply the penalty.
-        const endlessPenalty = Math.floor(result.coinIncome * 0.15); // ~15% haircut on late income
-        result.coinIncome = Math.max(0, result.coinIncome - endlessPenalty);
-      }
-
       // R25: Compound Interest (5% of coins as bonus, uncapped)
       if (upgradeCtrl.has('R25')) {
         const interest = Math.floor(coins * 0.05);
@@ -210,8 +203,8 @@ class GameSimulator {
         totalCoinsEarned += interest;
       }
 
-      // Score: killRate * wave * 10
-      const waveScore = result.killRate * wave * 10;
+      // Score: 10 per enemy killed (matches real game)
+      const waveScore = Math.round(result.killRate * waveData.enemies.length) * 10;
       score += waveScore;
 
       lastWaveResult = {

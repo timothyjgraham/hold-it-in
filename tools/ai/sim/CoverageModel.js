@@ -206,11 +206,13 @@ class CoverageModel {
     let totalCoinsIfAllKilled = 0;
     let totalDoorDmgIfAllLeak = 0;
     const despChance = desperateChance(wave, eventDesperateChance);
+    let desperateCount = 0;
 
     for (const [type, count] of Object.entries(typeCounts)) {
       for (let i = 0; i < count; i++) {
         let hp = enemyHP(type, wave);
-        if (rand() < despChance) hp = Math.round(hp * 0.75);
+        const isDesp = rand() < despChance;
+        if (isDesp) { hp = Math.round(hp * 0.75); desperateCount++; }
         totalHP += hp;
         totalCoinsIfAllKilled += coinDropValue(type);
         totalDoorDmgIfAllLeak += (GAME.enemies[type]?.doorDmg || 1);
@@ -253,10 +255,40 @@ class CoverageModel {
     const dps = this.computeDPS(towers, upgrades, permanentDmgBonus, wave);
 
     // ── 4. Compute wave timing ──
-    const avgSpeed = 3.5 * (1 + wave * 0.04) * eventSpeedMult;
-    const traverseTime = GAME.traverseDistance / avgSpeed;
+    const despFrac = totalEnemyCount > 0 ? desperateCount / totalEnemyCount : 0;
+    const despSpeedFactor = 1.0 + despFrac * 0.5; // desperate enemies are 1.5x speed
+    const scenario = params.scenario || 'office';
+    const traverseDist = GAME.traverseDistanceForScenario ? GAME.traverseDistanceForScenario(scenario) : GAME.traverseDistance;
+    const avgSpeed = 3.5 * (1 + wave * 0.04) * eventSpeedMult * despSpeedFactor;
+    const traverseTime = traverseDist / avgSpeed;
     const spawnDuration = enemies.length * interval;
     const waveDuration = spawnDuration + traverseTime;
+
+    // ── 4b. Enemy speed mechanics ──
+
+    // Panic threshold: tank enemies double speed when below 50% HP
+    // In aggregate: tanks spend ~40% of combat at 2x speed, so effective tank speed is ~1.4x
+    let panicSpeedFrac = 0;
+    for (const type of enemies) {
+      const def = GAME.enemies[type];
+      if (def && def.panicThreshold) panicSpeedFrac++;
+    }
+    const panicFrac = totalEnemyCount > 0 ? panicSpeedFrac / totalEnemyCount : 0;
+    const panicSpeedBonus = 1.0 + panicFrac * 0.4; // 40% of combat time at 2x speed -> 1.4x avg
+
+    // Speed aura: support enemies accelerate nearby allies
+    let auraEnemyCount = 0;
+    for (const type of enemies) {
+      const def = GAME.enemies[type];
+      if (def && def.speedAuraRange) auraEnemyCount++;
+    }
+    const auraFrac = totalEnemyCount > 0 ? auraEnemyCount / totalEnemyCount : 0;
+    // Each aura source affects ~20% of other enemies, giving them ~1.4x speed
+    const auraSpeedPenalty = 1.0 / (1.0 + auraFrac * 0.2 * 0.4); // reduces effective tower time
+
+    // Panic threshold reduces effective tower engagement time for tank enemies
+    const panicPenalty = 1.0 / panicSpeedBonus;
+    const combinedSpeedPenalty = panicPenalty * auraSpeedPenalty;
 
     // ── 5. Apply all upgrade bonuses ──
 
@@ -270,6 +302,17 @@ class CoverageModel {
     if (upgrades.C4 && towers.wetfloor > 0) slowBonus *= (1 + (upgrades.C4) * 0.06 * slowableFrac);
     // R29: Contagion (slow spreads — ~30% more enemies slowed, reduced by immune fraction)
     if (upgrades.R29 && towers.wetfloor > 0) slowBonus *= (1.0 + 0.15 * slowableFrac);
+    // barrierBust: stumbler-type enemies destroy wet floor signs on contact
+    let barrierBustCount = 0;
+    for (const type of enemies) {
+      const def = GAME.enemies[type];
+      if (def && def.barrierBust) barrierBustCount++;
+    }
+    const barrierBustFrac = totalEnemyCount > 0 ? barrierBustCount / totalEnemyCount : 0;
+    // Reduce wet floor sign effectiveness proportional to barrier-busting enemies
+    if (barrierBustFrac > 0 && towers.wetfloor > 0) {
+      slowBonus *= (1.0 - barrierBustFrac * 0.6); // 60% of their interaction destroys signs
+    }
     // R17: Marked for Death (+40% damage to slowed enemies — only applies to slowable fraction)
     const markedBonus = (upgrades.R17 && towers.wetfloor > 0)
       ? (1.0 + 0.40 * slowableFrac * 0.6) : 1.0; // ~60% of slowable enemies are slowed at any time
@@ -441,7 +484,7 @@ class CoverageModel {
       pileupBonus * dominoBonus * spillBonus * looseBonus * nuclearBonus *
       thornBonus * cactusSlowBonus *
       plumbersUnionBonus * terracottaBonus * moneyPrinterBonus *
-      enemyAbilityPenalty;
+      enemyAbilityPenalty * combinedSpeedPenalty;
 
     // Soft cap: matches game's per-tower _getTowerDamageMult soft cap (3.0x base, 0.25 diminish).
     // The game applies this PER TOWER PER ATTACK. We approximate by computing the global
@@ -462,7 +505,14 @@ class CoverageModel {
 
     // ── 6. Calculate coins collected ──
     const totalCoins = Math.round(totalCoinsIfAllKilled * killRatio);
-    const doorDamage = Math.round(totalDoorDmgIfAllLeak * (1 - killRatio));
+
+    // Last Straw: ~20% of enemies killed in lower half get a free 1s sprint at 3x speed
+    // Estimate ~30% of kills happen in lower half of field, ~20% of those trigger last straw
+    // ~6% of killed enemies do a last straw lunge. ~50% of those reach the door.
+    const lastStrawLeakRate = 0.06 * 0.5; // ~3% of kills produce a last straw door hit
+    const lastStrawDoorDmg = Math.round(killRatio * totalEnemyCount * lastStrawLeakRate * 1.5); // avg 1.5 dmg per leak
+
+    const doorDamage = Math.round(totalDoorDmgIfAllLeak * (1 - killRatio)) + lastStrawDoorDmg;
 
     // Coin collection: 30% base + 25% per magnet, cap 100%
     // Magnets disabled by magnetDisableRange enemies reduce effective magnet count
@@ -532,14 +582,18 @@ class CoverageModel {
 
     const dt = this.tickInterval;
     const despChance = desperateChance(wave, eventDesperateChance);
-    const toiletZ = GAME.toiletZ;
+    const scenario = params.scenario || 'office';
+    const layout = GAME.scenarioLayout ? (GAME.scenarioLayout[scenario] || GAME.scenarioLayout.office) : null;
+    const toiletZ = layout ? layout.doorZ + 1.5 : (GAME.toiletZ || 3);
 
     // ── Build enemy objects ──
     const enemyObjs = enemyTypes.map((type, i) => {
       const def = GAME.enemies[type];
       let hp = enemyHP(type, wave);
-      if (rand() < despChance) hp = Math.round(hp * 0.75);
-      const speed = enemySpeed(type, wave, eventSpeedMult);
+      const isDesp = rand() < despChance;
+      if (isDesp) hp = Math.round(hp * 0.75);
+      let speed = enemySpeed(type, wave, eventSpeedMult);
+      if (isDesp) speed *= 1.5;
       return {
         type,
         hp,
@@ -633,8 +687,20 @@ class CoverageModel {
           if (e.slowTimer <= 0) e.slowed = false;
         }
 
+        // Panic threshold: tanks speed up at low HP
+        if (e.def && e.def.panicThreshold && !e._panicked && e.hp < e.maxHP * e.def.panicThreshold) {
+          e._panicked = true;
+          e.speed *= 2.0;
+        }
+
+        // Last straw timer decrement
+        if (e._lastStrawTimer > 0) {
+          e._lastStrawTimer -= dt;
+          if (e._lastStrawTimer <= 0) { e.hp = 0; e.alive = false; }
+        }
+
         // Movement
-        const speedMult = e.slowed ? 0.4 : 1.0;
+        const speedMult = e.slowed ? (upgrades.C5 ? 0.15 : 0.4) : 1.0;
         e.z -= e.speed * speedMult * dt;
 
         // Check if reached door
@@ -722,8 +788,16 @@ class CoverageModel {
         // Check kills
         for (const e of enemyObjs) {
           if (e.alive && e.hp <= 0) {
-            e.alive = false;
-            totalCoinsEarned += coinDropValue(e.type);
+            // Last Straw: 20% chance of desperate final lunge when killed near toilet
+            if (!e._lastStrawUsed && e.z < 25 && rand() < 0.2) {
+              e._lastStrawUsed = true;
+              e.hp = 1;
+              e.speed *= 3.0;
+              e._lastStrawTimer = 1.0;
+            } else {
+              e.alive = false;
+              totalCoinsEarned += coinDropValue(e.type);
+            }
           }
         }
       }
@@ -752,7 +826,9 @@ class CoverageModel {
     const killRate = totalEnemies > 0 ? killed / totalEnemies : 1.0;
 
     // Coin collection
-    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25);
+    const overclockCollect = upgrades.C1 ? 0.20 : 0;
+    const globalPullCollect = ((upgrades.C3 || 0) >= 3) ? 0.15 : 0;
+    const collectionRate = Math.min(1.0, 0.3 + towers.coinmagnet * 0.25 + overclockCollect + globalPullCollect);
     const coinValueMult = 1 + (upgrades.C2 || 0) * 0.5;
     let collected = Math.round(totalCoinsEarned * collectionRate * coinValueMult);
 
