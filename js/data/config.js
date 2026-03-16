@@ -22,7 +22,7 @@ export const CONFIG = {
 
     // Gameplay
     startingHygiene: 5,         // Lives
-    startingCoins: 60,          // Tight wave 1 buy — forces meaningful opening choice
+    startingCoins: 100,         // Generous opening — lets players set up a real defense before wave 1
     MAX_TOWERS: Infinity,       // No global tower cap (Skeleton Crew still limits to 6)
 
     // Spawn

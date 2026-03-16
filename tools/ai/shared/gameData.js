@@ -5,7 +5,7 @@
  */
 
 const GAME = {
-  startingCoins: 60,
+  startingCoins: 100,
   doorMaxHP: 100,
   gridCell: 2,
   laneWidth: 30,
