@@ -123,7 +123,7 @@ export class UpgradeManager {
             case 'magnetHP':
                 return this.getStacks('C3') * 5;               // C3: +5 per stack (was 4)
             case 'magnetPullSpeedMult':
-                return 1.0 - this.getStacks('C3') * 0.05;      // C3: 5% faster pull per stack
+                return 1.0 - this.getStacks('C3') * 0.10;      // C3: 10% faster pull per stack
             case 'signHP':
                 return this.getStacks('C4') * 1.2;             // C4: +120% per stack (was 100%)
             case 'signSlowLinger':
@@ -242,32 +242,68 @@ export class UpgradeManager {
                 return Math.max(0.02, 0.22 - 0.03 * this.countUpgradesForTower('potplant', 'L5'));
 
             // ─── Chase Card Stats (R33, R34, R35) ───
+            // Balatro-style: active when owned, scale with tower-type upgrades
 
-            // R33: Plumber's Union — soaked enemies take 2× damage (4s debuff)
+            // R33: Plumber's Union — mop hits soak enemies (×1.5 base + 0.1× per mop upgrade, cap ×2.5)
             case 'soakedActive':
-                return this.isChaseActive('R33') ? 1 : 0;
+                return this.hasUpgrade('R33') ? 1 : 0;
             case 'soakedDamageMult':
-                return this.isChaseActive('R33') ? 2.0 : 1.0;
+                if (!this.hasUpgrade('R33')) return 1.0;
+                return Math.min(2.5, 1.5 + 0.1 * this.countUpgradesForTower('mop', 'R33'));
             case 'soakedDuration':
-                return this.isChaseActive('R33') ? 4.0 : 0;
+                return this.hasUpgrade('R33') ? 4.0 : 0;
 
-            // R34: Terracotta Army — trip damage × pot count, shatter on death
+            // R34: Terracotta Army — tripped enemies are Cracked + pot death shatters
             case 'terracottaActive':
-                return this.isChaseActive('R34') ? 1 : 0;
+                return this.hasUpgrade('R34') ? 1 : 0;
             case 'terracottaShardCount':
-                return this.isChaseActive('R34') ? 3 : 0;
+                return this.hasUpgrade('R34') ? 3 : 0;
             case 'terracottaShardDamagePct':
-                return this.isChaseActive('R34') ? 0.5 : 0;    // 50% of trip damage
+                return this.hasUpgrade('R34') ? 0.5 : 0;       // 50% of trip damage
+            case 'crackedDamageMult':
+                if (!this.hasUpgrade('R34')) return 1.0;
+                return 1.4 + 0.15 * this.countUpgradesForTower('potplant', 'R34');
+            case 'crackedDuration':
+                return this.hasUpgrade('R34') ? 3.0 : 0;
 
-            // R35: Money Printer — +1% tower damage per coin collected (4s, cap +30%)
+            // R35: Money Printer — coins buff tower damage + attack speed
             case 'moneyPrinterActive':
-                return this.isChaseActive('R35') ? 1 : 0;
+                return this.hasUpgrade('R35') ? 1 : 0;
             case 'moneyPrinterBuffPerCoin':
-                return this.isChaseActive('R35') ? 0.01 : 0;   // +1% per coin
+                return this.hasUpgrade('R35') ? 0.01 : 0;      // +1% per coin
             case 'moneyPrinterCap':
-                return this.isChaseActive('R35') ? 0.30 : 0;   // cap +30%
+                if (!this.hasUpgrade('R35')) return 0;
+                return 0.30 + 0.05 * this.countUpgradesForTower('coinmagnet', 'R35'); // +5% cap per magnet upgrade
             case 'moneyPrinterDuration':
-                return this.isChaseActive('R35') ? 4.0 : 0;    // 4s
+                return this.hasUpgrade('R35') ? 4.0 : 0;       // 4s
+            case 'moneyPrinterSpeedPerCoin':
+                return this.hasUpgrade('R35') ? 0.005 : 0;     // +0.5% attack speed per coin
+            case 'moneyPrinterSpeedCap':
+                return this.hasUpgrade('R35') ? 0.15 : 0;      // cap +15% attack speed
+
+            // ─── Synergy threshold stats ───
+
+            // C1: Overclocked Magnet — coin shockwave AoE damage (scales with magnet upgrades)
+            case 'coinShockwaveDmg':
+                if (!this.hasUpgrade('C1')) return 0;
+                return 3 + 1.5 * this.countUpgradesForTower('coinmagnet', 'C1');
+            // C3: Coin Resonance — permanent shockwave damage increase per coin collected
+            case 'coinResonancePctPerCoin':
+                if (!this.hasUpgrade('C3')) return 0;
+                return 0.005 + 0.0025 * this.getStacks('C3');  // (0.5 + 0.25/stack)%
+            // C5: Extra Slippery — sign zone DPS when 2+ sign upgrades
+            case 'signZoneDPS':
+                if (!this.hasUpgrade('C5')) return 0;
+                if (this.countUpgradesForTower('wetfloor') < 2) return 0;
+                return 2 + 1.5 * this.countUpgradesForTower('wetfloor');
+            // C9: Heavy Mop — retrigger on knockback when 2+ mop upgrades
+            case 'mopRetriggerPct':
+                if (!this.hasUpgrade('C9')) return 0;
+                return this.countUpgradesForTower('mop') >= 2 ? 0.5 : 0;
+            // C16: Cactus Pot — thorn retrigger on trip when 2+ pot upgrades
+            case 'potThornRetriggerPct':
+                if (!this.hasUpgrade('C16')) return 0;
+                return this.countUpgradesForTower('potplant') >= 2 ? 0.6 : 0;
 
             // ─── Boolean-like stats ───
             case 'potReturnToOrigin':
@@ -291,13 +327,11 @@ export class UpgradeManager {
             case 'skeletonCrewDamagePerSlot':
                 return this.hasUpgrade('R24') ? 0.25 : 0;     // +25% per empty slot
 
-            // R25: Compound Interest — 5% of coins as wave-end bonus (uncapped)
+            // R25: Compound Interest — 5% of coins as wave-end bonus
             case 'compoundInterestActive':
                 return this.hasUpgrade('R25') ? 1 : 0;
             case 'compoundInterestRate':
-                return this.hasUpgrade('R25') ? 0.08 : 0;
-            case 'compoundInterestCap':
-                return this.hasUpgrade('R25') ? 12 : 0;
+                return this.hasUpgrade('R25') ? 0.05 : 0;      // 5% per description
 
             // R26: Controlled Demolition — sell = explode + permanent buff
             case 'controlledDemolitionActive':
@@ -315,7 +349,7 @@ export class UpgradeManager {
             case 'doubleShiftSelfDamage':
                 return this.hasUpgrade('R27') ? 2 : 0;
 
-            // R28: Danger Pay — front rows +80%, back rows -20%
+            // R28: Danger Pay — front rows +50%, back rows -30%
             case 'dangerPayActive':
                 return this.hasUpgrade('R28') ? 1 : 0;
             case 'dangerPayFrontMult':
