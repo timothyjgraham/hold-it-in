@@ -2587,7 +2587,13 @@
                 if (!this._titleWaterActive) {
                     this._setupTitleWater();
                 }
-                if (window.SFX) SFX.play('menu_transition');
+                // Stop scenario ambient and restore menu ambient
+                if (window.SFX) {
+                    SFX.stopAllAmbient();
+                    SFX.startAmbient('ambient_drip');
+                    SFX.startAmbient('ambient_vent');
+                    SFX.play('menu_transition');
+                }
             };
 
             // Main menu buttons
@@ -3769,6 +3775,22 @@
                 Music.play(scenario);
             }
 
+            // Start scenario-specific ambient soundscape
+            if (window.SFX) {
+                SFX.stopAllAmbient();
+                const scenario = this._currentScenario || 'office';
+                if (scenario === 'office') {
+                    SFX.startAmbient('ambient_drip');
+                    SFX.startAmbient('ambient_vent');
+                } else if (scenario === 'forest') {
+                    SFX.startAmbient('ambient_forest');
+                } else if (scenario === 'ocean') {
+                    SFX.startAmbient('ambient_ocean');
+                } else if (scenario === 'airplane') {
+                    SFX.startAmbient('ambient_airplane');
+                }
+            }
+
             console.log('Game started — defend the throne!');
         },
 
@@ -3798,7 +3820,7 @@
 
         gameOver() {
             this.state = 'gameover';
-            if (window.SFX) SFX.play('game_over');
+            if (window.SFX) { SFX.play('game_over'); SFX.stopAllAmbient(); }
             if (window.Music) Music.play('gameover');
             // Delete save — can't continue a lost game
             this._deleteSave();
@@ -4524,7 +4546,7 @@
         // ============================
         _campaignVictory() {
             this.state = 'gameover';
-            if (window.SFX) SFX.play('wave_clear');
+            if (window.SFX) { SFX.play('wave_clear'); SFX.stopAllAmbient(); }
             if (window.Music) Music.play('title');
 
             // Delete save — campaign complete
@@ -7875,6 +7897,7 @@
                         e.panicked = true;
                         e.speed *= 2.0;
                         e.animController.setState('panic_sprint');
+                        if (window.SFX) SFX.play('enemy_panic');
                     }
 
                     const moveSpeed = e.speed * slowMult * auraMult * dt;
@@ -7978,6 +8001,7 @@
                                     e.jumpPeakY = 2.0;
                                     e.z = barrierBashRange;
                                     if (e.animController) e.animController.playOneShot('bash_door');
+                                    if (window.SFX) SFX.play('enemy_jump');
                                 } else if (eDef && eDef.canJumpTower) {
                                     // Jumper — leap over barrier if landing zone is clear
                                     const landing = this._findJumpLanding(e.x, bt);
@@ -7992,6 +8016,7 @@
                                         e.jumpPeakY = 2.5;
                                         e.z = barrierBashRange;
                                         if (e.animController) e.animController.playOneShot('jump');
+                                        if (window.SFX) SFX.play('enemy_jump');
                                     } else {
                                         // Landing blocked — bash normally
                                         e.z = barrierBashRange;
@@ -8049,6 +8074,7 @@
                                     e.jumpTargetX = landing.x;
                                     e.jumpPeakY = 2.5;
                                     if (e.animController) e.animController.playOneShot('jump');
+                                    if (window.SFX) SFX.play('enemy_jump');
                                     break; // Stop checking towers — we're jumping
                                 }
                                 // Landing blocked — fall through to normal trample behavior
@@ -8085,10 +8111,10 @@
                                 e.knockbackVZ = 2.0;
                                 if (e.animController) e.animController.playOneShot('hit_react');
                                 this._spawnBumpPopup(e.x, e.z);
+                                if (window.SFX) { SFX.play('tower_bump'); SFX.play('impact_med'); }
                                 // Tower takes damage
                                 t.hp -= 1;
                                 t.hitShake = 0.2;
-                                if (window.SFX) SFX.play('barrier_hit');
                                 if (t.hp <= 0) {
                                     this._destroyTower(ti);
                                 }
@@ -8097,7 +8123,7 @@
 
                             t.hp -= 1;
                             t.hitShake = 0.2;
-                            if (window.SFX) SFX.play('barrier_hit');
+                            if (window.SFX) SFX.play('tower_hit');
                             // Enemy flails arms trying to get past
                             if (e.animController) {
                                 e.animController.playOneShot('bash_door');
@@ -8187,6 +8213,7 @@
                         e.mesh.rotation.x = 0;
                         e.jumpTargetX = undefined;
                         e.jumpStartX = undefined;
+                        if (window.SFX) SFX.play('enemy_land');
                     }
                 }
 

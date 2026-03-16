@@ -584,6 +584,7 @@ export class UpgradeSelectionUI {
 
             const drone = this.drones[i];
             drone.userData.state = 'exiting';
+            if (staggerIdx === 0 && window.SFX) SFX.play('drone_reject');
 
             // Pick a random window to fly toward
             const game = window.Game;

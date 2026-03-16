@@ -607,6 +607,7 @@ export class MedicDroneSystem {
             if (t >= 1) {
                 drone.state = 'exiting';
                 drone.time = 0;
+                if (window.SFX) SFX.play('medic_flyaway');
                 const exitSide = mesh.position.x > 0 ? 1 : -1;
                 drone.exitStart = mesh.position.clone();
                 drone.exitEnd = new THREE.Vector3(exitSide * 25, FLY_HEIGHT + 3, mesh.position.z - 10);

@@ -706,6 +706,39 @@ export const SOUND_EVENTS = {
         category: 'sfx',
     },
 
+    // ─── JUMPER ENEMIES ─────────────────────────────────────────────────
+
+    enemy_jump: {
+        // Cozy weapon swing — light cartoonish whoosh for jumper leaps
+        files: ['enemy_jump_1.wav', 'enemy_jump_2.wav', 'enemy_jump_3.wav'],
+        volume: 0.35,
+        pitch: [0.9, 1.15],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 3,
+    },
+    enemy_land: {
+        // Cozy grass hit — soft body thud on landing
+        files: ['enemy_land_1.wav', 'enemy_land_2.wav', 'enemy_land_3.wav'],
+        volume: 0.3,
+        pitch: [0.8, 1.1],
+        category: 'sfx',
+        cooldown: 0.1,
+        maxSimultaneous: 3,
+    },
+
+    // ─── TOWER BUMP (coinmagnet/ubik deflection) ────────────────────────
+
+    tower_bump: {
+        // Fantasy shield impact — metallic deflection off tech towers
+        files: ['tower_bump_1.wav', 'tower_bump_2.wav'],
+        volume: 0.35,
+        pitch: [0.85, 1.1],
+        category: 'sfx',
+        cooldown: 0.15,
+        maxSimultaneous: 2,
+    },
+
     // ─── AMBIENT ──────────────────────────────────────────────────────────
 
     ambient_drip: {
@@ -718,6 +751,30 @@ export const SOUND_EVENTS = {
     ambient_vent: {
         files: ['ambient_vent.wav'],
         volume: 0.06,
+        pitch: [1.0, 1.0],
+        category: 'ambient',
+        loop: true,
+    },
+    ambient_forest: {
+        // Forest day ambience — birds, rustling, nature
+        files: ['ambient_forest.wav'],
+        volume: 0.1,
+        pitch: [1.0, 1.0],
+        category: 'ambient',
+        loop: true,
+    },
+    ambient_ocean: {
+        // Beach ambience — waves, seagulls
+        files: ['ambient_ocean.wav'],
+        volume: 0.1,
+        pitch: [1.0, 1.0],
+        category: 'ambient',
+        loop: true,
+    },
+    ambient_airplane: {
+        // Cabin interior hum — engine drone, air circulation
+        files: ['ambient_airplane.wav'],
+        volume: 0.08,
         pitch: [1.0, 1.0],
         category: 'ambient',
         loop: true,
