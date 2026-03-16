@@ -583,6 +583,7 @@
         _doorParticles: [],
         _crackPulses: [],
         _mopImpacts: [],
+        _knockoutRings: [],
         _slidingPots: [],
         _mopPuddles: [],        // R9: Sticky Mop puddle slow zones
         _bladderPuddles: [],    // L11: Bladder Burst ground puddles
@@ -3564,6 +3565,14 @@
             });
             this._mopImpacts = [];
 
+            // Clear knockout rings
+            this._knockoutRings.forEach(fx => {
+                this.scene.remove(fx.ring);
+                fx.ring.geometry.dispose();
+                fx.ring.material.dispose();
+            });
+            this._knockoutRings = [];
+
             // Clear mop puddles (R9)
             this._mopPuddles.forEach(p => {
                 this.scene.remove(p.group);
@@ -4897,6 +4906,7 @@
                         e.hp -= 20;
                         e._killSource = 'tower';
                         e.hitFlash = 0.15;
+                        this._spawnHitSparks(e.x, e.z, 20, e.maxHp, '#ff6b7a');
                         this._spawnDamageNumber(e.x, e.z, 20, '#ff6b7a');
                     }
                 }
@@ -8249,6 +8259,7 @@
                                     e.hp -= signDmg;
                                     e._killSource = 'tower';
                                     e.hitFlash = 0.15;
+                                    this._spawnHitSparks(e.x, e.z, signDmg, e.maxHp, '#e8d44a');
                                     this._spawnDamageNumber(e.x, e.z, signDmg, '#e8d44a');
                                 }
                             }
@@ -8677,6 +8688,13 @@
                     // Death animation then queue for medic drone pickup
                     if (!e.dying) {
                         e.dying = true;
+
+                        // Knockout burst VFX — expanding ring + particle burst
+                        this._spawnKnockoutBurst(e.x, e.z);
+
+                        // Death topple — slight random lean for satisfying ragdoll feel
+                        const toppleAngle = (Math.random() - 0.5) * 0.4;
+                        e.mesh.rotation.z = toppleAngle;
 
                         // Reset visual effect uniforms so corpse doesn't stay white
                         const deathMats = e.skinnedMesh.material;
@@ -9248,6 +9266,7 @@
                                     e.hp -= mopDmg;
                                     e._killSource = 'tower';
                                     e.hitFlash = 0.15;
+                                    this._spawnHitSparks(e.x, e.z, mopDmg, e.maxHp, '#9b59b6');
                                     this._spawnDamageNumber(e.x, e.z, mopDmg, '#9b59b6');
 
                                     // C9: Heavy Mop retrigger — 50% bonus hit when 2+ mop upgrades
@@ -9696,6 +9715,7 @@
                             e._killSource = 'tower';
                             e.hitFlash = 0.15;
                             e._impactSquash = 0.18;
+                            this._spawnHitSparks(e.x, e.z, ubikDmg, e.maxHp, '#6bcb77');
                             this._spawnDamageNumber(e.x, e.z, ubikDmg, '#6bcb77');
                             if (e.animController && !e.dying) {
                                 e.animController.playOneShot('hit_react');
@@ -10593,6 +10613,100 @@
         },
 
         // ============================
+        // HIT SPARKS (damage-proportional)
+        // ============================
+        _spawnHitSparks(x, z, damage, maxHp, color) {
+            const ratio = Math.min(1, damage / (maxHp || 1));
+            const count = 2 + Math.floor(4 * ratio);
+            const sparkColor = color ? parseInt(color.replace('#', ''), 16) : PALETTE.cream;
+
+            for (let i = 0; i < count; i++) {
+                const size = 0.06 + ratio * 0.08;
+                const geo = new THREE.TetrahedronGeometry(size, 0);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: sparkColor,
+                    transparent: true,
+                    depthWrite: false,
+                });
+                const spark = new THREE.Mesh(geo, mat);
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+                const speed = 3 + Math.random() * 4;
+                spark.position.set(x, 1.5 + Math.random() * 1.5, z);
+                spark.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+                this.scene.add(spark);
+
+                this._doorParticles.push({
+                    mesh: spark,
+                    vx: Math.cos(angle) * speed,
+                    vy: 2 + Math.random() * 3,
+                    vz: Math.sin(angle) * speed,
+                    rotSpeed: (Math.random() - 0.5) * 15,
+                    life: 0.3 + Math.random() * 0.25,
+                    maxLife: 0.3 + Math.random() * 0.25,
+                    gravity: 14,
+                });
+            }
+        },
+
+        // ============================
+        // KNOCKOUT BURST (death VFX)
+        // ============================
+        _spawnKnockoutBurst(x, z) {
+            // Expanding cream ring
+            const ringGeo = new THREE.RingGeometry(0.3, 0.7, 20);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.cream,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, 0.4, z);
+            ring.rotation.x = -Math.PI / 2;
+            this.scene.add(ring);
+            this._knockoutRings.push({ ring, life: 0.45, maxLife: 0.45 });
+
+            // Particle burst — mix of small stars and chunks
+            const burstCount = 8 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < burstCount; i++) {
+                const size = 0.08 + Math.random() * 0.1;
+                const geo = i % 3 === 0
+                    ? new THREE.OctahedronGeometry(size, 0)
+                    : new THREE.TetrahedronGeometry(size, 0);
+                // Warm palette — mix of cream, gold, white
+                const colors = [PALETTE.cream, PALETTE.gold, PALETTE.white, PALETTE.glow];
+                const col = colors[Math.floor(Math.random() * colors.length)];
+                const mat = new THREE.MeshBasicMaterial({
+                    color: col,
+                    transparent: true,
+                    depthWrite: false,
+                });
+                const particle = new THREE.Mesh(geo, mat);
+                const angle = (Math.PI * 2 * i) / burstCount + (Math.random() - 0.5) * 0.5;
+                const speed = 4 + Math.random() * 5;
+                particle.position.set(
+                    x + (Math.random() - 0.5) * 0.5,
+                    1.0 + Math.random() * 2.0,
+                    z + (Math.random() - 0.5) * 0.5
+                );
+                particle.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+                this.scene.add(particle);
+
+                this._doorParticles.push({
+                    mesh: particle,
+                    vx: Math.cos(angle) * speed,
+                    vy: 3 + Math.random() * 5,
+                    vz: Math.sin(angle) * speed,
+                    rotSpeed: (Math.random() - 0.5) * 18,
+                    life: 0.5 + Math.random() * 0.4,
+                    maxLife: 0.5 + Math.random() * 0.4,
+                    gravity: 10 + Math.random() * 4,
+                });
+            }
+        },
+
+        // ============================
         // DOOR BASH PARTICLES
         // ============================
         _spawnDoorChips(x, z, impactY) {
@@ -11276,6 +11390,22 @@
                 }
             }
 
+            // Update knockout rings (expanding + fading, slower than mop)
+            for (let i = this._knockoutRings.length - 1; i >= 0; i--) {
+                const fx = this._knockoutRings[i];
+                fx.life -= dt;
+                const t = 1 - fx.life / fx.maxLife; // 0→1
+                const scale = 1 + t * 6; // expand wider than mop rings
+                fx.ring.scale.set(scale, scale, 1);
+                fx.ring.material.opacity = 0.7 * (1 - t * t);
+                if (fx.life <= 0) {
+                    this.scene.remove(fx.ring);
+                    fx.ring.geometry.dispose();
+                    fx.ring.material.dispose();
+                    this._knockoutRings.splice(i, 1);
+                }
+            }
+
             // Update door particles (wood chips flying)
             for (let i = this._doorParticles.length - 1; i >= 0; i--) {
                 const p = this._doorParticles[i];
@@ -11381,6 +11511,7 @@
                             e.hp -= tripDmg;
                             e._killSource = 'trip';
                             e.hitFlash = 0.15;
+                            this._spawnHitSparks(e.x, e.z, tripDmg, e.maxHp, '#c4663a');
                             this._spawnDamageNumber(e.x, e.z, tripDmg, '#c4663a');
                             e.stunTimer = sp.stunDuration;
                             e.tripFallDuration = sp.stunDuration;
