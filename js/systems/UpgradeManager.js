@@ -178,15 +178,21 @@ export class UpgradeManager {
             case 'glassCannonHPMult':
                 return this.hasUpgrade('C17') ? 0.5 : 1.0;
             case 'slowSteady':
-                return this.hasUpgrade('C18') ? 1 : 0;        // C18: -40% speed, +60% dmg
+                return this.hasUpgrade('C18') ? 1 : 0;        // C18: -40% speed, +70% dmg
             case 'slowSteadyDamageMult':
-                return this.hasUpgrade('C18') ? 1.4 : 1.0;
+                return this.hasUpgrade('C18') ? 1.7 : 1.0;
             case 'slowSteadyCooldownMult':
                 return this.hasUpgrade('C18') ? 1.4 : 1.0;    // 40% slower = 1.4× cooldown
             case 'bargainBinCost':
                 return this.hasUpgrade('C19') ? 1 : 0;        // C19: Pot Plants cost 0, 2 HP
             case 'staticChargeOnCollect':
-                return this.hasUpgrade('C20') ? 3 : 0;        // C20: rework — 3 dmg on coin collect
+                if (!this.hasUpgrade('C20')) return 0;
+                return 8 + 3 * this.countUpgradesForTower('coinmagnet', 'C20'); // C20: 8 + 3/magnet upgrade
+            case 'staticChargeShockDuration':
+                return this.hasUpgrade('C20') ? 3.0 : 0;      // C20: Shock debuff 3s
+            case 'staticChargeShockVuln':
+                if (!this.hasUpgrade('C20')) return 1.0;
+                return 1.35 + 0.08 * this.countUpgradesForTower('coinmagnet', 'C20'); // C20: +35% + 8%/magnet upgrade
             case 'markedForDeathMult':
                 return this.hasUpgrade('R17') ? 1.4 : 1.0;    // R17: slowed enemies +40% dmg
             case 'crowdSurfingMult':

@@ -7215,6 +7215,11 @@
                     e._crackedTimer -= dt;
                     if (e._crackedTimer <= 0) e._cracked = false;
                 }
+                // C20: Static Charge — decrement shocked timer
+                if (e._shockedTimer > 0) {
+                    e._shockedTimer -= dt;
+                    if (e._shockedTimer <= 0) { e._shockedTimer = 0; e._shockedVuln = 1.0; }
+                }
                 // R30: Sympathetic Damage — snapshot HP for delta tracking
                 if (e._hpLastFrame === undefined) e._hpLastFrame = e.hp;
 
@@ -8736,7 +8741,7 @@
                                     }
                                 }
 
-                                // C20: Static Charge — zap nearest enemy on coin collect
+                                // C20: Static Charge — zap nearest enemy, apply Shocked debuff
                                 if (this.upgradeManager) {
                                     const zapDmg = this.upgradeManager.getModifier('staticChargeOnCollect');
                                     if (zapDmg > 0) {
@@ -8753,6 +8758,9 @@
                                             nearest._killSource = 'tower';
                                             nearest.hitFlash = 0.1;
                                             this._spawnDamageNumber(nearest.x, nearest.z, Math.round(finalZap), '#f0a030');
+                                            // Apply Shocked debuff — vulnerability to all damage
+                                            nearest._shockedTimer = this.upgradeManager.getModifier('staticChargeShockDuration');
+                                            nearest._shockedVuln = this.upgradeManager.getModifier('staticChargeShockVuln');
                                         }
                                     }
                                 }
@@ -9551,8 +9559,8 @@
 
             // C17: Glass Cannon — +50% damage
             if (um.hasUpgrade('C17')) mult *= 1.5;
-            // C18: Slow and Steady — +40% damage
-            if (um.hasUpgrade('C18')) mult *= 1.4;
+            // C18: Slow and Steady — +70% damage
+            if (um.hasUpgrade('C18')) mult *= 1.7;
             // R17: Marked for Death — slowed enemies take +40% from all sources
             if (enemy && enemy._inSlowZone && um.hasUpgrade('R17')) mult *= 1.4;
             // R18: Crowd Surfing — enemies near 2+ others take +30% damage
@@ -9569,6 +9577,8 @@
             if (enemy && enemy._soaked && um.hasUpgrade('R33')) mult *= um.getModifier('soakedDamageMult');
             // R34: Terracotta Army — cracked enemies take increased damage (×1.4 base + pot upgrades)
             if (enemy && enemy._cracked && um.hasUpgrade('R34')) mult *= um.getModifier('crackedDamageMult');
+            // C20: Static Charge — shocked enemies take increased damage from all sources
+            if (enemy && enemy._shockedTimer > 0 && enemy._shockedVuln > 1.0) mult *= enemy._shockedVuln;
             // R21: Specialist — +15% per tower type NOT owned
             if (um.hasUpgrade('R21')) {
                 const ownedTypes = new Set();

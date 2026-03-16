@@ -219,7 +219,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C18',
         name: 'Slow and Steady',
-        description: 'All towers attack 40% slower but deal +40% damage per hit',
+        description: 'All towers attack 40% slower but deal +70% damage per hit',
         rarity: 'common',
         icon: 'star',
         towerRequirement: null,
@@ -242,7 +242,7 @@ export const COMMON_UPGRADES = [
     {
         id: 'C20',
         name: 'Static Charge',
-        description: 'When a Coin Magnet collects a coin, zap the nearest enemy for 3 damage',
+        description: 'Coin collect zaps nearest enemy for (8 + 3 per magnet upgrade) damage and Shocks them for 3s (+35% damage from all sources, +8% per magnet upgrade).',
         rarity: 'common',
         icon: 'magnet',
         towerRequirement: ['coinmagnet'],

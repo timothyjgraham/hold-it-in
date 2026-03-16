@@ -293,9 +293,9 @@ const GAME = {
     { id: 'C15', name: 'Spring-Loaded Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potBounce', value: 1, exclusive: 'C16' },
     { id: 'C16', name: 'Cactus Pot', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'potDPS', value: 2, scaling: 'pot', potRetrigger: true, exclusive: 'C15' },
     { id: 'C17', name: 'Glass Cannon', rarity: 'common', tower: null, maxStacks: 1, effect: 'glassCannon', value: 1, exclusive: 'C18' },
-    { id: 'C18', name: 'Slow and Steady', rarity: 'common', tower: null, maxStacks: 1, effect: 'slowSteady', value: 1, exclusive: 'C17' },
+    { id: 'C18', name: 'Slow and Steady', rarity: 'common', tower: null, maxStacks: 1, effect: 'slowSteady', value: 1, exclusive: 'C17', damageMult: 1.7 },
     { id: 'C19', name: 'Bargain Bin', rarity: 'common', tower: 'potplant', maxStacks: 1, effect: 'bargainBin', value: 1 },
-    { id: 'C20', name: 'Static Charge', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'staticChargeOnCollect', value: 3, exclusive: 'C1' },
+    { id: 'C20', name: 'Static Charge', rarity: 'common', tower: 'coinmagnet', maxStacks: 1, effect: 'staticChargeOnCollect', value: 8, exclusive: 'C1', shockVulnBase: 0.35, shockVulnPerUpgrade: 0.08 },
     // Rare (22)
     { id: 'R1', name: 'Wet & Soapy', rarity: 'rare', tower: ['wetfloor','ubik'], maxStacks: 1, effect: 'synergyWetUbik', value: 2.0 },
     { id: 'R2', name: 'Mop Splash', rarity: 'rare', tower: ['mop','wetfloor'], maxStacks: 1, effect: 'synergyMopWet', value: 1.2 },

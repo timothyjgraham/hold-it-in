@@ -40,9 +40,9 @@ class CoverageModel {
 
     // C17: Glass Cannon (+50% damage, -50% HP)
     if (upgrades.C17) globalDmgMult *= 1.5;
-    // C18: Slow and Steady (+40% damage per hit, cooldown ×1.4 → DPS ×(1/1.4))
+    // C18: Slow and Steady (+70% damage per hit, cooldown ×1.4 → net DPS ×1.214)
     const slowSteadySpeedMult = upgrades.C18 ? (1.0 / 1.4) : 1.0;
-    if (upgrades.C18) globalDmgMult *= 1.4;
+    if (upgrades.C18) globalDmgMult *= 1.7;
     // R21: Specialist (+15% per tower type NOT owned)
     if (upgrades.R21) {
       const typesOwned = Object.keys(t).filter(k => t[k] > 0).length;
@@ -119,10 +119,15 @@ class CoverageModel {
       dps += t.wetfloor * signZoneDPS * signFocus;
     }
 
-    // C20: Static Charge — on-collect proc, ~1 proc/2s per magnet ≈ 1.5 effective DPS
+    // C20: Static Charge — zap (8 + 3/magnet upgrade) + Shocked vulnerability debuff
     const magFocus = countUpgradesForTowerSim(upgrades, 'coinmagnet') >= 3 ? 1.2 : 1.0; // Focus bonus
     if (upgrades.C20 && t.coinmagnet > 0) {
-      dps += t.coinmagnet * 1.5 * magFocus;
+      const zapDmg = 8 + 3 * magUpgradeCount;
+      const coinsPerSec = t.coinmagnet * 2.5; // estimate ~2.5 coins/sec per magnet
+      dps += zapDmg * coinsPerSec * 0.4 * magFocus; // single target, ~0.4 effectiveness
+      // Shocked debuff: +35% + 8%/magnet upgrade vuln for 3s, uptime ~70%
+      const shockVuln = 0.35 + 0.08 * magUpgradeCount;
+      globalDmgMult *= 1 + shockVuln * 0.7; // 70% uptime (3s duration, near-constant procs)
     }
 
     // C1: Coin Shockwave — each coin collected deals AoE damage near the magnet
@@ -647,7 +652,7 @@ class CoverageModel {
     // ── Pre-compute global multiplier ──
     let globalMult = 1.0 + permanentDmgBonus;
     if (upgrades.C17) globalMult *= 1.5;
-    if (upgrades.C18) globalMult *= 1.4;
+    if (upgrades.C18) globalMult *= 1.7;
     if (upgrades.R21) {
       const typesOwned = Object.keys(towers).filter(k => towers[k] > 0).length;
       globalMult *= 1 + (5 - typesOwned) * 0.15;
