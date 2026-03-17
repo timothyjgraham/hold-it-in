@@ -1921,7 +1921,7 @@ canvas {
     50% { transform: scale(1.08); }
 }
 
-/* Chain overlay (diagonal lines) */
+/* Chain overlay (interlocking chain links) */
 .cc-chains {
     position: absolute;
     inset: 0;
@@ -1934,32 +1934,28 @@ canvas {
 .cc-chains::after {
     content: '';
     position: absolute;
-    width: 150%;
-    height: 3px;
-    background: repeating-linear-gradient(
-        90deg,
-        rgba(26, 26, 46, 0.35) 0px,
-        rgba(26, 26, 46, 0.35) 6px,
-        transparent 6px,
-        transparent 10px
-    );
-    border-radius: 2px;
-    left: -25%;
+    width: 200%;
+    height: 16px;
+    /* SVG chain link: interlocking rounded rects that tile seamlessly */
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='16'%3E%3Crect x='-1' y='1' width='13' height='14' rx='6' ry='6' fill='%232d2b3d' fill-opacity='0.18' stroke='%231a1a2e' stroke-opacity='0.5' stroke-width='2.5'/%3E%3Cellipse cx='5.5' cy='5' rx='4' ry='3' fill='%23ffffff' fill-opacity='0.08'/%3E%3C/svg%3E") repeat-x;
+    left: -50%;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
 }
 
 .cc-chains::before {
-    top: 35%;
-    transform: rotate(25deg);
+    top: 32%;
+    transform: rotate(28deg);
 }
 
 .cc-chains::after {
-    bottom: 30%;
-    transform: rotate(-25deg);
+    bottom: 28%;
+    transform: rotate(-28deg);
 }
 
 @keyframes chain-sway {
     0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(1px); }
+    25% { transform: translateX(1px); }
+    75% { transform: translateX(-1px); }
 }
 
 /* Mystery text */
@@ -2013,13 +2009,13 @@ canvas {
 }
 
 @keyframes chain-break-1 {
-    0% { transform: rotate(25deg) scale(1); opacity: 1; }
-    100% { transform: rotate(25deg) scale(2) translateX(30px); opacity: 0; }
+    0% { transform: rotate(28deg) scale(1); opacity: 1; }
+    100% { transform: rotate(28deg) scale(2) translateX(30px); opacity: 0; }
 }
 
 @keyframes chain-break-2 {
-    0% { transform: rotate(-25deg) scale(1); opacity: 1; }
-    100% { transform: rotate(-25deg) scale(2) translateX(-30px); opacity: 0; }
+    0% { transform: rotate(-28deg) scale(1); opacity: 1; }
+    100% { transform: rotate(-28deg) scale(2) translateX(-30px); opacity: 0; }
 }
 
 @keyframes lock-vanish {
