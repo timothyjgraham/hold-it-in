@@ -138,40 +138,40 @@ function _buildForestModel() {
     const groundGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.06, 16);
     addWithOutline(g, groundGeo, toonMat(PALETTE.forestGrass), { y: -0.5 });
 
-    // Tree 1 (left)
-    const trunkGeo1 = new THREE.CylinderGeometry(0.06, 0.08, 0.5, 6);
-    addWithOutline(g, trunkGeo1, toonMat(PALETTE.forestBark), { x: -0.4, y: -0.22 });
+    // Tree 1 (left, tall)
+    const trunkGeo1 = new THREE.CylinderGeometry(0.07, 0.09, 0.6, 6);
+    addWithOutline(g, trunkGeo1, toonMat(PALETTE.forestBark), { x: -0.38, y: -0.17 });
 
-    const coneGeo1 = new THREE.ConeGeometry(0.28, 0.45, 8);
-    addWithOutline(g, coneGeo1, toonMat(PALETTE.forestLeaf), { x: -0.4, y: 0.22 });
-    const coneGeo1b = new THREE.ConeGeometry(0.22, 0.35, 8);
-    addWithOutline(g, coneGeo1b, toonMat(PALETTE.forestLeafDark), { x: -0.4, y: 0.48 });
+    const coneGeo1 = new THREE.ConeGeometry(0.32, 0.5, 8);
+    addWithOutline(g, coneGeo1, toonMat(PALETTE.forestLeaf), { x: -0.38, y: 0.3 });
+    const coneGeo1b = new THREE.ConeGeometry(0.25, 0.4, 8);
+    addWithOutline(g, coneGeo1b, toonMat(PALETTE.forestLeafDark), { x: -0.38, y: 0.58 });
 
-    // Tree 2 (right, smaller)
-    const trunkGeo2 = new THREE.CylinderGeometry(0.05, 0.07, 0.4, 6);
-    addWithOutline(g, trunkGeo2, toonMat(PALETTE.forestBark), { x: 0.45, y: -0.27 });
+    // Tree 2 (right, medium)
+    const trunkGeo2 = new THREE.CylinderGeometry(0.06, 0.08, 0.5, 6);
+    addWithOutline(g, trunkGeo2, toonMat(PALETTE.forestBark), { x: 0.42, y: -0.22 });
 
-    const coneGeo2 = new THREE.ConeGeometry(0.22, 0.35, 8);
-    addWithOutline(g, coneGeo2, toonMat(PALETTE.forestLeaf), { x: 0.45, y: 0.1 });
-    const coneGeo2b = new THREE.ConeGeometry(0.17, 0.28, 8);
-    addWithOutline(g, coneGeo2b, toonMat(PALETTE.forestLeafDark), { x: 0.45, y: 0.32 });
+    const coneGeo2 = new THREE.ConeGeometry(0.26, 0.42, 8);
+    addWithOutline(g, coneGeo2, toonMat(PALETTE.forestLeaf), { x: 0.42, y: 0.18 });
+    const coneGeo2b = new THREE.ConeGeometry(0.20, 0.32, 8);
+    addWithOutline(g, coneGeo2b, toonMat(PALETTE.forestLeafDark), { x: 0.42, y: 0.42 });
 
-    // Outhouse body
-    const houseGeo = createRoundedBox(0.4, 0.55, 0.35, 0.04);
-    addWithOutline(g, houseGeo, toonMat(PALETTE.forestPlanks), { y: -0.15 });
+    // Outhouse body (smaller — 65% of original)
+    const houseGeo = createRoundedBox(0.26, 0.36, 0.23, 0.03);
+    addWithOutline(g, houseGeo, toonMat(PALETTE.forestPlanks), { y: -0.28 });
 
     // Outhouse roof (pitched — two angled panels)
-    const roofGeo = createRoundedBox(0.48, 0.06, 0.22, 0.02);
-    addWithOutline(g, roofGeo, toonMat(PALETTE.forestRoof), { y: 0.16, z: 0.06 }, { x: -0.3 });
-    addWithOutline(g, roofGeo, toonMat(PALETTE.forestRoof), { y: 0.16, z: -0.06 }, { x: 0.3 });
+    const roofGeo = createRoundedBox(0.32, 0.04, 0.15, 0.015);
+    addWithOutline(g, roofGeo, toonMat(PALETTE.forestRoof), { y: -0.06, z: 0.04 }, { x: -0.3 });
+    addWithOutline(g, roofGeo, toonMat(PALETTE.forestRoof), { y: -0.06, z: -0.04 }, { x: 0.3 });
 
     // Outhouse door
-    const doorGeo = createRoundedBox(0.18, 0.32, 0.04, 0.02);
-    addWithOutline(g, doorGeo, toonMat(PALETTE.wood), { y: -0.2, z: 0.2 });
+    const doorGeo = createRoundedBox(0.12, 0.21, 0.03, 0.015);
+    addWithOutline(g, doorGeo, toonMat(PALETTE.wood), { y: -0.32, z: 0.13 });
 
     // Crescent cutout (fake — small half-moon shape)
-    const crescentGeo = new THREE.TorusGeometry(0.04, 0.012, 6, 8, Math.PI);
-    addWithOutline(g, crescentGeo, toonMat(PALETTE.gold), { y: -0.06, z: 0.22 });
+    const crescentGeo = new THREE.TorusGeometry(0.025, 0.008, 6, 8, Math.PI);
+    addWithOutline(g, crescentGeo, toonMat(PALETTE.gold), { y: -0.22, z: 0.145 });
 
     g.position.y = 0.05;
     return g;
@@ -180,100 +180,176 @@ function _buildForestModel() {
 function _buildOceanModel() {
     const g = new THREE.Group();
 
-    // Wave shapes
-    const waveGeo = new THREE.TorusGeometry(0.5, 0.06, 6, 16, Math.PI);
-    addWithOutline(g, waveGeo, toonMat(PALETTE.oceanSurf), { y: -0.45 }, { x: Math.PI / 2 });
+    // Water surface — flat disc
+    const waterGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.05, 20);
+    addWithOutline(g, waterGeo, toonMat(PALETTE.oceanMid, { transparent: true, opacity: 0.6 }),
+        { y: -0.48 });
 
-    const waveGeo2 = new THREE.TorusGeometry(0.55, 0.05, 6, 16, Math.PI);
-    addWithOutline(g, waveGeo2, toonMat(PALETTE.oceanMid, { transparent: true, opacity: 0.7 }),
-        { y: -0.5, z: 0.15 }, { x: Math.PI / 2, y: 0.4 });
+    // Wave crests on water surface
+    const waveGeo = new THREE.TorusGeometry(0.55, 0.04, 6, 16, Math.PI);
+    addWithOutline(g, waveGeo, toonMat(PALETTE.oceanSurf), { y: -0.42, z: 0.2 }, { x: Math.PI / 2 });
+    const waveGeo2 = new THREE.TorusGeometry(0.45, 0.035, 6, 14, Math.PI);
+    addWithOutline(g, waveGeo2, toonMat(PALETTE.oceanSurf), { y: -0.42, z: -0.15 }, { x: Math.PI / 2, y: Math.PI });
 
-    // Boat hull
-    const hullGeo = createRoundedBox(0.7, 0.22, 0.4, 0.05);
-    addWithOutline(g, hullGeo, toonMat(PALETTE.oceanBoatWood), { y: -0.22 });
+    // Boat hull — proper V-shape using lathe
+    const hullPts = [];
+    hullPts.push(new THREE.Vector2(0, -0.12));     // keel bottom
+    hullPts.push(new THREE.Vector2(0.15, -0.06));   // bilge
+    hullPts.push(new THREE.Vector2(0.20, 0.02));    // waterline
+    hullPts.push(new THREE.Vector2(0.18, 0.06));    // gunwale
+    const hullGeo = new THREE.LatheGeometry(hullPts, 12, 0, Math.PI * 2);
+    const hull = addWithOutline(g, hullGeo, toonMat(PALETTE.oceanBoatWood), { y: -0.28 }, null, { x: 1, y: 1, z: 1.8 });
 
-    // Bow (cone)
-    const bowGeo = new THREE.ConeGeometry(0.14, 0.3, 4);
-    addWithOutline(g, bowGeo, toonMat(PALETTE.oceanBoatDark),
-        { x: 0.45, y: -0.2 }, { z: -Math.PI / 2 });
+    // Hull stripe (darker trim at waterline)
+    const stripeGeo = new THREE.TorusGeometry(0.19, 0.015, 6, 16);
+    addWithOutline(g, stripeGeo, toonMat(PALETTE.oceanBoatDark), { y: -0.26 }, { x: Math.PI / 2 }, { x: 1, y: 1, z: 1.8 });
 
-    // Stern transom
-    const sternGeo = createRoundedBox(0.06, 0.2, 0.35, 0.03);
-    addWithOutline(g, sternGeo, toonMat(PALETTE.oceanBoatDark), { x: -0.38, y: -0.2 });
+    // Cabin / wheelhouse
+    const cabinGeo = createRoundedBox(0.16, 0.16, 0.14, 0.03);
+    addWithOutline(g, cabinGeo, toonMat(PALETTE.white), { y: -0.1, z: -0.06 });
+
+    // Cabin roof
+    const cabRoofGeo = createRoundedBox(0.20, 0.03, 0.18, 0.02);
+    addWithOutline(g, cabRoofGeo, toonMat(PALETTE.oceanBoatDark), { y: -0.0, z: -0.06 });
+
+    // Cabin window
+    const cabWinGeo = createRoundedBox(0.10, 0.06, 0.02, 0.01);
+    addWithOutline(g, cabWinGeo, toonMat(PALETTE.airplaneWindow || 0x87CEEB), { y: -0.08, z: 0.04 });
 
     // Mast
-    const mastGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.75, 6);
-    addWithOutline(g, mastGeo, toonMat(PALETTE.oceanRope), { y: 0.2 });
+    const mastGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.55, 6);
+    addWithOutline(g, mastGeo, toonMat(PALETTE.oceanRope), { y: 0.1, z: 0.1 });
 
-    // Sail (flat triangle shape using ExtrudeGeometry)
+    // Sail (triangle)
     const sailShape = new THREE.Shape();
     sailShape.moveTo(0, 0);
-    sailShape.lineTo(0.3, 0);
-    sailShape.lineTo(0.05, 0.45);
+    sailShape.lineTo(0.25, 0);
+    sailShape.lineTo(0.04, 0.38);
     sailShape.lineTo(0, 0);
-    const sailGeo = new THREE.ExtrudeGeometry(sailShape, { depth: 0.02, bevelEnabled: false });
+    const sailGeo = new THREE.ExtrudeGeometry(sailShape, { depth: 0.015, bevelEnabled: false });
     sailGeo.center();
-    addWithOutline(g, sailGeo, toonMat(PALETTE.white), { x: 0.08, y: 0.1 });
+    addWithOutline(g, sailGeo, toonMat(PALETTE.white), { x: 0.06, y: 0.08, z: 0.1 });
 
-    // Buoy
-    const buoyGeo = new THREE.SphereGeometry(0.08, 8, 6);
-    addWithOutline(g, buoyGeo, toonMat(PALETTE.oceanBuoy), { x: -0.55, y: -0.35 });
+    // Life buoy — proper torus ring
+    const buoyGeo = new THREE.TorusGeometry(0.065, 0.02, 8, 12);
+    addWithOutline(g, buoyGeo, toonMat(PALETTE.oceanBuoy), { x: -0.25, y: -0.15, z: 0.15 }, { x: 0.3, z: 0.2 });
 
-    g.position.y = 0.05;
+    // Buoy white stripes (smaller torus segments for the classic red-white look)
+    const buoyWhiteGeo = new THREE.TorusGeometry(0.065, 0.022, 8, 4, Math.PI / 2);
+    addWithOutline(g, buoyWhiteGeo, toonMat(PALETTE.white), { x: -0.25, y: -0.15, z: 0.15 }, { x: 0.3, z: 0.2 });
+
+    g.position.y = 0.08;
     return g;
 }
 
 function _buildAirplaneModel() {
     const g = new THREE.Group();
 
-    // Fuselage (cylinder, horizontal along X)
-    const fuseGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.2, 12);
-    addWithOutline(g, fuseGeo, toonMat(PALETTE.white), null, { z: Math.PI / 2 });
-
-    // Nose (hemisphere)
-    const noseGeo = new THREE.SphereGeometry(0.18, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    addWithOutline(g, noseGeo, toonMat(PALETTE.white), { x: 0.6 }, { z: -Math.PI / 2 });
-
-    // Tail taper (cone)
-    const tailGeo = new THREE.ConeGeometry(0.18, 0.35, 12);
-    addWithOutline(g, tailGeo, toonMat(PALETTE.white), { x: -0.77 }, { z: Math.PI / 2 });
-
-    // Wings (swept-back plates)
-    const wingGeo = createRoundedBox(0.5, 0.03, 0.2, 0.01);
+    const fuseMat = toonMat(PALETTE.white);
     const wingMat = toonMat(PALETTE.fixture);
-    addWithOutline(g, wingGeo, wingMat, { z: 0.22 }, { y: -0.15 });
-    addWithOutline(g, wingGeo, wingMat, { z: -0.22 }, { y: 0.15 });
 
-    // Engine nacelles under wings
-    const engGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.18, 8);
+    // Main fuselage (longer, slimmer cylinder)
+    const fuseGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.4, 14);
+    addWithOutline(g, fuseGeo, fuseMat, null, { z: Math.PI / 2 });
+
+    // Nose cone (smooth hemisphere)
+    const noseGeo = new THREE.SphereGeometry(0.16, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    addWithOutline(g, noseGeo, fuseMat, { x: 0.7 }, { z: -Math.PI / 2 });
+
+    // Cockpit windshield band
+    const cockpitGeo = new THREE.CylinderGeometry(0.165, 0.13, 0.12, 14);
+    addWithOutline(g, cockpitGeo, toonMat(PALETTE.charcoal), { x: 0.64 }, { z: Math.PI / 2 });
+
+    // Tail taper (narrowing cone for aft section)
+    const tailGeo = new THREE.ConeGeometry(0.16, 0.50, 14);
+    addWithOutline(g, tailGeo, fuseMat, { x: -0.94 }, { z: Math.PI / 2 });
+
+    // Tail tip (APU exhaust nub)
+    const tailTipGeo = new THREE.CylinderGeometry(0.02, 0.01, 0.08, 6);
+    addWithOutline(g, tailTipGeo, toonMat(PALETTE.charcoal), { x: -1.2 }, { z: Math.PI / 2 });
+
+    // === WINGS (swept-back, tapered trapezoid shape) ===
+    // Use a custom shape for proper swept wings
+    const wingShape = new THREE.Shape();
+    wingShape.moveTo(-0.15, 0);        // trailing edge root
+    wingShape.lineTo(0.2, 0);          // leading edge root
+    wingShape.lineTo(0.05, 0.55);      // leading edge tip (swept back)
+    wingShape.lineTo(-0.05, 0.45);     // trailing edge tip
+    wingShape.lineTo(-0.15, 0);
+    const wingExtrudeGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.025, bevelEnabled: false });
+    wingExtrudeGeo.center();
+
+    // Right wing
+    addWithOutline(g, wingExtrudeGeo, wingMat,
+        { x: 0.0, y: -0.04, z: 0.28 }, { x: Math.PI / 2, z: 0 });
+    // Left wing (mirrored)
+    addWithOutline(g, wingExtrudeGeo, wingMat,
+        { x: 0.0, y: -0.04, z: -0.28 }, { x: -Math.PI / 2, z: 0 });
+
+    // === ENGINES (bigger, hung under wings on pylons) ===
     const engMat = toonMat(PALETTE.wall);
-    addWithOutline(g, engGeo, engMat, { x: 0.05, z: 0.25, y: -0.12 }, { z: Math.PI / 2 });
-    addWithOutline(g, engGeo, engMat, { x: 0.05, z: -0.25, y: 0.12 }, { z: Math.PI / 2 });
 
-    // Engine intake rings
-    const intakeGeo = new THREE.TorusGeometry(0.055, 0.012, 6, 12);
+    // Engine nacelle body
+    const engGeo = new THREE.CylinderGeometry(0.06, 0.07, 0.22, 10);
+    addWithOutline(g, engGeo, engMat, { x: 0.06, z: 0.32, y: -0.14 }, { z: Math.PI / 2 });
+    addWithOutline(g, engGeo, engMat, { x: 0.06, z: -0.32, y: -0.14 }, { z: Math.PI / 2 });
+
+    // Engine intake rings (front)
+    const intakeGeo = new THREE.TorusGeometry(0.07, 0.014, 8, 14);
     const intakeMat = toonMat(PALETTE.charcoal);
-    addWithOutline(g, intakeGeo, intakeMat, { x: 0.14, z: 0.25, y: -0.12 }, { y: Math.PI / 2 });
-    addWithOutline(g, intakeGeo, intakeMat, { x: 0.14, z: -0.25, y: 0.12 }, { y: Math.PI / 2 });
+    addWithOutline(g, intakeGeo, intakeMat, { x: 0.17, z: 0.32, y: -0.14 }, { y: Math.PI / 2 });
+    addWithOutline(g, intakeGeo, intakeMat, { x: 0.17, z: -0.32, y: -0.14 }, { y: Math.PI / 2 });
 
-    // Vertical tail fin
-    const finGeo = createRoundedBox(0.22, 0.22, 0.025, 0.02);
-    addWithOutline(g, finGeo, toonMat(PALETTE.fixture), { x: -0.65, y: 0.2 });
+    // Engine exhaust (back)
+    const exhaustGeo = new THREE.TorusGeometry(0.055, 0.01, 6, 10);
+    addWithOutline(g, exhaustGeo, toonMat(PALETTE.ink), { x: -0.06, z: 0.32, y: -0.14 }, { y: Math.PI / 2 });
+    addWithOutline(g, exhaustGeo, toonMat(PALETTE.ink), { x: -0.06, z: -0.32, y: -0.14 }, { y: Math.PI / 2 });
 
-    // Horizontal stabilizers
-    const stabGeo = createRoundedBox(0.18, 0.02, 0.12, 0.01);
-    addWithOutline(g, stabGeo, toonMat(PALETTE.fixture), { x: -0.6, z: 0.1 });
-    addWithOutline(g, stabGeo, toonMat(PALETTE.fixture), { x: -0.6, z: -0.1 });
+    // Pylon struts connecting engines to wings
+    const pylonGeo = createRoundedBox(0.10, 0.06, 0.02, 0.005);
+    addWithOutline(g, pylonGeo, wingMat, { x: 0.06, z: 0.30, y: -0.08 });
+    addWithOutline(g, pylonGeo, wingMat, { x: 0.06, z: -0.30, y: -0.08 });
 
-    // Window dots along fuselage
-    const winGeo = new THREE.SphereGeometry(0.018, 6, 4);
+    // === TAIL SECTION ===
+    // Vertical tail fin (taller, swept)
+    const finShape = new THREE.Shape();
+    finShape.moveTo(0, 0);
+    finShape.lineTo(0.12, 0);
+    finShape.lineTo(-0.06, 0.35);
+    finShape.lineTo(-0.14, 0.30);
+    finShape.lineTo(0, 0);
+    const finGeo = new THREE.ExtrudeGeometry(finShape, { depth: 0.025, bevelEnabled: false });
+    finGeo.center();
+    addWithOutline(g, finGeo, toonMat(PALETTE.fixture), { x: -0.78, y: 0.28 });
+
+    // Horizontal stabilizers (swept-back)
+    const stabShape = new THREE.Shape();
+    stabShape.moveTo(-0.06, 0);
+    stabShape.lineTo(0.08, 0);
+    stabShape.lineTo(0.02, 0.22);
+    stabShape.lineTo(-0.04, 0.18);
+    stabShape.lineTo(-0.06, 0);
+    const stabGeo = new THREE.ExtrudeGeometry(stabShape, { depth: 0.018, bevelEnabled: false });
+    stabGeo.center();
+    addWithOutline(g, stabGeo, wingMat, { x: -0.72, y: 0.06, z: 0.08 }, { x: Math.PI / 2 });
+    addWithOutline(g, stabGeo, wingMat, { x: -0.72, y: 0.06, z: -0.08 }, { x: -Math.PI / 2 });
+
+    // === WINDOW ROWS (two rows for visibility during rotation) ===
+    const winGeo = new THREE.CircleGeometry(0.018, 8);
     const winMat = toonMat(PALETTE.airplaneWindow, { emissive: PALETTE.airplaneWindow, emissiveIntensity: 0.5 });
-    for (let i = 0; i < 6; i++) {
-        const xPos = 0.3 - i * 0.12;
-        // Place windows on top of fuselage (visible in turntable view)
-        addWithOutline(g, winGeo, winMat, { x: xPos, y: 0.17 });
+
+    // Windows on top (visible from above)
+    for (let i = 0; i < 8; i++) {
+        const xPos = 0.38 - i * 0.10;
+        addWithOutline(g, winGeo, winMat, { x: xPos, y: 0.155 });
     }
 
+    // Belly stripe (accent line)
+    const stripeGeo = createRoundedBox(1.0, 0.018, 0.005, 0.002);
+    addWithOutline(g, stripeGeo, toonMat(PALETTE.oceanSurf || PALETTE.rimCool), { x: -0.05, y: -0.06, z: 0.16 });
+    addWithOutline(g, stripeGeo, toonMat(PALETTE.oceanSurf || PALETTE.rimCool), { x: -0.05, y: -0.06, z: -0.16 });
+
+    g.position.y = 0.02;
     return g;
 }
 
