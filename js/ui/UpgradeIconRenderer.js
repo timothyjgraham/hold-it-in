@@ -33,8 +33,11 @@ const _dataURLCache = {};
 let _resizeCanvas = null;
 let _resizeCtx = null;
 
+// Internal render resolution — higher = crisper icons
+const _RES = 512;
+
 // Pre-allocated buffers for post-process (avoid GC on hot path)
-const _SZ = 256 * 256;
+const _SZ = _RES * _RES;
 const _lum = new Float32Array(_SZ);
 const _alpha = new Float32Array(_SZ);
 const _edges = new Float32Array(_SZ);
@@ -53,38 +56,39 @@ export function initIconRenderer() {
         antialias: true,
         preserveDrawingBuffer: true,
     });
-    _renderer.setSize(256, 256);
+    _renderer.setSize(_RES, _RES);
+    _renderer.setPixelRatio(1);            // Explicit 1:1 — resolution is our quality lever
     _renderer.setClearColor(0x000000, 0);
 
     _scene = new THREE.Scene();
     // Fog prevents outline shader WebGL warnings (fog uniforms expected)
     _scene.fog = new THREE.Fog(0x000000, 1000, 1000);
 
-    // Tighter framing — icons fill more of the 256px canvas
+    // Tighter framing — icons fill more of the canvas
     _camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     _camera.position.set(0, 0.15, 2.6);
     _camera.lookAt(0, 0, 0);
 
-    // Lighting: stronger contrast for cel-shaded look
-    _scene.add(new THREE.AmbientLight(PALETTE.ambient, 0.6));
-    const dir = new THREE.DirectionalLight(PALETTE.fillWarm, 1.1);
+    // Lighting: punchy contrast for clean toon steps
+    _scene.add(new THREE.AmbientLight(PALETTE.ambient, 0.65));
+    const dir = new THREE.DirectionalLight(PALETTE.fillWarm, 1.2);
     dir.position.set(2, 3, 2);
     _scene.add(dir);
 
     // Second fill light from lower-left for rim definition
-    const fill = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
+    const fill = new THREE.DirectionalLight(PALETTE.rimCool, 0.35);
     fill.position.set(-2, -1, 1);
     _scene.add(fill);
 
     // Post-process canvases (persistent — no per-frame allocation)
     _postCanvas = document.createElement('canvas');
-    _postCanvas.width = 256;
-    _postCanvas.height = 256;
+    _postCanvas.width = _RES;
+    _postCanvas.height = _RES;
     _postCtx = _postCanvas.getContext('2d', { willReadFrequently: true });
 
     _mergeCanvas = document.createElement('canvas');
-    _mergeCanvas.width = 256;
-    _mergeCanvas.height = 256;
+    _mergeCanvas.width = _RES;
+    _mergeCanvas.height = _RES;
     _mergeCtx = _mergeCanvas.getContext('2d');
 }
 
@@ -116,15 +120,14 @@ function _setupScene(iconKey, rarity, time) {
 }
 
 // ─── BORDERLANDS POST-PROCESS ────────────────────────────────────────────────
-// Operates on the 256×256 WebGL output:
-//   1. Sobel edge detection on luminance + alpha → thick ink outlines
-//   2. Cross-hatching in shadow regions
-//   3. Slight edge wobble for hand-drawn feel
+// Operates on the _RES×_RES WebGL output:
+//   1. Sobel edge detection on luminance + alpha → crisp ink outlines
+//   2. Subtle cross-hatching in shadow regions
 
 function _borderlandsPostProcess(time) {
     if (!_postCtx) return _renderer.domElement;
 
-    const W = 256, H = 256;
+    const W = _RES, H = _RES;
 
     // Copy WebGL output to post-process canvas
     _postCtx.clearRect(0, 0, W, H);
@@ -181,13 +184,12 @@ function _borderlandsPostProcess(time) {
             const gyA = -atl - 2 * atc - atr + abl + 2 * abc + abr;
             let edgeA = Math.sqrt(gxA * gxA + gyA * gyA);
 
-            // Alpha edges weighted for clean silhouette outlines (not overpowering)
-            edges[idx] = Math.min(1.0, edgeL * 1.5 + edgeA * 2.5);
+            // Higher res → edges are thinner, so boost multipliers slightly
+            edges[idx] = Math.min(1.0, edgeL * 1.8 + edgeA * 3.0);
         }
     }
 
-    // ── Step 3: Draw edges as thick ink strokes ──
-    // Re-draw the base image first
+    // ── Step 3: Draw edges as crisp ink strokes ──
     _postCtx.clearRect(0, 0, W, H);
     _postCtx.drawImage(_renderer.domElement, 0, 0);
 
@@ -207,9 +209,9 @@ function _borderlandsPostProcess(time) {
 
             let e = edges[idx];
 
-            // Threshold for crisp ink lines (not fuzzy gradients)
-            if (e < 0.20) { e = 0; }
-            else { e = Math.min(1.0, (e - 0.20) / 0.5); }
+            // Higher threshold → only real edges survive (no fuzzy gradients)
+            if (e < 0.28) { e = 0; }
+            else { e = Math.min(1.0, (e - 0.28) / 0.35); }
 
             // Only draw where there's actual content nearby
             if (alpha[idx] < 0.01 && e < 0.3) { e = 0; }
@@ -218,7 +220,8 @@ function _borderlandsPostProcess(time) {
                 epx[off]     = inkR;
                 epx[off + 1] = inkG;
                 epx[off + 2] = inkB;
-                epx[off + 3] = Math.round(e * 170);
+                // Full-opacity ink for solid, confident lines
+                epx[off + 3] = Math.round(e * 230);
             }
         }
     }
@@ -231,39 +234,34 @@ function _borderlandsPostProcess(time) {
     _mergeCtx.drawImage(_postCanvas, 0, 0);
     const mCtx = _mergeCtx;
 
-    // ── Step 4: Cross-hatching in dark regions ──
+    // ── Step 4: Subtle cross-hatching in dark regions ──
     mCtx.save();
-    mCtx.strokeStyle = `rgba(${inkR}, ${inkG}, ${inkB}, 0.07)`;
+    mCtx.strokeStyle = `rgba(${inkR}, ${inkG}, ${inkB}, 0.04)`;
     mCtx.lineWidth = 1;
 
-    const hatchSpacing = 6;
+    const hatchSpacing = 10;
     for (let y = 0; y < H; y += hatchSpacing) {
         for (let x = 0; x < W; x += hatchSpacing) {
             const idx = y * W + x;
             if (alpha[idx] < 0.3) continue;
-            if (lum[idx] > 0.45) continue; // Only hatch shadows
+            if (lum[idx] > 0.40) continue; // Only hatch deep shadows
 
-            // Diagonal hatch line
-            const len = hatchSpacing * 0.8;
-            // Slight time-based wobble for hand-drawn feel
-            const wobble = Math.sin(x * 0.3 + y * 0.2 + (time || 0) * 0.5) * 0.5;
+            const len = hatchSpacing * 0.7;
             mCtx.beginPath();
-            mCtx.moveTo(x + wobble, y);
-            mCtx.lineTo(x + len + wobble, y + len);
+            mCtx.moveTo(x, y);
+            mCtx.lineTo(x + len, y + len);
             mCtx.stroke();
 
-            // Cross-hatch (perpendicular) for very dark areas
-            if (lum[idx] < 0.25) {
+            // Cross-hatch for very dark areas only
+            if (lum[idx] < 0.20) {
                 mCtx.beginPath();
-                mCtx.moveTo(x + len + wobble, y);
-                mCtx.lineTo(x + wobble, y + len);
+                mCtx.moveTo(x + len, y);
+                mCtx.lineTo(x, y + len);
                 mCtx.stroke();
             }
         }
     }
     mCtx.restore();
-
-    // Silhouette emphasis is handled by boosted alpha edge weight in step 2
 
     return _mergeCanvas;
 }
@@ -321,7 +319,7 @@ export function create3DIconDataURL(iconKey, rarity, size, time) {
     const result = _borderlandsPostProcess(t);
 
     let url;
-    if (size === 256) {
+    if (size === _RES) {
         url = result.toDataURL('image/png');
     } else {
         // Reuse resize canvas (avoid per-call allocation)
