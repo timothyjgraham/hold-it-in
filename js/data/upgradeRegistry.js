@@ -548,7 +548,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R26',
         name: 'Controlled Demolition',
-        description: 'Selling a tower detonates it for 20 damage (5-unit blast) and permanently gives all towers +8% damage.',
+        description: 'Selling a tower detonates it for 20 damage (5-unit blast) and permanently gives all towers +5% damage, but permanently reduces toilet HP by 5%.',
         rarity: 'rare',
         icon: 'R26',
         towerRequirement: null,  // general

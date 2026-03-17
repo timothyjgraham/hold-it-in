@@ -5299,7 +5299,18 @@
                         this._spawnDamageNumber(e.x, e.z, 20, '#ff6b7a');
                     }
                 }
-                this._controlledDemolitionBuff += 0.08;
+                this._controlledDemolitionBuff += 0.05;
+                // Permanently reduce door max HP by 5%
+                if (this.doorGroup) {
+                    const ud = this.doorGroup.userData;
+                    const reduction = Math.floor(ud.maxDoorHP * 0.05);
+                    if (reduction > 0) {
+                        ud.maxDoorHP -= reduction;
+                        ud.doorHP = Math.min(ud.doorHP, ud.maxDoorHP);
+                        this.updateHUD();
+                        this._doorDamageSystem && this._doorDamageSystem.setDamageLevel(1 - ud.doorHP / ud.maxDoorHP);
+                    }
+                }
                 // Explosion VFX
                 this._spawnMopImpact(t.gridX, t.gridZ);
                 this._cameraShake = 0.2;
@@ -5346,8 +5357,8 @@
                     mesh.position.y += 0.02;
                     // Flash white
                     mesh.traverse(c => {
-                        if (c.isMesh && c.material && !c.material._sellOrigColor) {
-                            c.material._sellOrigColor = c.material.color ? c.material.color.getHex() : 0xffffff;
+                        if (c.isMesh && c.material && c.material.color && !c.material._sellOrigColor) {
+                            c.material._sellOrigColor = c.material.color.getHex();
                             c.material.color.setHex(0xffffff);
                         }
                     });
@@ -5365,7 +5376,7 @@
                             c.material.transparent = true;
                             c.material.opacity = 1 - eased;
                             // Restore color after flash
-                            if (c.material._sellOrigColor !== undefined) {
+                            if (c.material._sellOrigColor !== undefined && c.material.color) {
                                 c.material.color.setHex(c.material._sellOrigColor);
                                 delete c.material._sellOrigColor;
                             }
