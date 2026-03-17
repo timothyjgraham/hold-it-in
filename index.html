@@ -2667,6 +2667,7 @@
                 if (window.SFX) SFX.play('ui_click');
                 this._hideCollectionTooltip();
                 this._stopCollectionIconLoop();
+                this._skipRevealAnimations();
                 showScreen('title-screen');
             });
 
@@ -3942,19 +3943,61 @@
             // Trigger reveal animation for newly discovered cards
             if (this._newlyDiscovered.length > 0) {
                 const newCards = document.querySelectorAll('.collection-card[data-new="true"]');
+                this._revealTimers = [];
+
                 newCards.forEach((card, i) => {
                     const delay = 500 + i * 200;
-                    setTimeout(() => {
+                    this._revealTimers.push(setTimeout(() => {
+                        if (card.classList.contains('revealed')) return; // already skipped
                         card.classList.add('revealing');
                         if (window.SFX) SFX.play('upgrade_acquire');
-                        // Swap faces at the midpoint of the flip (when card is edge-on)
-                        setTimeout(() => { if (card._swapFaces) card._swapFaces(); }, 670);
-                    }, delay);
+                        this._revealTimers.push(setTimeout(() => {
+                            if (card._swapFaces) card._swapFaces();
+                        }, 670));
+                    }, delay));
                 });
+
                 // Clear newly discovered after all animations complete
-                setTimeout(() => {
+                this._revealTimers.push(setTimeout(() => {
                     this._newlyDiscovered = [];
-                }, 500 + newCards.length * 200 + 1500);
+                    this._revealTimers = null;
+                    if (this._skipRevealHandler) {
+                        document.getElementById('collection-screen').removeEventListener('click', this._skipRevealHandler);
+                        this._skipRevealHandler = null;
+                    }
+                }, 500 + newCards.length * 200 + 1500));
+
+                // Click anywhere to skip remaining reveals
+                this._skipRevealHandler = (e) => {
+                    // Don't skip if clicking filter buttons or back
+                    if (e.target.closest('.collection-filter, .menu-btn')) return;
+                    this._skipRevealAnimations();
+                };
+                document.getElementById('collection-screen').addEventListener('click', this._skipRevealHandler);
+            }
+        },
+
+        _skipRevealAnimations() {
+            // Clear all pending timers
+            if (this._revealTimers) {
+                for (const t of this._revealTimers) clearTimeout(t);
+                this._revealTimers = null;
+            }
+
+            // Instantly complete all pending reveals
+            const pendingCards = document.querySelectorAll('.collection-card[data-new="true"]:not(.revealed)');
+            pendingCards.forEach(card => {
+                card.classList.remove('revealing', 'locked', 'new-pending');
+                card.classList.add('revealed');
+                if (card._swapFaces) card._swapFaces();
+            });
+
+            this._newlyDiscovered = [];
+
+            // Clean up click handler
+            if (this._skipRevealHandler) {
+                document.getElementById('collection-screen').removeEventListener('click', this._skipRevealHandler);
+                this._skipRevealHandler = null;
             }
         },
 
