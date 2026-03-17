@@ -511,7 +511,7 @@ export const RARE_UPGRADES = [
     {
         id: 'R23',
         name: 'Devotion',
-        description: 'Lock in 2 tower types for the run. Those types deal +60% damage and cost 30% less.',
+        description: 'Choose 2 tower types. All other towers are destroyed (full refund). Chosen types deal +60% damage and cost 30% less.',
         rarity: 'rare',
         icon: 'star',
         towerRequirement: null,  // general

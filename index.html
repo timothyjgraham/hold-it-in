@@ -459,6 +459,16 @@
         </div>
     </div>
 
+    <!-- Devotion Picker Modal -->
+    <div id="devotion-picker" style="display:none;">
+        <div class="devotion-box">
+            <div class="devotion-title">DEVOTION</div>
+            <div class="devotion-subtitle">Choose 2 tower types to devote to.<br>All other towers will be destroyed (full refund).</div>
+            <div class="devotion-cards" id="devotion-cards"></div>
+            <button class="menu-btn" id="devotion-confirm" disabled>CONFIRM</button>
+        </div>
+    </div>
+
     <!-- Fade Overlay (cinematic fade to black) -->
     <div id="fade-overlay"></div>
 
@@ -591,6 +601,9 @@
         _bladderRings: [],      // L11: Bladder Burst expanding rings
         _controlledDemolitionBuff: 0,  // R26: cumulative +8% per sell
         _devotionTypes: null,          // R23: Set of locked tower types (max 2)
+        _devotionPickerActive: false,  // R23: true while picker modal is open
+        _pendingDevotionUpgrade: null, // R23: stored upgrade ref during picker
+        _devotionSelected: null,       // R23: Set of tower types selected in picker
         _attritionTimer: 0,            // R32: seconds enemies have been alive this wave
         _moneyPrinterStacks: 0,        // R35: Money Printer — current buff stacks (0-30)
         _moneyPrinterDecayTimer: 0,    // R35: Money Printer — time until stacks start decaying
@@ -2504,7 +2517,7 @@
 
                 // Pause toggle (disabled during upgrade selection / intro / confirm dialog)
                 if (e.code === 'Space' || e.code === 'Escape') {
-                    if (this._upgradePhase || this._introPhase) return;
+                    if (this._upgradePhase || this._introPhase || this._devotionPickerActive) return;
                     // Don't toggle while confirm dialog is visible
                     const confirmDialog = document.getElementById('confirm-dialog');
                     if (confirmDialog && confirmDialog.style.display === 'flex') return;
@@ -2514,7 +2527,7 @@
                 }
 
                 // Tower hotkeys (work while paused too, not during upgrade/intro selection)
-                if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase) {
+                if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase && !this._devotionPickerActive) {
                     // X key: sell tower at cursor
                     if (e.code === 'KeyX') {
                         this._trySellTowerAtCursor();
@@ -2539,7 +2552,7 @@
             window.addEventListener('click', (e) => {
                 if (this.state !== 'playing' && this.state !== 'paused') return;
                 // Don't place towers during upgrade selection or enemy intro
-                if (this._upgradePhase || this._introPhase) return;
+                if (this._upgradePhase || this._introPhase || this._devotionPickerActive) return;
                 if (this.selectedTower) {
                     this._tryPlaceTower(e);
                 }
@@ -3742,6 +3755,10 @@
                 this._cleanupUpgradeDrones();
                 this._upgradePhase = false;
             }
+            this._devotionPickerActive = false;
+            this._pendingDevotionUpgrade = null;
+            this._devotionSelected = null;
+            document.getElementById('devotion-picker').style.display = 'none';
             if (this.upgradeSelectionUI) {
                 this.upgradeSelectionUI.deactivate();
             }
@@ -4841,11 +4858,6 @@
             }
 
             this.coins -= towerCost;
-
-            // R23: Devotion — register placed tower type
-            if (this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes) {
-                this._devotionTypes.add(this.selectedTower);
-            }
 
             // SFX: coin spend + tower type-specific placement
             if (window.SFX) {
@@ -5981,14 +5993,19 @@
                 this.updateHUD();
             }
 
-            // R23: Devotion — lock current tower types (first 2 types placed)
+            // R23: Devotion — intercept to show interactive picker
             if (upgrade.id === 'R23' && !this._devotionTypes) {
-                const types = new Set();
-                for (const t of this.towers) {
-                    if (!t.dying && !t.delivering) types.add(t.type);
-                    if (types.size >= 2) break;
-                }
-                this._devotionTypes = types.size > 0 ? types : null;
+                this._pendingDevotionUpgrade = upgrade;
+                // Do normal cleanup first (drones go away, UI restores)
+                this._addUpgradeCard(upgrade);
+                if (this.upgradeSelectionUI) this.upgradeSelectionUI.deactivate();
+                this._upgradePhase = false;
+                if (window.Music) Music.unduck();
+                this._cleanupUpgradeDrones();
+                // Show picker instead of proceeding to next wave
+                this._devotionPickerActive = true;
+                this._showDevotionPicker();
+                return;
             }
 
             // L1: Double Flush — +4 max HP and full heal with juicy effect
@@ -6085,6 +6102,201 @@
             this._cleanupUpgradeDrones();
 
             // Chain: tower intro → enemy intro → wave timer
+            this._proceedAfterUpgrade();
+        },
+
+        /** R23: Show the Devotion tower picker modal */
+        _showDevotionPicker() {
+            this._devotionSelected = new Set();
+            const container = document.getElementById('devotion-cards');
+            const confirmBtn = document.getElementById('devotion-confirm');
+            container.innerHTML = '';
+            confirmBtn.disabled = true;
+
+            const persistentUnlocks = this._getTowerUnlocks();
+            for (const [type, def] of Object.entries(this.TOWERS)) {
+                const unlockWave = TOWER_UNLOCK_WAVES[type] || 1;
+                if (this.wave < unlockWave && !persistentUnlocks[type]) continue;
+
+                const card = document.createElement('div');
+                card.className = 'devotion-card';
+                card.dataset.tower = type;
+
+                // Clone SVG icon from the tower panel button
+                const srcBtn = document.querySelector(`.tower-btn[data-tower="${type}"] .tower-icon svg`);
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'devotion-card-icon';
+                if (srcBtn) iconDiv.appendChild(srcBtn.cloneNode(true));
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'devotion-card-name';
+                nameDiv.textContent = def.name;
+
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'devotion-card-stats';
+                const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+                const baseCost = Math.max(5, Math.floor(def.cost * costMult));
+                statsDiv.textContent = `Cost: ${baseCost}`;
+
+                card.appendChild(iconDiv);
+                card.appendChild(nameDiv);
+                card.appendChild(statsDiv);
+                card.addEventListener('click', () => this._toggleDevotionCard(type));
+                container.appendChild(card);
+            }
+
+            confirmBtn.onclick = () => this._onDevotionConfirmed();
+            document.getElementById('devotion-picker').style.display = 'flex';
+            if (window.SFX) SFX.play('ui_click');
+        },
+
+        /** R23: Toggle a tower card in the Devotion picker */
+        _toggleDevotionCard(type) {
+            if (this._devotionSelected.has(type)) {
+                this._devotionSelected.delete(type);
+            } else if (this._devotionSelected.size < 2) {
+                this._devotionSelected.add(type);
+            } else {
+                return; // Already 2 selected
+            }
+
+            // Update card visual states
+            const cards = document.querySelectorAll('#devotion-cards .devotion-card');
+            cards.forEach(card => {
+                const t = card.dataset.tower;
+                card.classList.toggle('selected', this._devotionSelected.has(t));
+                card.classList.toggle('dimmed', this._devotionSelected.size >= 2 && !this._devotionSelected.has(t));
+            });
+
+            document.getElementById('devotion-confirm').disabled = this._devotionSelected.size !== 2;
+            if (window.SFX) SFX.play('ui_click');
+        },
+
+        /** R23: Confirm Devotion selection — destroy non-chosen towers */
+        _onDevotionConfirmed() {
+            if (this._devotionSelected.size !== 2) return;
+            this._devotionTypes = new Set(this._devotionSelected);
+            document.getElementById('devotion-picker').style.display = 'none';
+            if (window.SFX) SFX.play('upgrade_acquire');
+
+            // Collect towers to destroy (not matching chosen types, not dying/delivering)
+            const toDestroy = [];
+            for (let i = this.towers.length - 1; i >= 0; i--) {
+                const t = this.towers[i];
+                if (!t.dying && !t.delivering && !this._devotionTypes.has(t.type)) {
+                    toDestroy.push(t);
+                }
+            }
+
+            if (toDestroy.length === 0) {
+                this._finishDevotionSequence();
+                return;
+            }
+
+            // Brief hitstop for impact
+            this._globalHitstop = 0.08;
+
+            const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
+            let totalRefund = 0;
+
+            // Stagger destruction
+            for (let i = 0; i < toDestroy.length; i++) {
+                const tower = toDestroy[i];
+                const refund = Math.max(5, Math.floor(tower.def.cost * costMult));
+                totalRefund += refund;
+                setTimeout(() => this._devotionDestroyTower(tower, refund), i * 150);
+            }
+
+            // After all done, grant total refund and finish
+            const finishDelay = toDestroy.length * 150 + 500;
+            setTimeout(() => {
+                this.coins += totalRefund;
+                this._animateCoinGain(totalRefund);
+                this.updateHUD();
+                this._finishDevotionSequence();
+            }, finishDelay);
+        },
+
+        /** R23: Destroy a single non-chosen tower with VFX (no Insurance/Terracotta triggers) */
+        _devotionDestroyTower(tower, refund) {
+            if (tower.dying) return;
+            tower.dying = true;
+
+            // SFX
+            if (window.SFX) {
+                if (tower.type === 'potplant') SFX.play('pot_shatter');
+                else SFX.play('tower_destroy');
+            }
+
+            // VFX
+            this._spawnKnockoutBurst(tower.gridX, tower.gridZ);
+            if (tower.type === 'potplant') this._spawnPotShatter(tower.gridX, tower.gridZ);
+
+            // Floating coin text per tower
+            this._spawnCoinText(tower.gridX, tower.gridZ, refund);
+
+            // Camera shake
+            this._cameraShake = Math.min(0.4, this._cameraShake + 0.1);
+            this._cameraShakeIntensity = 0.2;
+
+            // Release enemies bashing this barrier (same as _destroyTower)
+            if (tower.type === 'wetfloor') {
+                for (const e of this.enemies) {
+                    if (e.bashingBarrier === tower) {
+                        e.bashing = false;
+                        e.bashingBarrier = null;
+                        if (e.animController) {
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
+                            e.animController.setState(walkState);
+                        }
+                    }
+                }
+            }
+
+            // Death animation — tumble, shrink, fade (same pattern as _destroyTower)
+            const mesh = tower.mesh;
+            const startTime = Date.now();
+            const duration = 400;
+            const tumbleDir = (Math.random() - 0.5) * 2;
+
+            const animateDeath = () => {
+                const elapsed = Date.now() - startTime;
+                const p = Math.min(1, elapsed / duration);
+                mesh.rotation.z = tumbleDir * p * (Math.PI / 2);
+                mesh.rotation.x = (1 - Math.abs(tumbleDir)) * p * (Math.PI / 3);
+                const scale = 1 - p * p;
+                mesh.scale.set(scale, scale, scale);
+                mesh.position.y = -p * 0.5;
+                const fadeOpacity = Math.max(0, 1 - p * 1.5);
+                mesh.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        child.material.transparent = true;
+                        if (child.material.uniforms && child.material.uniforms.uOpacity) {
+                            child.material.uniforms.uOpacity.value = fadeOpacity;
+                        } else {
+                            child.material.opacity = fadeOpacity;
+                        }
+                    }
+                });
+                if (p < 1) {
+                    requestAnimationFrame(animateDeath);
+                } else {
+                    this.scene.remove(mesh);
+                }
+            };
+            animateDeath();
+
+            // Remove from towers array (find by reference since array mutates)
+            const idx = this.towers.indexOf(tower);
+            if (idx !== -1) this.towers.splice(idx, 1);
+        },
+
+        /** R23: Finish Devotion sequence — clean up state and resume game */
+        _finishDevotionSequence() {
+            this._pendingDevotionUpgrade = null;
+            this._devotionSelected = null;
+            this._devotionPickerActive = false;
+            this.updateHUD();
             this._proceedAfterUpgrade();
         },
 
@@ -7474,6 +7686,9 @@
                 }
                 return; // Skip all game logic while selecting
             }
+
+            // Freeze during Devotion picker
+            if (this._devotionPickerActive) return;
 
             this.time += dt;
 
