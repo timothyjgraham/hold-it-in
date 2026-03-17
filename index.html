@@ -3958,6 +3958,9 @@
         },
 
         _buildCollectionGrid(filter) {
+            // Cancel any in-flight icon render queue from previous call
+            if (this._iconQueueRAF) { cancelAnimationFrame(this._iconQueueRAF); this._iconQueueRAF = null; }
+
             const grid = document.getElementById('collection-grid');
             grid.innerHTML = '';
             const allUpgrades = window.ALL_UPGRADES || [];
@@ -3966,6 +3969,9 @@
             // Rarity color maps
             const rarityBorder = { common: 'var(--pal-cream, #faf5ef)', rare: '#9b8ec4', legendary: 'var(--pal-gold, #ffd93d)' };
             const rarityBg = { common: 'rgba(250,245,239,0.15)', rare: 'rgba(155,142,196,0.15)', legendary: 'rgba(255,217,61,0.15)' };
+
+            // Queue for lazy icon rendering (avoids synchronous render of all 73 icons)
+            const iconQueue = [];
 
             filtered.forEach((upgrade, i) => {
                 const discovered = !!this._collection[upgrade.id];
@@ -3979,12 +3985,14 @@
                 card.style.animationDelay = `${i * 30}ms`;
 
                 if (discovered && !isNew) {
-                    // Fully discovered — show card
+                    // Fully discovered — show card (icon rendered lazily)
                     card.style.borderColor = rarityBorder[upgrade.rarity];
-                    const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', upgrade.rarity, 48, 0) : '';
                     card.innerHTML =
-                        '<div class="cc-icon"><img src="' + iconURL + '" width="48" height="48" alt=""></div>' +
+                        '<div class="cc-icon"><img width="48" height="48" alt="" style="opacity:0;transition:opacity 0.15s"></div>' +
                         '<div class="cc-name">' + upgrade.name + '</div>';
+
+                    // Queue icon for lazy batch render
+                    iconQueue.push({ img: card.querySelector('img'), iconKey: upgrade.icon || 'star', rarity: upgrade.rarity });
 
                     card.addEventListener('mouseenter', (e) => this._showCollectionTooltip(e, upgrade));
                     card.addEventListener('mouseleave', () => this._hideCollectionTooltip());
@@ -4002,11 +4010,10 @@
                             '<div class="cc-new-badge">NEW!</div>' +
                         '</div>';
 
-                    // Pre-populate the reveal face
-                    const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', upgrade.rarity, 48, 0) : '';
+                    // Queue reveal face icon for lazy render
                     const revealFace = card.querySelector('.cc-reveal-face');
-                    revealFace.querySelector('.cc-icon').innerHTML = '<img src="' + iconURL + '" width="48" height="48" alt="">';
                     revealFace.querySelector('.cc-name').textContent = upgrade.name;
+                    iconQueue.push({ revealIcon: revealFace.querySelector('.cc-icon'), iconKey: upgrade.icon || 'star', rarity: upgrade.rarity });
 
                     // Bind tooltip for after reveal
                     card.addEventListener('mouseenter', (e) => {
@@ -4037,6 +4044,9 @@
 
                 grid.appendChild(card);
             });
+
+            // Render icons in batches of 4 per frame to avoid blocking the main thread
+            this._processCollectionIconQueue(iconQueue);
 
             // Update progress bar
             const stats = this._getCollectionStats();
@@ -4080,6 +4090,38 @@
 
         _hideCollectionTooltip() {
             document.getElementById('collection-tooltip').classList.remove('visible');
+        },
+
+        // Render collection icons in batches of 4 per animation frame
+        // Prevents main thread from blocking when 73 unique 3D icons need rendering
+        _processCollectionIconQueue(queue) {
+            const BATCH = 4;
+            let idx = 0;
+
+            const processNext = () => {
+                const end = Math.min(idx + BATCH, queue.length);
+                for (; idx < end; idx++) {
+                    const item = queue[idx];
+                    if (!window.createIconDataURL) continue;
+                    const url = window.createIconDataURL(item.iconKey, item.rarity, 48, 0);
+                    if (item.img) {
+                        item.img.src = url;
+                        item.img.style.opacity = '1';
+                    }
+                    if (item.revealIcon) {
+                        item.revealIcon.innerHTML = '<img src="' + url + '" width="48" height="48" alt="">';
+                    }
+                }
+                if (idx < queue.length) {
+                    this._iconQueueRAF = requestAnimationFrame(processNext);
+                } else {
+                    this._iconQueueRAF = null;
+                }
+            };
+
+            if (queue.length > 0) {
+                this._iconQueueRAF = requestAnimationFrame(processNext);
+            }
         },
 
         // ── Persistent tower unlock helpers ──

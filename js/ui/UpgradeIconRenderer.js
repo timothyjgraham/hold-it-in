@@ -26,6 +26,13 @@ let _postCtx = null;
 let _mergeCanvas = null;
 let _mergeCtx = null;
 
+// Cache for static data URLs (collection screen renders time=0 for all icons)
+const _dataURLCache = {};
+
+// Reusable resize canvas (avoid per-call allocation)
+let _resizeCanvas = null;
+let _resizeCtx = null;
+
 // Pre-allocated buffers for post-process (avoid GC on hot path)
 const _SZ = 256 * 256;
 const _lum = new Float32Array(_SZ);
@@ -300,19 +307,41 @@ export function create3DIconDataURL(iconKey, rarity, size, time) {
     if (!_renderer) return '';
 
     size = size || 64;
-    _setupScene(iconKey, rarity || 'common', time || 0);
+
+    // Cache static renders (time=0) — avoids re-rendering the same icon
+    const t = time || 0;
+    if (t === 0) {
+        const cacheKey = `${iconKey}_${rarity}_${size}`;
+        if (_dataURLCache[cacheKey]) return _dataURLCache[cacheKey];
+    }
+
+    _setupScene(iconKey, rarity || 'common', t);
     _renderer.render(_scene, _camera);
 
-    const result = _borderlandsPostProcess(time);
+    const result = _borderlandsPostProcess(t);
 
-    if (size === 256) return result.toDataURL('image/png');
+    let url;
+    if (size === 256) {
+        url = result.toDataURL('image/png');
+    } else {
+        // Reuse resize canvas (avoid per-call allocation)
+        if (!_resizeCanvas) {
+            _resizeCanvas = document.createElement('canvas');
+            _resizeCtx = _resizeCanvas.getContext('2d');
+        }
+        _resizeCanvas.width = size;
+        _resizeCanvas.height = size;
+        _resizeCtx.clearRect(0, 0, size, size);
+        _resizeCtx.drawImage(result, 0, 0, size, size);
+        url = _resizeCanvas.toDataURL('image/png');
+    }
 
-    // Resize via offscreen canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    canvas.getContext('2d').drawImage(result, 0, 0, size, size);
-    return canvas.toDataURL('image/png');
+    // Store in cache for static renders
+    if (t === 0) {
+        _dataURLCache[`${iconKey}_${rarity}_${size}`] = url;
+    }
+
+    return url;
 }
 
 /**
@@ -335,4 +364,12 @@ export function disposeIconRenderer() {
     for (const key in _iconClones) {
         delete _iconClones[key];
     }
+
+    // Clear data URL cache
+    for (const key in _dataURLCache) {
+        delete _dataURLCache[key];
+    }
+
+    _resizeCanvas = null;
+    _resizeCtx = null;
 }
