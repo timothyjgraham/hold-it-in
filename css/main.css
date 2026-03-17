@@ -1778,8 +1778,8 @@ canvas {
 
 /* --- Card base --- */
 .collection-card {
-    width: 160px;
-    height: 210px;
+    width: 170px;
+    height: 220px;
     border: 3px solid var(--pal-cream, #faf5ef);
     border-radius: 12px;
     background: rgba(250, 245, 239, 0.12);
@@ -1850,10 +1850,11 @@ canvas {
     align-items: center;
     justify-content: center;
     flex: 1;
-    min-height: 90px;
+    min-height: 110px;
 }
 
-.cc-icon img {
+.cc-icon img,
+.cc-icon canvas {
     display: block;
     image-rendering: auto;
     filter: drop-shadow(2px 3px 1px rgba(26, 26, 46, 0.3));

@@ -2666,6 +2666,7 @@
             document.getElementById('btn-collection-back').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 this._hideCollectionTooltip();
+                this._stopCollectionIconLoop();
                 showScreen('title-screen');
             });
 
@@ -3958,8 +3959,9 @@
         },
 
         _buildCollectionGrid(filter) {
-            // Cancel any in-flight icon render queue from previous call
+            // Cancel any in-flight icon render queue + animation loop from previous call
             if (this._iconQueueRAF) { cancelAnimationFrame(this._iconQueueRAF); this._iconQueueRAF = null; }
+            this._stopCollectionIconLoop();
 
             const grid = document.getElementById('collection-grid');
             grid.innerHTML = '';
@@ -3985,14 +3987,15 @@
                 card.style.animationDelay = `${i * 30}ms`;
 
                 if (discovered && !isNew) {
-                    // Fully discovered — show card (icon rendered lazily)
+                    // Fully discovered — show card with rotating canvas icon
                     card.style.borderColor = rarityBorder[upgrade.rarity];
                     card.innerHTML =
-                        '<div class="cc-icon"><img width="90" height="90" alt="" style="opacity:0;transition:opacity 0.15s"></div>' +
+                        '<div class="cc-icon"><canvas width="128" height="128" style="width:110px;height:110px;opacity:0;transition:opacity 0.3s"></canvas></div>' +
                         '<div class="cc-name">' + upgrade.name + '</div>';
 
-                    // Queue icon for lazy batch render
-                    iconQueue.push({ img: card.querySelector('img'), iconKey: upgrade.icon || 'star', rarity: upgrade.rarity });
+                    // Queue icon for lazy batch render + animation
+                    const cvs = card.querySelector('canvas');
+                    iconQueue.push({ canvas: cvs, iconKey: upgrade.icon || 'star', rarity: upgrade.rarity });
 
                     card.addEventListener('mouseenter', (e) => this._showCollectionTooltip(e, upgrade));
                     card.addEventListener('mouseleave', () => this._hideCollectionTooltip());
@@ -4013,7 +4016,7 @@
                     // Queue reveal face icon for lazy render
                     const revealFace = card.querySelector('.cc-reveal-face');
                     revealFace.querySelector('.cc-name').textContent = upgrade.name;
-                    iconQueue.push({ revealIcon: revealFace.querySelector('.cc-icon'), iconKey: upgrade.icon || 'star', rarity: upgrade.rarity });
+                    iconQueue.push({ revealIcon: revealFace.querySelector('.cc-icon'), iconKey: upgrade.icon || 'star', rarity: upgrade.rarity, isReveal: true });
 
                     // Bind tooltip for after reveal
                     card.addEventListener('mouseenter', (e) => {
@@ -4092,35 +4095,83 @@
             document.getElementById('collection-tooltip').classList.remove('visible');
         },
 
-        // Render collection icons in batches of 4 per animation frame
-        // Prevents main thread from blocking when 73 unique 3D icons need rendering
+        // Render collection icons in batches, then start continuous rotation loop
         _processCollectionIconQueue(queue) {
-            const BATCH = 4;
+            const INIT_BATCH = 4;
             let idx = 0;
+            const canvasItems = []; // items with canvas elements for animation
 
-            const processNext = () => {
-                const end = Math.min(idx + BATCH, queue.length);
+            // Phase 1: Initial render (batched over multiple frames)
+            const processInit = () => {
+                const end = Math.min(idx + INIT_BATCH, queue.length);
                 for (; idx < end; idx++) {
                     const item = queue[idx];
-                    if (!window.createIconDataURL) continue;
-                    const url = window.createIconDataURL(item.iconKey, item.rarity, 128, 0);
-                    if (item.img) {
-                        item.img.src = url;
-                        item.img.style.opacity = '1';
+                    if (!window.draw3DUpgradeIcon && !window.createIconDataURL) continue;
+
+                    if (item.canvas) {
+                        // Canvas icon — render first frame + queue for animation
+                        const ctx = item.canvas.getContext('2d');
+                        if (window.draw3DUpgradeIcon) {
+                            window.draw3DUpgradeIcon(ctx, item.iconKey, item.rarity, 64, 64, 128, 0);
+                        }
+                        item.canvas.style.opacity = '1';
+                        canvasItems.push(item);
                     }
                     if (item.revealIcon) {
-                        item.revealIcon.innerHTML = '<img src="' + url + '" width="90" height="90" alt="">';
+                        // Reveal face — insert canvas for animation
+                        const cvs = document.createElement('canvas');
+                        cvs.width = 128; cvs.height = 128;
+                        cvs.style.cssText = 'width:110px;height:110px;';
+                        item.revealIcon.appendChild(cvs);
+                        const ctx = cvs.getContext('2d');
+                        if (window.draw3DUpgradeIcon) {
+                            window.draw3DUpgradeIcon(ctx, item.iconKey, item.rarity, 64, 64, 128, 0);
+                        }
+                        canvasItems.push({ canvas: cvs, iconKey: item.iconKey, rarity: item.rarity });
                     }
                 }
                 if (idx < queue.length) {
-                    this._iconQueueRAF = requestAnimationFrame(processNext);
+                    this._iconQueueRAF = requestAnimationFrame(processInit);
                 } else {
                     this._iconQueueRAF = null;
+                    // Phase 2: Start continuous rotation animation
+                    this._startCollectionIconLoop(canvasItems);
                 }
             };
 
             if (queue.length > 0) {
-                this._iconQueueRAF = requestAnimationFrame(processNext);
+                this._iconQueueRAF = requestAnimationFrame(processInit);
+            }
+        },
+
+        // Continuous rotation loop — renders 3 icons per frame, cycling through all
+        _startCollectionIconLoop(items) {
+            if (this._collectionAnimRAF) cancelAnimationFrame(this._collectionAnimRAF);
+            if (!items.length || !window.draw3DUpgradeIcon) return;
+
+            const BATCH = 3;
+            let cursor = 0;
+
+            const animate = () => {
+                const t = performance.now() / 1000;
+                const end = Math.min(cursor + BATCH, items.length);
+                for (let i = cursor; i < end; i++) {
+                    const item = items[i];
+                    if (!item.canvas || !item.canvas.isConnected) continue;
+                    const ctx = item.canvas.getContext('2d');
+                    ctx.clearRect(0, 0, 128, 128);
+                    window.draw3DUpgradeIcon(ctx, item.iconKey, item.rarity, 64, 64, 128, t);
+                }
+                cursor = end >= items.length ? 0 : end;
+                this._collectionAnimRAF = requestAnimationFrame(animate);
+            };
+            this._collectionAnimRAF = requestAnimationFrame(animate);
+        },
+
+        _stopCollectionIconLoop() {
+            if (this._collectionAnimRAF) {
+                cancelAnimationFrame(this._collectionAnimRAF);
+                this._collectionAnimRAF = null;
             }
         },
 

@@ -15,7 +15,7 @@ import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './m
 import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { createIconModel } from './models/UpgradeIconFactory.js';
-import { initIconRenderer, create3DIconDataURL, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
+import { initIconRenderer, create3DIconDataURL, draw3DUpgradeIcon, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
@@ -174,6 +174,7 @@ window.createIconDataURL = function(iconKey, rarityOrSize, size, time) {
     return create3DIconDataURL(iconKey, rarityOrSize || 'common', size || 64, time || 0);
 };
 window.createIconModel = createIconModel;
+window.draw3DUpgradeIcon = draw3DUpgradeIcon;
 window.disposeIconRenderer = disposeIconRenderer;
 window.outlineMatStatic = outlineMatStatic;
 window.DoorDamageSystem = DoorDamageSystem;
