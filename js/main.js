@@ -21,6 +21,7 @@ import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
 import { Music } from './systems/MusicManager.js';
+import { GamepadManager } from './input/GamepadManager.js';
 import { GLBModelCache } from './loaders/GLBModelCache.js';
 import { PlayerModelLoader } from './loaders/PlayerModelLoader.js';
 import { ENEMY_DEATH_VOCAL } from './data/soundConfig.js';
@@ -188,6 +189,7 @@ window.Music = Music;
 window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;
 window.GLBModelCache = GLBModelCache;
 window.PlayerModelLoader = PlayerModelLoader;
+window.GamepadManager = GamepadManager;
 
 // Initialize game
 window.Game = Game;

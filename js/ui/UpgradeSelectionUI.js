@@ -233,6 +233,9 @@ export class UpgradeSelectionUI {
         // Bound handlers (for cleanup)
         this._onMouseMove = this._handleMouseMove.bind(this);
         this._onClick = this._handleClick.bind(this);
+
+        // Gamepad hover flag — when true, skip raycaster-based hover
+        this._gamepadHoverActive = false;
     }
 
     // ─── ACTIVATE (enter upgrade selection phase) ─────────────────────────
@@ -284,6 +287,7 @@ export class UpgradeSelectionUI {
         this.phase = 'done';
         this.hoveredIndex = -1;
         this.selectedIndex = -1;
+        this._gamepadHoverActive = false;
 
         // Remove listeners
         window.removeEventListener('mousemove', this._onMouseMove);
@@ -329,6 +333,9 @@ export class UpgradeSelectionUI {
             return;
         }
 
+        // Skip raycasting when gamepad is driving hover
+        if (this._gamepadHoverActive) return;
+
         this._raycaster.setFromCamera(this._mouseNDC, this._camera);
 
         // Collect all meshes from all drones for intersection
@@ -354,6 +361,21 @@ export class UpgradeSelectionUI {
             document.body.style.cursor = bestIndex >= 0 ? 'pointer' : '';
             if (bestIndex >= 0 && window.SFX) SFX.play('drone_hover');
         }
+    }
+
+    // ─── GAMEPAD HOVER / SELECTION ──────────────────────────────────────
+
+    setHoveredIndex(index) {
+        const clamped = Math.max(-1, Math.min(this.drones.length - 1, index));
+        if (clamped !== this.hoveredIndex) {
+            this.hoveredIndex = clamped;
+            if (clamped >= 0 && window.SFX) SFX.play('drone_hover');
+        }
+    }
+
+    confirmSelection() {
+        if (this.phase !== 'choosing' || this.hoveredIndex < 0) return;
+        this._selectDrone(this.hoveredIndex);
     }
 
     // ─── HOVER FEEDBACK ──────────────────────────────────────────────────

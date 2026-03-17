@@ -154,6 +154,24 @@
                             <span class="toggle-track"></span>
                         </label>
                     </div>
+                    <div class="setting-section-header-controller">CONTROLLER</div>
+                    <div class="setting-row">
+                        <span class="setting-label">STICK SENSITIVITY</span>
+                        <input type="range" class="setting-slider" id="pause-slider-gp-sensitivity" min="1" max="10" value="5" step="1">
+                        <span class="setting-value" id="pause-val-gp-sensitivity">5</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">DEADZONE</span>
+                        <input type="range" class="setting-slider" id="pause-slider-gp-deadzone" min="5" max="30" value="15" step="1">
+                        <span class="setting-value" id="pause-val-gp-deadzone">15%</span>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">VIBRATION</span>
+                        <label class="setting-toggle">
+                            <input type="checkbox" id="pause-toggle-gp-vibration" checked>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
                 </div>
                 <button class="menu-btn menu-btn-small" id="btn-pause-settings-back">BACK</button>
             </div>
@@ -457,6 +475,24 @@
             <div class="keybind-row"><span class="keybind-label">SELL</span><button class="keybind-btn" data-action="sell">X</button></div>
             <div class="keybind-row"><span class="keybind-label">PAUSE</span><button class="keybind-btn" data-action="pause">SPACE</button></div>
             <button class="menu-btn menu-btn-small" id="btn-reset-keybinds" style="margin-top:8px;">RESET TO DEFAULT</button>
+            <div class="setting-section-header-controller">CONTROLLER</div>
+            <div class="setting-row">
+                <span class="setting-label">STICK SENSITIVITY</span>
+                <input type="range" class="setting-slider" id="slider-gp-sensitivity" min="1" max="10" value="5" step="1">
+                <span class="setting-value" id="val-gp-sensitivity">5</span>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">DEADZONE</span>
+                <input type="range" class="setting-slider" id="slider-gp-deadzone" min="5" max="30" value="15" step="1">
+                <span class="setting-value" id="val-gp-deadzone">15%</span>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">VIBRATION</span>
+                <label class="setting-toggle">
+                    <input type="checkbox" id="toggle-gp-vibration" checked>
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
         </div>
         <button class="menu-btn menu-btn-small" id="btn-settings-back">BACK</button>
     </div>
@@ -685,6 +721,7 @@
         _rebinding: null,
 
         _sellMode: false,              // Sell mode toggle
+        _gamepadManager: null,         // GamepadManager instance
         _wallGroupCounter: 0,   // Coordinated wall formation ID counter
         _swarmGroupCounter: 0,  // Swarm group (girls/raccoons/etc.) ID counter
         _titleWaterActive: false,
@@ -1655,6 +1692,20 @@
             window.addEventListener('keydown', unlockAudio);
             window.addEventListener('touchstart', unlockAudio);
 
+            // Gamepad support
+            if (window.GamepadManager) {
+                this._gamepadManager = new GamepadManager();
+                this._gamepadManager.init(this);
+                // Sync gamepad settings sliders with loaded values
+                const gps = this._gamepadManager._settings;
+                const gpSensEl = document.getElementById('slider-gp-sensitivity');
+                const gpDzEl = document.getElementById('slider-gp-deadzone');
+                const gpVibEl = document.getElementById('toggle-gp-vibration');
+                if (gpSensEl) { gpSensEl.value = gps.sensitivity; document.getElementById('val-gp-sensitivity').textContent = gps.sensitivity; }
+                if (gpDzEl) { gpDzEl.value = gps.deadzone; document.getElementById('val-gp-deadzone').textContent = gps.deadzone + '%'; }
+                if (gpVibEl) { gpVibEl.checked = gps.vibration; }
+            }
+
             // Start render loop (but game doesn't start until player clicks)
             this._animate();
 
@@ -2592,6 +2643,7 @@
         _setupInput() {
             // Keyboard
             window.addEventListener('keydown', (e) => {
+                if (this._gamepadManager) this._gamepadManager._onMouseActivity();
                 // 6E: Toggle performance stats with backtick
                 if (e.code === 'Backquote') {
                     this._showPerfStats = !this._showPerfStats;
@@ -2658,6 +2710,7 @@
             window.addEventListener('mousemove', (e) => {
                 this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                if (this._gamepadManager) this._gamepadManager._onMouseActivity();
             });
 
             // Mouse click (place tower or sell in sell mode)
@@ -3130,6 +3183,13 @@
                 pauseShakeToggle.checked = mainShakeToggle.checked;
                 document.getElementById('pause-val-music').textContent = mainMusicSlider.value + '%';
                 document.getElementById('pause-val-sfx').textContent = mainSfxSlider.value + '%';
+                // Sync gamepad settings to pause panel
+                const mainGpSens = document.getElementById('slider-gp-sensitivity');
+                const mainGpDz = document.getElementById('slider-gp-deadzone');
+                const mainGpVib = document.getElementById('toggle-gp-vibration');
+                if (mainGpSens) { document.getElementById('pause-slider-gp-sensitivity').value = mainGpSens.value; document.getElementById('pause-val-gp-sensitivity').textContent = mainGpSens.value; }
+                if (mainGpDz) { document.getElementById('pause-slider-gp-deadzone').value = mainGpDz.value; document.getElementById('pause-val-gp-deadzone').textContent = mainGpDz.value + '%'; }
+                if (mainGpVib) { document.getElementById('pause-toggle-gp-vibration').checked = mainGpVib.checked; }
                 pauseButtons.style.display = 'none';
                 document.getElementById('pause-text').style.display = 'none';
                 pauseSettings.style.display = 'flex';
@@ -3166,6 +3226,63 @@
             pauseShakeToggle.addEventListener('change', () => {
                 document.getElementById('toggle-shake').checked = pauseShakeToggle.checked;
             });
+
+            // === GAMEPAD SETTINGS ===
+            const gpSensSlider = document.getElementById('slider-gp-sensitivity');
+            const gpDeadzoneSlider = document.getElementById('slider-gp-deadzone');
+            const gpVibrationToggle = document.getElementById('toggle-gp-vibration');
+            if (gpSensSlider) {
+                gpSensSlider.addEventListener('input', (ev) => {
+                    const v = parseInt(ev.target.value);
+                    document.getElementById('val-gp-sensitivity').textContent = v;
+                    if (this._gamepadManager) this._gamepadManager.setSensitivity(v);
+                    // Sync pause slider
+                    const ps = document.getElementById('pause-slider-gp-sensitivity');
+                    if (ps) { ps.value = v; document.getElementById('pause-val-gp-sensitivity').textContent = v; }
+                });
+            }
+            if (gpDeadzoneSlider) {
+                gpDeadzoneSlider.addEventListener('input', (ev) => {
+                    const v = parseInt(ev.target.value);
+                    document.getElementById('val-gp-deadzone').textContent = v + '%';
+                    if (this._gamepadManager) this._gamepadManager.setDeadzone(v);
+                    const ps = document.getElementById('pause-slider-gp-deadzone');
+                    if (ps) { ps.value = v; document.getElementById('pause-val-gp-deadzone').textContent = v + '%'; }
+                });
+            }
+            if (gpVibrationToggle) {
+                gpVibrationToggle.addEventListener('change', () => {
+                    if (this._gamepadManager) this._gamepadManager.setVibration(gpVibrationToggle.checked);
+                    const pt = document.getElementById('pause-toggle-gp-vibration');
+                    if (pt) pt.checked = gpVibrationToggle.checked;
+                });
+            }
+            // Pause versions
+            const pauseGpSens = document.getElementById('pause-slider-gp-sensitivity');
+            const pauseGpDz = document.getElementById('pause-slider-gp-deadzone');
+            const pauseGpVib = document.getElementById('pause-toggle-gp-vibration');
+            if (pauseGpSens) {
+                pauseGpSens.addEventListener('input', (ev) => {
+                    const v = parseInt(ev.target.value);
+                    document.getElementById('pause-val-gp-sensitivity').textContent = v;
+                    if (gpSensSlider) { gpSensSlider.value = v; document.getElementById('val-gp-sensitivity').textContent = v; }
+                    if (this._gamepadManager) this._gamepadManager.setSensitivity(v);
+                });
+            }
+            if (pauseGpDz) {
+                pauseGpDz.addEventListener('input', (ev) => {
+                    const v = parseInt(ev.target.value);
+                    document.getElementById('pause-val-gp-deadzone').textContent = v + '%';
+                    if (gpDeadzoneSlider) { gpDeadzoneSlider.value = v; document.getElementById('val-gp-deadzone').textContent = v + '%'; }
+                    if (this._gamepadManager) this._gamepadManager.setDeadzone(v);
+                });
+            }
+            if (pauseGpVib) {
+                pauseGpVib.addEventListener('change', () => {
+                    if (gpVibrationToggle) gpVibrationToggle.checked = pauseGpVib.checked;
+                    if (this._gamepadManager) this._gamepadManager.setVibration(pauseGpVib.checked);
+                });
+            }
 
             // Menu hover sounds
             document.querySelectorAll('.menu-btn, .scenario-continue-btn').forEach(btn => {
@@ -5438,6 +5555,7 @@
                 const placeSfx = { potplant: 'pot_place', wetfloor: 'sign_place' };
                 SFX.play(placeSfx[this.selectedTower] || 'tower_place');
             }
+            if (this._gamepadManager) this._gamepadManager.hapticPlace();
 
             // Create tower mesh
             const tower = this._createTowerMesh(this.selectedTower, def);
@@ -5644,6 +5762,7 @@
             }
 
             if (window.SFX) SFX.play('tower_destroy');
+            if (this._gamepadManager) this._gamepadManager.hapticSell();
 
             // === JUICY SELL VFX ===
             const gx = t.gridX, gz = t.gridZ;
@@ -9567,6 +9686,7 @@
                             if (pctHP < 0.3) SFX.play('door_crack');
                             else SFX.play('door_bash');
                         }
+                        if (this._gamepadManager) this._gamepadManager.hapticDamage();
 
                         // L3: Plunger Protocol — door hit triggers tower speed buff
                         if (this.upgradeManager && this.upgradeManager.hasUpgrade('L3')) {
@@ -12532,6 +12652,9 @@
                 wEl.style.left = (sx - wEl.offsetWidth / 2) + 'px';
                 wEl.style.top = (sy - wEl.offsetHeight) + 'px';
             }
+
+            // Update gamepad input
+            if (this._gamepadManager) this._gamepadManager.update(rawDt);
 
             // Update grid hover + sell mode hover
             this._updateGridHover();
