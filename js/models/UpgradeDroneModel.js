@@ -53,9 +53,9 @@ const RARITY = {
 function createPlacardTexture(upgrade, rarity) {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
-    canvas.height = 500;
+    canvas.height = 650;
     const ctx = canvas.getContext('2d');
-    const cW = 800, cH = 500;
+    const cW = 800, cH = 650;
 
     // ── Background with subtle gradient ──
     const bgGrad = ctx.createLinearGradient(0, 0, 0, cH);
@@ -124,8 +124,8 @@ function createPlacardTexture(upgrade, rarity) {
         ctx.strokeRect(4, 4, cW - 8, cH - 8);
     }
 
-    // ── RARITY BANNER (0-50px) ──
-    const bannerH = 50;
+    // ── RARITY BANNER (0-55px) ──
+    const bannerH = 55;
     const bannerFill = rarity === 'legendary' ? '#e6b800'
                      : rarity === 'rare' ? '#9b8ec4'
                      : '#f0ebe0';
@@ -142,17 +142,22 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
-    ctx.font = "bold 30px 'Bangers', sans-serif";
+    ctx.font = "bold 32px 'Bangers', sans-serif";
     ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
-    // ── ICON — centered, prominent (55-230px) ──
-    const iconSize = 170;
+    // ── ICON — centered, prominent ──
+    const iconSize = 210;
     const iconCX = cW / 2;
-    const iconCY = 148;
+    const iconCY = 180;
+
+    // Save icon background region for animated re-rendering (avoids visible square artifact)
+    const _iconHalf = Math.ceil(iconSize / 2) + 2;
+    const _iconBgData = ctx.getImageData(iconCX - _iconHalf, iconCY - _iconHalf, _iconHalf * 2, _iconHalf * 2);
+
     draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
     // ── NAME — centered below icon ──
-    const nameFontSize = upgrade.name.length > 18 ? 42 : upgrade.name.length > 12 ? 48 : 56;
+    const nameFontSize = upgrade.name.length > 18 ? 48 : upgrade.name.length > 12 ? 54 : 62;
     ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -173,7 +178,7 @@ function createPlacardTexture(upgrade, rarity) {
     nameLines.push(currentLine);
 
     const nameLineH = nameFontSize + 6;
-    const nameStartY = 268 - (nameLines.length - 1) * nameLineH / 2;
+    const nameStartY = 340 - (nameLines.length - 1) * nameLineH / 2;
     for (let i = 0; i < nameLines.length; i++) {
         // Drop shadow
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
@@ -206,7 +211,7 @@ function createPlacardTexture(upgrade, rarity) {
         const descAreaBot = cH - 16;
         const descAreaH = descAreaBot - descAreaTop;
 
-        let descFontSize = 38;
+        let descFontSize = 42;
         let descLines, descLineH;
 
         // Shrink font until description fits available area
@@ -255,6 +260,9 @@ function createPlacardTexture(upgrade, rarity) {
     texture._iconCtx = ctx;
     texture._iconKey = upgrade.icon || 'star';
     texture._iconRarity = rarity;
+    texture._iconBgData = _iconBgData;
+    texture._iconBgX = iconCX - _iconHalf;
+    texture._iconBgY = iconCY - _iconHalf;
 
     return texture;
 }
@@ -652,9 +660,9 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     chainR.position.set(chainSpacing, -chainLength / 2, 0);
     signGroup.add(chainR);
 
-    // Placard (800x500 canvas → 4.5 x 2.8125 world units)
+    // Placard (800x650 canvas → 4.5 x 3.65625 world units)
     const placardW = 4.5;
-    const placardH = 2.8125;
+    const placardH = 3.65625;
     const placardD = 0.04;
 
     const placardTexture = createPlacardTexture(upgrade, rarity);
@@ -763,8 +771,8 @@ export function updateUpgradeDrone(drone, dt) {
     // ── HOVER BOB (hovering, settling, or idle) ─────────────────────────
     if (ud.state === 'hovering' || ud.state === 'settling' || ud.state === 'idle') {
         ud.hoverTime += dt;
-        const bobAmplitude = 0.15;
-        const bobFreq = 1.8;
+        const bobAmplitude = 0.05;
+        const bobFreq = 0.8;
         const bob = Math.sin(ud.hoverTime * bobFreq * Math.PI * 2 + ud.hoverPhase) * bobAmplitude;
         drone.userData._hoverBob = bob;
     }
@@ -788,7 +796,7 @@ export function updateUpgradeDrone(drone, dt) {
 
     // Ambient micro-sway when hovering
     if (ud.state === 'hovering') {
-        const ambientSway = Math.sin(ud.hoverTime * 0.8 + ud.hoverPhase) * 0.05;
+        const ambientSway = Math.sin(ud.hoverTime * 0.5 + ud.hoverPhase) * 0.015;
         ud._externalAccel = ambientSway;
     } else if (ud.state !== 'entering') {
         ud._externalAccel = 0;
@@ -851,17 +859,21 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud._iconFrame % 3 === 0) {
             const tex = ud.placardTexture;
             const ctx = tex._iconCtx;
-            const cx = 400, cy = 148, half = 90;
+            const cx = 400, cy = 180, half = 107;
 
-            // Clear icon region and fill with placard background color
-            const bgColor = tex._iconRarity === 'legendary' ? '#ffd93d'
-                          : tex._iconRarity === 'rare' ? '#fff4d9'
-                          : '#faf5ef';
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
+            // Restore saved background region (avoids visible square artifact)
+            if (tex._iconBgData) {
+                ctx.putImageData(tex._iconBgData, tex._iconBgX, tex._iconBgY);
+            } else {
+                const bgColor = tex._iconRarity === 'legendary' ? '#ffd93d'
+                              : tex._iconRarity === 'rare' ? '#fff4d9'
+                              : '#faf5ef';
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
+            }
 
             // Re-draw rotating 3D icon
-            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 170, performance.now() / 1000);
+            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 210, performance.now() / 1000);
             tex.needsUpdate = true;
         }
     }

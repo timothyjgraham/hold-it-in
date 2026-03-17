@@ -34,7 +34,7 @@ const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 
 // Card drop display dimensions
 const CARD_DROP_W = 360;
-const CARD_DROP_H = 225;
+const CARD_DROP_H = 293;
 
 // ─── SCREEN FLASH OVERLAY ───────────────────────────────────────────────────
 
@@ -772,7 +772,7 @@ export class UpgradeSelectionUI {
         const rarity = upgrade.rarity;
 
         // ── Render card content onto a canvas (mirrors the 3D placard sign) ──
-        const cW = 800, cH = 500;
+        const cW = 800, cH = 650;
         const canvas = document.createElement('canvas');
         canvas.width = cW;
         canvas.height = cH;
@@ -861,8 +861,8 @@ export class UpgradeSelectionUI {
             ctx.stroke();
         }
 
-        // ── Rarity banner (0-50px) ──
-        const bannerH = 50;
+        // ── Rarity banner (0-55px) ──
+        const bannerH = 55;
         const bannerFill = rarity === 'legendary' ? '#e6b800'
                          : rarity === 'rare' ? '#9b8ec4'
                          : '#f0ebe0';
@@ -884,17 +884,17 @@ export class UpgradeSelectionUI {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
-        ctx.font = "bold 30px 'Bangers', sans-serif";
+        ctx.font = "bold 32px 'Bangers', sans-serif";
         ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
-        // ── Icon — centered, prominent (55-230px) ──
-        const iconSize = 170;
+        // ── Icon — centered, prominent ──
+        const iconSize = 210;
         const iconCX = cW / 2;
-        const iconCY = 148;
+        const iconCY = 180;
         draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
         // ── Name — centered below icon ──
-        const nameFontSize = upgrade.name.length > 18 ? 42 : upgrade.name.length > 12 ? 48 : 56;
+        const nameFontSize = upgrade.name.length > 18 ? 48 : upgrade.name.length > 12 ? 54 : 62;
         ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -915,7 +915,7 @@ export class UpgradeSelectionUI {
         nameLines.push(curLine);
 
         const nLineH = nameFontSize + 6;
-        const nStartY = 268 - (nameLines.length - 1) * nLineH / 2;
+        const nStartY = 340 - (nameLines.length - 1) * nLineH / 2;
         for (let i = 0; i < nameLines.length; i++) {
             // Drop shadow
             ctx.fillStyle = 'rgba(0,0,0,0.12)';
@@ -948,7 +948,7 @@ export class UpgradeSelectionUI {
             const descAreaBot = cH - 16;
             const descAreaH = descAreaBot - descAreaTop;
 
-            let descFontSize = 38;
+            let descFontSize = 42;
             let dLines, descLineH;
 
             // Shrink font until description fits available area
