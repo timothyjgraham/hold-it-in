@@ -22,8 +22,9 @@ const LEGENDARY_SELECT_DUR = 1.4;
 const REJECTED_EXIT_DUR = 1.2;
 const REJECTED_STAGGER = 0.2;
 
-// Legendary slowmo
-const LEGENDARY_SLOWMO_DUR = 0.3;
+// Slowmo
+const LEGENDARY_SLOWMO_DUR = 0.5;
+const RARE_SLOWMO_DUR = 0.15;
 
 // Presenting phase (chosen drone close-up)
 const PRESENT_FLY_DUR = 0.8;      // Fly to close-up position
@@ -88,13 +89,87 @@ function _ensureFlashElement() {
     return _flashEl;
 }
 
-function _screenFlash(duration) {
+function _screenFlash(duration, color, opacity) {
     const el = _ensureFlashElement();
+    if (color) el.style.background = color;
     el.style.transition = 'none';
-    el.style.opacity = '0.6';
+    el.style.opacity = String(opacity || 0.6);
     void el.offsetWidth;
     el.style.transition = `opacity ${duration}s`;
     el.style.opacity = '0';
+}
+
+// ─── SHOCKWAVE RING (expanding torus in 3D) ─────────────────────────────────
+
+function _spawnShockwaveRing(scene, position, color, maxRadius, duration) {
+    const ringGeo = new THREE.TorusGeometry(1, 0.06, 8, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.copy(position);
+    ring.rotation.x = Math.PI / 2; // Flat horizontal
+    scene.add(ring);
+    return {
+        mesh: ring,
+        life: duration,
+        maxLife: duration,
+        maxRadius: maxRadius,
+    };
+}
+
+// ─── CONFETTI BURST (varied shapes with spin) ───────────────────────────────
+
+let _confettiGeos = null;
+function _getConfettiGeos() {
+    if (!_confettiGeos) {
+        _confettiGeos = [
+            new THREE.PlaneGeometry(0.12, 0.12),
+            new THREE.PlaneGeometry(0.08, 0.16),
+            new THREE.BoxGeometry(0.06, 0.06, 0.06),
+        ];
+    }
+    return _confettiGeos;
+}
+
+function _spawnConfettiBurst(scene, position, colors, count, speed, lifetime) {
+    const particles = [];
+    const geos = _getConfettiGeos();
+    for (let i = 0; i < count; i++) {
+        const geo = geos[Math.floor(Math.random() * geos.length)];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const mat = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 1.0,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(position);
+        scene.add(mesh);
+
+        const angle = Math.random() * Math.PI * 2;
+        const upAngle = Math.random() * Math.PI * 0.5;
+        const spd = speed * (0.6 + Math.random() * 0.8);
+        particles.push({
+            mesh,
+            vx: Math.cos(angle) * Math.cos(upAngle) * spd,
+            vy: Math.sin(upAngle) * spd + 3,
+            vz: Math.sin(angle) * Math.cos(upAngle) * spd,
+            spinX: (Math.random() - 0.5) * 12,
+            spinY: (Math.random() - 0.5) * 12,
+            spinZ: (Math.random() - 0.5) * 12,
+            life: lifetime * (0.5 + Math.random() * 0.5),
+            maxLife: lifetime,
+            isConfetti: true,
+        });
+    }
+    return particles;
 }
 
 // ─── DIM OVERLAY ────────────────────────────────────────────────────────────
@@ -212,6 +287,17 @@ export class UpgradeSelectionUI {
         // Camera zoom-punch
         this._zoomPunch = 0;
         this._zoomPunchVel = 0;
+
+        // Screen shake
+        this._shakeTimer = 0;
+        this._shakeIntensity = 0;
+
+        // Shockwave rings
+        this._shockwaves = [];
+
+        // Saturation punch
+        this._satPunch = 0;
+        this._satPunchVel = 0;
 
         // Slowmo
         this._slowmoTimer = 0;
@@ -504,31 +590,98 @@ export class UpgradeSelectionUI {
             ));
         } else if (rarity === 'rare') {
             if (window.SFX) SFX.play('upgrade_rare');
-            // Colored particle burst
+
+            // Violet screen flash
+            _screenFlash(0.2, '#9b8ec4', 0.35);
+
+            // Colored particle burst — MORE particles
             const upgrade = this.options[index];
             const burstColor = upgrade.towerRequirement && upgrade.towerRequirement[0]
                 ? this._getTowerColor(upgrade.towerRequirement[0])
                 : PALETTE.rarityRare;
             this._particles.push(..._spawnParticleBurst(
-                this._scene, droneWorldPos, burstColor, 20, 4, 0.7
+                this._scene, droneWorldPos, burstColor, 35, 5, 0.8
             ));
+
+            // Confetti burst in rarity colors
+            this._particles.push(..._spawnConfettiBurst(
+                this._scene, droneWorldPos,
+                [PALETTE.rarityRare, PALETTE.white, burstColor],
+                15, 4, 1.0
+            ));
+
+            // Brief slowmo
+            this._slowmoTimer = RARE_SLOWMO_DUR;
+
+            // Zoom-punch (lighter than legendary)
+            this._zoomPunch = 0;
+            this._zoomPunchVel = 8;
+
+            // Screen shake (light)
+            this._shakeTimer = 0.12;
+            this._shakeIntensity = 0.15;
+
+            // Shockwave ring
+            this._shockwaves.push(_spawnShockwaveRing(
+                this._scene, droneWorldPos, PALETTE.rarityRare, 6, 0.6
+            ));
+
+            // Saturation punch
+            this._satPunch = 0;
+            this._satPunchVel = 0.4;
+
         } else if (rarity === 'legendary') {
             if (window.SFX) SFX.play('upgrade_legendary');
-            // Gold screen flash
-            _screenFlash(0.15);
 
-            // Gold particle shower from above
+            // Double gold flash — first big, then a staggered follow-up
+            _screenFlash(0.2, 'var(--pal-gold, #ffd93d)', 0.7);
+            setTimeout(() => _screenFlash(0.25, '#fff0c0', 0.4), 120);
+
+            // Massive gold particle shower from above
             this._particles.push(..._spawnGoldShower(
-                this._scene, this._camera.position, 40
+                this._scene, this._camera.position, 80
             ));
 
-            // Slowmo
+            // Gold confetti burst at drone
+            this._particles.push(..._spawnConfettiBurst(
+                this._scene, droneWorldPos,
+                [PALETTE.gold, PALETTE.rarityLegendary, PALETTE.white, 0xffe066],
+                30, 6, 1.4
+            ));
+
+            // Extra radial burst from drone
+            this._particles.push(..._spawnParticleBurst(
+                this._scene, droneWorldPos, PALETTE.gold, 25, 5, 0.9
+            ));
+
+            // Slowmo — longer, more dramatic
             this._slowmoTimer = LEGENDARY_SLOWMO_DUR;
 
-            // Zoom-punch
+            // Zoom-punch — BIGGER
             if (window.SFX) SFX.play('zoom_punch');
             this._zoomPunch = 0;
-            this._zoomPunchVel = 15;
+            this._zoomPunchVel = 20;
+
+            // Screen shake — strong rumble
+            this._shakeTimer = 0.25;
+            this._shakeIntensity = 0.3;
+
+            // Expanding shockwave ring
+            this._shockwaves.push(_spawnShockwaveRing(
+                this._scene, droneWorldPos, PALETTE.gold, 10, 0.8
+            ));
+            // Staggered second ring
+            setTimeout(() => {
+                if (this._scene) {
+                    this._shockwaves.push(_spawnShockwaveRing(
+                        this._scene, droneWorldPos, PALETTE.glow, 8, 0.7
+                    ));
+                }
+            }, 100);
+
+            // Saturation punch (post-processing)
+            this._satPunch = 0;
+            this._satPunchVel = 0.8;
 
             // Make rejected drones droop/wobble
             for (let i = 0; i < this.drones.length; i++) {
@@ -1167,6 +1320,15 @@ export class UpgradeSelectionUI {
             p.mesh.position.y += p.vy * dt;
             p.mesh.position.z += p.vz * dt;
 
+            // Confetti spin
+            if (p.isConfetti) {
+                p.mesh.rotation.x += p.spinX * dt;
+                p.mesh.rotation.y += p.spinY * dt;
+                p.mesh.rotation.z += p.spinZ * dt;
+                // Flutter drag — confetti falls slower
+                p.vy += 2 * dt;
+            }
+
             // Fade out
             const fade = Math.max(0, p.life / p.maxLife);
             p.mesh.material.transparent = true;
@@ -1183,6 +1345,32 @@ export class UpgradeSelectionUI {
         }
     }
 
+    // ─── SHOCKWAVE UPDATE ─────────────────────────────────────────────────
+
+    _updateShockwaves(dt) {
+        for (let i = this._shockwaves.length - 1; i >= 0; i--) {
+            const sw = this._shockwaves[i];
+            sw.life -= dt;
+            const t = 1 - sw.life / sw.maxLife; // 0→1
+
+            // Expand radius with ease-out
+            const eased = 1 - Math.pow(1 - t, 3);
+            const radius = eased * sw.maxRadius;
+            sw.mesh.scale.setScalar(radius);
+
+            // Fade out + thin the ring
+            sw.mesh.material.opacity = 0.7 * (1 - t);
+            sw.mesh.scale.y = 1 - t * 0.5; // Flatten as it expands
+
+            if (sw.life <= 0) {
+                this._scene.remove(sw.mesh);
+                sw.mesh.geometry.dispose();
+                sw.mesh.material.dispose();
+                this._shockwaves.splice(i, 1);
+            }
+        }
+    }
+
     _cleanupParticles() {
         if (!this._scene) return;
         for (const p of this._particles) {
@@ -1191,6 +1379,14 @@ export class UpgradeSelectionUI {
             p.mesh.material.dispose();
         }
         this._particles = [];
+
+        // Clean up shockwaves too
+        for (const sw of this._shockwaves) {
+            this._scene.remove(sw.mesh);
+            sw.mesh.geometry.dispose();
+            sw.mesh.material.dispose();
+        }
+        this._shockwaves = [];
     }
 
     // ─── BACKGROUND DIMMING ──────────────────────────────────────────────
@@ -1240,9 +1436,27 @@ export class UpgradeSelectionUI {
         // Particles
         this._updateParticles(dt);
 
+        // Shockwaves
+        this._updateShockwaves(dt);
+
         // Camera zoom-punch
         if (Math.abs(this._zoomPunch) > 0.001) {
             result.zoomPunch = this._zoomPunch;
+        }
+
+        // Screen shake
+        if (this._shakeTimer > 0) {
+            this._shakeTimer -= dt;
+            const t = Math.max(0, this._shakeTimer / 0.25);
+            result.shakeX = (Math.random() - 0.5) * this._shakeIntensity * t;
+            result.shakeY = (Math.random() - 0.5) * this._shakeIntensity * t * 0.7;
+        }
+
+        // Saturation punch (spring-damped)
+        if (Math.abs(this._satPunch) > 0.001 || Math.abs(this._satPunchVel) > 0.001) {
+            this._satPunchVel += (-this._satPunch * 80 - this._satPunchVel * 8) * dt;
+            this._satPunch += this._satPunchVel * dt;
+            result.saturationPunch = this._satPunch;
         }
 
         // Done — signal completion

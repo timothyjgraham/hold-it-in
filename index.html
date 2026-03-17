@@ -8565,9 +8565,33 @@
                     this.camera.position.z = CONFIG.cameraPos.z;
                 }
 
+                // Apply screen shake from upgrade ceremony
+                const shakeEnabled = document.getElementById('toggle-shake');
+                if (shakeEnabled && shakeEnabled.checked) {
+                    if (result.shakeX !== undefined) {
+                        this.camera.position.x = CONFIG.cameraPos.x + result.shakeX;
+                        this.camera.position.y = CONFIG.cameraPos.y + result.shakeY;
+                    } else {
+                        this.camera.position.x = CONFIG.cameraPos.x;
+                        this.camera.position.y = CONFIG.cameraPos.y;
+                    }
+                }
+
+                // Apply saturation punch via post-processing
+                if (result.saturationPunch && this.postFX && this.postFX.uniforms) {
+                    this.postFX.uniforms.uSaturationBoost.value = Math.max(0, result.saturationPunch);
+                } else if (this.postFX && this.postFX.uniforms) {
+                    this.postFX.uniforms.uSaturationBoost.value = 0;
+                }
+
                 // Selection complete — apply upgrade and resume
                 if (result.done && result.selectedUpgrade) {
                     this.camera.position.z = CONFIG.cameraPos.z;
+                    this.camera.position.x = CONFIG.cameraPos.x;
+                    this.camera.position.y = CONFIG.cameraPos.y;
+                    if (this.postFX && this.postFX.uniforms) {
+                        this.postFX.uniforms.uSaturationBoost.value = 0;
+                    }
                     this._onUpgradeSelected(result.selectedUpgrade);
                 }
                 return; // Skip all game logic while selecting
