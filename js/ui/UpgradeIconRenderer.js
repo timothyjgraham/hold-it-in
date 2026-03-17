@@ -60,9 +60,9 @@ export function initIconRenderer() {
     // Fog prevents outline shader WebGL warnings (fog uniforms expected)
     _scene.fog = new THREE.Fog(0x000000, 1000, 1000);
 
-    // Wider FOV + pulled back — gives icons room to breathe (no circular crop)
-    _camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
-    _camera.position.set(0, 0.3, 3.2);
+    // Tighter framing — icons fill more of the 256px canvas
+    _camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    _camera.position.set(0, 0.15, 2.6);
     _camera.lookAt(0, 0, 0);
 
     // Lighting: stronger contrast for cel-shaded look
@@ -181,8 +181,8 @@ function _borderlandsPostProcess(time) {
             const gyA = -atl - 2 * atc - atr + abl + 2 * abc + abr;
             let edgeA = Math.sqrt(gxA * gxA + gyA * gyA);
 
-            // Alpha edges weighted heavier for strong silhouette outlines
-            edges[idx] = Math.min(1.0, edgeL * 2.5 + edgeA * 4.0);
+            // Alpha edges weighted for clean silhouette outlines (not overpowering)
+            edges[idx] = Math.min(1.0, edgeL * 1.5 + edgeA * 2.5);
         }
     }
 
@@ -208,8 +208,8 @@ function _borderlandsPostProcess(time) {
             let e = edges[idx];
 
             // Threshold for crisp ink lines (not fuzzy gradients)
-            if (e < 0.15) { e = 0; }
-            else { e = Math.min(1.0, (e - 0.15) / 0.4); }
+            if (e < 0.20) { e = 0; }
+            else { e = Math.min(1.0, (e - 0.20) / 0.5); }
 
             // Only draw where there's actual content nearby
             if (alpha[idx] < 0.01 && e < 0.3) { e = 0; }
@@ -218,7 +218,7 @@ function _borderlandsPostProcess(time) {
                 epx[off]     = inkR;
                 epx[off + 1] = inkG;
                 epx[off + 2] = inkB;
-                epx[off + 3] = Math.round(e * 220);
+                epx[off + 3] = Math.round(e * 170);
             }
         }
     }
@@ -233,7 +233,7 @@ function _borderlandsPostProcess(time) {
 
     // ── Step 4: Cross-hatching in dark regions ──
     mCtx.save();
-    mCtx.strokeStyle = `rgba(${inkR}, ${inkG}, ${inkB}, 0.12)`;
+    mCtx.strokeStyle = `rgba(${inkR}, ${inkG}, ${inkB}, 0.07)`;
     mCtx.lineWidth = 1;
 
     const hatchSpacing = 6;

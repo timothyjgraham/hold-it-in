@@ -888,9 +888,9 @@ export class UpgradeSelectionUI {
         ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
         // ── Icon — centered, prominent ──
-        const iconSize = 210;
+        const iconSize = 300;
         const iconCX = cW / 2;
-        const iconCY = 180;
+        const iconCY = 210;
         draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
         // ── Name — centered below icon ──
@@ -915,7 +915,7 @@ export class UpgradeSelectionUI {
         nameLines.push(curLine);
 
         const nLineH = nameFontSize + 6;
-        const nStartY = 340 - (nameLines.length - 1) * nLineH / 2;
+        const nStartY = 400 - (nameLines.length - 1) * nLineH / 2;
         for (let i = 0; i < nameLines.length; i++) {
             // Drop shadow
             ctx.fillStyle = 'rgba(0,0,0,0.12)';

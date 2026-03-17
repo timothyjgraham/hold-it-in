@@ -17,7 +17,7 @@ import { createRoundedBox } from '../../utils/characterGeometry.js';
 let _olMat = null;
 
 export function ol() {
-    if (!_olMat) _olMat = outlineMatStatic(0.045);
+    if (!_olMat) _olMat = outlineMatStatic(0.025);
     return _olMat;
 }
 

@@ -3988,7 +3988,7 @@
                     // Fully discovered — show card (icon rendered lazily)
                     card.style.borderColor = rarityBorder[upgrade.rarity];
                     card.innerHTML =
-                        '<div class="cc-icon"><img width="48" height="48" alt="" style="opacity:0;transition:opacity 0.15s"></div>' +
+                        '<div class="cc-icon"><img width="90" height="90" alt="" style="opacity:0;transition:opacity 0.15s"></div>' +
                         '<div class="cc-name">' + upgrade.name + '</div>';
 
                     // Queue icon for lazy batch render
@@ -4103,13 +4103,13 @@
                 for (; idx < end; idx++) {
                     const item = queue[idx];
                     if (!window.createIconDataURL) continue;
-                    const url = window.createIconDataURL(item.iconKey, item.rarity, 48, 0);
+                    const url = window.createIconDataURL(item.iconKey, item.rarity, 128, 0);
                     if (item.img) {
                         item.img.src = url;
                         item.img.style.opacity = '1';
                     }
                     if (item.revealIcon) {
-                        item.revealIcon.innerHTML = '<img src="' + url + '" width="48" height="48" alt="">';
+                        item.revealIcon.innerHTML = '<img src="' + url + '" width="90" height="90" alt="">';
                     }
                 }
                 if (idx < queue.length) {
@@ -6500,7 +6500,7 @@
             };
 
             // Create icon data URL using canvas icon system
-            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 96) : '';
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 128) : '';
 
             const rarity = upgrade.rarity || 'common';
             const card = document.createElement('div');
@@ -6528,8 +6528,8 @@
             if (iconURL) {
                 const img = document.createElement('img');
                 img.src = iconURL;
-                img.width = 48;
-                img.height = 48;
+                img.width = 56;
+                img.height = 56;
                 img.style.pointerEvents = 'none';
                 card.appendChild(img);
             }
@@ -6592,7 +6592,7 @@
             toast.style.background = rarityBg[upgrade.rarity] || rarityBg.common;
 
             // Icon (canvas-rendered, no emoji)
-            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 96) : '';
+            const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 128) : '';
             toast.innerHTML = '';
             if (iconURL) {
                 const img = document.createElement('img');
