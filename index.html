@@ -110,6 +110,7 @@
                 </div>
             </div>
         </div>
+        <span id="difficulty-badge" class="difficulty-badge">NORMAL</span>
     </div>
 
     <!-- Wave badge (positioned above door in 3D) -->
@@ -128,6 +129,7 @@
             <div id="pause-buttons">
                 <button class="menu-btn" id="btn-resume">RESUME</button>
                 <button class="menu-btn menu-btn-small" id="btn-pause-settings">SETTINGS</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-howto">HOW TO PLAY</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-quit">SAVE &amp; QUIT</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-menu">SAVE &amp; MAIN MENU</button>
                 <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save">QUIT WITHOUT SAVING</button>
@@ -154,6 +156,25 @@
                     </div>
                 </div>
                 <button class="menu-btn menu-btn-small" id="btn-pause-settings-back">BACK</button>
+            </div>
+            <div id="pause-howto" style="display:none;">
+                <div class="howto-panel">
+                    <div class="howto-heading">OBJECTIVE</div>
+                    <div class="howto-text">Defend your toilet from waves of desperate people by placing towers on the grid. If they reach the door, you lose HP!</div>
+                    <div class="howto-heading" style="margin-top:12px;">CONTROLS</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower1">1</span> Coin Magnet</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower2">2</span> Wet Floor Sign</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower3">3</span> Mop Turret</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower4">4</span> Ubik Spray</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower5">5</span> Pot Plant</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-sell">X</span> Sell Mode</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-pause">SPACE</span> Pause</div>
+                    <div class="howto-key-row"><span class="howto-key">CLICK</span> Place / Sell Tower</div>
+                    <div class="howto-key-row"><span class="howto-key">R-CLICK</span> Cancel Selection</div>
+                    <div class="howto-heading" style="margin-top:12px;">TIPS</div>
+                    <div class="howto-text">Combine towers for maximum effect — Signs slow enemies into Mop range. Sell towers you don't need to recoup coins!</div>
+                </div>
+                <button class="menu-btn menu-btn-small" id="btn-pause-howto-back" style="margin-top:12px;">BACK</button>
             </div>
         </div>
     </div>
@@ -271,6 +292,7 @@
             </svg>
             <span class="tip-cost"></span> coins
         </div>
+        <div class="tip-stats"></div>
         <div class="tip-desc"></div>
     </div>
 
@@ -292,6 +314,14 @@
     <!-- Scenario Select Screen (shared by campaign & endless) -->
     <div id="scenario-screen" class="menu-screen" style="display:none;">
         <h2 class="screen-title" id="scenario-screen-title">CAMPAIGN</h2>
+        <div class="scenario-difficulty-row">
+            <span class="setting-label">DIFFICULTY</span>
+            <div class="difficulty-selector" id="diff-selector-scenario">
+                <button class="diff-btn" data-diff="easy">EASY</button>
+                <button class="diff-btn active" data-diff="normal">NORMAL</button>
+                <button class="diff-btn" data-diff="hard">HARD</button>
+            </div>
+        </div>
         <div class="scenario-grid">
             <!-- The Office -->
             <div class="scenario-card playable" id="card-office" data-scenario="office">
@@ -410,6 +440,23 @@
                     <span class="toggle-track"></span>
                 </label>
             </div>
+            <div class="setting-row">
+                <span class="setting-label">DIFFICULTY</span>
+                <div class="difficulty-selector" id="diff-selector-settings">
+                    <button class="diff-btn" data-diff="easy">EASY</button>
+                    <button class="diff-btn active" data-diff="normal">NORMAL</button>
+                    <button class="diff-btn" data-diff="hard">HARD</button>
+                </div>
+            </div>
+            <div class="setting-section-header">CONTROLS</div>
+            <div class="keybind-row"><span class="keybind-label">MAGNET</span><button class="keybind-btn" data-action="tower1">1</button></div>
+            <div class="keybind-row"><span class="keybind-label">SIGN</span><button class="keybind-btn" data-action="tower2">2</button></div>
+            <div class="keybind-row"><span class="keybind-label">MOP</span><button class="keybind-btn" data-action="tower3">3</button></div>
+            <div class="keybind-row"><span class="keybind-label">UBIK</span><button class="keybind-btn" data-action="tower4">4</button></div>
+            <div class="keybind-row"><span class="keybind-label">POT PLANT</span><button class="keybind-btn" data-action="tower5">5</button></div>
+            <div class="keybind-row"><span class="keybind-label">SELL</span><button class="keybind-btn" data-action="sell">X</button></div>
+            <div class="keybind-row"><span class="keybind-label">PAUSE</span><button class="keybind-btn" data-action="pause">SPACE</button></div>
+            <button class="menu-btn menu-btn-small" id="btn-reset-keybinds" style="margin-top:8px;">RESET TO DEFAULT</button>
         </div>
         <button class="menu-btn menu-btn-small" id="btn-settings-back">BACK</button>
     </div>
@@ -585,6 +632,14 @@
         // Best stats per scenario (persisted to localStorage)
         _bestStats: { office: { wave: 0, score: 0 }, forest: { wave: 0, score: 0 }, ocean: { wave: 0, score: 0 }, airplane: { wave: 0, score: 0 } },
 
+        // Difficulty settings
+        _difficulty: 'normal',
+        DIFFICULTY_CONFIG: {
+            easy:   { hpMult: 0.7, countMult: 0.75, speedCreepMult: 0.85, startCoinsMult: 1.2, doorHPMult: 1.3, scoreMult: 0.7,  label: 'EASY',   color: '#50c878' },
+            normal: { hpMult: 1.0, countMult: 1.0,  speedCreepMult: 1.0,  startCoinsMult: 1.0, doorHPMult: 1.0, scoreMult: 1.0,  label: 'NORMAL', color: '#ffd93d' },
+            hard:   { hpMult: 1.3, countMult: 1.25, speedCreepMult: 1.15, startCoinsMult: 0.8, doorHPMult: 0.8, scoreMult: 1.5,  label: 'HARD',   color: '#ff6b7a' },
+        },
+
         // Collection discovery tracking (persisted to localStorage)
         _collection: {},          // id → true for discovered upgrades
         _newlyDiscovered: [],     // IDs discovered since last collection screen view
@@ -624,6 +679,11 @@
         _moneyPrinterDecayTimer: 0,    // R35: Money Printer — time until stacks start decaying
         _moneyPrinterSpeedStacks: 0,   // R35: Money Printer — attack speed buff (0-0.15)
         _coinResonanceBonus: 0,        // C3: Coin Resonance — permanent shockwave damage bonus
+        // Remappable controls
+        _keybinds: { tower1:'Digit1', tower2:'Digit2', tower3:'Digit3', tower4:'Digit4', tower5:'Digit5', sell:'KeyX', pause:'Space' },
+        _defaultKeybinds: { tower1:'Digit1', tower2:'Digit2', tower3:'Digit3', tower4:'Digit4', tower5:'Digit5', sell:'KeyX', pause:'Space' },
+        _rebinding: null,
+
         _sellMode: false,              // Sell mode toggle
         _wallGroupCounter: 0,   // Coordinated wall formation ID counter
         _swarmGroupCounter: 0,  // Swarm group (girls/raccoons/etc.) ID counter
@@ -1491,6 +1551,10 @@
             this._environmentGroup.name = 'environment';
             this.scene.add(this._environmentGroup);
             this._setupTitleWater();
+
+            // Load persisted settings
+            this._loadDifficulty();
+            this._loadKeybinds();
 
             // Input
             this._setupInput();
@@ -2538,10 +2602,31 @@
                     return;
                 }
 
+                // If rebinding, capture the key instead
+                if (this._rebinding) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const action = this._rebinding;
+                    const newCode = e.code;
+                    // Swap if duplicate
+                    for (const [k, v] of Object.entries(this._keybinds)) {
+                        if (v === newCode && k !== action) {
+                            this._keybinds[k] = this._keybinds[action];
+                        }
+                    }
+                    this._keybinds[action] = newCode;
+                    this._rebinding = null;
+                    this._saveKeybinds();
+                    this._updateKeybindButtons();
+                    this._updateHotkeyLabels();
+                    document.querySelectorAll('.keybind-btn.listening').forEach(b => b.classList.remove('listening'));
+                    return;
+                }
+
                 if (this.state === 'title') return;
 
                 // Pause toggle (disabled during upgrade selection / intro / confirm dialog)
-                if (e.code === 'Space' || e.code === 'Escape') {
+                if (e.code === this._keybinds.pause || e.code === 'Escape') {
                     if (this._upgradePhase || this._introPhase || this._devotionPickerActive) return;
                     // Don't toggle while confirm dialog is visible
                     const confirmDialog = document.getElementById('confirm-dialog');
@@ -2553,14 +2638,16 @@
 
                 // Tower hotkeys (work while paused too, not during upgrade/intro selection)
                 if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase && !this._devotionPickerActive) {
-                    // X key: toggle sell mode
-                    if (e.code === 'KeyX') {
+                    // Sell mode toggle
+                    if (e.code === this._keybinds.sell) {
                         this._toggleSellMode();
                         return;
                     }
-                    for (const [key, def] of Object.entries(this.TOWERS)) {
-                        if (e.code === def.hotkey) {
-                            this.selectTower(key);
+                    // Tower selection by keybind
+                    const towerTypes = ['coinmagnet', 'wetfloor', 'mop', 'ubik', 'potplant'];
+                    for (let i = 0; i < towerTypes.length; i++) {
+                        if (e.code === this._keybinds['tower' + (i + 1)]) {
+                            this.selectTower(towerTypes[i]);
                             return;
                         }
                     }
@@ -2874,6 +2961,59 @@
                 localStorage.setItem('holditin_tutorial_enabled', tutorialToggle.checked ? '1' : '0');
             });
 
+            // Difficulty selectors (both settings + scenario)
+            document.querySelectorAll('.difficulty-selector').forEach(sel => {
+                sel.querySelectorAll('.diff-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (window.SFX) SFX.play('ui_click');
+                        this._difficulty = btn.dataset.diff;
+                        this._saveDifficulty();
+                        this._syncDifficultyButtons();
+                    });
+                });
+            });
+            this._syncDifficultyButtons();
+
+            // Keybind buttons
+            document.querySelectorAll('.keybind-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (window.SFX) SFX.play('ui_click');
+                    document.querySelectorAll('.keybind-btn.listening').forEach(b => b.classList.remove('listening'));
+                    this._rebinding = btn.dataset.action;
+                    btn.classList.add('listening');
+                    btn.textContent = '...';
+                });
+            });
+            this._updateKeybindButtons();
+            this._updateHotkeyLabels();
+
+            // Reset keybinds
+            const resetBtn = document.getElementById('btn-reset-keybinds');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    if (window.SFX) SFX.play('ui_click');
+                    Object.assign(this._keybinds, this._defaultKeybinds);
+                    this._saveKeybinds();
+                    this._updateKeybindButtons();
+                    this._updateHotkeyLabels();
+                });
+            }
+
+            // How to Play (pause menu)
+            document.getElementById('btn-pause-howto').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('pause-buttons').style.display = 'none';
+                document.getElementById('pause-text').style.display = 'none';
+                document.getElementById('pause-howto').style.display = 'flex';
+                this._updateHowToKeys();
+            });
+            document.getElementById('btn-pause-howto-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('pause-howto').style.display = 'none';
+                document.getElementById('pause-buttons').style.display = 'flex';
+                document.getElementById('pause-text').style.display = '';
+            });
+
             // Tutorial overlay — click to advance
             document.getElementById('tutorial-overlay').addEventListener('click', () => {
                 if (this._tutorialActive && (this._tutorialStep === 0 || this._tutorialStep === 8)) {
@@ -3058,7 +3198,12 @@
                     if (window.SFX) SFX.play('ui_hover');
                     tipName.textContent = sellBtn.dataset.tipName;
                     tipCost.textContent = sellBtn.dataset.tipCost || '';
-                    tipDesc.textContent = sellBtn.dataset.tipDesc;
+                    const hasFullRefund = this.upgradeManager && this.upgradeManager.hasUpgrade('R22');
+                    tipDesc.textContent = hasFullRefund
+                        ? 'Click a placed tower to sell it (100% refund!)'
+                        : 'Click a placed tower to sell it (40% refund)';
+                    const tipStats = tooltip.querySelector('.tip-stats');
+                    if (tipStats) tipStats.innerHTML = '';
                     const rect = sellBtn.getBoundingClientRect();
                     tooltip.style.right = (window.innerWidth - rect.left + 10) + 'px';
                     tooltip.style.top = (rect.top + rect.height / 2 - 40) + 'px';
@@ -3084,6 +3229,15 @@
                     tipName.textContent = btn.dataset.tipName;
                     tipCost.textContent = btn.dataset.tipCost;
                     tipDesc.textContent = btn.dataset.tipDesc;
+
+                    // Tower stats
+                    const tipStats = tooltip.querySelector('.tip-stats');
+                    if (tipStats) {
+                        const stats = this._getTowerTooltipStats(btn.dataset.tower);
+                        tipStats.innerHTML = stats.map(s =>
+                            `<div class="tip-stat-row"><span>${s.label}</span><span class="tip-stat-value${s.modified ? ' modified' : ''}">${s.value}</span></div>`
+                        ).join('');
+                    }
 
                     // Position tooltip to the left of the button
                     const rect = btn.getBoundingClientRect();
@@ -3165,6 +3319,13 @@
             if (h.coins) h.coins.textContent = this.coins;
             if (h.wave) h.wave.textContent = `WAVE ${this.wave}`;
             if (h.score) h.score.textContent = this.score;
+            // Difficulty badge
+            if (!h.diffBadge) h.diffBadge = document.getElementById('difficulty-badge');
+            if (h.diffBadge) {
+                const diff = this._getDifficulty();
+                h.diffBadge.textContent = diff.label;
+                h.diffBadge.style.background = diff.color;
+            }
 
             // Update tower cost displays (R14 Clearance Sale, C19 Bargain Bin, R23 Devotion)
             if (this.upgradeManager) {
@@ -3588,7 +3749,7 @@
         start() {
             this.state = 'playing';
             this.wave = 0;
-            this.coins = CONFIG.startingCoins;
+            this.coins = Math.floor(CONFIG.startingCoins * this._getDifficulty().startCoinsMult);
 
             // Clean up any active tutorial
             if (this._tutorialActive) {
@@ -3603,7 +3764,7 @@
             if (this.doorGroup) {
                 this.doorGroup.visible = true; // Restore after shatter
                 const ud = this.doorGroup.userData;
-                ud.maxDoorHP = 100; // Reset to base (L1 modifies on acquire)
+                ud.maxDoorHP = Math.round(100 * this._getDifficulty().doorHPMult); // Reset to base (L1 modifies on acquire)
                 ud.doorHP = ud.maxDoorHP;
                 // Reset door panels visibility
                 const panels = ud.doorPanels || (ud.door ? [ud.door] : []);
@@ -3953,6 +4114,162 @@
             console.log('Game started — defend the throne!');
         },
 
+        // ============================
+        // DIFFICULTY & KEYBIND HELPERS
+        // ============================
+        _getDifficulty() {
+            return this.DIFFICULTY_CONFIG[this._difficulty] || this.DIFFICULTY_CONFIG.normal;
+        },
+
+        _loadDifficulty() {
+            try {
+                const saved = localStorage.getItem('holditin_difficulty');
+                if (saved && this.DIFFICULTY_CONFIG[saved]) this._difficulty = saved;
+            } catch(e) { /* ignore */ }
+        },
+        _saveDifficulty() {
+            try { localStorage.setItem('holditin_difficulty', this._difficulty); } catch(e) { /* ignore */ }
+        },
+
+        _loadKeybinds() {
+            try {
+                const raw = localStorage.getItem('holditin_keybinds');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        for (const key of Object.keys(this._defaultKeybinds)) {
+                            if (parsed[key]) this._keybinds[key] = parsed[key];
+                        }
+                    }
+                }
+            } catch(e) { /* ignore */ }
+        },
+        _saveKeybinds() {
+            try { localStorage.setItem('holditin_keybinds', JSON.stringify(this._keybinds)); } catch(e) { /* ignore */ }
+        },
+
+        _keyDisplayName(code) {
+            if (!code) return '?';
+            if (code.startsWith('Digit')) return code.slice(5);
+            if (code.startsWith('Key')) return code.slice(3);
+            if (code === 'Space') return 'SPACE';
+            if (code === 'Escape') return 'ESC';
+            if (code === 'ArrowUp') return 'UP';
+            if (code === 'ArrowDown') return 'DOWN';
+            if (code === 'ArrowLeft') return 'LEFT';
+            if (code === 'ArrowRight') return 'RIGHT';
+            if (code === 'ShiftLeft' || code === 'ShiftRight') return 'SHIFT';
+            if (code === 'ControlLeft' || code === 'ControlRight') return 'CTRL';
+            if (code === 'AltLeft' || code === 'AltRight') return 'ALT';
+            if (code === 'Tab') return 'TAB';
+            if (code === 'Enter') return 'ENTER';
+            if (code === 'Backspace') return 'BKSP';
+            return code.replace(/([a-z])([A-Z])/g, '$1 $2').toUpperCase();
+        },
+
+        _syncDifficultyButtons() {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.diff === this._difficulty);
+            });
+            // Update HUD badge
+            const badge = document.getElementById('difficulty-badge');
+            if (badge) {
+                const diff = this._getDifficulty();
+                badge.textContent = diff.label;
+                badge.style.background = diff.color;
+            }
+        },
+
+        _updateKeybindButtons() {
+            document.querySelectorAll('.keybind-btn').forEach(btn => {
+                const action = btn.dataset.action;
+                if (action && this._keybinds[action]) {
+                    btn.textContent = this._keyDisplayName(this._keybinds[action]);
+                }
+            });
+        },
+
+        _updateHotkeyLabels() {
+            const towerTypes = ['coinmagnet', 'wetfloor', 'mop', 'ubik', 'potplant'];
+            towerTypes.forEach((type, i) => {
+                const btn = document.querySelector(`.tower-btn[data-tower="${type}"] .hotkey`);
+                if (btn) btn.textContent = this._keyDisplayName(this._keybinds['tower' + (i + 1)]);
+            });
+            const sellHotkey = document.querySelector('#sell-btn .hotkey');
+            if (sellHotkey) sellHotkey.textContent = this._keyDisplayName(this._keybinds.sell);
+        },
+
+        _updateHowToKeys() {
+            const map = { 'howto-tower1':'tower1', 'howto-tower2':'tower2', 'howto-tower3':'tower3',
+                          'howto-tower4':'tower4', 'howto-tower5':'tower5', 'howto-sell':'sell', 'howto-pause':'pause' };
+            for (const [elId, action] of Object.entries(map)) {
+                const el = document.getElementById(elId);
+                if (el) el.textContent = this._keyDisplayName(this._keybinds[action]);
+            }
+        },
+
+        _getTowerTooltipStats(towerType) {
+            const def = this.TOWERS[towerType];
+            if (!def) return [];
+            const um = this.upgradeManager;
+            const mod = (key) => um ? um.getModifier(key) : (key.endsWith('Mult') ? 1 : 0);
+            const has = (id) => um ? um.hasUpgrade(id) : false;
+            const stats = [];
+
+            if (towerType === 'coinmagnet') {
+                const baseRange = def.range;
+                const rangeBonus = mod('magnetRange');
+                const range = baseRange + rangeBonus;
+                stats.push({ label: 'Range', value: range.toFixed(0), modified: rangeBonus !== 0 });
+                const baseHP = def.hp;
+                const hpBonus = mod('magnetHP');
+                const hp = baseHP + hpBonus;
+                stats.push({ label: 'HP', value: hp, modified: hpBonus !== 0 });
+            } else if (towerType === 'wetfloor') {
+                const baseHP = def.hp;
+                const hpBonus = mod('signHP');
+                const hp = baseHP + hpBonus;
+                stats.push({ label: 'HP', value: hp, modified: hpBonus !== 0 });
+                stats.push({ label: 'Slow', value: '40%', modified: false });
+            } else if (towerType === 'mop') {
+                const baseDmg = def.damage;
+                const dmgMult = mod('mopDamageMult');
+                const glassMult = mod('glassCannonDamageMult');
+                const dmg = Math.round(baseDmg * dmgMult * glassMult);
+                stats.push({ label: 'DMG', value: dmg, modified: dmgMult !== 1 || glassMult !== 1 });
+                const baseCd = def.attackRate;
+                const cdMult = mod('mopCooldownMult');
+                const spd = (baseCd * cdMult).toFixed(1) + 's';
+                stats.push({ label: 'SPD', value: spd, modified: cdMult !== 1 });
+                stats.push({ label: 'Range', value: def.range, modified: false });
+                const baseHP = def.hp;
+                const hpBonus = mod('mopHP');
+                const glassHPMult = mod('glassCannonHPMult');
+                const mopHP = Math.round((baseHP + hpBonus) * glassHPMult);
+                stats.push({ label: 'HP', value: mopHP, modified: hpBonus !== 0 || glassHPMult !== 1 });
+            } else if (towerType === 'ubik') {
+                const baseDmg = def.damage;
+                const dmgMult = mod('ubikDamageMult');
+                const dmg = Math.round(baseDmg * dmgMult);
+                stats.push({ label: 'DMG', value: dmg, modified: dmgMult !== 1 });
+                const baseRange = def.range;
+                const rangeMult = mod('ubikRangeMult');
+                stats.push({ label: 'Range', value: Math.round(baseRange * rangeMult), modified: rangeMult !== 1 });
+                const baseCd = def.attackRate;
+                const cdMult = mod('ubikCooldownMult');
+                const spd = (baseCd * cdMult).toFixed(1) + 's';
+                stats.push({ label: 'SPD', value: spd, modified: cdMult !== 1 });
+                stats.push({ label: 'HP', value: def.hp, modified: false });
+            } else if (towerType === 'potplant') {
+                stats.push({ label: 'Trip DMG', value: def.tripDamage, modified: false });
+                const stunBonus = mod('potStunBonus');
+                const stun = (def.stunDuration + stunBonus).toFixed(1) + 's';
+                stats.push({ label: 'Stun', value: stun, modified: stunBonus !== 0 });
+                stats.push({ label: 'HP', value: def.hp, modified: false });
+            }
+            return stats;
+        },
+
         pause() {
             if (this.state !== 'playing') return;
             this.state = 'paused';
@@ -3970,8 +4287,9 @@
             this.state = 'playing';
             if (window.SFX) SFX.play('ui_unpause');
             if (window.Music) Music.resume();
-            // Reset pause settings panel back to buttons view
+            // Reset pause settings/howto panels back to buttons view
             document.getElementById('pause-settings').style.display = 'none';
+            document.getElementById('pause-howto').style.display = 'none';
             document.getElementById('pause-buttons').style.display = 'flex';
             document.getElementById('pause-text').style.display = '';
             document.getElementById('pause-overlay').classList.remove('active');
@@ -4411,6 +4729,7 @@
                 timestamp: Date.now(),
                 scenario: this._currentScenario,
                 gameMode: this._gameMode,
+                difficulty: this._difficulty,
 
                 // Core
                 wave: this.wave,
@@ -4528,6 +4847,13 @@
                         () => { this._deleteSave(); }
                     );
                     return false;
+                }
+
+                // Restore difficulty before start() so door HP etc. use the right multiplier
+                if (data.difficulty && this.DIFFICULTY_CONFIG[data.difficulty]) {
+                    this._difficulty = data.difficulty;
+                    this._saveDifficulty();
+                    this._syncDifficultyButtons();
                 }
 
                 // 1. Clean start — resets scene, entities, door, upgrades
@@ -7661,6 +7987,7 @@
             // Quadratic enemy count — accelerating growth
             let total = 10 + Math.floor(wave * 2.2 + Math.pow(wave, 1.5) * 0.25);
             if (event && event.enemyMult) total = Math.floor(total * event.enemyMult);
+            total = Math.floor(total * this._getDifficulty().countMult);
 
             // Enemy type weights — scenario-specific
             const isForest = this._currentScenario === 'forest';
@@ -7799,7 +8126,7 @@
                 const groupSize = 5 + Math.floor(Math.random() * 3); // 5-7
 
                 // Unified speed — everyone moves at the same pace so they stay together
-                const speedCreep = 1 + this.wave * 0.04;
+                const speedCreep = 1 + this.wave * 0.04 * this._getDifficulty().speedCreepMult;
                 const eventSpeedMult = this._eventSpeedMult || 1.0;
                 const groupSpeed = (def.baseSpeed + def.speedVar * 0.3) * speedCreep * eventSpeedMult;
 
@@ -7930,10 +8257,10 @@
             // Waves 1-4: scale hpPerWave by 0.2/0.4/0.6/0.8x, full scaling from wave 5+
             const earlyWaveScale = Math.min(1.0, this.wave * 0.2);
             const linearHP = def.baseHP + this.wave * def.hpPerWave * earlyWaveScale;
-            let hp = Math.round(linearHP);
+            let hp = Math.round(linearHP * this._getDifficulty().hpMult);
 
             // Speed creep — enemies get faster each wave + event modifier
-            const speedCreep = 1 + this.wave * 0.04;
+            const speedCreep = 1 + this.wave * 0.04 * this._getDifficulty().speedCreepMult;
             const eventSpeedMult = this._eventSpeedMult || 1.0;
             let speed = (def.baseSpeed + Math.random() * def.speedVar) * speedCreep * eventSpeedMult;
 
@@ -9378,7 +9705,7 @@
                         continue;
                     }
 
-                    this.score += 10;
+                    this.score += Math.round(10 * this._getDifficulty().scoreMult);
                     this._totalRepelled = (this._totalRepelled || 0) + 1;
                     // SFX: enemy death impact + role-based vocal
                     if (window.SFX) {

@@ -36,6 +36,38 @@ const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 const CARD_DROP_W = 360;
 const CARD_DROP_H = 293;
 
+// ─── UPGRADE STAT PREVIEW LOOKUP ─────────────────────────────────────────────
+
+const UPGRADE_STAT_PREVIEWS = {
+    // Common upgrades
+    C1:  [{ label: 'Magnet Range', text: '+12', beneficial: true }, { label: 'Magnet HP', text: '+2', beneficial: true }],
+    C2:  [{ label: 'Coin Value', text: '+50%', beneficial: true }],
+    C4:  [{ label: 'Sign HP', text: '+120%', beneficial: true }],
+    C5:  [{ label: 'Sign Slow', text: '15% speed', beneficial: true }],
+    C6:  [{ label: 'Bash DMG', text: '10 per hit', beneficial: true }],
+    C7:  [{ label: 'Mop Arc', text: '180\u00B0', beneficial: true }, { label: 'Mop DMG', text: '+15%', beneficial: true }],
+    C8:  [{ label: 'Mop Cooldown', text: '-30%', beneficial: true }],
+    C9:  [{ label: 'Mop Knockback', text: '+75%', beneficial: true }],
+    C10: [{ label: 'Mop HP', text: '+4', beneficial: true }],
+    C14: [{ label: 'Ubik Cooldown', text: '-25%', beneficial: true }],
+    C15: [{ label: 'Pot Stun', text: '+0.5s', beneficial: true }],
+    C17: [{ label: 'Tower DMG', text: '+50%', beneficial: true }, { label: 'Tower HP', text: '-50%', beneficial: false }],
+    C19: [{ label: 'Pot Cost', text: '0 coins', beneficial: true }, { label: 'Pot HP', text: '2', beneficial: false }],
+    // Rare upgrades
+    R12: [{ label: 'Coin Drop', text: '+50% near Magnets', beneficial: true }],
+    R14: [{ label: 'Tower Cost', text: '-20%', beneficial: true }],
+    R22: [{ label: 'Sell Refund', text: '100%', beneficial: true }],
+    // Legendary upgrades
+    L1:  [{ label: 'Door HP', text: '+4 max', beneficial: true }],
+    L4:  [{ label: 'Collision Stun', text: '0.8s + 4 DMG', beneficial: true }],
+    L8:  [{ label: 'Mop Knockback', text: '3x', beneficial: true }],
+};
+
+function _getUpgradeStatPreview(upgrade) {
+    if (!upgrade || !upgrade.id) return [];
+    return UPGRADE_STAT_PREVIEWS[upgrade.id] || [];
+}
+
 // ─── SCREEN FLASH OVERLAY ───────────────────────────────────────────────────
 
 let _flashEl = null;
@@ -941,11 +973,15 @@ export class UpgradeSelectionUI {
         ctx.fillRect(-4, -4, 8, 8);
         ctx.restore();
 
-        // ── Description (auto-scaling font) ──
+        // ── Stat preview + Description (auto-scaling font) ──
+        const previews = _getUpgradeStatPreview(upgrade);
+        const previewLineH = 40;
+        const previewTotalH = previews.length > 0 ? previews.length * previewLineH + 12 : 0;
+
         if (upgrade.description) {
             const descMaxW = 700;
             const descAreaTop = dividerY + 16;
-            const descAreaBot = cH - 16;
+            const descAreaBot = cH - 16 - previewTotalH;
             const descAreaH = descAreaBot - descAreaTop;
 
             let descFontSize = 42;
@@ -982,10 +1018,23 @@ export class UpgradeSelectionUI {
             ctx.fillStyle = '#3a3a4a';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const dCenter = (dividerY + 16 + cH - 16) / 2;
+            const dCenter = (descAreaTop + descAreaBot) / 2;
             const dStartY = dCenter - (dLines.length - 1) * descLineH / 2;
             for (let i = 0; i < dLines.length; i++) {
                 ctx.fillText(dLines[i], cW / 2, dStartY + i * descLineH);
+            }
+        }
+
+        // ── Stat preview lines (below description) ──
+        if (previews.length > 0) {
+            const previewStartY = cH - 16 - previewTotalH + 8;
+            ctx.font = "28px 'Bangers', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i < previews.length; i++) {
+                const p = previews[i];
+                ctx.fillStyle = p.beneficial ? '#50c878' : '#ff6b7a';
+                ctx.fillText(`${p.label}: ${p.text}`, cW / 2, previewStartY + i * previewLineH);
             }
         }
 
