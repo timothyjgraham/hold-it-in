@@ -244,6 +244,21 @@
             </div>
             <span class="cost">10</span>
         </div>
+        <div class="tower-panel-divider"></div>
+        <div class="tower-btn sell-btn" id="sell-btn"
+             data-tip-name="Sell Tower" data-tip-cost=""
+             data-tip-desc="Click a placed tower to sell it for coins!">
+            <span class="hotkey">X</span>
+            <div class="tower-icon">
+                <!-- Wrecking ball / demolish icon -->
+                <svg viewBox="0 0 48 48" width="36" height="36">
+                    <line x1="24" y1="6" x2="24" y2="24" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="16" y1="6" x2="32" y2="6" stroke="#1a1a2e" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="24" cy="30" r="10" fill="#ff6b7a" stroke="#1a1a2e" stroke-width="2"/>
+                    <text x="24" y="34" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a1a2e" font-family="sans-serif">$</text>
+                </svg>
+            </div>
+        </div>
     </div>
 
     <!-- Tower Tooltip -->
@@ -2538,9 +2553,9 @@
 
                 // Tower hotkeys (work while paused too, not during upgrade/intro selection)
                 if ((this.state === 'playing' || this.state === 'paused') && !this._upgradePhase && !this._introPhase && !this._devotionPickerActive) {
-                    // X key: sell tower at cursor
+                    // X key: toggle sell mode
                     if (e.code === 'KeyX') {
-                        this._trySellTowerAtCursor();
+                        this._toggleSellMode();
                         return;
                     }
                     for (const [key, def] of Object.entries(this.TOWERS)) {
@@ -2558,19 +2573,27 @@
                 this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             });
 
-            // Mouse click (place tower)
+            // Mouse click (place tower or sell in sell mode)
             window.addEventListener('click', (e) => {
                 if (this.state !== 'playing' && this.state !== 'paused') return;
                 // Don't place towers during upgrade selection or enemy intro
                 if (this._upgradePhase || this._introPhase || this._devotionPickerActive) return;
+                if (this._sellMode) {
+                    this._trySellTowerAtCursor();
+                    return;
+                }
                 if (this.selectedTower) {
                     this._tryPlaceTower(e);
                 }
             });
 
-            // Right click to deselect
+            // Right click to deselect / exit sell mode
             window.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                if (this._sellMode) {
+                    this._exitSellMode();
+                    return;
+                }
                 if (this.selectedTower && window.SFX) SFX.play('ui_tower_deselect');
                 this.selectedTower = null;
                 this._updateTowerButtons();
@@ -3024,10 +3047,33 @@
             const tipCost = tooltip.querySelector('.tip-cost');
             const tipDesc = tooltip.querySelector('.tip-desc');
 
-            document.querySelectorAll('.tower-btn').forEach(btn => {
+            // Sell button
+            const sellBtn = document.getElementById('sell-btn');
+            if (sellBtn) {
+                sellBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._toggleSellMode();
+                });
+                sellBtn.addEventListener('mouseenter', () => {
+                    if (window.SFX) SFX.play('ui_hover');
+                    tipName.textContent = sellBtn.dataset.tipName;
+                    tipCost.textContent = sellBtn.dataset.tipCost || '';
+                    tipDesc.textContent = sellBtn.dataset.tipDesc;
+                    const rect = sellBtn.getBoundingClientRect();
+                    tooltip.style.right = (window.innerWidth - rect.left + 10) + 'px';
+                    tooltip.style.top = (rect.top + rect.height / 2 - 40) + 'px';
+                    tooltip.classList.add('visible');
+                });
+                sellBtn.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
+                });
+            }
+
+            document.querySelectorAll('.tower-btn:not(.sell-btn)').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const towerType = btn.dataset.tower;
+                    if (this._sellMode) this._exitSellMode();
                     if (window.SFX) SFX.play('ui_tower_select');
                     this.selectTower(towerType);
                 });
@@ -3053,6 +3099,7 @@
         },
 
         selectTower(type) {
+            if (this._sellMode) this._exitSellMode();
             if (this.selectedTower === type) {
                 this.selectedTower = null;
             } else {
@@ -3507,6 +3554,14 @@
                     "Nice work! Pick an upgrade<br>to power up!"
                 );
             } else if (step === 9) {
+                // Sell tip — point at the sell button
+                this._showTutorialBubble(
+                    "Need coins? Sell a tower!<br>Press <b>X</b> or click the red button!",
+                    { highlight: '#sell-btn',
+                      pointerAt: '#sell-btn',
+                      nearElement: '#sell-btn' }
+                );
+            } else if (step === 10) {
                 // Player clicked continue — now spawn upgrade drones
                 this._hideTutorialBubble();
                 this._endTutorial();
@@ -3673,6 +3728,21 @@
             });
             this._knockoutRings = [];
 
+            // Clear sell highlight meshes
+            if (this._sellHighlight) {
+                this.scene.remove(this._sellHighlight);
+                this._sellHighlight.geometry.dispose();
+                this._sellHighlight.material.dispose();
+                this._sellHighlight = null;
+            }
+            if (this._sellPreviewSprite) {
+                this.scene.remove(this._sellPreviewSprite);
+                this._sellPreviewSprite.material.map.dispose();
+                this._sellPreviewSprite.material.dispose();
+                this._sellPreviewSprite = null;
+                this._sellPreviewCanvas = null;
+            }
+
             // Clear mop puddles (R9)
             this._mopPuddles.forEach(p => {
                 this.scene.remove(p.group);
@@ -3702,6 +3772,12 @@
             this._overtimeTimer = 0;
             this._desperateMeasures = false;
             this._controlledDemolitionBuff = 0;
+            // Exit sell mode cleanly on reset
+            this._sellMode = false;
+            const sellBtnReset = document.getElementById('sell-btn');
+            if (sellBtnReset) sellBtnReset.classList.remove('selected');
+            document.body.classList.remove('sell-mode-active');
+            this._clearSellHighlight();
             this._moneyPrinterStacks = 0;
             this._moneyPrinterDecayTimer = 0;
             this._moneyPrinterSpeedStacks = 0;
@@ -5231,19 +5307,77 @@
             }
 
             if (window.SFX) SFX.play('tower_destroy');
-            // Removal animation (same as destroy but lighter)
+
+            // === JUICY SELL VFX ===
+            const gx = t.gridX, gz = t.gridZ;
+
+            // 1) "SOLD!" comic text popup
+            this._spawnSoldText(gx, gz);
+
+            // 2) Gold expanding ring
+            this._spawnSellRing(gx, gz);
+
+            // 3) Coin burst shower (5-8 gold sparks flying outward)
+            this._spawnCoinBurst(gx, gz, refund);
+
+            // 4) Gold hit sparks
+            this._spawnHitSparks(gx, gz, 50, 100, '#ffd93d');
+
+            // 5) Camera shake (light satisfying tap)
+            this._cameraShake = Math.max(this._cameraShake || 0, 0.15);
+            this._cameraShakeIntensity = Math.max(this._cameraShakeIntensity || 0, 0.15);
+
+            // 6) HUD coin badge pop
+            this._animateCoinGain(refund);
+
+            // 7) Juicy removal animation: scale PUNCH up then shrink + dissolve
             const mesh = t.mesh;
+            const origScale = mesh.scale.clone();
             const startTime = Date.now();
             const animSell = () => {
-                const p = Math.min(1, (Date.now() - startTime) / 300);
-                const scale = 1 - p;
-                mesh.scale.set(scale, scale, scale);
-                mesh.position.y = p * 2;
-                mesh.traverse(c => {
-                    if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = 1 - p; }
-                });
-                if (p < 1) requestAnimationFrame(animSell);
-                else this.scene.remove(mesh);
+                const elapsed = Date.now() - startTime;
+                const p = Math.min(1, elapsed / 500); // 500ms total (slower for more drama)
+
+                if (p < 0.15) {
+                    // Phase 1: PUNCH UP (scale 1 -> 1.4 in 75ms)
+                    const t1 = p / 0.15;
+                    const s = 1 + 0.4 * t1;
+                    mesh.scale.set(origScale.x * s, origScale.y * s, origScale.z * s);
+                    mesh.position.y += 0.02;
+                    // Flash white
+                    mesh.traverse(c => {
+                        if (c.isMesh && c.material && !c.material._sellOrigColor) {
+                            c.material._sellOrigColor = c.material.color ? c.material.color.getHex() : 0xffffff;
+                            c.material.color.setHex(0xffffff);
+                        }
+                    });
+                } else {
+                    // Phase 2: Shrink + float up + fade (0.15 -> 1.0)
+                    const t2 = (p - 0.15) / 0.85;
+                    const eased = 1 - Math.pow(1 - t2, 2); // ease-out quad
+                    const s = 1.4 * (1 - eased);
+                    mesh.scale.set(origScale.x * s, origScale.y * s, origScale.z * s);
+                    mesh.position.y = 1.0 + eased * 3;
+                    // Spin a bit
+                    mesh.rotation.y += 0.08;
+                    mesh.traverse(c => {
+                        if (c.isMesh && c.material) {
+                            c.material.transparent = true;
+                            c.material.opacity = 1 - eased;
+                            // Restore color after flash
+                            if (c.material._sellOrigColor !== undefined) {
+                                c.material.color.setHex(c.material._sellOrigColor);
+                                delete c.material._sellOrigColor;
+                            }
+                        }
+                    });
+                }
+
+                if (p < 1) {
+                    requestAnimationFrame(animSell);
+                } else {
+                    this.scene.remove(mesh);
+                }
             };
             animSell();
             this.towers.splice(index, 1);
@@ -5265,6 +5399,128 @@
                     return;
                 }
             }
+        },
+
+        // ============================
+        // SELL MODE
+        // ============================
+        _toggleSellMode() {
+            if (this._sellMode) {
+                this._exitSellMode();
+            } else {
+                this._enterSellMode();
+            }
+        },
+
+        _enterSellMode() {
+            this._sellMode = true;
+            this.selectedTower = null;
+            this._updateTowerButtons();
+            this._clearGhost();
+            const sellBtn = document.getElementById('sell-btn');
+            if (sellBtn) sellBtn.classList.add('selected');
+            document.body.classList.add('sell-mode-active');
+            if (window.SFX) SFX.play('ui_tower_select');
+        },
+
+        _exitSellMode() {
+            this._sellMode = false;
+            const sellBtn = document.getElementById('sell-btn');
+            if (sellBtn) sellBtn.classList.remove('selected');
+            document.body.classList.remove('sell-mode-active');
+            this._clearSellHighlight();
+            if (window.SFX) SFX.play('ui_tower_deselect');
+        },
+
+        // Red glow ring under tower being hovered in sell mode
+        _updateSellHover() {
+            if (!this._sellMode) {
+                this._clearSellHighlight();
+                return;
+            }
+            const pos = this._getGridPos();
+            if (!pos) {
+                this._clearSellHighlight();
+                return;
+            }
+            let found = null;
+            for (const t of this.towers) {
+                if (t.dying || t.delivering) continue;
+                const tw = t.tileWidth || 1;
+                const gs = CONFIG.grid;
+                const halfSpan = tw * gs * 0.5;
+                if (pos.x >= t.gridX - halfSpan && pos.x <= t.gridX + halfSpan &&
+                    Math.abs(pos.z - t.gridZ) < gs * 0.6) {
+                    found = t;
+                    break;
+                }
+            }
+            if (!found) {
+                this._clearSellHighlight();
+                return;
+            }
+            // Create or reposition sell highlight ring
+            if (!this._sellHighlight) {
+                const geo = new THREE.RingGeometry(1.2, 1.6, 24);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: PALETTE.danger,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                });
+                this._sellHighlight = new THREE.Mesh(geo, mat);
+                this._sellHighlight.rotation.x = -Math.PI / 2;
+                this.scene.add(this._sellHighlight);
+            }
+            const pulse = 0.9 + Math.sin(Date.now() * 0.008) * 0.15;
+            this._sellHighlight.position.set(found.gridX, 0.08, found.gridZ);
+            this._sellHighlight.scale.set(pulse, pulse, pulse);
+            this._sellHighlight.material.opacity = 0.35 + Math.sin(Date.now() * 0.006) * 0.15;
+            this._sellHighlight.visible = true;
+
+            // Show refund preview text
+            if (!this._sellPreviewSprite) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 80;
+                this._sellPreviewCanvas = canvas;
+                const texture = new THREE.CanvasTexture(canvas);
+                const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+                this._sellPreviewSprite = new THREE.Sprite(mat);
+                this._sellPreviewSprite.scale.set(3.5, 1.2, 1);
+                this.scene.add(this._sellPreviewSprite);
+            }
+            // Calculate refund
+            const um = this.upgradeManager;
+            const refundPct = (um && um.hasUpgrade('R22')) ? 1.0 : 0.4;
+            const costMult = um ? um.getModifier('towerCostMult') : 1.0;
+            const baseCost = Math.max(5, Math.floor(found.def.cost * costMult));
+            const refund = Math.floor(baseCost * refundPct);
+            // Redraw preview text
+            const ctx = this._sellPreviewCanvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 80);
+            ctx.save();
+            ctx.translate(128, 40);
+            ctx.font = 'bold 38px Bangers, Impact, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 4;
+            ctx.strokeText(`SELL +${refund}`, 0, 0);
+            ctx.fillStyle = '#ffd93d';
+            ctx.fillText(`SELL +${refund}`, 0, 0);
+            ctx.restore();
+            this._sellPreviewSprite.material.map.needsUpdate = true;
+            this._sellPreviewSprite.position.set(found.gridX, 4.5, found.gridZ);
+            this._sellPreviewSprite.visible = true;
+            // Bob animation
+            this._sellPreviewSprite.position.y = 4.5 + Math.sin(Date.now() * 0.004) * 0.15;
+        },
+
+        _clearSellHighlight() {
+            if (this._sellHighlight) this._sellHighlight.visible = false;
+            if (this._sellPreviewSprite) this._sellPreviewSprite.visible = false;
         },
 
         // ============================
@@ -10966,6 +11222,102 @@
         },
 
         // ============================
+        // SELL VFX: "SOLD!" comic text
+        // ============================
+        _spawnSoldText(x, z) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const rot = (Math.random() - 0.5) * 0.2;
+            ctx.translate(128, 64);
+            ctx.rotate(rot);
+            // Big chunky "SOLD!" text
+            ctx.font = 'bold 72px Bangers, Impact, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Danger-red outline
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 7;
+            ctx.strokeText('SOLD!', 0, 0);
+            // Gold fill
+            ctx.fillStyle = '#ffd93d';
+            ctx.fillText('SOLD!', 0, 0);
+            // Inner highlight
+            ctx.strokeStyle = '#fff4d9';
+            ctx.lineWidth = 1.5;
+            ctx.strokeText('SOLD!', -1, -1);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(x, 4, z);
+            sprite.scale.set(5, 2.5, 1);
+            this.scene.add(sprite);
+            this._floatingTexts.push({ sprite, life: 1.4 });
+        },
+
+        // ============================
+        // SELL VFX: expanding gold ring
+        // ============================
+        _spawnSellRing(x, z) {
+            const ringGeo = new THREE.RingGeometry(0.3, 0.8, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: PALETTE.gold,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.set(x, 0.15, z);
+            this.scene.add(ring);
+            this._mopImpacts.push({
+                ring,
+                life: 0.5,
+                maxLife: 0.5,
+            });
+        },
+
+        // ============================
+        // SELL VFX: coin burst shower
+        // ============================
+        _spawnCoinBurst(x, z, amount) {
+            const count = Math.min(12, 5 + Math.floor(amount / 10));
+            for (let i = 0; i < count; i++) {
+                const size = 0.12 + Math.random() * 0.08;
+                // Tiny gold coin — octahedron for sparkle shape
+                const geo = new THREE.OctahedronGeometry(size, 0);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: PALETTE.gold,
+                    transparent: true,
+                    depthWrite: false,
+                });
+                const coin = new THREE.Mesh(geo, mat);
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+                const speed = 2 + Math.random() * 3;
+                coin.position.set(x + (Math.random() - 0.5) * 0.5, 2 + Math.random() * 1, z + (Math.random() - 0.5) * 0.5);
+                coin.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+                this.scene.add(coin);
+                this._doorParticles.push({
+                    mesh: coin,
+                    vx: Math.cos(angle) * speed,
+                    vy: 3 + Math.random() * 4,
+                    vz: Math.sin(angle) * speed,
+                    rotSpeed: (Math.random() - 0.5) * 12,
+                    life: 0.5 + Math.random() * 0.4,
+                    maxLife: 0.5 + Math.random() * 0.4,
+                    gravity: 12,
+                });
+            }
+        },
+
+        // ============================
         // FLOATING DAMAGE NUMBERS
         // ============================
         _spawnDamageNumber(x, z, amount, color) {
@@ -11843,8 +12195,9 @@
                 wEl.style.top = (sy - wEl.offsetHeight) + 'px';
             }
 
-            // Update grid hover
+            // Update grid hover + sell mode hover
             this._updateGridHover();
+            this._updateSellHover();
 
             // Update floating texts
             for (let i = this._floatingTexts.length - 1; i >= 0; i--) {
