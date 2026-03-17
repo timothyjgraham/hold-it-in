@@ -1,7 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — 3D Upgrade Icon Renderer                                    ║
-// ║  Offscreen rendering of rotating 3D icons with rarity glow effects.      ║
-// ║  Drop-in replacement for 2D canvas icon drawing API.                     ║
+// ║  Offscreen rendering of rotating 3D icons with Borderlands-style          ║
+// ║  toon post-processing: thick ink edges, cross-hatching, sketch wobble.    ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE } from '../data/palette.js';
@@ -20,10 +20,17 @@ const _iconClones = {};
 let _currentIcon = null;
 let _currentKey = '';
 
-// Glow objects
-let _glowSphere = null;
-let _glowRing = null;
-let _glowParticles = [];
+// Post-process canvases (reused across frames)
+let _postCanvas = null;
+let _postCtx = null;
+let _mergeCanvas = null;
+let _mergeCtx = null;
+
+// Pre-allocated buffers for post-process (avoid GC on hot path)
+const _SZ = 256 * 256;
+const _lum = new Float32Array(_SZ);
+const _alpha = new Float32Array(_SZ);
+const _edges = new Float32Array(_SZ);
 
 const ROT_SPEED = 0.8;                  // rad/s Y-axis rotation
 const TILT = 15 * Math.PI / 180;        // Star/coin tilt toward viewer
@@ -46,57 +53,32 @@ export function initIconRenderer() {
     // Fog prevents outline shader WebGL warnings (fog uniforms expected)
     _scene.fog = new THREE.Fog(0x000000, 1000, 1000);
 
-    _camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    _camera.position.set(0, 0.3, 3.5);
+    // Wider FOV + pulled back — gives icons room to breathe (no circular crop)
+    _camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+    _camera.position.set(0, 0.3, 3.2);
     _camera.lookAt(0, 0, 0);
 
-    // Lighting: ambient + directional from upper-right
-    _scene.add(new THREE.AmbientLight(PALETTE.ambient, 0.8));
-    const dir = new THREE.DirectionalLight(PALETTE.fillWarm, 0.9);
+    // Lighting: stronger contrast for cel-shaded look
+    _scene.add(new THREE.AmbientLight(PALETTE.ambient, 0.6));
+    const dir = new THREE.DirectionalLight(PALETTE.fillWarm, 1.1);
     dir.position.set(2, 3, 2);
     _scene.add(dir);
 
-    _buildGlowObjects();
-}
+    // Second fill light from lower-left for rim definition
+    const fill = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
+    fill.position.set(-2, -1, 1);
+    _scene.add(fill);
 
-// ─── GLOW OBJECTS ────────────────────────────────────────────────────────────
+    // Post-process canvases (persistent — no per-frame allocation)
+    _postCanvas = document.createElement('canvas');
+    _postCanvas.width = 256;
+    _postCanvas.height = 256;
+    _postCtx = _postCanvas.getContext('2d', { willReadFrequently: true });
 
-function _buildGlowObjects() {
-    // Shared glow sphere (material color/opacity swapped per rarity)
-    _glowSphere = new THREE.Mesh(
-        new THREE.SphereGeometry(1.2, 16, 16),
-        new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.15,
-            depthWrite: false,
-            side: THREE.BackSide,
-        })
-    );
-
-    // Rare: rotating torus ring
-    _glowRing = new THREE.Mesh(
-        new THREE.TorusGeometry(1.3, 0.04, 8, 32),
-        new THREE.MeshBasicMaterial({
-            color: PALETTE.rarityRare,
-            transparent: true,
-            opacity: 0.4,
-            depthWrite: false,
-        })
-    );
-
-    // Legendary: orbiting particle spheres
-    for (let i = 0; i < 6; i++) {
-        _glowParticles.push(new THREE.Mesh(
-            new THREE.SphereGeometry(0.08, 6, 6),
-            new THREE.MeshBasicMaterial({
-                color: PALETTE.rarityLegendary,
-                transparent: true,
-                opacity: 0.8,
-                depthWrite: false,
-            })
-        ));
-    }
+    _mergeCanvas = document.createElement('canvas');
+    _mergeCanvas.width = 256;
+    _mergeCanvas.height = 256;
+    _mergeCtx = _mergeCanvas.getContext('2d');
 }
 
 // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
@@ -112,11 +94,6 @@ function _setupScene(iconKey, rarity, time) {
     // Remove previous icon from scene
     if (_currentIcon) _scene.remove(_currentIcon);
 
-    // Remove glow objects
-    _scene.remove(_glowSphere);
-    _scene.remove(_glowRing);
-    for (const p of _glowParticles) _scene.remove(p);
-
     // Add icon model (cached clone)
     _currentIcon = _getIcon(iconKey);
     _currentKey = iconKey;
@@ -129,49 +106,166 @@ function _setupScene(iconKey, rarity, time) {
     _currentIcon.rotation.y = time * ROT_SPEED;
 
     _scene.add(_currentIcon);
+}
 
-    // ─── Rarity glow effects ────────────────────────────────────────────
-    if (rarity === 'common') {
-        // Subtle white glow sphere with gentle opacity pulse
-        _glowSphere.material.color.setHex(PALETTE.rarityCommon);
-        _glowSphere.material.opacity = 0.12 + Math.sin(time * 2) * 0.04;
-        _glowSphere.scale.setScalar(1.0);
-        _scene.add(_glowSphere);
+// ─── BORDERLANDS POST-PROCESS ────────────────────────────────────────────────
+// Operates on the 256×256 WebGL output:
+//   1. Sobel edge detection on luminance + alpha → thick ink outlines
+//   2. Cross-hatching in shadow regions
+//   3. Slight edge wobble for hand-drawn feel
 
-    } else if (rarity === 'rare') {
-        // Violet glow sphere + rotating torus ring
-        _glowSphere.material.color.setHex(PALETTE.rarityRare);
-        _glowSphere.material.opacity = 0.18 + Math.sin(time * 3) * 0.06;
-        _glowSphere.scale.setScalar(1.0);
-        _scene.add(_glowSphere);
+function _borderlandsPostProcess(time) {
+    if (!_postCtx) return _renderer.domElement;
 
-        _glowRing.rotation.set(time * 1.5, 0, time * 0.5);
-        _scene.add(_glowRing);
+    const W = 256, H = 256;
 
-    } else if (rarity === 'legendary') {
-        // Intense gold glow sphere + scale breathing + orbiting particles
-        _glowSphere.material.color.setHex(PALETTE.rarityLegendary);
-        _glowSphere.material.opacity = 0.2 + Math.sin(time * 4) * 0.1;
-        _glowSphere.scale.setScalar(1.0 + Math.sin(time * 2) * 0.05);
-        _scene.add(_glowSphere);
+    // Copy WebGL output to post-process canvas
+    _postCtx.clearRect(0, 0, W, H);
+    _postCtx.drawImage(_renderer.domElement, 0, 0);
 
-        for (let i = 0; i < _glowParticles.length; i++) {
-            const angle = time * 1.2 + (i / _glowParticles.length) * Math.PI * 2;
-            _glowParticles[i].position.set(
-                Math.cos(angle) * 1.4,
-                Math.sin(angle * 0.7 + i) * 0.3,
-                Math.sin(angle) * 1.4
-            );
-            _scene.add(_glowParticles[i]);
+    const imageData = _postCtx.getImageData(0, 0, W, H);
+    const px = imageData.data;
+
+    // ── Step 1: Build luminance + alpha arrays (pre-allocated) ──
+    const lum = _lum;
+    const alpha = _alpha;
+    for (let i = 0; i < W * H; i++) {
+        const off = i * 4;
+        const a = px[off + 3] / 255;
+        alpha[i] = a;
+        // Perceived luminance (premultiply-aware)
+        lum[i] = a > 0
+            ? (0.299 * px[off] + 0.587 * px[off + 1] + 0.114 * px[off + 2]) / 255
+            : 0;
+    }
+
+    // ── Step 2: Sobel edge detection (pre-allocated) ──
+    const edges = _edges;
+    edges.fill(0);
+    for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+            const idx = y * W + x;
+
+            // Sobel on luminance
+            const tl = lum[(y - 1) * W + (x - 1)];
+            const tc = lum[(y - 1) * W + x];
+            const tr = lum[(y - 1) * W + (x + 1)];
+            const ml = lum[y * W + (x - 1)];
+            const mr = lum[y * W + (x + 1)];
+            const bl = lum[(y + 1) * W + (x - 1)];
+            const bc = lum[(y + 1) * W + x];
+            const br = lum[(y + 1) * W + (x + 1)];
+
+            const gxL = -tl + tr - 2 * ml + 2 * mr - bl + br;
+            const gyL = -tl - 2 * tc - tr + bl + 2 * bc + br;
+            let edgeL = Math.sqrt(gxL * gxL + gyL * gyL);
+
+            // Sobel on alpha (catches silhouette edges)
+            const atl = alpha[(y - 1) * W + (x - 1)];
+            const atc = alpha[(y - 1) * W + x];
+            const atr = alpha[(y - 1) * W + (x + 1)];
+            const aml = alpha[y * W + (x - 1)];
+            const amr = alpha[y * W + (x + 1)];
+            const abl = alpha[(y + 1) * W + (x - 1)];
+            const abc = alpha[(y + 1) * W + x];
+            const abr = alpha[(y + 1) * W + (x + 1)];
+
+            const gxA = -atl + atr - 2 * aml + 2 * amr - abl + abr;
+            const gyA = -atl - 2 * atc - atr + abl + 2 * abc + abr;
+            let edgeA = Math.sqrt(gxA * gxA + gyA * gyA);
+
+            // Alpha edges weighted heavier for strong silhouette outlines
+            edges[idx] = Math.min(1.0, edgeL * 2.5 + edgeA * 4.0);
         }
     }
+
+    // ── Step 3: Draw edges as thick ink strokes ──
+    // Re-draw the base image first
+    _postCtx.clearRect(0, 0, W, H);
+    _postCtx.drawImage(_renderer.domElement, 0, 0);
+
+    // Get ink color components
+    const inkR = (PALETTE.ink >> 16) & 0xff;
+    const inkG = (PALETTE.ink >> 8) & 0xff;
+    const inkB = PALETTE.ink & 0xff;
+
+    // Create edge overlay
+    const edgeData = _postCtx.createImageData(W, H);
+    const epx = edgeData.data;
+
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            const idx = y * W + x;
+            const off = idx * 4;
+
+            let e = edges[idx];
+
+            // Threshold for crisp ink lines (not fuzzy gradients)
+            if (e < 0.15) { e = 0; }
+            else { e = Math.min(1.0, (e - 0.15) / 0.4); }
+
+            // Only draw where there's actual content nearby
+            if (alpha[idx] < 0.01 && e < 0.3) { e = 0; }
+
+            if (e > 0) {
+                epx[off]     = inkR;
+                epx[off + 1] = inkG;
+                epx[off + 2] = inkB;
+                epx[off + 3] = Math.round(e * 220);
+            }
+        }
+    }
+
+    _postCtx.putImageData(edgeData, 0, 0);
+
+    // Composite: original + edges merged on persistent canvas
+    _mergeCtx.clearRect(0, 0, W, H);
+    _mergeCtx.drawImage(_renderer.domElement, 0, 0);
+    _mergeCtx.drawImage(_postCanvas, 0, 0);
+    const mCtx = _mergeCtx;
+
+    // ── Step 4: Cross-hatching in dark regions ──
+    mCtx.save();
+    mCtx.strokeStyle = `rgba(${inkR}, ${inkG}, ${inkB}, 0.12)`;
+    mCtx.lineWidth = 1;
+
+    const hatchSpacing = 6;
+    for (let y = 0; y < H; y += hatchSpacing) {
+        for (let x = 0; x < W; x += hatchSpacing) {
+            const idx = y * W + x;
+            if (alpha[idx] < 0.3) continue;
+            if (lum[idx] > 0.45) continue; // Only hatch shadows
+
+            // Diagonal hatch line
+            const len = hatchSpacing * 0.8;
+            // Slight time-based wobble for hand-drawn feel
+            const wobble = Math.sin(x * 0.3 + y * 0.2 + (time || 0) * 0.5) * 0.5;
+            mCtx.beginPath();
+            mCtx.moveTo(x + wobble, y);
+            mCtx.lineTo(x + len + wobble, y + len);
+            mCtx.stroke();
+
+            // Cross-hatch (perpendicular) for very dark areas
+            if (lum[idx] < 0.25) {
+                mCtx.beginPath();
+                mCtx.moveTo(x + len + wobble, y);
+                mCtx.lineTo(x + wobble, y + len);
+                mCtx.stroke();
+            }
+        }
+    }
+    mCtx.restore();
+
+    // Silhouette emphasis is handled by boosted alpha edge weight in step 2
+
+    return _mergeCanvas;
 }
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
 /**
  * Draw a rotating 3D upgrade icon onto a 2D canvas context.
- * Drop-in replacement for drawUpgradeIcon with added rarity + time params.
+ * Includes Borderlands-style post-processing (ink edges, cross-hatching).
  *
  * @param {CanvasRenderingContext2D} ctx - Target 2D context
  * @param {string} iconKey - Icon type (magnet|coin|sign|mop|spray|pot|star|chain|door)
@@ -187,13 +281,14 @@ export function draw3DUpgradeIcon(ctx, iconKey, rarity, cx, cy, size, time) {
     _setupScene(iconKey, rarity || 'common', time || 0);
     _renderer.render(_scene, _camera);
 
+    const result = _borderlandsPostProcess(time);
     const half = size / 2;
-    ctx.drawImage(_renderer.domElement, cx - half, cy - half, size, size);
+    ctx.drawImage(result, cx - half, cy - half, size, size);
 }
 
 /**
  * Render a 3D icon and return a PNG data URL.
- * Drop-in replacement for createIconDataURL with added rarity + time params.
+ * Includes Borderlands-style post-processing.
  *
  * @param {string} iconKey - Icon type
  * @param {string} rarity - common|rare|legendary
@@ -208,14 +303,15 @@ export function create3DIconDataURL(iconKey, rarity, size, time) {
     _setupScene(iconKey, rarity || 'common', time || 0);
     _renderer.render(_scene, _camera);
 
-    // If native size, return directly
-    if (size === 256) return _renderer.domElement.toDataURL('image/png');
+    const result = _borderlandsPostProcess(time);
+
+    if (size === 256) return result.toDataURL('image/png');
 
     // Resize via offscreen canvas
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
-    canvas.getContext('2d').drawImage(_renderer.domElement, 0, 0, size, size);
+    canvas.getContext('2d').drawImage(result, 0, 0, size, size);
     return canvas.toDataURL('image/png');
 }
 
@@ -230,6 +326,10 @@ export function disposeIconRenderer() {
     _currentIcon = null;
     _scene = null;
     _camera = null;
+    _postCanvas = null;
+    _postCtx = null;
+    _mergeCanvas = null;
+    _mergeCtx = null;
 
     // Clear cached clones
     for (const key in _iconClones) {

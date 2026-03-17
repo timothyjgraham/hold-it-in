@@ -18,7 +18,7 @@ const _cache = {};
 let _outlineMat = null;
 
 function _ol() {
-    if (!_outlineMat) _outlineMat = outlineMatStatic(0.03);
+    if (!_outlineMat) _outlineMat = outlineMatStatic(0.045);
     return _outlineMat;
 }
 
