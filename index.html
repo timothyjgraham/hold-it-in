@@ -683,7 +683,7 @@
                 name: 'Ubik',
                 cost: 40,
                 range: 18,             // Spray travels 18 units forward
-                hp: 6,                 // Sturdy canister — shows progressive damage
+                hp: 10,                // Beefy canister — survives early-wave trampling
                 color: 0x6bcb77,    // PALETTE.ubik
                 damage: 10,            // Per-tick spray damage (hits multiple enemies)
                 attackRate: 1.5,       // Interval between sprays
@@ -1002,8 +1002,8 @@
             null, // index 0 unused
             // Wave 1: Tutorial — PvZ pacing, 3 knockers with big gaps to learn the game
             { enemies: [['polite', 3]], interval: 5.0, delay: 8 },
-            // Wave 2: More knockers, Coin Magnet now available
-            { enemies: [['polite', 7]], interval: 2.0, delay: 4 },
+            // Wave 2: More knockers — gentle ramp (PvZ pacing)
+            { enemies: [['polite', 4]], interval: 2.5, delay: 4 },
             // Wave 3: PEE DANCERS — fast, bouncy, come in groups
             { enemies: [['polite', 4], ['dancer', 4]], interval: 1.8, delay: 4 },
             // Wave 4: Harder mix, Ubik now available
@@ -1091,8 +1091,8 @@
             null,
             // Wave 1: Deer only — gentle intro (wide spacing so first two come solo)
             { enemies: [['deer', 5]], interval: 4.0, delay: 6 },
-            // Wave 2: More deer
-            { enemies: [['deer', 7]], interval: 2.0, delay: 4 },
+            // Wave 2: More deer — gentle ramp (PvZ pacing)
+            { enemies: [['deer', 4]], interval: 2.5, delay: 4 },
             // Wave 3: SQUIRRELS — fast, bouncy, swarm
             { enemies: [['deer', 4], ['squirrel', 4]], interval: 1.8, delay: 4 },
             // Wave 4: Harder mix
@@ -1164,8 +1164,8 @@
             null,
             // Wave 1: Dolphins only — gentle ocean intro (wide spacing)
             { enemies: [['dolphin', 5]], interval: 4.0, delay: 6 },
-            // Wave 2: More dolphins
-            { enemies: [['dolphin', 7]], interval: 2.0, delay: 4 },
+            // Wave 2: More dolphins — gentle ramp (PvZ pacing)
+            { enemies: [['dolphin', 4]], interval: 2.5, delay: 4 },
             // Wave 3: FLYING FISH — fast, darting, swarm
             { enemies: [['dolphin', 4], ['flyfish', 4]], interval: 1.8, delay: 4 },
             // Wave 4: Harder mix
@@ -1237,8 +1237,8 @@
             null,
             // Wave 1: Nervous Flyers only — welcome aboard (wide spacing)
             { enemies: [['nervous', 5]], interval: 4.0, delay: 6 },
-            // Wave 2: More nervous flyers
-            { enemies: [['nervous', 7]], interval: 2.0, delay: 4 },
+            // Wave 2: More nervous flyers — gentle ramp (PvZ pacing)
+            { enemies: [['nervous', 4]], interval: 2.5, delay: 4 },
             // Wave 3: BUSINESS CLASS — knockback immune
             { enemies: [['nervous', 4], ['business', 4]], interval: 1.8, delay: 4 },
             // Wave 4: Harder mix
@@ -7624,8 +7624,10 @@
                 ? opts.zOverride
                 : CONFIG.spawnZoneZ + (opts.zOffset || 0) + Math.random() * 2;
 
-            // Linear HP scaling — difficulty from volume, not sponge
-            const linearHP = def.baseHP + this.wave * def.hpPerWave;
+            // HP scaling — soft ramp in early waves (PvZ-style onboarding)
+            // Waves 1-4: scale hpPerWave by 0.2/0.4/0.6/0.8x, full scaling from wave 5+
+            const earlyWaveScale = Math.min(1.0, this.wave * 0.2);
+            const linearHP = def.baseHP + this.wave * def.hpPerWave * earlyWaveScale;
             let hp = Math.round(linearHP);
 
             // Speed creep — enemies get faster each wave + event modifier
