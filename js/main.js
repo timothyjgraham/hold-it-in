@@ -17,6 +17,11 @@ import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { createIconModel } from './models/UpgradeIconFactory.js';
 import { initIconRenderer, create3DIconDataURL, draw3DUpgradeIcon, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
+import {
+    initScenarioIcons, startScenarioIcons, stopScenarioIcons,
+    setScenarioHover, triggerScenarioClick, triggerScenarioDenied,
+    disposeScenarioIcons,
+} from './ui/ScenarioIconRenderer.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
 import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
@@ -190,6 +195,11 @@ window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;
 window.GLBModelCache = GLBModelCache;
 window.PlayerModelLoader = PlayerModelLoader;
 window.GamepadManager = GamepadManager;
+window.ScenarioIconRenderer = {
+    initScenarioIcons, startScenarioIcons, stopScenarioIcons,
+    setScenarioHover, triggerScenarioClick, triggerScenarioDenied,
+    disposeScenarioIcons,
+};
 
 // Initialize game
 window.Game = Game;

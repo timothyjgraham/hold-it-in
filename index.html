@@ -345,13 +345,7 @@
             <div class="scenario-card playable" id="card-office" data-scenario="office">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
-                        <svg viewBox="0 0 64 64" width="56" height="56">
-                            <rect x="8" y="12" width="48" height="40" rx="4" fill="#c4b8a5" stroke="#1a1a2e" stroke-width="3"/>
-                            <rect x="16" y="18" width="14" height="10" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
-                            <rect x="34" y="18" width="14" height="10" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
-                            <rect x="16" y="32" width="32" height="14" rx="2" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
-                            <circle cx="44" cy="31" r="3" fill="#ffd93d" stroke="#1a1a2e" stroke-width="2"/>
-                        </svg>
+                        <canvas id="scenario-canvas-office" width="256" height="256"></canvas>
                     </div>
                     <div class="scenario-name">THE OFFICE</div>
                     <div class="scenario-desc">Corporate bathroom. Desperate coworkers.</div>
@@ -366,11 +360,7 @@
             <div class="scenario-card playable" id="card-forest" data-scenario="forest">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
-                        <svg viewBox="0 0 64 64" width="56" height="56">
-                            <polygon points="32,8 12,40 52,40" fill="#50c878" stroke="#1a1a2e" stroke-width="3" stroke-linejoin="round"/>
-                            <polygon points="32,18 18,44 46,44" fill="#3da863" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
-                            <rect x="28" y="40" width="8" height="14" fill="#8b6e4e" stroke="#1a1a2e" stroke-width="2"/>
-                        </svg>
+                        <canvas id="scenario-canvas-forest" width="256" height="256"></canvas>
                     </div>
                     <div class="scenario-name">THE FOREST</div>
                     <div class="scenario-desc">Wooden outhouse. Wild animals.</div>
@@ -385,13 +375,7 @@
             <div class="scenario-card playable" id="card-ocean" data-scenario="ocean">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
-                        <svg viewBox="0 0 64 64" width="56" height="56">
-                            <path d="M4 36 Q16 28 32 36 Q48 44 60 36" fill="none" stroke="#4ab8c8" stroke-width="4" stroke-linecap="round"/>
-                            <path d="M4 44 Q16 36 32 44 Q48 52 60 44" fill="none" stroke="#2e6b8a" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
-                            <path d="M20 22 L32 18 L44 22 L44 30 Q32 34 20 30 Z" fill="#9b7850" stroke="#1a1a2e" stroke-width="2.5" stroke-linejoin="round"/>
-                            <rect x="28" y="10" width="8" height="10" rx="1" fill="#faf5ef" stroke="#1a1a2e" stroke-width="2"/>
-                            <circle cx="32" cy="13" r="1.5" fill="#ffd93d"/>
-                        </svg>
+                        <canvas id="scenario-canvas-ocean" width="256" height="256"></canvas>
                     </div>
                     <div class="scenario-name">THE OCEAN</div>
                     <div class="scenario-desc">Outhouse on a raft. Sea creatures.</div>
@@ -406,16 +390,7 @@
             <div class="scenario-card playable" id="card-airplane" data-scenario="airplane">
                 <div class="scenario-card-inner">
                     <div class="scenario-icon">
-                        <svg viewBox="0 0 64 64" width="56" height="56">
-                            <ellipse cx="32" cy="32" rx="24" ry="10" fill="#ddd2c0" stroke="#1a1a2e" stroke-width="3"/>
-                            <polygon points="8,32 2,20 14,28" fill="#a8a098" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
-                            <polygon points="56,32 62,20 50,28" fill="#a8a098" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
-                            <polygon points="30,22 34,22 36,18 28,18" fill="#59c3e8" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
-                            <circle cx="20" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
-                            <circle cx="28" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
-                            <circle cx="36" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
-                            <circle cx="44" cy="32" r="2.5" fill="#fff4d9" stroke="#1a1a2e" stroke-width="1.5"/>
-                        </svg>
+                        <canvas id="scenario-canvas-airplane" width="256" height="256"></canvas>
                     </div>
                     <div class="scenario-name">THE AIRPLANE</div>
                     <div class="scenario-desc">Mile-high bathroom. Impatient passengers.</div>
@@ -1600,6 +1575,17 @@
             this._setupUI();
             this._loadBestStats();
             this._updateScenarioLocks();
+
+            // Initialize 3D scenario icons
+            if (window.ScenarioIconRenderer) {
+                ScenarioIconRenderer.initScenarioIcons({
+                    office: document.getElementById('scenario-canvas-office'),
+                    forest: document.getElementById('scenario-canvas-forest'),
+                    ocean: document.getElementById('scenario-canvas-ocean'),
+                    airplane: document.getElementById('scenario-canvas-airplane'),
+                });
+            }
+
             this._loadCollection();
 
             // Handle resize
@@ -2760,9 +2746,15 @@
             setGameUIVisible(false);
 
             const showScreen = (id) => {
+                // Stop scenario icons when leaving scenario screen
+                if (window.ScenarioIconRenderer) ScenarioIconRenderer.stopScenarioIcons();
                 document.querySelectorAll('.menu-screen').forEach(s => s.style.display = 'none');
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'flex';
+                // Start scenario icons when showing scenario screen
+                if (id === 'scenario-screen' && window.ScenarioIconRenderer) {
+                    ScenarioIconRenderer.startScenarioIcons();
+                }
                 setGameUIVisible(false);
                 // Clear upgrade HUD icons when navigating to menu screens
                 if (this._upgradeHUD) {
@@ -2859,6 +2851,13 @@
             const startScenario = (scenario) => {
                 if (!this._isScenarioUnlocked(scenario)) {
                     if (window.SFX) SFX.play('scenario_lock');
+                    // Denied animation on 3D icon + CSS shake
+                    if (window.ScenarioIconRenderer) ScenarioIconRenderer.triggerScenarioDenied(scenario);
+                    const card = document.getElementById(`card-${scenario}`);
+                    if (card) {
+                        card.classList.add('denied');
+                        setTimeout(() => card.classList.remove('denied'), 500);
+                    }
                     const req = this._getUnlockRequirement(scenario);
                     if (scenario === 'forest' || scenario === 'ocean') {
                         this._showConfirm(
@@ -2871,6 +2870,13 @@
                         this._showConfirm(req, () => {}, 'OK', '');
                     }
                     return;
+                }
+                // Click animation on 3D icon + CSS punch
+                if (window.ScenarioIconRenderer) ScenarioIconRenderer.triggerScenarioClick(scenario);
+                const clickCard = document.getElementById(`card-${scenario}`);
+                if (clickCard) {
+                    clickCard.classList.add('clicking');
+                    setTimeout(() => clickCard.classList.remove('clicking'), 400);
                 }
                 this._gameMode = this._menuMode;
                 this._setupScenario(scenario);
@@ -2913,6 +2919,18 @@
                 if (e.target.closest('.scenario-continue-btn')) return;
                 startScenario('airplane');
             });
+
+            // Scenario card hover handlers (3D icon scale/spin)
+            for (const scenario of ['office', 'forest', 'ocean', 'airplane']) {
+                const card = document.getElementById(`card-${scenario}`);
+                if (!card) continue;
+                card.addEventListener('mouseenter', () => {
+                    if (window.ScenarioIconRenderer) ScenarioIconRenderer.setScenarioHover(scenario, true);
+                });
+                card.addEventListener('mouseleave', () => {
+                    if (window.ScenarioIconRenderer) ScenarioIconRenderer.setScenarioHover(scenario, false);
+                });
+            }
 
             // Continue saved game — office
             document.getElementById('continue-office').addEventListener('click', (e) => {
