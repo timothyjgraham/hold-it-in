@@ -1470,6 +1470,7 @@
             // UI
             this._setupUI();
             this._loadBestStats();
+            this._updateScenarioLocks();
             this._loadCollection();
 
             // Handle resize
@@ -2608,6 +2609,7 @@
                 document.getElementById('scenario-screen-title').textContent = 'CAMPAIGN';
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
+                this._updateScenarioLocks();
             });
             document.getElementById('btn-endless').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
@@ -2619,6 +2621,7 @@
                 document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
+                this._updateScenarioLocks();
             });
             document.getElementById('btn-collection').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
@@ -2666,6 +2669,21 @@
 
             // Scenario cards — office + forest playable
             const startScenario = (scenario) => {
+                if (!this._isScenarioUnlocked(scenario)) {
+                    if (window.SFX) SFX.play('scenario_lock');
+                    const req = this._getUnlockRequirement(scenario);
+                    if (scenario === 'forest' || scenario === 'ocean') {
+                        this._showConfirm(
+                            req,
+                            () => startScenario('office'),
+                            'PLAY THE OFFICE',
+                            'BACK'
+                        );
+                    } else {
+                        this._showConfirm(req, () => {}, 'OK', '');
+                    }
+                    return;
+                }
                 this._gameMode = this._menuMode;
                 this._setupScenario(scenario);
                 if (this._hasSave(scenario, this._menuMode)) {
@@ -2711,6 +2729,7 @@
             // Continue saved game — office
             document.getElementById('continue-office').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!this._isScenarioUnlocked('office')) return;
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('office');
@@ -2724,6 +2743,7 @@
             // Continue saved game — forest
             document.getElementById('continue-forest').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!this._isScenarioUnlocked('forest')) return;
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('forest');
@@ -2737,6 +2757,7 @@
             // Continue saved game — ocean
             document.getElementById('continue-ocean').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!this._isScenarioUnlocked('ocean')) return;
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('ocean');
@@ -2750,6 +2771,7 @@
             // Continue saved game — airplane
             document.getElementById('continue-airplane').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!this._isScenarioUnlocked('airplane')) return;
                 if (window.SFX) SFX.play('ui_game_start');
                 this._gameMode = this._menuMode;
                 this._setupScenario('airplane');
@@ -2840,6 +2862,7 @@
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
                 this._updateBestStats();
+                this._updateScenarioLocks();
                 if (window.Music) Music.play('title');
             });
             document.getElementById('btn-victory-menu').addEventListener('click', () => {
@@ -2962,9 +2985,10 @@
                     if (window.SFX) SFX.play('ui_hover');
                 });
             });
-            // Scenario card hovers — distinct playful sound
-            document.querySelectorAll('.scenario-card.playable').forEach(card => {
+            // Scenario card hovers — distinct playful sound (only for unlocked cards)
+            document.querySelectorAll('.scenario-card').forEach(card => {
                 card.addEventListener('mouseenter', () => {
+                    if (card.classList.contains('locked')) return;
                     if (window.SFX) SFX.play('scenario_hover');
                 });
             });
@@ -4584,7 +4608,75 @@
             return false;
         },
 
-        _showConfirm(message, onConfirm) {
+        _isScenarioUnlocked(scenario) {
+            switch (scenario) {
+                case 'office': return true;
+                case 'forest': return this._bestStats.office.wave >= 10;
+                case 'ocean': return this._isScenarioCompleted('office');
+                case 'airplane': {
+                    let count = 0;
+                    for (const s of ['office', 'forest', 'ocean', 'airplane']) {
+                        if (this._isScenarioCompleted(s)) count++;
+                    }
+                    return count >= 2;
+                }
+                default: return false;
+            }
+        },
+
+        _getUnlockRequirement(scenario) {
+            switch (scenario) {
+                case 'forest': {
+                    const progress = this._bestStats.office.wave;
+                    return `Reach Wave 10 in The Office (${progress}/10)`;
+                }
+                case 'ocean': return 'Complete The Office campaign';
+                case 'airplane': {
+                    let count = 0;
+                    for (const s of ['office', 'forest', 'ocean', 'airplane']) {
+                        if (this._isScenarioCompleted(s)) count++;
+                    }
+                    return `Complete 2 campaigns (${count}/2)`;
+                }
+                default: return '';
+            }
+        },
+
+        _updateScenarioLocks() {
+            const lockSVG = `<svg viewBox="0 0 24 24" width="28" height="28"><rect x="5" y="11" width="14" height="10" rx="2" fill="#2d2b3d" stroke="#1a1a2e" stroke-width="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/></svg>`;
+            for (const scenario of ['office', 'forest', 'ocean', 'airplane']) {
+                const card = document.getElementById(`card-${scenario}`);
+                if (!card) continue;
+                const unlocked = this._isScenarioUnlocked(scenario);
+                const inner = card.querySelector('.scenario-card-inner');
+                const stats = document.getElementById(`stats-${scenario}`);
+                const continueBtn = document.getElementById(`continue-${scenario}`);
+                const existingOverlay = inner.querySelector('.scenario-lock-overlay');
+
+                if (unlocked) {
+                    card.classList.add('playable');
+                    card.classList.remove('locked');
+                    if (existingOverlay) existingOverlay.remove();
+                    if (stats) stats.style.display = '';
+                    if (continueBtn) continueBtn.style.display = this._hasSave(scenario, this._menuMode) ? '' : 'none';
+                } else {
+                    card.classList.add('locked');
+                    card.classList.remove('playable');
+                    if (stats) stats.style.display = 'none';
+                    if (continueBtn) continueBtn.style.display = 'none';
+                    if (!existingOverlay) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'scenario-lock-overlay';
+                        overlay.innerHTML = `<div class="scenario-lock-icon">${lockSVG}</div><div class="scenario-lock-text">${this._getUnlockRequirement(scenario)}</div>`;
+                        inner.appendChild(overlay);
+                    } else {
+                        existingOverlay.querySelector('.scenario-lock-text').textContent = this._getUnlockRequirement(scenario);
+                    }
+                }
+            }
+        },
+
+        _showConfirm(message, onConfirm, yesLabel, noLabel) {
             const dialog = document.getElementById('confirm-dialog');
             document.getElementById('confirm-text').textContent = message;
             dialog.style.display = 'flex';
@@ -4597,6 +4689,14 @@
             const newNo = noBtn.cloneNode(true);
             yesBtn.parentNode.replaceChild(newYes, yesBtn);
             noBtn.parentNode.replaceChild(newNo, noBtn);
+
+            newYes.textContent = yesLabel || 'YES';
+            if (noLabel === '') {
+                newNo.style.display = 'none';
+            } else {
+                newNo.style.display = '';
+                newNo.textContent = noLabel || 'CANCEL';
+            }
 
             newYes.addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
