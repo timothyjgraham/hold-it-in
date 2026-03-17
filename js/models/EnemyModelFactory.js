@@ -14,6 +14,16 @@ import { PALETTE } from '../data/palette.js';
 // Types that use the new rigid body parts pipeline
 const RIGID_TYPES = new Set(['polite', 'dancer', 'waddle', 'panicker', 'powerwalker', 'girls', 'deer', 'squirrel', 'dolphin', 'flyfish', 'shark', 'pirate', 'seaturtle', 'jellyfish', 'nervous', 'business', 'stumbler', 'attendant', 'marshal', 'unruly', 'drunk', 'ant', 'seahorse', 'trolley', 'vaulter', 'kangaroo', 'frog', 'hurdler']);
 
+// ── Geometry cache: share geometry buffers across all instances of same type ──
+// First build of each type caches geometries; subsequent builds reuse them.
+// Saves ~90% VRAM when 50+ enemies are on screen.
+const _geoCache = new Map();
+
+/** Clear cached geometries (call on scenario change / full cleanup). */
+export function clearGeometryCache() {
+    _geoCache.clear();
+}
+
 /**
  * Create a fully rigged enemy model.
  * Routes to rigid-body or legacy pipeline based on enemy type.
@@ -56,6 +66,25 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
 
     const parts = builder(size, config, materials, boneMap);
 
+    // 4a. Geometry caching — share geometry buffers across instances of same type.
+    //     First build creates & caches; subsequent builds swap in cached geometries.
+    if (!_geoCache.has(enemyType)) {
+        const cached = {};
+        for (const [name, mesh] of Object.entries(parts)) {
+            if (mesh && mesh.geometry) cached[name] = mesh.geometry;
+        }
+        _geoCache.set(enemyType, cached);
+    } else {
+        const cached = _geoCache.get(enemyType);
+        for (const [name, mesh] of Object.entries(parts)) {
+            if (mesh && mesh.geometry && cached[name]) {
+                const fresh = mesh.geometry;
+                mesh.geometry = cached[name];
+                if (fresh !== cached[name]) fresh.dispose();
+            }
+        }
+    }
+
     // 4. Create outline meshes for STRUCTURAL parts only.
     //    Skip facial features, accessories, and small details — they create
     //    visual noise when outlined at small sizes.
@@ -94,7 +123,9 @@ function _createRigidModel(enemyType, color, isDesperate, size) {
     for (const [partName, mesh] of Object.entries(parts)) {
         if (!mesh || !mesh.geometry) continue;
         if (!_outlinePartNames.has(partName) && !partName.startsWith('glb_')) continue;
-        const outlineGeo = mesh.geometry.clone();
+        // Share geometry with main part — outline uses BackSide rendering,
+        // so same buffer data works. Eliminates ~15 geometry clones per enemy.
+        const outlineGeo = mesh.geometry;
         const outlineMat = materials.outline.clone();
         const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
         outlineMesh.name = partName + '_outline';

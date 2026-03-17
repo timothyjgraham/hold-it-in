@@ -1440,7 +1440,7 @@
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.shadowMap.type = THREE.PCFShadowMap;
             this.renderer.setClearColor(PALETTE.ink);
             container.appendChild(this.renderer.domElement);
 
@@ -1506,6 +1506,16 @@
                 this.enemyPool = new EnemyPool();
                 this.enemyPool.preAllocate();
             }
+
+            // Spatial grid for O(1) enemy proximity queries (replaces O(n) scans)
+            if (window.SpatialGrid) {
+                this._enemyGrid = new SpatialGrid(4);
+            }
+
+            // Projectile pool — reuse meshes instead of create/destroy per shot
+            this._projectileGeo = new THREE.SphereGeometry(0.15, 6, 6);
+            this._projectileMat = new THREE.MeshBasicMaterial({ color: PALETTE.success });
+            this._projectilePool = [];
 
             // Initialize coin drop pool
             if (window.CoinPool) {
@@ -1593,8 +1603,8 @@
             dirLight.name = 'sceneLight';
             dirLight.position.set(6, 42, 18);
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
             dirLight.shadow.camera.near = 0.5;
             dirLight.shadow.camera.far = 100;
             dirLight.shadow.camera.left = -35;
@@ -1914,8 +1924,8 @@
             sunLight.name = 'sceneLight';
             sunLight.position.set(8, 40, 20);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
             sunLight.shadow.camera.near = 0.5;
             sunLight.shadow.camera.far = 100;
             sunLight.shadow.camera.left = -35;
@@ -2051,8 +2061,8 @@
             sunLight.name = 'sceneLight';
             sunLight.position.set(10, 45, 20);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
             sunLight.shadow.camera.near = 0.5;
             sunLight.shadow.camera.far = 100;
             sunLight.shadow.camera.left = -35;
@@ -2263,8 +2273,8 @@
             sunLight.name = 'sceneLight';
             sunLight.position.set(6, 40, 20);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
             sunLight.shadow.camera.near = 0.5;
             sunLight.shadow.camera.far = 100;
             sunLight.shadow.camera.left = -25;
@@ -3062,43 +3072,59 @@
         },
 
         updateHUD() {
+            // Lazy-init cached DOM references (avoids getElementById every frame)
+            if (!this._hudEls) {
+                this._hudEls = {
+                    doorHP: document.getElementById('door-hp-display'),
+                    clipRect: document.getElementById('hp-clip-rect'),
+                    fillPath: document.getElementById('hp-fill-path'),
+                    hpStat: document.getElementById('door-hp-stat'),
+                    coins: document.getElementById('coins-display'),
+                    wave: document.getElementById('wave-display'),
+                    score: document.getElementById('score-display'),
+                    towerBtns: null,
+                };
+            }
+            const h = this._hudEls;
+
             // Door HP display — SVG blob bar
             if (this.doorGroup) {
                 const hp = this.doorGroup.userData.doorHP;
                 const max = this.doorGroup.userData.maxDoorHP;
                 const pct = Math.max(0, Math.round((hp / max) * 100));
-                document.getElementById('door-hp-display').textContent = pct + '%';
+                if (h.doorHP) h.doorHP.textContent = pct + '%';
 
                 // SVG HP bar: clip rect width (0–200 in viewBox space)
-                const clipRect = document.getElementById('hp-clip-rect');
-                if (clipRect) clipRect.setAttribute('width', (pct / 100) * 200);
+                if (h.clipRect) h.clipRect.setAttribute('width', (pct / 100) * 200);
 
                 // SVG HP bar: color shift
-                const fillPath = document.getElementById('hp-fill-path');
-                if (fillPath) {
-                    if (pct > 60) fillPath.setAttribute('fill', '#ff6b7a');
-                    else if (pct > 40) fillPath.setAttribute('fill', '#ff9800');
-                    else if (pct > 20) fillPath.setAttribute('fill', '#ff5722');
-                    else fillPath.setAttribute('fill', '#f44336');
+                if (h.fillPath) {
+                    if (pct > 60) h.fillPath.setAttribute('fill', '#ff6b7a');
+                    else if (pct > 40) h.fillPath.setAttribute('fill', '#ff9800');
+                    else if (pct > 20) h.fillPath.setAttribute('fill', '#ff5722');
+                    else h.fillPath.setAttribute('fill', '#f44336');
                 }
 
                 // Urgent jitter on low HP (CSS class drives all layers)
-                const hpStat = document.getElementById('door-hp-stat');
-                if (pct <= 20 && !hpStat.classList.contains('urgent')) {
-                    hpStat.classList.add('urgent');
-                }
-                if (pct > 20 && hpStat.classList.contains('urgent')) {
-                    hpStat.classList.remove('urgent');
+                if (h.hpStat) {
+                    if (pct <= 20 && !h.hpStat.classList.contains('urgent')) {
+                        h.hpStat.classList.add('urgent');
+                    }
+                    if (pct > 20 && h.hpStat.classList.contains('urgent')) {
+                        h.hpStat.classList.remove('urgent');
+                    }
                 }
             }
-            document.getElementById('coins-display').textContent = this.coins;
-            document.getElementById('wave-display').textContent = `WAVE ${this.wave}`;
-            document.getElementById('score-display').textContent = this.score;
+            if (h.coins) h.coins.textContent = this.coins;
+            if (h.wave) h.wave.textContent = `WAVE ${this.wave}`;
+            if (h.score) h.score.textContent = this.score;
 
             // Update tower cost displays (R14 Clearance Sale, C19 Bargain Bin, R23 Devotion)
             if (this.upgradeManager) {
                 const baseCostMult = this.upgradeManager.getModifier('towerCostMult');
-                document.querySelectorAll('.tower-btn').forEach(btn => {
+                // Cache tower buttons on first access (avoids querySelectorAll every call)
+                if (!h.towerBtns) h.towerBtns = document.querySelectorAll('.tower-btn');
+                h.towerBtns.forEach(btn => {
                     const type = btn.dataset.tower;
                     const def = this.TOWERS[type];
                     if (def) {
@@ -3584,9 +3610,18 @@
             }
             this.towers.forEach(t => { if (t.mesh) this.scene.remove(t.mesh); });
             this.projectiles.forEach(p => { if (p.mesh) this.scene.remove(p.mesh); });
+            // Return pooled projectile meshes
+            if (this._projectilePool) {
+                this._projectilePool.forEach(m => { if (m.parent) m.parent.remove(m); });
+                this._projectilePool.length = 0;
+            }
             this.enemies = [];
             this.towers = [];
             this.projectiles = [];
+            // Clear geometry cache so fresh geometries are created for next scenario
+            if (window.clearGeometryCache) clearGeometryCache();
+            // Reset HUD element cache (DOM may change between scenarios)
+            this._hudEls = null;
             this._wallGroupCounter = 0;
             this._swarmGroupCounter = 0;
             // Clean up active sprays
@@ -5398,7 +5433,7 @@
                     z + (Math.random() - 0.5) * 1.5
                 );
                 chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                chip.castShadow = true;
+                // Door particle shadows disabled for performance (many small particles)
                 this.scene.add(chip);
 
                 this._doorParticles.push({
@@ -7861,6 +7896,12 @@
                 if (ud.doorHP < ud.maxDoorHP * 0.5) this._desperateMeasures = true;
             }
 
+            // Rebuild spatial grid for fast enemy proximity queries this frame
+            if (this._enemyGrid) this._enemyGrid.rebuild(this.enemies);
+            // Clear per-frame cached multipliers (recomputed lazily on first use)
+            this._specialistMult = undefined;
+            this._skeletonCrewMult = undefined;
+
             // --- Wave management ---
             if (!this.waveActive) {
                 this.waveTimer -= dt;
@@ -8637,8 +8678,11 @@
                         }
                     }
 
-                    // 6E: LOD — hide outline beyond 40 units
-                    const camDist = e.mesh.position.distanceTo(this.camera.position);
+                    // 6E: LOD — hide outline beyond 40 units (manual dist avoids temp Vector3)
+                    const _cdx = e.mesh.position.x - this.camera.position.x;
+                    const _cdy = e.mesh.position.y - this.camera.position.y;
+                    const _cdz = e.mesh.position.z - this.camera.position.z;
+                    const camDist = Math.sqrt(_cdx * _cdx + _cdy * _cdy + _cdz * _cdz);
                     if (e.outlineMesh) {
                         e.outlineMesh.visible = camDist < 40;
                     }
@@ -9374,7 +9418,8 @@
                 if (t.type === 'coinmagnet') {
                     // magnetDisableRange: Air Marshal jams nearby coin magnets
                     let magnetJammed = false;
-                    for (const e of this.enemies) {
+                    const magnetCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, 12) : this.enemies;
+                    for (const e of magnetCandidates) {
                         if (e.dying) continue;
                         const eDef = this.ENEMY_TYPES[e.type] || {};
                         if (eDef.magnetDisableRange) {
@@ -9425,7 +9470,8 @@
                                         if (Math.random() < 0.15) {
                                             let nearest = null;
                                             let nearDist2 = magnetRange * magnetRange;
-                                            for (const e of this.enemies) {
+                                            const shrapCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, magnetRange) : this.enemies;
+                                            for (const e of shrapCandidates) {
                                                 if (e.dying) continue;
                                                 const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
                                                 if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
@@ -9448,7 +9494,8 @@
                                     if (zapDmg > 0) {
                                         let nearest = null;
                                         let nearDist2 = magnetRange * magnetRange;
-                                        for (const e of this.enemies) {
+                                        const zapCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, magnetRange) : this.enemies;
+                                        for (const e of zapCandidates) {
                                             if (e.dying) continue;
                                             const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
                                             if (dx2 < nearDist2) { nearest = e; nearDist2 = dx2; }
@@ -9471,7 +9518,8 @@
                                     const shockDmg = this.upgradeManager.getModifier('coinShockwaveDmg');
                                     if (shockDmg > 0) {
                                         const resonanceMult = 1 + (this._coinResonanceBonus || 0);
-                                        for (const e of this.enemies) {
+                                        const shockCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, magnetRange) : this.enemies;
+                                        for (const e of shockCandidates) {
                                             if (e.dying) continue;
                                             const dx2 = (e.x - t.gridX) ** 2 + (e.z - t.gridZ) ** 2;
                                             if (dx2 < magnetRange * magnetRange) {
@@ -9525,7 +9573,8 @@
                         const contactDPS = this.upgradeManager.getModifier('potContactDPS');
                         if (contactDPS > 0) {
                             const auraR2 = 2.5 * 2.5; // ~2.5 unit radius
-                            for (const e of this.enemies) {
+                            const cactusCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, 2.5) : this.enemies;
+                            for (const e of cactusCandidates) {
                                 if (e.dying) continue;
                                 const pdx = e.x - t.gridX;
                                 const pdz = e.z - t.gridZ;
@@ -9549,7 +9598,8 @@
                 if (t.type === 'ubik') {
                     let ubikTarget = null;
                     let ubikTargetDist = Infinity;
-                    for (const e of this.enemies) {
+                    const ubikCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, t.def.range) : this.enemies;
+                    for (const e of ubikCandidates) {
                         if (e.dying) continue;
                         const dx = e.x - t.gridX;
                         const dz = e.z - t.gridZ;
@@ -9650,7 +9700,8 @@
                             const tipX = t.gridX + t.def.range * Math.sin(currentAngle);
                             const tipZ = t.gridZ + t.def.range * Math.cos(currentAngle);
 
-                            for (const e of this.enemies) {
+                            const mopCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, t.def.range + 1) : this.enemies;
+                            for (const e of mopCandidates) {
                                 if (e.dying || t.sweepHitEnemies.has(e)) continue;
 
                                 // Point-to-segment distance
@@ -9781,7 +9832,8 @@
                             // Find nearest enemy in range
                             let mopTarget = null;
                             let mopTargetDist = Infinity;
-                            for (const e of this.enemies) {
+                            const mopTargetCandidates = this._enemyGrid ? this._enemyGrid.query(t.gridX, t.gridZ, t.def.range) : this.enemies;
+                            for (const e of mopTargetCandidates) {
                                 if (e.dying) continue;
                                 const dx = e.x - t.gridX;
                                 const dz = e.z - t.gridZ;
@@ -9843,12 +9895,14 @@
 
                 if (p.life <= 0) {
                     this.scene.remove(p.mesh);
+                    this._projectilePool.push(p.mesh);
                     this.projectiles.splice(i, 1);
                     continue;
                 }
 
-                // Hit detection
-                for (const e of this.enemies) {
+                // Hit detection — spatial grid narrows candidates
+                const projCandidates = this._enemyGrid ? this._enemyGrid.query(p.x, p.z, 3.5) : this.enemies;
+                for (const e of projCandidates) {
                     const dx = e.x - p.x;
                     const dz = e.z - p.z;
                     const dist = Math.sqrt(dx * dx + dz * dz);
@@ -9861,6 +9915,7 @@
                             e.animController.playOneShot('hit_react');
                         }
                         this.scene.remove(p.mesh);
+                        this._projectilePool.push(p.mesh);
                         this.projectiles.splice(i, 1);
                         break;
                     }
@@ -9986,10 +10041,9 @@
             const dist = Math.sqrt(dx * dx + dz * dz);
             const speed = 20;
 
-            const mesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.15, 6, 6),
-                new THREE.MeshBasicMaterial({ color: PALETTE.success })
-            );
+            const mesh = this._projectilePool.length > 0
+                ? this._projectilePool.pop()
+                : new THREE.Mesh(this._projectileGeo, this._projectileMat);
             mesh.position.set(tower.gridX, 0.8, tower.gridZ);
             this.scene.add(mesh);
 
@@ -10117,7 +10171,8 @@
                     // R11: Spray & Pray — track enemies hit this burst
                     if (!s._hitEnemies) s._hitEnemies = new Set();
 
-                    for (const e of this.enemies) {
+                    const sprayCandidates = this._enemyGrid ? this._enemyGrid.query(s.x, s.z, s.range + 2) : this.enemies;
+                    for (const e of sprayCandidates) {
                         if (e.dying) continue;
                         const relX = e.x - s.x;
                         const relZ = e.z - s.z;
@@ -10269,7 +10324,8 @@
             // R18: Crowd Surfing — enemies near 2+ others take +30% damage
             if (enemy && um.hasUpgrade('R18')) {
                 let nearby = 0;
-                for (const o of this.enemies) {
+                const crowdCandidates = this._enemyGrid ? this._enemyGrid.query(enemy.x, enemy.z, 3) : this.enemies;
+                for (const o of crowdCandidates) {
                     if (o === enemy || o.dying) continue;
                     const dx = o.x - enemy.x, dz = o.z - enemy.z;
                     if (dx * dx + dz * dz < 9) { nearby++; if (nearby >= 3) break; }
@@ -10282,23 +10338,30 @@
             if (enemy && enemy._cracked && um.hasUpgrade('R34')) mult *= um.getModifier('crackedDamageMult');
             // C20: Static Charge — shocked enemies take increased damage from all sources
             if (enemy && enemy._shockedTimer > 0 && enemy._shockedVuln > 1.0) mult *= enemy._shockedVuln;
-            // R21: Specialist — +15% per tower type NOT owned
+            // R21: Specialist — +15% per tower type NOT owned (cached per frame)
             if (um.hasUpgrade('R21')) {
-                const ownedTypes = new Set();
-                for (const t of this.towers) { if (!t.dying && !t.delivering) ownedTypes.add(t.type); }
-                const totalTypes = Object.keys(this.TOWERS).length;
-                const missing = totalTypes - ownedTypes.size;
-                mult *= 1 + missing * 0.15;
+                if (this._specialistMult === undefined) {
+                    const ownedTypes = new Set();
+                    for (const t of this.towers) { if (!t.dying && !t.delivering) ownedTypes.add(t.type); }
+                    const totalTypes = Object.keys(this.TOWERS).length;
+                    const missing = totalTypes - ownedTypes.size;
+                    this._specialistMult = 1 + missing * 0.15;
+                }
+                mult *= this._specialistMult;
             }
             // R23: Devotion — locked types get +60% damage
             if (tower && um.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.has(tower.type)) {
                 mult *= 1.6;
             }
-            // R24: Skeleton Crew — +25% per empty slot (max 6 towers)
+            // R24: Skeleton Crew — +25% per empty slot (max 6 towers, cached per frame)
             if (um.hasUpgrade('R24')) {
-                const active = this.towers.filter(t => !t.dying && !t.delivering).length;
-                const empty = Math.max(0, 6 - active);
-                mult *= 1 + empty * 0.25;
+                if (this._skeletonCrewMult === undefined) {
+                    let active = 0;
+                    for (const t of this.towers) { if (!t.dying && !t.delivering) active++; }
+                    const empty = Math.max(0, 6 - active);
+                    this._skeletonCrewMult = 1 + empty * 0.25;
+                }
+                mult *= this._skeletonCrewMult;
             }
             // R28: Danger Pay — front rows +80%, back rows -20%
             if (tower && um.hasUpgrade('R28')) {
@@ -12114,7 +12177,8 @@
                     const fps = Math.round(this._perfFrameCount / this._perfAccum);
                     const info = this.renderer.info.render;
                     const poolStats = this.enemyPool ? this.enemyPool.getStats() : {};
-                    const statsText = `FPS: ${fps} | Draw: ${info.calls} | Tris: ${info.triangles} | Enemies: ${this.enemies.length} | Pool: ${JSON.stringify(poolStats.poolSizes || {})}`;
+                    const gridCells = this._enemyGrid ? this._enemyGrid.cells.size : 0;
+                    const statsText = `FPS: ${fps} | Draw: ${info.calls} | Tris: ${info.triangles} | Enemies: ${this.enemies.length} | Grid: ${gridCells} cells | Proj pool: ${(this._projectilePool || []).length}`;
                     if (!this._perfEl) {
                         this._perfEl = document.createElement('div');
                         this._perfEl.style.cssText = 'position:fixed;top:4px;left:4px;color:#0f0;font:12px monospace;background:rgba(0,0,0,0.7);padding:4px 8px;z-index:9999;pointer-events:none;';
