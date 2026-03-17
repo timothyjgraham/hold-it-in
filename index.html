@@ -4844,6 +4844,11 @@
                     if (e.bashingBarrier === t) {
                         e.bashing = false;
                         e.bashingBarrier = null;
+                        // Reset animation from bash_door back to walk state
+                        if (e.animController) {
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
+                            e.animController.setState(walkState);
+                        }
                     }
                 }
             }
@@ -8229,6 +8234,11 @@
                     if (bt.dying || bt.hp <= 0) {
                         e.bashing = false;
                         e.bashingBarrier = null;
+                        // Reset animation from bash_door back to walk state
+                        if (e.animController) {
+                            const walkState = ((e.type === 'waddle' || e.type === 'bear' || e.type === 'shark') && e.panicked) ? 'panic_sprint' : e.walkState;
+                            e.animController.setState(walkState);
+                        }
                     } else {
                         e.bashTimer -= dt;
                         const camDist = e.mesh.position.distanceTo(this.camera.position);
@@ -8292,6 +8302,11 @@
                                     if (other.bashingBarrier === deadBt) {
                                         other.bashing = false;
                                         other.bashingBarrier = null;
+                                        // Reset animation from bash_door back to walk state
+                                        if (other.animController) {
+                                            const walkState = ((other.type === 'waddle' || other.type === 'bear' || other.type === 'shark') && other.panicked) ? 'panic_sprint' : other.walkState;
+                                            other.animController.setState(walkState);
+                                        }
                                     }
                                 }
                                 const bIdx = this.towers.indexOf(deadBt);
