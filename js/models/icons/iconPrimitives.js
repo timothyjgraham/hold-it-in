@@ -250,8 +250,9 @@ export function lightningBolt(h = 0.8) {
     m3.rotation.z = 0.3;
     g.add(m3);
 
-    // Outline
-    for (const c of g.children) {
+    // Outline — snapshot children first to avoid infinite loop
+    const meshes = [...g.children];
+    for (const c of meshes) {
         const o = new THREE.Mesh(c.geometry, ol());
         o.position.copy(c.position);
         o.rotation.copy(c.rotation);
