@@ -11,6 +11,7 @@ import {
     circularArrows, clockFace, crosshair, priceTag, splashDroplets, bubbles,
     flameShape, explosionBurst, skullShape, heartShape, puddleDisc, coinStack,
     miniTower, capsuleFigure, sparkSpheres, motionLines,
+    tortoiseDome, impactStar, hpCross,
 } from './iconPrimitives.js';
 
 // ─── C1: Overclocked Magnet ────────────────────────────────────────────────────
@@ -57,28 +58,33 @@ function buildC2() {
     return g;
 }
 
-// ─── C3: Magnet Durability ─────────────────────────────────────────────────────
-// Magnet inside shield frame with rivet spheres at corners
+// ─── C3: Magnet Durability (Coin Resonance) ───────────────────────────────────
+// Magnet with ascending gold rings around it (coins buffing the shockwave) + upward arrow
 function buildC3() {
     const g = new THREE.Group();
 
-    const shield = shieldShape(0.8, 1.0);
-    g.add(shield);
-
+    // Central magnet
     const magnet = miniMagnet();
-    magnet.scale.setScalar(0.7);
-    magnet.position.z = 0.1;
+    magnet.position.y = -0.05;
     g.add(magnet);
 
-    const rivetGeo = new THREE.SphereGeometry(0.045, 6, 6);
-    const rivetMat = toonMat(PALETTE.fixture);
-    const corners = [
-        { x: -0.3, y: 0.25 }, { x: 0.3, y: 0.25 },
-        { x: -0.25, y: -0.2 }, { x: 0.25, y: -0.2 },
-    ];
-    for (const c of corners) {
-        addWithOutline(g, rivetGeo, rivetMat, { x: c.x, y: c.y, z: 0.12 });
+    // Ascending gold rings — each represents a collected coin buffing the shockwave
+    const ringMat = matGold();
+    const ringCounts = 4;
+    for (let i = 0; i < ringCounts; i++) {
+        const r = 0.22 + i * 0.08;
+        const ringGeo = new THREE.TorusGeometry(r, 0.025, 6, 16);
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.y = -0.2 + i * 0.12;
+        ring.rotation.x = Math.PI / 2;
+        g.add(ring);
     }
+
+    // Small upward arrow showing scaling/accumulation
+    const arrow = arrowUp(0.4);
+    arrow.position.set(0.45, 0.15, 0);
+    arrow.scale.setScalar(0.6);
+    g.add(arrow);
 
     return g;
 }
@@ -223,30 +229,29 @@ function buildC9() {
 }
 
 // ─── C10: Extra Absorbent ──────────────────────────────────────────────────────
-// Inflated sphere mop head, blue water droplets dripping from it
+// Mop with armor bands on handle + HP cross near mop head — "tougher mop"
 function buildC10() {
     const g = new THREE.Group();
 
     // Handle
-    const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6);
-    addWithOutline(g, handleGeo, toonMat(PALETTE.wood), { y: 0.2 });
+    const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 6);
+    addWithOutline(g, handleGeo, toonMat(PALETTE.wood), { y: 0.1 });
 
-    // Inflated sphere mop head
-    const headGeo = new THREE.SphereGeometry(0.3, 10, 8);
-    addWithOutline(g, headGeo, matMop(), { y: -0.2 });
-
-    // Blue water droplets dripping
-    const dropGeo = new THREE.SphereGeometry(0.04, 6, 6);
-    const dropMat = toonMat(PALETTE.dancer);
-    const dropPositions = [
-        { x: -0.1, y: -0.5, z: 0.05 },
-        { x: 0.08, y: -0.55, z: -0.03 },
-        { x: 0.0, y: -0.6, z: 0.08 },
-        { x: -0.05, y: -0.65, z: -0.02 },
-    ];
-    for (const p of dropPositions) {
-        addWithOutline(g, dropGeo, dropMat, p);
+    // Armor bands on handle
+    const bandMat = toonMat(PALETTE.fixture);
+    const bandGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8);
+    for (const y of [-0.05, 0.1, 0.25]) {
+        addWithOutline(g, bandGeo, bandMat, { y });
     }
+
+    // Mop head
+    const headGeo = new THREE.SphereGeometry(0.22, 10, 8);
+    addWithOutline(g, headGeo, matMop(), { y: -0.25 }, null, { x: 1.3, y: 0.7, z: 1.0 });
+
+    // HP cross near mop head
+    const cross = hpCross(0.25);
+    cross.position.set(0.35, -0.15, 0.1);
+    g.add(cross);
 
     return g;
 }
@@ -416,25 +421,35 @@ function buildC16() {
 }
 
 // ─── C17: Glass Cannon ─────────────────────────────────────────────────────────
-// Crystal tapered cylinder (translucent white), crack lines, small explosion at barrel
+// Translucent/cracked mini tower (glass material) + massive explosion burst behind it
 function buildC17() {
     const g = new THREE.Group();
 
-    // Crystal barrel — tapered translucent cylinder
-    const barrelGeo = new THREE.CylinderGeometry(0.08, 0.16, 0.7, 8);
-    const crystalMat = toonMat(PALETTE.white, {
-        transparent: true, opacity: 0.5,
+    // Glass tower — translucent with cracks
+    const glassMat = toonMat(PALETTE.white, {
+        transparent: true, opacity: 0.4,
         emissive: PALETTE.glow, emissiveIntensity: 0.3,
     });
-    addWithOutline(g, barrelGeo, crystalMat, null, null, { x: 1, y: 1, z: 1 });
 
-    // Crack lines (thin dark cylinders across surface)
-    const crackGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.2, 4);
+    // Tower base
+    const baseGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
+    addWithOutline(g, baseGeo, glassMat, { y: -0.25 });
+
+    // Tower body
+    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.4, 8);
+    addWithOutline(g, bodyGeo, glassMat, { y: 0 });
+
+    // Tower top
+    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
+    addWithOutline(g, topGeo, glassMat, { y: 0.25 });
+
+    // Crack lines across the glass tower
     const crackMat = toonMat(PALETTE.ink);
+    const crackGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.2, 4);
     const cracks = [
-        { pos: { x: 0.09, y: 0.05, z: 0.05 }, rot: { z: 0.5, x: 0.3 } },
-        { pos: { x: -0.07, y: -0.1, z: 0.08 }, rot: { z: -0.4, x: -0.2 } },
-        { pos: { x: 0.05, y: -0.15, z: -0.07 }, rot: { z: 0.6, x: 0.5 } },
+        { pos: { x: 0.08, y: 0.05, z: 0.08 }, rot: { z: 0.5, x: 0.3 } },
+        { pos: { x: -0.06, y: -0.1, z: 0.09 }, rot: { z: -0.4, x: -0.2 } },
+        { pos: { x: 0.04, y: -0.18, z: -0.06 }, rot: { z: 0.7, x: 0.4 } },
     ];
     for (const c of cracks) {
         const crack = new THREE.Mesh(crackGeo, crackMat);
@@ -443,45 +458,40 @@ function buildC17() {
         g.add(crack);
     }
 
-    // Small explosion at barrel tip
-    const burst = explosionBurst(0.25);
-    burst.position.y = 0.45;
+    // Massive explosion burst behind/above the tower
+    const burst = explosionBurst(0.45);
+    burst.position.set(0.1, 0.2, -0.15);
     g.add(burst);
 
     return g;
 }
 
 // ─── C18: Slow and Steady ──────────────────────────────────────────────────────
-// Anvil body (trapezoid box), hexagonal pattern on surface
+// Tortoise shell dome with impact star hammering from above — "slower attacks, bigger damage"
 function buildC18() {
     const g = new THREE.Group();
 
-    const anvilMat = toonMat(PALETTE.charcoal);
+    // Tortoise shell dome
+    const dome = tortoiseDome(0.4);
+    dome.position.y = -0.2;
+    g.add(dome);
 
-    // Anvil top (wide)
-    const topGeo = new THREE.BoxGeometry(0.7, 0.2, 0.4);
-    addWithOutline(g, topGeo, anvilMat, { y: 0.15 });
+    // Flat base under dome
+    const baseGeo = new THREE.CylinderGeometry(0.42, 0.45, 0.04, 12);
+    addWithOutline(g, baseGeo, toonMat(PALETTE.wood), { y: -0.22 });
 
-    // Anvil body (narrower)
-    const bodyGeo = new THREE.BoxGeometry(0.45, 0.25, 0.35);
-    addWithOutline(g, bodyGeo, anvilMat, { y: -0.08 });
+    // Large impact star hammering from above
+    const star = impactStar(0.3);
+    star.position.set(0, 0.35, 0.05);
+    g.add(star);
 
-    // Anvil base (wider again)
-    const baseGeo = new THREE.BoxGeometry(0.6, 0.1, 0.4);
-    addWithOutline(g, baseGeo, anvilMat, { y: -0.25 });
-
-    // Hexagonal pattern on top surface (small hex outlines)
-    const hexMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.6 });
-    const hexGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.02, 6);
-    const hexPositions = [
-        { x: 0, z: 0 }, { x: 0.14, z: 0 }, { x: -0.14, z: 0 },
-        { x: 0.07, z: 0.12 }, { x: -0.07, z: 0.12 },
-        { x: 0.07, z: -0.12 }, { x: -0.07, z: -0.12 },
-    ];
-    for (const h of hexPositions) {
-        const hex = new THREE.Mesh(hexGeo, hexMat);
-        hex.position.set(h.x, 0.26, h.z);
-        g.add(hex);
+    // Impact lines connecting star to dome
+    const lineMat = toonMat(PALETTE.gold, { transparent: true, opacity: 0.4 });
+    const lineGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.25, 4);
+    for (const x of [-0.12, 0, 0.12]) {
+        const line = new THREE.Mesh(lineGeo, lineMat);
+        line.position.set(x, 0.15, 0.05);
+        g.add(line);
     }
 
     return g;

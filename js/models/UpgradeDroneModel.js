@@ -147,7 +147,7 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
     // ── ICON — centered, prominent ──
-    const iconSize = 300;
+    const iconSize = 360;
     const iconCX = cW / 2;
     const iconCY = 210;
 
@@ -862,7 +862,7 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud._iconFrame % 3 === 0) {
             const tex = ud.placardTexture;
             const ctx = tex._iconCtx;
-            const cx = 400, cy = 210, half = 152;
+            const cx = 400, cy = 210, half = 182;
 
             // Restore saved background region (avoids visible square artifact)
             if (tex._iconBgData) {
@@ -876,7 +876,7 @@ export function updateUpgradeDrone(drone, dt) {
             }
 
             // Re-draw rotating 3D icon
-            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 300, performance.now() / 1000);
+            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 360, performance.now() / 1000);
             tex.needsUpdate = true;
         }
     }

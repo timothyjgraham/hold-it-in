@@ -727,3 +727,183 @@ export function motionLines(count = 3, length = 0.3) {
 
     return g;
 }
+
+// ─── PHASE 4 PRIMITIVES ─────────────────────────────────────────────────────
+
+export function tortoiseDome(r = 0.4) {
+    const g = new THREE.Group();
+    const shellMat = toonMat(PALETTE.fixture, { emissive: PALETTE.wood, emissiveIntensity: 0.15 });
+
+    // Main dome (half-sphere)
+    const domeGeo = new THREE.SphereGeometry(r, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    addWithOutline(g, domeGeo, shellMat);
+
+    // Hexagonal plates on shell surface
+    const plateMat = toonMat(PALETTE.wood, { transparent: true, opacity: 0.5 });
+    const plateGeo = new THREE.CylinderGeometry(r * 0.2, r * 0.2, 0.015, 6);
+    const platePositions = [
+        { a: 0, elev: 0.7 },
+        { a: Math.PI * 0.5, elev: 0.5 },
+        { a: Math.PI, elev: 0.5 },
+        { a: Math.PI * 1.5, elev: 0.5 },
+        { a: Math.PI * 0.25, elev: 0.3 },
+        { a: Math.PI * 0.75, elev: 0.3 },
+        { a: Math.PI * 1.25, elev: 0.3 },
+    ];
+    for (const p of platePositions) {
+        const plate = new THREE.Mesh(plateGeo, plateMat);
+        const y = Math.sin(p.elev) * r;
+        const dist = Math.cos(p.elev) * r;
+        plate.position.set(Math.cos(p.a) * dist, y + 0.01, Math.sin(p.a) * dist);
+        // Tilt to follow dome curvature
+        plate.lookAt(0, 0, 0);
+        plate.rotation.x += Math.PI / 2;
+        g.add(plate);
+    }
+
+    return g;
+}
+
+export function dottedOutlineTower() {
+    const g = new THREE.Group();
+    const ghostMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.2 });
+    const dotMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.5 });
+
+    // Ghost base
+    const baseGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
+    const base = new THREE.Mesh(baseGeo, ghostMat);
+    base.position.y = -0.25;
+    g.add(base);
+
+    // Ghost body
+    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.4, 8);
+    const body = new THREE.Mesh(bodyGeo, ghostMat);
+    g.add(body);
+
+    // Ghost top
+    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
+    const top = new THREE.Mesh(topGeo, ghostMat);
+    top.position.y = 0.25;
+    g.add(top);
+
+    // Dotted outline — small spheres along silhouette
+    const dotGeo = new THREE.SphereGeometry(0.02, 4, 4);
+    const dotCount = 16;
+    for (let i = 0; i < dotCount; i++) {
+        const a = (i / dotCount) * Math.PI * 2;
+        const dot = new THREE.Mesh(dotGeo, dotMat);
+        // Alternate between body edge and base edge
+        const yLevel = i < 8 ? 0 : -0.25;
+        const r = i < 8 ? 0.12 : 0.17;
+        dot.position.set(Math.cos(a) * r, yLevel, Math.sin(a) * r);
+        g.add(dot);
+    }
+
+    return g;
+}
+
+export function hourglass(topGlowColor = null, botGlowColor = null) {
+    const g = new THREE.Group();
+
+    const clearMat = toonMat(PALETTE.white, { transparent: true, opacity: 0.4 });
+    const dimMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.25 });
+    const coneGeo = new THREE.ConeGeometry(0.25, 0.4, 8);
+
+    // Top cone (inverted) — optionally glowing
+    const topMat = topGlowColor
+        ? toonMat(topGlowColor, { transparent: true, opacity: 0.5, emissive: topGlowColor, emissiveIntensity: 0.4 })
+        : clearMat;
+    addWithOutline(g, coneGeo, topMat, { y: 0.2 }, { x: Math.PI });
+
+    // Bottom cone — optionally dimmed or glowing
+    const botMat = botGlowColor
+        ? toonMat(botGlowColor, { transparent: true, opacity: 0.5, emissive: botGlowColor, emissiveIntensity: 0.4 })
+        : dimMat;
+    addWithOutline(g, coneGeo, botMat, { y: -0.2 });
+
+    // Frame rings at top, middle, bottom
+    const ringMat = toonMat(PALETTE.fixture);
+    const ringGeo = new THREE.TorusGeometry(0.26, 0.025, 6, 14);
+    for (const y of [0.4, 0, -0.4]) {
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.y = y;
+        ring.rotation.x = Math.PI / 2;
+        g.add(ring);
+    }
+
+    return g;
+}
+
+export function impactStar(r = 0.3) {
+    const g = new THREE.Group();
+    const mat = toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.5 });
+
+    // 6-pointed impact star from overlapping triangles
+    const shape = new THREE.Shape();
+    const pts = 6, outerR = r, innerR = r * 0.45;
+    for (let i = 0; i < pts * 2; i++) {
+        const angle = -Math.PI / 2 + (i * Math.PI) / pts;
+        const rad = i % 2 === 0 ? outerR : innerR;
+        const x = Math.cos(angle) * rad;
+        const y = Math.sin(angle) * rad;
+        if (i === 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+    }
+    shape.closePath();
+
+    const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: 0.06, bevelEnabled: true,
+        bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 1,
+    });
+    geo.center();
+    addWithOutline(g, geo, mat);
+
+    return g;
+}
+
+export function timelineArrow(length = 1.2) {
+    const g = new THREE.Group();
+    const mat = toonMat(PALETTE.fixture);
+
+    // Horizontal shaft
+    const shaftGeo = new THREE.CylinderGeometry(0.025, 0.025, length * 0.85, 6);
+    addWithOutline(g, shaftGeo, mat, { x: -length * 0.075 }, { z: Math.PI / 2 });
+
+    // Arrowhead at right end
+    const headGeo = new THREE.ConeGeometry(0.08, 0.2, 6);
+    addWithOutline(g, headGeo, mat, { x: length * 0.5 }, { z: -Math.PI / 2 });
+
+    return g;
+}
+
+export function slowSwirl(r = 0.3) {
+    const g = new THREE.Group();
+    const mat = toonMat(PALETTE.dancer, { transparent: true, opacity: 0.4 });
+
+    // Spiral lines suggesting slowness
+    const segments = 20;
+    for (let i = 0; i < segments; i++) {
+        const t = i / segments;
+        const angle = t * Math.PI * 3;
+        const rad = r * (0.3 + t * 0.7);
+        const dotGeo = new THREE.SphereGeometry(0.02 + t * 0.015, 4, 4);
+        const dot = new THREE.Mesh(dotGeo, mat);
+        dot.position.set(Math.cos(angle) * rad, 0, Math.sin(angle) * rad);
+        g.add(dot);
+    }
+
+    return g;
+}
+
+export function hpCross(size = 0.3) {
+    const g = new THREE.Group();
+    const mat = toonMat(PALETTE.success, { emissive: PALETTE.success, emissiveIntensity: 0.3 });
+
+    const hGeo = new THREE.CylinderGeometry(size * 0.18, size * 0.18, size, 8);
+    addWithOutline(g, hGeo, mat, null, { z: Math.PI / 2 });
+
+    const vGeo = new THREE.CylinderGeometry(size * 0.18, size * 0.18, size, 8);
+    addWithOutline(g, vGeo, mat);
+
+    return g;
+}

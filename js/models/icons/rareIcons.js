@@ -11,10 +11,11 @@ import {
     circularArrows, clockFace, crosshair, priceTag, splashDroplets, bubbles,
     flameShape, explosionBurst, skullShape, heartShape, puddleDisc, coinStack,
     miniTower, capsuleFigure, sparkSpheres, motionLines,
+    dottedOutlineTower, hourglass, timelineArrow, slowSwirl,
 } from './iconPrimitives.js';
 
 // ─── R1: Wet & Soapy ──────────────────────────────────────────────────────────
-// Warning sign half-submerged in green ubik puddle disc + 4 floating bubbles
+// Sign + spray can flanking a "×2" damage multiplier — shows sign+ubik synergy = damage amp
 function buildR1() {
     const g = new THREE.Group();
 
@@ -23,15 +24,35 @@ function buildR1() {
     puddle.position.y = -0.35;
     g.add(puddle);
 
-    // Warning sign half-submerged
+    // Warning sign on left
     const sign = miniSign();
-    sign.position.y = -0.1;
-    sign.scale.setScalar(0.7);
+    sign.position.set(-0.3, -0.05, 0);
+    sign.scale.setScalar(0.6);
     g.add(sign);
 
-    // 4 floating bubbles
-    const bubs = bubbles(4, 0.4);
-    bubs.position.y = 0.15;
+    // Small spray can on right
+    const spray = miniSpray();
+    spray.position.set(0.3, -0.05, 0);
+    spray.scale.setScalar(0.55);
+    g.add(spray);
+
+    // ×2 multiplier — two crossed damage stars in center
+    const starMat = matGold();
+    const starGeo = new THREE.SphereGeometry(0.08, 6, 6);
+    addWithOutline(g, starGeo, starMat, { x: -0.05, y: 0.3, z: 0.05 });
+    addWithOutline(g, starGeo, starMat, { x: 0.05, y: 0.3, z: 0.05 });
+
+    // Connecting arc between sign and spray
+    const arcMat = toonMat(PALETTE.gold, { transparent: true, opacity: 0.35 });
+    const arcGeo = new THREE.TorusGeometry(0.25, 0.02, 6, 12, Math.PI);
+    const arc = new THREE.Mesh(arcGeo, arcMat);
+    arc.position.set(0, 0.15, 0);
+    arc.rotation.z = Math.PI;
+    g.add(arc);
+
+    // Bubbles
+    const bubs = bubbles(3, 0.35);
+    bubs.position.y = 0.1;
     g.add(bubs);
 
     return g;
@@ -482,19 +503,30 @@ function buildR16() {
 }
 
 // ─── R17: Marked for Death ────────────────────────────────────────────────────
-// Target crosshair (large) with skull centered inside
+// Capsule figure with slow-swirl + red crosshair overlay + mini wet floor sign
 function buildR17() {
     const g = new THREE.Group();
 
-    // Large crosshair
-    const ch = crosshair(0.55);
+    // Capsule figure (the slowed enemy)
+    const fig = capsuleFigure(0.5, PALETTE.polite);
+    fig.position.set(0, -0.1, 0);
+    g.add(fig);
+
+    // Slow-swirl lines around the figure
+    const swirl = slowSwirl(0.3);
+    swirl.position.set(0, -0.15, 0.05);
+    g.add(swirl);
+
+    // Large red crosshair/target overlaid on figure
+    const ch = crosshair(0.5);
+    ch.position.set(0, 0, 0.12);
     g.add(ch);
 
-    // Skull centered inside
-    const skull = skullShape();
-    skull.scale.setScalar(0.5);
-    skull.position.y = -0.02;
-    g.add(skull);
+    // Mini wet floor sign in corner
+    const sign = miniSign();
+    sign.scale.setScalar(0.4);
+    sign.position.set(-0.45, 0.3, 0.05);
+    g.add(sign);
 
     return g;
 }
@@ -673,32 +705,36 @@ function buildR23() {
 }
 
 // ─── R24: Skeleton Crew ───────────────────────────────────────────────────────
-// Skull with flat cap on top + 2 tiny towers flanking
+// 3 solid towers + 3 dotted-outline empty slots + large upward arrow in empty space
+// "Fewer towers = more power"
 function buildR24() {
     const g = new THREE.Group();
 
-    // Central skull
-    const skull = skullShape();
-    skull.scale.setScalar(0.7);
-    g.add(skull);
+    // Platform
+    const platGeo = new THREE.BoxGeometry(1.4, 0.06, 0.35);
+    addWithOutline(g, platGeo, toonMat(PALETTE.fixture), { y: -0.35 });
 
-    // Flat cap on top of skull
-    const capGeo = new THREE.CylinderGeometry(0.22, 0.25, 0.06, 10);
-    addWithOutline(g, capGeo, toonMat(PALETTE.charcoal), { y: 0.28 });
-
-    const brimGeo = new THREE.CylinderGeometry(0.15, 0.3, 0.025, 10);
-    const brim = new THREE.Mesh(brimGeo, toonMat(PALETTE.charcoal));
-    brim.position.set(0, 0.25, 0.1);
-    brim.rotation.x = -0.15;
-    g.add(brim);
-
-    // 2 tiny towers flanking
-    for (const sx of [-0.5, 0.5]) {
+    // 3 solid towers on left side
+    for (let i = 0; i < 3; i++) {
         const t = miniTower();
-        t.scale.setScalar(0.3);
-        t.position.set(sx, -0.1, 0);
+        t.scale.setScalar(0.4);
+        t.position.set(-0.5 + i * 0.25, -0.05, 0);
         g.add(t);
     }
+
+    // 3 dotted outline towers on right side (empty slots)
+    for (let i = 0; i < 3; i++) {
+        const ghost = dottedOutlineTower();
+        ghost.scale.setScalar(0.4);
+        ghost.position.set(0.25 + i * 0.25, -0.05, 0);
+        g.add(ghost);
+    }
+
+    // Large upward arrow in the empty space
+    const arrow = arrowUp(0.55);
+    arrow.position.set(0.5, 0.35, 0.05);
+    arrow.scale.setScalar(0.7);
+    g.add(arrow);
 
     return g;
 }
@@ -761,59 +797,95 @@ function buildR26() {
 }
 
 // ─── R27: Double Shift ────────────────────────────────────────────────────────
-// Large clock face with hands at blur angle + crack lines radiating from center
+// Clock with two overlapping hour hands (double speed) + red heart being chipped away
+// "Work harder/faster but take damage"
 function buildR27() {
     const g = new THREE.Group();
 
     // Clock face
-    const clock = clockFace(0.5);
+    const clock = clockFace(0.45);
     g.add(clock);
 
-    // Crack lines radiating from clock center
-    const crackMat = toonMat(PALETTE.danger);
-    for (let i = 0; i < 5; i++) {
-        const angle = (i / 5) * Math.PI * 2 + 0.3;
-        const crackGeo = new THREE.BoxGeometry(0.02, 0.18, 0.02);
-        const crack = new THREE.Mesh(crackGeo, crackMat);
-        crack.position.set(
-            Math.cos(angle) * 0.2,
-            Math.sin(angle) * 0.2,
-            0.06
-        );
-        crack.rotation.z = angle + Math.PI / 2;
-        g.add(crack);
+    // Second overlapping hour hand (shows "double" speed)
+    const inkMat = toonMat(PALETTE.ink);
+    const handGeo = new THREE.BoxGeometry(0.04, 0.45 * 0.5, 0.02);
+    const hand2 = new THREE.Mesh(handGeo, inkMat);
+    hand2.position.set(0, 0.45 * 0.2, 0.07);
+    hand2.rotation.z = -Math.PI * 0.55;
+    g.add(hand2);
+
+    // Small red heart being chipped — shows self-harm element
+    const heart = heartShape();
+    heart.scale.setScalar(0.35);
+    heart.position.set(0.45, -0.3, 0.05);
+    g.add(heart);
+
+    // Crack/chip on heart
+    const crackGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.12, 4);
+    const crackMat = toonMat(PALETTE.ink);
+    const crack = new THREE.Mesh(crackGeo, crackMat);
+    crack.position.set(0.47, -0.28, 0.1);
+    crack.rotation.z = 0.5;
+    g.add(crack);
+
+    // Small chip fragments
+    const chipGeo = new THREE.SphereGeometry(0.025, 4, 4);
+    const chipMat = matDanger();
+    for (const [x, y] of [[0.55, -0.22], [0.52, -0.38]]) {
+        const chip = new THREE.Mesh(chipGeo, chipMat);
+        chip.position.set(x, y, 0.1);
+        g.add(chip);
     }
 
     return g;
 }
 
 // ─── R28: Danger Pay ──────────────────────────────────────────────────────────
-// Mini tower front-lit (emissive warm) + shadow plane behind, contrast
+// Split composition: front tower with gold glow + up arrow, back tower dimmed + down arrow
+// "Front rows = +50%, back rows = -30%" — positional concept
 function buildR28() {
     const g = new THREE.Group();
 
-    // Tower with warm emissive glow
-    const tower = miniTower();
-    tower.scale.setScalar(0.6);
-    tower.position.set(0, 0, 0.1);
-    g.add(tower);
+    // Left side: "FRONT" — bright tower with gold glow
+    const frontTower = miniTower();
+    frontTower.scale.setScalar(0.5);
+    frontTower.position.set(-0.35, -0.05, 0);
+    g.add(frontTower);
 
-    // Warm front glow
-    const glowGeo = new THREE.SphereGeometry(0.25, 8, 8);
+    // Gold glow behind front tower
+    const glowGeo = new THREE.SphereGeometry(0.2, 8, 8);
     const glowMat = toonMat(PALETTE.glow, {
-        transparent: true, opacity: 0.2,
-        emissive: PALETTE.gold, emissiveIntensity: 0.5,
+        transparent: true, opacity: 0.25,
+        emissive: PALETTE.gold, emissiveIntensity: 0.6,
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
-    glow.position.set(0, 0, 0.2);
+    glow.position.set(-0.35, 0, -0.05);
     g.add(glow);
 
-    // Dark shadow plane behind
-    const shadowGeo = new THREE.PlaneGeometry(0.7, 0.9);
-    const shadowMat = toonMat(PALETTE.ink, { transparent: true, opacity: 0.3 });
-    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.position.set(0.05, 0, -0.1);
-    g.add(shadow);
+    // Up arrow next to front tower
+    const upArr = arrowUp(0.4);
+    upArr.position.set(-0.35, 0.4, 0);
+    upArr.scale.setScalar(0.55);
+    g.add(upArr);
+
+    // Divider line in middle
+    const divGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.8, 4);
+    addWithOutline(g, divGeo, toonMat(PALETTE.ink, { transparent: true, opacity: 0.3 }), { x: 0 });
+
+    // Right side: "BACK" — dimmed tower
+    const dimMat = toonMat(PALETTE.charcoal, { transparent: true, opacity: 0.6 });
+    const backBaseGeo = new THREE.CylinderGeometry(0.15 * 0.5, 0.18 * 0.5, 0.1 * 0.5, 8);
+    addWithOutline(g, backBaseGeo, dimMat, { x: 0.35, y: -0.25 * 0.5 - 0.05 });
+    const backBodyGeo = new THREE.CylinderGeometry(0.1 * 0.5, 0.12 * 0.5, 0.4 * 0.5, 8);
+    addWithOutline(g, backBodyGeo, dimMat, { x: 0.35, y: -0.05 });
+    const backTopGeo = new THREE.SphereGeometry(0.1 * 0.5, 8, 6);
+    addWithOutline(g, backTopGeo, dimMat, { x: 0.35, y: 0.25 * 0.5 - 0.05 });
+
+    // Down arrow next to back tower
+    const downArr = arrowDown(0.4);
+    downArr.position.set(0.35, 0.4, 0);
+    downArr.scale.setScalar(0.55);
+    g.add(downArr);
 
     return g;
 }
@@ -887,29 +959,16 @@ function buildR30() {
 }
 
 // ─── R31: Rush Defense ────────────────────────────────────────────────────────
-// Hourglass (2 cones tip-to-tip) with lightning bolt in top half
+// Hourglass with TOP half glowing gold (power) and bottom half dimmed/grey
+// Lightning bolt in bright half only — "first 3s = 2.5× damage, then -25%"
 function buildR31() {
     const g = new THREE.Group();
 
-    // Top cone (inverted)
-    const coneGeo = new THREE.ConeGeometry(0.25, 0.4, 8);
-    const glassMat = toonMat(PALETTE.white, { transparent: true, opacity: 0.4 });
-    addWithOutline(g, coneGeo, glassMat, { y: 0.2 }, { x: Math.PI });
+    // Hourglass with glowing top, dim bottom
+    const hg = hourglass(PALETTE.gold, null);
+    g.add(hg);
 
-    // Bottom cone
-    addWithOutline(g, coneGeo, glassMat, { y: -0.2 });
-
-    // Frame rings at top, middle, bottom
-    const ringMat = toonMat(PALETTE.fixture);
-    const ringGeo = new THREE.TorusGeometry(0.26, 0.025, 6, 14);
-    for (const y of [0.4, 0, -0.4]) {
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.y = y;
-        ring.rotation.x = Math.PI / 2;
-        g.add(ring);
-    }
-
-    // Lightning bolt in top half
+    // Lightning bolt in the bright top half only
     const bolt = lightningBolt(0.35);
     bolt.position.y = 0.15;
     bolt.scale.setScalar(0.5);
@@ -919,37 +978,41 @@ function buildR31() {
 }
 
 // ─── R32: Attrition ───────────────────────────────────────────────────────────
-// Vertical cylinder tube + red inner fill cylinder at ~80% + bulb sphere at base
+// Ascending staircase of increasingly large/red damage spikes along a timeline arrow
+// "Damage ramps +4%/s while enemies alive, resets per wave"
 function buildR32() {
     const g = new THREE.Group();
 
-    // Outer tube (translucent)
-    const tubeGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 12);
-    const tubeMat = toonMat(PALETTE.white, { transparent: true, opacity: 0.3 });
-    const tube = new THREE.Mesh(tubeGeo, tubeMat);
-    g.add(tube);
+    // Horizontal timeline arrow at base
+    const tl = timelineArrow(1.2);
+    tl.position.y = -0.35;
+    g.add(tl);
 
-    // Tube frame rings
-    const frameMat = toonMat(PALETTE.fixture);
-    const frameGeo = new THREE.TorusGeometry(0.16, 0.02, 6, 12);
-    for (const y of [0.4, -0.4]) {
-        const ring = new THREE.Mesh(frameGeo, frameMat);
-        ring.position.y = y;
-        ring.rotation.x = Math.PI / 2;
-        g.add(ring);
+    // Ascending damage spikes along timeline — each bigger and redder
+    const spikeCount = 5;
+    for (let i = 0; i < spikeCount; i++) {
+        const t = i / (spikeCount - 1); // 0..1
+        const h = 0.15 + t * 0.45;
+        const w = 0.04 + t * 0.04;
+        const x = -0.5 + i * 0.25;
+
+        // Interpolate from gold (low) to danger (high)
+        const spikeColor = t < 0.5 ? PALETTE.gold : PALETTE.danger;
+        const intensity = 0.2 + t * 0.5;
+        const spikeMat = toonMat(spikeColor, {
+            emissive: spikeColor,
+            emissiveIntensity: intensity,
+        });
+
+        const spikeGeo = new THREE.ConeGeometry(w, h, 5);
+        addWithOutline(g, spikeGeo, spikeMat, { x, y: -0.35 + h / 2 });
     }
 
-    // Red inner fill at ~80%
-    const fillH = 0.8 * 0.8;
-    const fillGeo = new THREE.CylinderGeometry(0.12, 0.12, fillH, 10);
-    const fillMat = toonMat(PALETTE.danger, { transparent: true, opacity: 0.6 });
-    const fill = new THREE.Mesh(fillGeo, fillMat);
-    fill.position.y = -0.4 + fillH / 2;
-    g.add(fill);
-
-    // Bulb sphere at base
-    const bulbGeo = new THREE.SphereGeometry(0.18, 10, 8);
-    addWithOutline(g, bulbGeo, matDanger(), { y: -0.55 });
+    // Small upward arrow at the end showing escalation
+    const arrow = arrowUp(0.35);
+    arrow.position.set(0.5, 0.15, 0);
+    arrow.scale.setScalar(0.5);
+    g.add(arrow);
 
     return g;
 }

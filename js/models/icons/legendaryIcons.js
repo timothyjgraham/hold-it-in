@@ -11,6 +11,7 @@ import {
     circularArrows, clockFace, crosshair, priceTag, splashDroplets, bubbles,
     flameShape, explosionBurst, skullShape, heartShape, puddleDisc, coinStack,
     miniTower, capsuleFigure, sparkSpheres, motionLines,
+    hourglass, slowSwirl,
 } from './iconPrimitives.js';
 
 // ─── L1: Double Flush ─────────────────────────────────────────────────────────
@@ -360,80 +361,91 @@ function buildL10() {
 }
 
 // ─── L11: Bladder Burst ──────────────────────────────────────────────────────
-// Central sphere with radial spike cones + shockwave rings + flying debris
+// Tipped capsule figure with inflating sphere belly about to pop + pressure rings + timer
 function buildL11() {
     const g = new THREE.Group();
 
-    // Central sphere
-    const coreMat = toonMat(PALETTE.danger, { emissive: PALETTE.danger, emissiveIntensity: 0.6 });
-    const coreGeo = new THREE.SphereGeometry(0.25, 10, 10);
-    addWithOutline(g, coreGeo, coreMat);
+    // Tipped/KO'd capsule figure
+    const fig = capsuleFigure(0.5, PALETTE.polite);
+    fig.position.set(-0.25, -0.2, 0);
+    fig.rotation.z = Math.PI / 2.5;
+    g.add(fig);
 
-    // Radial spike cones
-    const spikeMat = toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.4 });
-    const spikeGeo = new THREE.ConeGeometry(0.06, 0.35, 5);
-    const spikeCount = 10;
-    for (let i = 0; i < spikeCount; i++) {
-        const phi = (i / spikeCount) * Math.PI * 2;
-        const theta = (i % 3 - 1) * 0.5;
-        const dist = 0.35;
-        const spike = new THREE.Mesh(spikeGeo, spikeMat);
-        spike.position.set(
-            Math.cos(phi) * dist * Math.cos(theta),
-            Math.sin(theta) * dist,
-            Math.sin(phi) * dist * Math.cos(theta)
-        );
-        spike.lookAt(0, 0, 0);
-        spike.rotation.x += Math.PI;
-        g.add(spike);
-    }
+    // Inflating sphere (belly about to burst) — danger red, pulsing
+    const bulge = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 10, 10),
+        toonMat(PALETTE.danger, { emissive: PALETTE.danger, emissiveIntensity: 0.5, transparent: true, opacity: 0.7 })
+    );
+    bulge.position.set(-0.15, -0.05, 0.08);
+    g.add(bulge);
 
-    // Shockwave rings
-    const rings = shockwaveRings(2, 0.5);
-    rings.position.y = -0.1;
+    // Expanding concentric pressure rings around the figure
+    const rings = shockwaveRings(3, 0.35);
+    rings.position.set(0.05, -0.05, 0);
     g.add(rings);
 
-    // Flying debris spheres
-    const debrisMat = toonMat(PALETTE.fixture);
-    const debrisGeo = new THREE.SphereGeometry(0.04, 4, 4);
-    for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2;
-        const d = 0.6 + Math.random() * 0.2;
-        const debris = new THREE.Mesh(debrisGeo, debrisMat);
-        debris.position.set(Math.cos(a) * d, (Math.random() - 0.3) * 0.5, Math.sin(a) * d);
-        g.add(debris);
-    }
+    // Timer/ticking indicator — small clock-like element
+    const timerMat = toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.6 });
+    const timerGeo = new THREE.TorusGeometry(0.12, 0.02, 6, 12);
+    addWithOutline(g, timerGeo, timerMat, { x: 0.35, y: 0.35 }, { x: Math.PI / 2 });
+    // Timer hand
+    const handGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.1, 4);
+    addWithOutline(g, handGeo, timerMat, { x: 0.35, y: 0.35, z: 0.03 }, { z: -Math.PI / 4 });
+
+    // Small explosion hint sparks
+    const sparks = sparkSpheres(4, 0.4);
+    sparks.position.set(0, 0.15, 0);
+    g.add(sparks);
 
     return g;
 }
 
 // ─── L12: Overtime ───────────────────────────────────────────────────────────
-// Clock face with hands at 12 + emissive gold torus aura + lightning sparks
+// Hourglass with gold sand in top half + two mini towers flanking with speed lines
+// + slow-frozen capsule figure at base — "first 3s: 2× tower speed, 0.5× enemy speed"
 function buildL12() {
     const g = new THREE.Group();
 
-    // Clock face (hands at 12)
-    const clock = clockFace(0.45);
-    g.add(clock);
+    // Gold-topped hourglass (not a clock — differentiates from R27)
+    const hg = hourglass(PALETTE.gold, null);
+    g.add(hg);
 
-    // Override the clock hands to point at 12 — re-add custom ones
-    // The clockFace primitive already has hands, so we enhance with gold aura
-
-    // Emissive gold torus ring aura
-    const auraGeo = new THREE.TorusGeometry(0.6, 0.04, 8, 24);
-    const auraMat = toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.8 });
-    addWithOutline(g, auraGeo, auraMat, null, { x: Math.PI / 2 });
-
-    // Small lightning sparks around clock
-    const sparkPositions = [
-        [0.55, 0.3, 0], [-0.5, -0.25, 0], [0.3, -0.5, 0], [-0.35, 0.45, 0],
-    ];
-    for (const [x, y, z] of sparkPositions) {
-        const bolt = lightningBolt(0.25);
-        bolt.position.set(x, y, z);
-        bolt.scale.setScalar(0.4);
-        g.add(bolt);
+    // Gold sand particles falling through hourglass center
+    const sandMat = toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.5 });
+    const sandGeo = new THREE.SphereGeometry(0.02, 4, 4);
+    for (let i = 0; i < 5; i++) {
+        const sand = new THREE.Mesh(sandGeo, sandMat);
+        sand.position.set(
+            (Math.random() - 0.5) * 0.06,
+            -0.08 - i * 0.06,
+            (Math.random() - 0.5) * 0.06
+        );
+        g.add(sand);
     }
+
+    // Two mini towers flanking with speed lines
+    for (const sx of [-1, 1]) {
+        const tower = miniTower();
+        tower.scale.setScalar(0.35);
+        tower.position.set(sx * 0.5, 0.1, 0);
+        g.add(tower);
+
+        // Speed lines behind each tower
+        const lines = motionLines(2, 0.18);
+        lines.position.set(sx * 0.35, 0.1, 0);
+        if (sx > 0) lines.rotation.y = Math.PI;
+        g.add(lines);
+    }
+
+    // Slow-frozen capsule figure at base
+    const fig = capsuleFigure(0.35, PALETTE.polite);
+    fig.position.set(0, -0.55, 0.05);
+    g.add(fig);
+
+    // Slow swirl around frozen figure
+    const swirl = slowSwirl(0.2);
+    swirl.position.set(0, -0.55, 0.05);
+    g.add(swirl);
 
     return g;
 }

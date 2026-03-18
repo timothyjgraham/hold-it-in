@@ -66,7 +66,7 @@ export function initIconRenderer() {
 
     // Tighter framing — icons fill more of the canvas
     _camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    _camera.position.set(0, 0.15, 2.6);
+    _camera.position.set(0, 0.15, 2.2);
     _camera.lookAt(0, 0, 0);
 
     // Lighting: punchy contrast for clean toon steps
