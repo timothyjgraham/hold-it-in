@@ -383,7 +383,7 @@ function _buildAirplaneModel() {
     addWithOutline(g, stripeGeo, toonMat(PALETTE.oceanSurf || PALETTE.rimCool), { x: -0.05, y: -0.06, z: -0.16 });
 
     g.position.y = 0.02;
-    g.scale.setScalar(0.75);
+    g.scale.setScalar(0.6);
     return g;
 }
 
