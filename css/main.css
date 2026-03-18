@@ -1059,6 +1059,12 @@ canvas {
     align-items: center;
     z-index: 100;
     gap: 0;
+    overflow-y: auto;
+}
+
+#settings-screen {
+    justify-content: flex-start;
+    padding: 20px 0;
 }
 
 /* Title screen — most transparent to show ocean water */
@@ -1362,15 +1368,16 @@ canvas {
 .settings-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 14px;
     min-width: 320px;
-    max-width: 400px;
-    margin-bottom: 32px;
+    max-width: 520px;
+    width: 90vw;
+    margin-bottom: 20px;
     background: var(--pal-cream, #fff4d9);
     border: 4px solid var(--pal-ink, #1a1a1a);
     border-radius: 16px;
     box-shadow: 3px 4px 0px var(--pal-ink, #1a1a1a);
-    padding: 24px 28px;
+    padding: 18px 28px;
 }
 
 .setting-row {
@@ -2295,8 +2302,8 @@ canvas {
     opacity: 0.7;
     border-bottom: 2px dashed var(--pal-charcoal, #2d2b3d);
     padding-bottom: 4px;
-    margin-top: 12px;
-    margin-bottom: 8px;
+    margin-top: 4px;
+    margin-bottom: 2px;
     width: 100%;
     text-align: center;
 }
@@ -2305,7 +2312,7 @@ canvas {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 3px 0;
+    padding: 1px 0;
 }
 .keybind-label {
     font-family: 'Bangers', sans-serif;
@@ -2518,8 +2525,8 @@ body.gamepad-active * {
     font-size: 16px;
     color: var(--pal-gold, #ffd93d);
     letter-spacing: 2px;
-    margin-top: 12px;
-    padding-top: 8px;
+    margin-top: 4px;
+    padding-top: 4px;
     border-top: 2px solid rgba(255, 217, 61, 0.2);
 }
 
