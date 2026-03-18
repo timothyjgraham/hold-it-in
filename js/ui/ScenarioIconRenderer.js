@@ -94,38 +94,71 @@ function addWithOutline(group, geo, mat, pos, rot, scale) {
 function _buildOfficeModel() {
     const g = new THREE.Group();
 
-    // Building body
-    const bodyGeo = createRoundedBox(1.2, 1.0, 0.7, 0.06);
-    addWithOutline(g, bodyGeo, toonMat(PALETTE.tileDark), { y: 0.1 });
+    // === DESK ===
+    // Desktop surface
+    const deskTopGeo = createRoundedBox(1.0, 0.06, 0.55, 0.02);
+    addWithOutline(g, deskTopGeo, toonMat(PALETTE.wood), { y: -0.15 });
 
-    // Roof slab
-    const roofGeo = createRoundedBox(1.35, 0.12, 0.8, 0.04);
-    addWithOutline(g, roofGeo, toonMat(PALETTE.wall), { y: 0.68 });
-
-    // Base/carpet strip
-    const baseGeo = createRoundedBox(1.3, 0.08, 0.75, 0.03);
-    addWithOutline(g, baseGeo, toonMat(PALETTE.carpet), { y: -0.42 });
-
-    // 4 windows (2x2 grid)
-    const winGeo = createRoundedBox(0.22, 0.2, 0.05, 0.03);
-    const winMat = toonMat(PALETTE.wood);
-    for (const col of [-0.3, 0.3]) {
-        for (const row of [0.3, 0.0]) {
-            addWithOutline(g, winGeo, winMat, { x: col, y: row, z: 0.35 });
+    // Desk legs (4 corners)
+    const legGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.35, 6);
+    const legMat = toonMat(PALETTE.fixture);
+    for (const lx of [-0.44, 0.44]) {
+        for (const lz of [-0.22, 0.22]) {
+            addWithOutline(g, legGeo, legMat, { x: lx, y: -0.35, z: lz });
         }
     }
 
-    // Door
-    const doorGeo = createRoundedBox(0.24, 0.36, 0.05, 0.03);
-    addWithOutline(g, doorGeo, toonMat(PALETTE.wood), { y: -0.2, z: 0.35 });
+    // === MONITOR ===
+    // Screen bezel (dark frame)
+    const bezelGeo = createRoundedBox(0.48, 0.34, 0.03, 0.02);
+    addWithOutline(g, bezelGeo, toonMat(PALETTE.charcoal), { x: -0.05, y: 0.18 });
+
+    // Screen (bright, slightly recessed)
+    const screenGeo = createRoundedBox(0.42, 0.28, 0.01, 0.015);
+    addWithOutline(g, screenGeo, toonMat(PALETTE.airplaneWindow, { emissive: PALETTE.airplaneWindow, emissiveIntensity: 0.3 }),
+        { x: -0.05, y: 0.19, z: 0.018 });
+
+    // Monitor stand neck
+    const neckGeo = createRoundedBox(0.06, 0.16, 0.04, 0.01);
+    addWithOutline(g, neckGeo, toonMat(PALETTE.fixture), { x: -0.05, y: -0.03 });
+
+    // Monitor stand base
+    const standGeo = createRoundedBox(0.18, 0.025, 0.12, 0.01);
+    addWithOutline(g, standGeo, toonMat(PALETTE.fixture), { x: -0.05, y: -0.11 });
+
+    // === KEYBOARD ===
+    const kbGeo = createRoundedBox(0.3, 0.02, 0.1, 0.01);
+    addWithOutline(g, kbGeo, toonMat(PALETTE.tileDark), { x: -0.05, y: -0.1, z: 0.22 });
+
+    // === COFFEE MUG ===
+    const mugGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.1, 8);
+    addWithOutline(g, mugGeo, toonMat(PALETTE.white), { x: 0.35, y: -0.07 });
+
+    // Mug handle
+    const handleGeo = new THREE.TorusGeometry(0.03, 0.008, 6, 8, Math.PI);
+    addWithOutline(g, handleGeo, toonMat(PALETTE.white),
+        { x: 0.40, y: -0.06 }, { z: Math.PI / 2 });
+
+    // Coffee inside mug (dark circle on top)
+    const coffeeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.01, 8);
+    addWithOutline(g, coffeeGeo, toonMat(PALETTE.wood), { x: 0.35, y: -0.02 });
+
+    // === RESTROOM DOOR (behind desk, offset right) ===
+    // Door panel
+    const doorGeo = createRoundedBox(0.28, 0.52, 0.04, 0.02);
+    addWithOutline(g, doorGeo, toonMat(PALETTE.tileDark), { x: 0.42, y: 0.14, z: -0.28 });
+
+    // Door frame top
+    const frameGeo = createRoundedBox(0.34, 0.04, 0.06, 0.01);
+    addWithOutline(g, frameGeo, toonMat(PALETTE.wall), { x: 0.42, y: 0.42, z: -0.28 });
 
     // Door knob
-    const knobGeo = new THREE.SphereGeometry(0.03, 8, 6);
-    addWithOutline(g, knobGeo, toonMat(PALETTE.gold), { x: 0.08, y: -0.2, z: 0.4 });
+    const knobGeo = new THREE.SphereGeometry(0.025, 8, 6);
+    addWithOutline(g, knobGeo, toonMat(PALETTE.gold), { x: 0.32, y: 0.12, z: -0.24 });
 
-    // WC sign
-    const signGeo = createRoundedBox(0.18, 0.1, 0.02, 0.02);
-    addWithOutline(g, signGeo, toonMat(PALETTE.danger), { y: 0.08, z: 0.38 });
+    // WC sign on door
+    const signGeo = createRoundedBox(0.12, 0.07, 0.015, 0.01);
+    addWithOutline(g, signGeo, toonMat(PALETTE.danger), { x: 0.42, y: 0.30, z: -0.26 });
 
     g.position.y = -0.05;
     return g;
@@ -625,8 +658,8 @@ export function initScenarioIcons(canvasMap) {
     _renderer.setClearColor(0x000000, 0);
 
     // Shared camera
-    _camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    _camera.position.set(0, 0.3, 2.8);
+    _camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    _camera.position.set(0, 0.3, 3.2);
     _camera.lookAt(0, 0, 0);
 
     // Post-process canvases
