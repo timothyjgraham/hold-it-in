@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'ER GING IETS MIS',
+    'error.message':            'Er is een onverwachte fout opgetreden',
     'error.restart':            'HERSTARTEN',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────

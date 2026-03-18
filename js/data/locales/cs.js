@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'NĚCO SE POKAZILO',
+    'error.message':            'Došlo k neočekávané chybě',
     'error.restart':            'RESTARTOVAT',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────

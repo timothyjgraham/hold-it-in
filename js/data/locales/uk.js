@@ -163,6 +163,7 @@ export default {
 
     // --- ERROR ---
     'error.title':              'ЩОСЬ ПІШЛО НЕ ТАК',
+    'error.message':            'Сталася неочікувана помилка',
     'error.restart':            'ПЕРЕЗАПУСТИТИ',
 
     // --- TUTORIAL ---

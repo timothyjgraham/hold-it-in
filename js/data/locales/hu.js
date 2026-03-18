@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'VALAMI HIBA TÖRTÉNT',
+    'error.message':            'Váratlan hiba történt',
     'error.restart':            'ÚJRAINDÍTÁS',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────

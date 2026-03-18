@@ -29,8 +29,8 @@ export default {
     'scenario.airplane.name':   'O AVIÃO',
     'scenario.airplane.desc':   'Casa de banho nas alturas. Passageiros impacientes.',
 
-    'scenario.stat.bestWave':   'Melhor Vaga: {{n}}',
-    'scenario.stat.bestWaveNone': 'Melhor Vaga: --',
+    'scenario.stat.bestWave':   'Melhor Onda: {{n}}',
+    'scenario.stat.bestWaveNone': 'Melhor Onda: --',
     'scenario.stat.highScore':  'Pontuação Máxima: {{n}}',
     'scenario.stat.highScoreNone': 'Pontuação Máxima: --',
 
@@ -40,7 +40,7 @@ export default {
     'difficulty.hard':          'DIFÍCIL',
 
     // ─── HUD ─────────────────────────────────────────────────────────────
-    'hud.wave':                 'VAGA {{n}}',
+    'hud.wave':                 'ONDA {{n}}',
     'hud.pts':                  'PTS',
     'hud.demo':                 'DEMO',
 
@@ -80,7 +80,7 @@ export default {
 
     // ─── HOW TO PLAY ─────────────────────────────────────────────────────
     'howto.objective':          'OBJECTIVO',
-    'howto.objective_text':     'Defende a tua sanita das vagas de pessoas desesperadas colocando torres na grelha. Se chegarem à porta, perdes pontos de vida!',
+    'howto.objective_text':     'Defende a tua sanita das ondas de pessoas desesperadas colocando torres na grelha. Se chegarem à porta, perdes pontos de vida!',
     'howto.controls':           'CONTROLOS',
     'howto.tower.coinmagnet':   'Íman de Moedas',
     'howto.tower.wetfloor':     'Placa de Chão Molhado',
@@ -147,7 +147,7 @@ export default {
     // ─── GAME OVER ───────────────────────────────────────────────────────
     'gameover.title':           'OCUPADO',
     'gameover.subtitle':        'Arrombaram a porta!',
-    'gameover.stats':           'Sobreviveste até à Vaga {{wave}}<br>Pontuação: {{score}}<br>Inimigos repelidos: {{repelled}}',
+    'gameover.stats':           'Sobreviveste até à Onda {{wave}}<br>Pontuação: {{score}}<br>Inimigos repelidos: {{repelled}}',
     'gameover.tryAgain':        'TENTAR OUTRA VEZ',
     'gameover.mainMenu':        'MENU PRINCIPAL',
     'gameover.wishlist':        'LISTA DE DESEJOS NO STEAM',
@@ -155,13 +155,14 @@ export default {
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'VITÓRIA!',
     'victory.subtitle':         'Aguentaste!',
-    'victory.stats':            'Vagas Sobrevividas: {{wave}}<br>Pontuação: {{score}}<br>Inimigos Repelidos: {{repelled}}<br>Tempo: {{time}}',
+    'victory.stats':            'Ondas Sobrevividas: {{wave}}<br>Pontuação: {{score}}<br>Inimigos Repelidos: {{repelled}}<br>Tempo: {{time}}',
     'victory.playEndless':      'JOGAR MODO INFINITO',
     'victory.mainMenu':         'MENU PRINCIPAL',
     'victory.wishlist':         'ADICIONA O JOGO COMPLETO À LISTA DE DESEJOS',
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'ALGO CORREU MAL',
+    'error.message':            'Ocorreu um erro inesperado',
     'error.restart':            'REINICIAR',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -300,7 +301,7 @@ export default {
 
     // ─── SCENARIO UNLOCK REQUIREMENTS ────────────────────────────────────
     'unlock.demo':              'Disponível no jogo completo!',
-    'unlock.office_10':         'Alcança a Vaga 10 n\'O Escritório ({{n}}/10)',
+    'unlock.office_10':         'Alcança a Onda 10 n\'O Escritório ({{n}}/10)',
     'unlock.office_campaign':   'Completa a campanha d\'O Escritório',
     'unlock.campaigns_2':       'Completa 2 campanhas ({{n}}/2)',
 
@@ -621,14 +622,14 @@ export default {
     'upgrade.R22.desc':         'Vender uma torre reembolsa 100% do custo e aumenta permanentemente o dano das torres adjacentes em +10%',
     'upgrade.R23.desc':         'Escolhe 2 tipos de torre. Todas as outras são destruídas (reembolso total). Tipos escolhidos causam +60% dano e custam 30% menos.',
     'upgrade.R24.desc':         'Máx 6 torres no campo. Cada slot vazio dá +25% dano a todas as torres.',
-    'upgrade.R25.desc':         'Fim de cada vaga: ganha 5% das tuas moedas como bónus.',
+    'upgrade.R25.desc':         'Fim de cada onda: ganha 5% das tuas moedas como bónus.',
     'upgrade.R26.desc':         'Vender uma torre detona-a por 20 de dano (explosão de 5 unidades) e dá permanentemente +5% dano a todas as torres, mas reduz permanentemente HP da sanita em 5%.',
     'upgrade.R27.desc':         'Todas as torres atacam 40% mais rápido, mas recebem 2 de auto-dano por ataque.',
     'upgrade.R28.desc':         'Torres nas 3 filas da frente causam +50% dano. Torres nas filas de trás causam −30%.',
     'upgrade.R29.desc':         'Efeitos de abrandamento propagam-se a inimigos a 4 unidades de um inimigo abrandado (50% eficácia).',
     'upgrade.R30.desc':         'Quando um inimigo recebe dano, todos os inimigos a 4 unidades recebem 8% desse dano.',
-    'upgrade.R31.desc':         'Primeiros 3s de cada vaga: todas as torres causam 2,5× dano. Depois: −25% no restante.',
-    'upgrade.R32.desc':         'Torres ganham +4% dano por segundo que inimigos estão vivos (máx +50%). Reinicia cada vaga.',
+    'upgrade.R31.desc':         'Primeiros 3s de cada onda: todas as torres causam 2,5× dano. Depois: −25% no restante.',
+    'upgrade.R32.desc':         'Torres ganham +4% dano por segundo que inimigos estão vivos (máx +50%). Reinicia cada onda.',
     'upgrade.R33.desc':         'Acertos da esfregona encharcam inimigos — encharcados recebem ×1,5 dano de todas as fontes (4s). Por melhoria de esfregona: +0,1× (máx ×2,5).',
     'upgrade.R34.desc':         'Inimigos que tropeçam ficam Rachados — recebem ×1,4 dano de TODAS as fontes por 3s. Por melhoria de vaso: +0,15× mult. Vasos destruídos estilhaçam-se em 3 fragmentos.',
     'upgrade.R35.desc':         'Cada moeda recolhida aumenta dano de todas as torres +1% por 4s (acumula até +30%). Por melhoria de íman: +5% cap. Moedas também dão +0,5% velocidade de ataque (acumula até +15%).',
@@ -644,11 +645,11 @@ export default {
     'upgrade.L9.desc':          'Cada spray deixa uma zona persistente de 4 unidades (8s). DPS da zona = (1 + 1 por melhoria Ubik). Máx 5 por Ubik.',
     'upgrade.L10.desc':         'Ímanes de Moedas geram 1 moeda a cada (5 − 0,5 por melhoria de íman) segundos. Mín 2s.',
     'upgrade.L11.desc':         'Inimigos eliminados acumulam pressão por 2s e depois REBENTAM — 25% HP máx dano splash em 5 unidades, encadeia',
-    'upgrade.L12.desc':         'Primeiros 3s de cada vaga: torres a 2× velocidade, inimigos a 0,5× velocidade. Por melhoria de placa: +0,8s.',
+    'upgrade.L12.desc':         'Primeiros 3s de cada onda: torres a 2× velocidade, inimigos a 0,5× velocidade. Por melhoria de placa: +0,8s.',
     'upgrade.L13.desc':         'Se tiveres 4 ou menos torres, cada uma causa 2× dano',
     'upgrade.L14.desc':         'Por cada (50 − 4 por melhoria de íman, mín 25) moedas não gastas: todas as torres +10% dano. Máx +80%.',
     'upgrade.L15.desc':         'Quando uma torre elimina um inimigo, a torre mais próxima a 12 unidades dispara imediatamente (2s cooldown por torre)',
-    'upgrade.L16.desc':         'Ganhas 60 moedas imediatamente, mas bónus de vaga são reduzidos a metade pelo resto da corrida',
+    'upgrade.L16.desc':         'Ganhas 60 moedas imediatamente, mas bónus de onda são reduzidos a metade pelo resto da corrida',
     'upgrade.L17.desc':         'Torres numa fila recta ganham +20% dano por torre adjacente na linha',
     'upgrade.L18.desc':         'Torres com 1 HP causam 3× dano e atacam 50% mais rápido',
 

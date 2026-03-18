@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'COŚ POSZŁO NIE TAK',
+    'error.message':            'Wystąpił nieoczekiwany błąd',
     'error.restart':            'RESTART',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -260,7 +261,7 @@ export default {
     'coordinated.office.4':     'Cały zespół musi iść... TERAZ!',
 
     // ─── COORDINATED WALL MESSAGES (FOREST) ──────────────────────────────
-    'coordinated.forest.0':    'Stado porusza się jednogłośnie!',
+    'coordinated.forest.0':    'Stado porusza się jak jedno!',
     'coordinated.forest.1':    'Wszyscy zjedli te same jagody!',
     'coordinated.forest.2':    'Instynkt stada... do wychodka!',
     'coordinated.forest.3':    'Natura wzywa... cały las odpowiada!',
@@ -551,7 +552,7 @@ export default {
     'upgrade.R29.name':         'Zaraza',
     'upgrade.R30.name':         'Obrażenia Współczulne',
     'upgrade.R31.name':         'Obrona w Szczycie',
-    'upgrade.R32.name':         'Atrytacja',
+    'upgrade.R32.name':         'Wyczerpanie',
     'upgrade.R33.name':         'Związek Hydraulików',
     'upgrade.R34.name':         'Armia Terakotowa',
     'upgrade.R35.name':         'Drukarka Pieniędzy',

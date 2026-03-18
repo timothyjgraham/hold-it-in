@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'QUELQUE CHOSE A MAL TOURNÉ',
+    'error.message':            'Une erreur inattendue s\'est produite',
     'error.restart':            'REDÉMARRER',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -232,7 +233,7 @@ export default {
     'wave.event.forest.fullMoon':       'FOLIE DE PLEINE LUNE !',
     'wave.event.forest.fire':           'FEU DE FORÊT — FUYEZ TOUS !',
     'wave.event.forest.hibernation':    'DERNIÈRE CHANCE AVANT L\'HIBERNATION !',
-    'wave.event.forest.stampede':       'STAMPEDE !',
+    'wave.event.forest.stampede':       'RUÉE SAUVAGE !',
 
     // ─── WAVE EVENTS (OCEAN) ─────────────────────────────────────────────
     'wave.event.ocean.feeding':         'FRÉNÉSIE ALIMENTAIRE !',
@@ -474,7 +475,7 @@ export default {
     'enemy.frog.t2':            'S\'accroupit puis SE PROPULSE',
     'enemy.frog.t3':            'Pattes palmées = aucun problème d\'adhérence',
 
-    'enemy.hurdler.name':       'LE HURDLER',
+    'enemy.hurdler.name':       'LE COUREUR DE HAIES',
     'enemy.hurdler.tag':        'À vos marques... prêts...',
     'enemy.hurdler.t1':         'Franchissement classique par-dessus chaque tour',
     'enemy.hurdler.t2':         'Dossard de course et pointes',

@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              '發生錯誤',
+    'error.message':            '發生了意外錯誤',
     'error.restart':            '重新開始',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -281,7 +282,7 @@ export default {
     'coordinated.airplane.4':  '亂流之後，所有人都得去了！',
 
     // ─── CANVAS SPRITE TEXT ──────────────────────────────────────────────
-    'canvas.sold':              'SOLD!',
+    'canvas.sold':              '已售！',
     'canvas.sellPreview':       '賣出 +{{n}}',
     'canvas.fullHeal':          '完全恢復！',
     'canvas.curse':             '@#$%!',

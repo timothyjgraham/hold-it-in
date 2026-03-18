@@ -154,7 +154,7 @@ export default {
     'gameover.wishlist':        "STEAM'DE İSTEK LİSTESİNE EKLE",
 
     // --- VICTORY ---
-    'victory.title':            'ZAFERİ!',
+    'victory.title':            'ZAFER!',
     'victory.subtitle':         'Tuttun!',
     'victory.stats':            'Hayatta Kalınan Dalgalar: {{wave}}<br>Puan: {{score}}<br>Püskürtülen Düşmanlar: {{repelled}}<br>Süre: {{time}}',
     'victory.playEndless':      'SONSUZ MODU OYNA',
@@ -163,6 +163,7 @@ export default {
 
     // --- ERROR ---
     'error.title':              'BİR ŞEYLER YANLIŞ GİTTİ',
+    'error.message':            'Beklenmeyen bir hata oluştu',
     'error.restart':            'YENİDEN BAŞLAT',
 
     // --- TUTORIAL ---
@@ -210,7 +211,7 @@ export default {
     'wave.intro.ocean.9':       ' — KADİM BİR KABUK YAKLAŞIYOR...',
     'wave.intro.ocean.10':      ' — SU PARLIYOR!',
 
-    'wave.intro.airplane.3':    ' — BUSİNESS CLASS GELİYOR!',
+    'wave.intro.airplane.3':    ' — BUSINESS CLASS GELİYOR!',
     'wave.intro.airplane.5':    ' — BİRİ BALIĞI YEDİ...',
     'wave.intro.airplane.7':    ' — HOSTES YAKLAŞIYOR!',
     'wave.intro.airplane.8':    ' — İÇECEK ARABASI GELİYOR!',
@@ -240,7 +241,7 @@ export default {
     'wave.event.ocean.tidal':           'GELGİT DALGASI GELİYOR!',
     'wave.event.ocean.bloodMoon':       'KAN AYI GELGİTİ!',
     'wave.event.ocean.pirate':          'KORSAN DONANMASI SALDIRIYOR!',
-    'wave.event.ocean.kraken':          'KRAKEN DERİNLERDE KIPIĞRDANIYOR!',
+    'wave.event.ocean.kraken':          'KRAKEN DERİNLERDE KIPIRDANIYOR!',
     'wave.event.ocean.maelstrom':       'ANAFOR!',
 
     // --- WAVE EVENTS (AIRPLANE) ---
@@ -420,7 +421,7 @@ export default {
     'enemy.seahorse.t3':        'Nazik ama inatçı',
 
     // Airplane enemies
-    'enemy.business.name':      'BUSİNESS CLASS',
+    'enemy.business.name':      'BUSINESS CLASS',
     'enemy.business.tag':       'Takım elbiseye dokunma.',
     'enemy.business.t1':        'İtilip kakılmayı kabul etmez',
     'enemy.business.t2':        'Paspas mı? Lütfen.',

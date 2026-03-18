@@ -162,6 +162,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'エラーが発生しました',
+    'error.message':            '予期しないエラーが発生しました',
     'error.restart':            'リスタート',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -188,7 +189,7 @@ export default {
     'wave.airplaneHint':        'この飛行機には両面アクセスのトイレが装備されています。最高の利便性のために',
 
     // ─── WAVE INTRO SUBTITLES ────────────────────────────────────────────
-    'wave.intro.office.3':      '— 踊ってるぞ！',
+    'wave.intro.office.3':      ' — 踊ってるぞ！',
     'wave.intro.office.5':      ' — 何か大きいのが来る…',
     'wave.intro.office.7':      ' — 誰かパニックだ！',
     'wave.intro.office.8':      ' — コンガライン！',

@@ -163,6 +163,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              '出错了',
+    'error.message':            '发生了意外错误',
     'error.restart':            '重新开始',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────
@@ -282,7 +283,7 @@ export default {
     'coordinated.airplane.4':  '遇到颠簸后他们全都要去了！',
 
     // ─── CANVAS SPRITE TEXT ──────────────────────────────────────────────
-    'canvas.sold':              'SOLD!',
+    'canvas.sold':              '已售！',
     'canvas.sellPreview':       '出售 +{{n}}',
     'canvas.fullHeal':          '满血恢复！',
     'canvas.curse':             '@#$%!',

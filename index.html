@@ -637,7 +637,7 @@
     window.addEventListener('unhandledrejection', function(e) {
         const overlay = document.getElementById('error-overlay');
         if (overlay) {
-            document.getElementById('error-message').textContent = e.reason?.message || 'An unexpected error occurred';
+            document.getElementById('error-message').textContent = e.reason?.message || t('error.message');
             overlay.style.display = 'flex';
         }
     });
@@ -2912,11 +2912,11 @@
                         this._showConfirm(
                             req,
                             () => startScenario('office'),
-                            'PLAY THE OFFICE',
-                            'BACK'
+                            t('confirm.playOffice'),
+                            t('confirm.back')
                         );
                     } else {
-                        this._showConfirm(req, () => {}, 'OK', '');
+                        this._showConfirm(req, () => {}, t('confirm.ok'), '');
                     }
                     return;
                 }
@@ -3417,8 +3417,8 @@
                     tipCost.textContent = sellBtn.dataset.tipCost || '';
                     const hasFullRefund = this.upgradeManager && this.upgradeManager.hasUpgrade('R22');
                     tipDesc.textContent = hasFullRefund
-                        ? 'Click a placed tower to sell it (100% refund!)'
-                        : 'Click a placed tower to sell it (40% refund)';
+                        ? t('tower.sell.descRecycler')
+                        : t('tower.sell.descNormal');
                     const tipStats = tooltip.querySelector('.tip-stats');
                     if (tipStats) tipStats.innerHTML = '';
                     const rect = sellBtn.getBoundingClientRect();
@@ -5505,12 +5505,12 @@
             yesBtn.parentNode.replaceChild(newYes, yesBtn);
             noBtn.parentNode.replaceChild(newNo, noBtn);
 
-            newYes.textContent = yesLabel || 'YES';
+            newYes.textContent = yesLabel || t('confirm.yes');
             if (noLabel === '') {
                 newNo.style.display = 'none';
             } else {
                 newNo.style.display = '';
-                newNo.textContent = noLabel || 'CANCEL';
+                newNo.textContent = noLabel || t('confirm.cancel');
             }
 
             newYes.addEventListener('click', () => {
@@ -7121,13 +7121,13 @@
 
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'devotion-card-name';
-                nameDiv.textContent = def.name;
+                nameDiv.textContent = t('tower.' + type + '.name');
 
                 const statsDiv = document.createElement('div');
                 statsDiv.className = 'devotion-card-stats';
                 const costMult = this.upgradeManager ? this.upgradeManager.getModifier('towerCostMult') : 1.0;
                 const baseCost = Math.max(5, Math.floor(def.cost * costMult));
-                statsDiv.textContent = `Cost: ${baseCost}`;
+                statsDiv.textContent = t('game.cost', { n: baseCost });
 
                 card.appendChild(iconDiv);
                 card.appendChild(nameDiv);

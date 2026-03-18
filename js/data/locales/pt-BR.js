@@ -163,6 +163,7 @@ export default {
 
     // ─── ERROR ───────────────────────────────────────────────────────────
     'error.title':              'ALGO DEU ERRADO',
+    'error.message':            'Ocorreu um erro inesperado',
     'error.restart':            'REINICIAR',
 
     // ─── TUTORIAL ────────────────────────────────────────────────────────

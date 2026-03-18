@@ -163,6 +163,7 @@ export default {
 
     // --- ERROR ---
     'error.title':              'เกิดข้อผิดพลาด',
+    'error.message':            'เกิดข้อผิดพลาดที่ไม่คาดคิด',
     'error.restart':            'เริ่มใหม่',
 
     // --- TUTORIAL ---
@@ -438,7 +439,7 @@ export default {
     'enemy.attendant.t2':       'สเปรย์? พวกเขาเจอแย่กว่านี้ทุกวัน',
     'enemy.attendant.t3':       'กระโดดข้ามสิ่งกีดขวางเหมือนมืออาชีพ',
 
-    'enemy.marshal.name':       'จอมพลอากาศ',
+    'enemy.marshal.name':       'เจ้าหน้าที่รักษาความปลอดภัย',
     'enemy.marshal.tag':        'ตราออกมาแล้ว กระเพาะปัสสาวะเต็ม',
     'enemy.marshal.t1':         'ชะลอไม่ได้',
     'enemy.marshal.t2':         'ยึดแม่เหล็กเหรียญของคุณ',
