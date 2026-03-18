@@ -7,6 +7,7 @@
 import { PALETTE } from '../data/palette.js';
 import { CONFIG } from '../data/config.js';
 import { toonMat } from '../shaders/toonMaterials.js';
+import { t } from '../i18n.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export class GamepadManager {
         window.addEventListener('gamepadconnected', (e) => {
             this._gamepadIndex = e.gamepad.index;
             this._controllerType = this._detectType(e.gamepad.id);
-            this._showToast(`${this._controllerLabel()} Connected`);
+            this._showToast(t('gamepad.connected.' + this._controllerType));
             this._switchMode('gamepad');
         });
 
@@ -123,7 +124,7 @@ export class GamepadManager {
             if (e.gamepad.index === this._gamepadIndex) {
                 this._gamepadIndex = -1;
                 this._switchMode('mouse');
-                this._showToast('Controller Disconnected');
+                this._showToast(t('gamepad.disconnected'));
             }
         });
 
@@ -828,57 +829,57 @@ export class GamepadManager {
                 const game = this._game;
                 if (game._sellMode) {
                     prompts = [
-                        { icon: icons[BTN.A], label: 'SELL' },
-                        { icon: icons[BTN.B], label: 'EXIT SELL' },
-                        { icon: icons[BTN.Y], label: 'SELL MODE' },
+                        { icon: icons[BTN.A], label: t('gamepad.sell') },
+                        { icon: icons[BTN.B], label: t('gamepad.exitSell') },
+                        { icon: icons[BTN.Y], label: t('gamepad.sellMode') },
                     ];
                 } else if (game.selectedTower) {
                     prompts = [
-                        { icon: icons[BTN.A], label: 'PLACE' },
-                        { icon: icons[BTN.B], label: 'DESELECT' },
-                        { icon: icons[BTN.Y], label: 'SELL MODE' },
-                        { icon: icons[BTN.LB], label: 'PREV' },
-                        { icon: icons[BTN.RB], label: 'NEXT' },
+                        { icon: icons[BTN.A], label: t('gamepad.place') },
+                        { icon: icons[BTN.B], label: t('gamepad.deselect') },
+                        { icon: icons[BTN.Y], label: t('gamepad.sellMode') },
+                        { icon: icons[BTN.LB], label: t('gamepad.prev') },
+                        { icon: icons[BTN.RB], label: t('gamepad.next') },
                     ];
                 } else {
                     prompts = [
-                        { icon: icons[BTN.Y], label: 'SELL MODE' },
-                        { icon: icons[BTN.LB], label: 'PREV' },
-                        { icon: icons[BTN.RB], label: 'NEXT' },
+                        { icon: icons[BTN.Y], label: t('gamepad.sellMode') },
+                        { icon: icons[BTN.LB], label: t('gamepad.prev') },
+                        { icon: icons[BTN.RB], label: t('gamepad.next') },
                     ];
                 }
-                prompts.push({ icon: icons[BTN.START], label: 'PAUSE' });
+                prompts.push({ icon: icons[BTN.START], label: t('gamepad.pause') });
                 break;
             }
             case 'menu':
                 prompts = [
-                    { icon: icons[BTN.A], label: 'SELECT' },
-                    { icon: icons[BTN.B], label: 'BACK' },
-                    { icon: icons.dpad, label: 'NAVIGATE' },
+                    { icon: icons[BTN.A], label: t('gamepad.select') },
+                    { icon: icons[BTN.B], label: t('gamepad.back') },
+                    { icon: icons.dpad, label: t('gamepad.navigate') },
                 ];
                 break;
             case 'upgrade':
                 prompts = [
-                    { icon: icons[BTN.A], label: 'SELECT' },
-                    { icon: icons.dpad, label: 'CHOOSE' },
+                    { icon: icons[BTN.A], label: t('gamepad.select') },
+                    { icon: icons.dpad, label: t('gamepad.choose') },
                 ];
                 break;
             case 'pause':
                 prompts = [
-                    { icon: icons[BTN.A], label: 'SELECT' },
-                    { icon: icons[BTN.B], label: 'BACK' },
-                    { icon: icons[BTN.START], label: 'RESUME' },
+                    { icon: icons[BTN.A], label: t('gamepad.select') },
+                    { icon: icons[BTN.B], label: t('gamepad.back') },
+                    { icon: icons[BTN.START], label: t('gamepad.resume') },
                 ];
                 break;
             case 'intro':
                 prompts = [
-                    { icon: icons[BTN.A], label: 'CONTINUE' },
+                    { icon: icons[BTN.A], label: t('gamepad.continue') },
                 ];
                 break;
             case 'confirm':
                 prompts = [
-                    { icon: icons[BTN.A], label: 'CONFIRM' },
-                    { icon: icons[BTN.B], label: 'CANCEL' },
+                    { icon: icons[BTN.A], label: t('gamepad.confirm') },
+                    { icon: icons[BTN.B], label: t('gamepad.cancel') },
                 ];
                 break;
         }

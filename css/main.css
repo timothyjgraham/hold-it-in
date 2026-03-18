@@ -1,6 +1,104 @@
 /* ===== GOOGLE FONT ===== */
 @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
+/* ===== NON-LATIN FONT FACES (self-hosted subsets) ===== */
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('/fonts/NotoSans-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans SC';
+    src: url('/fonts/NotoSansSC-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans SC';
+    src: url('/fonts/NotoSansSC-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans TC';
+    src: url('/fonts/NotoSansTC-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans TC';
+    src: url('/fonts/NotoSansTC-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans JP';
+    src: url('/fonts/NotoSansJP-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans JP';
+    src: url('/fonts/NotoSansJP-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans KR';
+    src: url('/fonts/NotoSansKR-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans KR';
+    src: url('/fonts/NotoSansKR-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans Thai';
+    src: url('/fonts/NotoSansThai-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Noto Sans Thai';
+    src: url('/fonts/NotoSansThai-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===== PER-LANGUAGE FONT OVERRIDES ===== */
+body.lang-zh-CN { font-family: 'Noto Sans SC', sans-serif; }
+body.lang-zh-TW { font-family: 'Noto Sans TC', sans-serif; }
+body.lang-ja    { font-family: 'Noto Sans JP', sans-serif; }
+body.lang-ko    { font-family: 'Noto Sans KR', sans-serif; }
+body.lang-ru,
+body.lang-uk    { font-family: 'Noto Sans', sans-serif; }
+body.lang-th    { font-family: 'Noto Sans Thai', sans-serif; }
+
+/* Game title always stays in Bangers regardless of language */
+.title-logo, .splash-title, #pause-text { font-family: 'Bangers', sans-serif !important; }
+
 * {
     margin: 0;
     padding: 0;
@@ -2330,6 +2428,25 @@ canvas {
     background: #ff6b7a;
     color: var(--pal-ink, #1a1a2e);
 }
+/* ===== LANGUAGE SELECTOR ===== */
+.language-selector-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+.lang-display {
+    min-width: 180px;
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 1px;
+}
+.lang-prev, .lang-next {
+    min-width: 36px;
+    font-size: 18px;
+    padding: 4px 10px;
+}
+
 .scenario-difficulty-row {
     display: flex;
     align-items: center;

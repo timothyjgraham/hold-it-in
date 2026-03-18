@@ -12,7 +12,7 @@
     <!-- Splash / Loading Screen -->
     <div id="splash-screen" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--pal-charcoal,#2d2b3d); z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; transition:opacity 0.5s;">
         <h1 class="title-logo" style="margin-bottom:0;">HOLD IT IN</h1>
-        <div style="font-family:'Bangers',sans-serif; font-size:22px; color:#fff; letter-spacing:3px; opacity:0.7;">Your toilet. Your rules.</div>
+        <div data-i18n="splash.tagline" style="font-family:'Bangers',sans-serif; font-size:22px; color:#fff; letter-spacing:3px; opacity:0.7;">Your toilet. Your rules.</div>
         <div class="splash-dots" style="font-family:'Bangers',sans-serif; font-size:36px; color:var(--pal-gold,#ffd93d); letter-spacing:8px; margin-top:20px;">
             <span style="animation:splash-dot-blink 1.4s ease-in-out infinite;">.</span><span style="animation:splash-dot-blink 1.4s ease-in-out 0.2s infinite;">.</span><span style="animation:splash-dot-blink 1.4s ease-in-out 0.4s infinite;">.</span>
         </div>
@@ -107,11 +107,11 @@
                 </svg>
                 <div class="badge-content">
                     <span class="value" id="score-display">0</span>
-                    <span class="icon">PTS</span>
+                    <span class="icon" data-i18n="hud.pts">PTS</span>
                 </div>
             </div>
         </div>
-        <span id="difficulty-badge" class="difficulty-badge">NORMAL</span>
+        <span id="difficulty-badge" class="difficulty-badge" data-i18n="difficulty.normal">NORMAL</span>
     </div>
 
     <!-- Wave badge (positioned above door in 3D) -->
@@ -126,74 +126,80 @@
     <!-- Pause Overlay -->
     <div id="pause-overlay">
         <div id="pause-content">
-            <div id="pause-text">PAUSED</div>
+            <div id="pause-text" data-i18n="pause.title">PAUSED</div>
             <div id="pause-buttons">
-                <button class="menu-btn" id="btn-resume">RESUME</button>
-                <button class="menu-btn menu-btn-small" id="btn-pause-settings">SETTINGS</button>
-                <button class="menu-btn menu-btn-small" id="btn-pause-howto">HOW TO PLAY</button>
-                <button class="menu-btn menu-btn-small" id="btn-save-quit">SAVE &amp; QUIT</button>
-                <button class="menu-btn menu-btn-small" id="btn-save-menu">SAVE &amp; MAIN MENU</button>
-                <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save">QUIT WITHOUT SAVING</button>
+                <button class="menu-btn" id="btn-resume" data-i18n="pause.resume">RESUME</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-settings" data-i18n="pause.settings">SETTINGS</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-howto" data-i18n="pause.howto">HOW TO PLAY</button>
+                <button class="menu-btn menu-btn-small" id="btn-save-quit" data-i18n="pause.saveQuit">SAVE &amp; QUIT</button>
+                <button class="menu-btn menu-btn-small" id="btn-save-menu" data-i18n="pause.saveMenu">SAVE &amp; MAIN MENU</button>
+                <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save" data-i18n="pause.quitNoSave">QUIT WITHOUT SAVING</button>
             </div>
             <div id="pause-settings" style="display:none;">
-                <h2 class="screen-title" style="margin-top:0;">SETTINGS</h2>
+                <h2 class="screen-title" style="margin-top:0;" data-i18n="settings.title">SETTINGS</h2>
                 <div class="settings-list">
                     <div class="setting-row">
-                        <span class="setting-label">MUSIC</span>
+                        <span class="setting-label" data-i18n="settings.music">MUSIC</span>
                         <input type="range" class="setting-slider" id="pause-slider-music" min="0" max="100" value="70">
                         <span class="setting-value" id="pause-val-music">70%</span>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">SFX</span>
+                        <span class="setting-label" data-i18n="settings.sfx">SFX</span>
                         <input type="range" class="setting-slider" id="pause-slider-sfx" min="0" max="100" value="80">
                         <span class="setting-value" id="pause-val-sfx">80%</span>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">SCREEN SHAKE</span>
+                        <span class="setting-label" data-i18n="settings.screenShake">SCREEN SHAKE</span>
                         <label class="setting-toggle">
                             <input type="checkbox" id="pause-toggle-shake" checked>
                             <span class="toggle-track"></span>
                         </label>
                     </div>
-                    <div class="setting-section-header-controller">CONTROLLER</div>
+                    <div class="setting-section-header-controller" data-i18n="settings.controller">CONTROLLER</div>
                     <div class="setting-row">
-                        <span class="setting-label">STICK SENSITIVITY</span>
+                        <span class="setting-label" data-i18n="settings.stickSens">STICK SENSITIVITY</span>
                         <input type="range" class="setting-slider" id="pause-slider-gp-sensitivity" min="1" max="10" value="5" step="1">
                         <span class="setting-value" id="pause-val-gp-sensitivity">5</span>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">DEADZONE</span>
+                        <span class="setting-label" data-i18n="settings.deadzone">DEADZONE</span>
                         <input type="range" class="setting-slider" id="pause-slider-gp-deadzone" min="5" max="30" value="15" step="1">
                         <span class="setting-value" id="pause-val-gp-deadzone">15%</span>
                     </div>
                     <div class="setting-row">
-                        <span class="setting-label">VIBRATION</span>
+                        <span class="setting-label" data-i18n="settings.vibration">VIBRATION</span>
                         <label class="setting-toggle">
                             <input type="checkbox" id="pause-toggle-gp-vibration" checked>
                             <span class="toggle-track"></span>
                         </label>
                     </div>
+                    <div class="setting-section-header" data-i18n="settings.language">LANGUAGE</div>
+                    <div class="setting-row language-selector-row">
+                        <button class="diff-btn lang-prev" id="pause-lang-prev">◀</button>
+                        <span class="lang-display" id="pause-lang-display">English</span>
+                        <button class="diff-btn lang-next" id="pause-lang-next">▶</button>
+                    </div>
                 </div>
-                <button class="menu-btn menu-btn-small" id="btn-pause-settings-back">BACK</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-settings-back" data-i18n="settings.back">BACK</button>
             </div>
             <div id="pause-howto" style="display:none;">
                 <div class="howto-panel">
-                    <div class="howto-heading">OBJECTIVE</div>
-                    <div class="howto-text">Defend your toilet from waves of desperate people by placing towers on the grid. If they reach the door, you lose HP!</div>
-                    <div class="howto-heading" style="margin-top:12px;">CONTROLS</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-tower1">1</span> Coin Magnet</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-tower2">2</span> Wet Floor Sign</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-tower3">3</span> Mop Turret</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-tower4">4</span> Ubik Spray</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-tower5">5</span> Pot Plant</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-sell">X</span> Sell Mode</div>
-                    <div class="howto-key-row"><span class="howto-key" id="howto-pause">SPACE</span> Pause</div>
-                    <div class="howto-key-row"><span class="howto-key">CLICK</span> Place / Sell Tower</div>
-                    <div class="howto-key-row"><span class="howto-key">R-CLICK</span> Cancel Selection</div>
-                    <div class="howto-heading" style="margin-top:12px;">TIPS</div>
-                    <div class="howto-text">Combine towers for maximum effect — Signs slow enemies into Mop range. Sell towers you don't need to recoup coins!</div>
+                    <div class="howto-heading" data-i18n="howto.objective">OBJECTIVE</div>
+                    <div class="howto-text" data-i18n="howto.objective_text">Defend your toilet from waves of desperate people by placing towers on the grid. If they reach the door, you lose HP!</div>
+                    <div class="howto-heading" style="margin-top:12px;" data-i18n="howto.controls">CONTROLS</div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower1">1</span> <span data-i18n="howto.tower.coinmagnet">Coin Magnet</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower2">2</span> <span data-i18n="howto.tower.wetfloor">Wet Floor Sign</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower3">3</span> <span data-i18n="howto.tower.mop">Mop Turret</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower4">4</span> <span data-i18n="howto.tower.ubik">Ubik Spray</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-tower5">5</span> <span data-i18n="howto.tower.potplant">Pot Plant</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-sell">X</span> <span data-i18n="howto.tower.sell">Sell Mode</span></div>
+                    <div class="howto-key-row"><span class="howto-key" id="howto-pause">SPACE</span> <span data-i18n="howto.tower.pause">Pause</span></div>
+                    <div class="howto-key-row"><span class="howto-key">CLICK</span> <span data-i18n="howto.placeSell">Place / Sell Tower</span></div>
+                    <div class="howto-key-row"><span class="howto-key">R-CLICK</span> <span data-i18n="howto.cancel">Cancel Selection</span></div>
+                    <div class="howto-heading" style="margin-top:12px;" data-i18n="howto.tips">TIPS</div>
+                    <div class="howto-text" data-i18n="howto.tips_text">Combine towers for maximum effect — Signs slow enemies into Mop range. Sell towers you don't need to recoup coins!</div>
                 </div>
-                <button class="menu-btn menu-btn-small" id="btn-pause-howto-back" style="margin-top:12px;">BACK</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-howto-back" style="margin-top:12px;" data-i18n="settings.back">BACK</button>
             </div>
         </div>
     </div>
@@ -202,7 +208,8 @@
     <div id="tower-panel">
         <div class="tower-btn" data-tower="coinmagnet"
              data-tip-name="Coin Magnet" data-tip-cost="15"
-             data-tip-desc="Auto-collects dropped coins in range. Fragile!">
+             data-tip-desc="Auto-collects dropped coins in range. Fragile!"
+             data-i18n-tip-name="tower.coinmagnet.name" data-i18n-tip-desc="tower.coinmagnet.desc">
             <span class="hotkey">1</span>
             <div class="tower-icon">
                 <!-- Horseshoe magnet with coin jar -->
@@ -220,7 +227,8 @@
         </div>
         <div class="tower-btn" data-tower="wetfloor"
              data-tip-name="Wet Floor Sign" data-tip-cost="20"
-             data-tip-desc="Slows enemies to 40% speed. Tough plastic!">
+             data-tip-desc="Slows enemies to 40% speed. Tough plastic!"
+             data-i18n-tip-name="tower.wetfloor.name" data-i18n-tip-desc="tower.wetfloor.desc">
             <span class="hotkey">2</span>
             <div class="tower-icon">
                 <!-- A-frame caution sign with ! -->
@@ -234,7 +242,8 @@
         </div>
         <div class="tower-btn" data-tower="mop"
              data-tip-name="Mop Turret" data-tip-cost="30"
-             data-tip-desc="Sweeping crowd control. Low damage, big knockback!">
+             data-tip-desc="Sweeping crowd control. Low damage, big knockback!"
+             data-i18n-tip-name="tower.mop.name" data-i18n-tip-desc="tower.mop.desc">
             <span class="hotkey">3</span>
             <div class="tower-icon">
                 <!-- Mop in bucket -->
@@ -252,7 +261,8 @@
         </div>
         <div class="tower-btn" data-tower="ubik"
              data-tip-name="Ubik Spray" data-tip-cost="40"
-             data-tip-desc="Long-range spray hits all enemies in cone. Area damage!">
+             data-tip-desc="Long-range spray hits all enemies in cone. Area damage!"
+             data-i18n-tip-name="tower.ubik.name" data-i18n-tip-desc="tower.ubik.desc">
             <span class="hotkey">4</span>
             <div class="tower-icon">
                 <!-- Spray can -->
@@ -269,7 +279,8 @@
         </div>
         <div class="tower-btn" data-tower="potplant"
              data-tip-name="Pot Plant" data-tip-cost="10"
-             data-tip-desc="Cheap trip hazard. Gets kicked into enemies on contact!">
+             data-tip-desc="Cheap trip hazard. Gets kicked into enemies on contact!"
+             data-i18n-tip-name="tower.potplant.name" data-i18n-tip-desc="tower.potplant.desc">
             <span class="hotkey">5</span>
             <div class="tower-icon">
                 <!-- Potted plant -->
@@ -287,7 +298,8 @@
         <div class="tower-panel-divider"></div>
         <div class="tower-btn sell-btn" id="sell-btn"
              data-tip-name="Sell Tower" data-tip-cost=""
-             data-tip-desc="Click a placed tower to sell it for coins!">
+             data-tip-desc="Click a placed tower to sell it for coins!"
+             data-i18n-tip-name="tower.sell.name" data-i18n-tip-desc="tower.sell.desc">
             <span class="hotkey">X</span>
             <div class="tower-icon">
                 <!-- Wrecking ball / demolish icon -->
@@ -309,7 +321,7 @@
                 <circle cx="8" cy="8" r="7" fill="#ffd93d" stroke="#1a1a2e" stroke-width="1.5"/>
                 <text x="8" y="11.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a1a2e" font-family="sans-serif">$</text>
             </svg>
-            <span class="tip-cost"></span> coins
+            <span class="tip-cost"></span> <span data-i18n="tower.tooltip.coins">coins</span>
         </div>
         <div class="tip-stats"></div>
         <div class="tip-desc"></div>
@@ -320,29 +332,29 @@
     <!-- Main Title Screen -->
     <div id="title-screen" class="menu-screen">
         <h1 class="title-logo">HOLD IT IN</h1>
-        <div class="tagline">Your toilet. Your rules.</div>
+        <div class="tagline" data-i18n="splash.tagline">Your toilet. Your rules.</div>
         <div class="menu-buttons">
-            <button class="menu-btn" id="btn-campaign">CAMPAIGN</button>
-            <button class="menu-btn" id="btn-endless">ENDLESS MODE</button>
-            <button class="menu-btn menu-btn-small" id="btn-collection">COLLECTION</button>
-            <button class="menu-btn menu-btn-small" id="btn-settings">SETTINGS</button>
-            <button class="menu-btn menu-btn-small" id="btn-credits">CREDITS</button>
+            <button class="menu-btn" id="btn-campaign" data-i18n="title.campaign">CAMPAIGN</button>
+            <button class="menu-btn" id="btn-endless" data-i18n="title.endless">ENDLESS MODE</button>
+            <button class="menu-btn menu-btn-small" id="btn-collection" data-i18n="title.collection">COLLECTION</button>
+            <button class="menu-btn menu-btn-small" id="btn-settings" data-i18n="title.settings">SETTINGS</button>
+            <button class="menu-btn menu-btn-small" id="btn-credits" data-i18n="title.credits">CREDITS</button>
         </div>
         <a class="wishlist-btn demo-only" id="btn-wishlist-title" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
             <svg class="wishlist-icon" viewBox="0 0 24 24" width="22" height="22"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
-            WISHLIST ON STEAM
+            <span data-i18n="title.wishlist">WISHLIST ON STEAM</span>
         </a>
     </div>
 
     <!-- Scenario Select Screen (shared by campaign & endless) -->
     <div id="scenario-screen" class="menu-screen" style="display:none;">
-        <h2 class="screen-title" id="scenario-screen-title">CAMPAIGN</h2>
+        <h2 class="screen-title" id="scenario-screen-title" data-i18n="scenario.title.campaign">CAMPAIGN</h2>
         <div class="scenario-difficulty-row">
-            <span class="setting-label">DIFFICULTY</span>
+            <span class="setting-label" data-i18n="scenario.difficulty">DIFFICULTY</span>
             <div class="difficulty-selector" id="diff-selector-scenario">
-                <button class="diff-btn" data-diff="easy">EASY</button>
-                <button class="diff-btn active" data-diff="normal">NORMAL</button>
-                <button class="diff-btn" data-diff="hard">HARD</button>
+                <button class="diff-btn" data-diff="easy" data-i18n="difficulty.easy">EASY</button>
+                <button class="diff-btn active" data-diff="normal" data-i18n="difficulty.normal">NORMAL</button>
+                <button class="diff-btn" data-diff="hard" data-i18n="difficulty.hard">HARD</button>
             </div>
         </div>
         <div class="scenario-grid">
@@ -352,13 +364,13 @@
                     <div class="scenario-icon">
                         <canvas id="scenario-canvas-office" width="256" height="256"></canvas>
                     </div>
-                    <div class="scenario-name">THE OFFICE</div>
-                    <div class="scenario-desc">Corporate bathroom. Desperate coworkers.</div>
+                    <div class="scenario-name" data-i18n="scenario.office.name">THE OFFICE</div>
+                    <div class="scenario-desc" data-i18n="scenario.office.desc">Corporate bathroom. Desperate coworkers.</div>
                     <div class="scenario-stats" id="stats-office">
-                        <span class="stat-item">Best Wave: --</span>
-                        <span class="stat-item">High Score: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.bestWaveNone">Best Wave: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.highScoreNone">High Score: --</span>
                     </div>
-                    <button class="scenario-continue-btn" id="continue-office" style="display:none;">CONTINUE SAVED GAME</button>
+                    <button class="scenario-continue-btn" id="continue-office" style="display:none;" data-i18n="scenario.continue">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Forest -->
@@ -367,13 +379,13 @@
                     <div class="scenario-icon">
                         <canvas id="scenario-canvas-forest" width="256" height="256"></canvas>
                     </div>
-                    <div class="scenario-name">THE FOREST</div>
-                    <div class="scenario-desc">Wooden outhouse. Wild animals.</div>
+                    <div class="scenario-name" data-i18n="scenario.forest.name">THE FOREST</div>
+                    <div class="scenario-desc" data-i18n="scenario.forest.desc">Wooden outhouse. Wild animals.</div>
                     <div class="scenario-stats" id="stats-forest">
-                        <span class="stat-item">Best Wave: --</span>
-                        <span class="stat-item">High Score: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.bestWaveNone">Best Wave: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.highScoreNone">High Score: --</span>
                     </div>
-                    <button class="scenario-continue-btn" id="continue-forest" style="display:none;">CONTINUE SAVED GAME</button>
+                    <button class="scenario-continue-btn" id="continue-forest" style="display:none;" data-i18n="scenario.continue">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Ocean -->
@@ -382,13 +394,13 @@
                     <div class="scenario-icon">
                         <canvas id="scenario-canvas-ocean" width="256" height="256"></canvas>
                     </div>
-                    <div class="scenario-name">THE OCEAN</div>
-                    <div class="scenario-desc">Outhouse on a raft. Sea creatures.</div>
+                    <div class="scenario-name" data-i18n="scenario.ocean.name">THE OCEAN</div>
+                    <div class="scenario-desc" data-i18n="scenario.ocean.desc">Outhouse on a raft. Sea creatures.</div>
                     <div class="scenario-stats" id="stats-ocean">
-                        <span class="stat-item">Best Wave: --</span>
-                        <span class="stat-item">High Score: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.bestWaveNone">Best Wave: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.highScoreNone">High Score: --</span>
                     </div>
-                    <button class="scenario-continue-btn" id="continue-ocean" style="display:none;">CONTINUE SAVED GAME</button>
+                    <button class="scenario-continue-btn" id="continue-ocean" style="display:none;" data-i18n="scenario.continue">CONTINUE SAVED GAME</button>
                 </div>
             </div>
             <!-- The Airplane -->
@@ -397,114 +409,120 @@
                     <div class="scenario-icon">
                         <canvas id="scenario-canvas-airplane" width="256" height="256"></canvas>
                     </div>
-                    <div class="scenario-name">THE AIRPLANE</div>
-                    <div class="scenario-desc">Mile-high bathroom. Impatient passengers.</div>
+                    <div class="scenario-name" data-i18n="scenario.airplane.name">THE AIRPLANE</div>
+                    <div class="scenario-desc" data-i18n="scenario.airplane.desc">Mile-high bathroom. Impatient passengers.</div>
                     <div class="scenario-stats" id="stats-airplane">
-                        <span class="stat-item">Best Wave: --</span>
-                        <span class="stat-item">High Score: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.bestWaveNone">Best Wave: --</span>
+                        <span class="stat-item" data-i18n="scenario.stat.highScoreNone">High Score: --</span>
                     </div>
-                    <button class="scenario-continue-btn" id="continue-airplane" style="display:none;">CONTINUE SAVED GAME</button>
+                    <button class="scenario-continue-btn" id="continue-airplane" style="display:none;" data-i18n="scenario.continue">CONTINUE SAVED GAME</button>
                 </div>
             </div>
         </div>
         <a class="wishlist-btn wishlist-btn-inline demo-only" id="btn-wishlist-scenario" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
             <svg class="wishlist-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
-            WISHLIST TO UNLOCK ALL SCENARIOS
+            <span data-i18n="scenario.wishlist">WISHLIST TO UNLOCK ALL SCENARIOS</span>
         </a>
-        <button class="menu-btn menu-btn-small" id="btn-scenario-back">BACK</button>
+        <button class="menu-btn menu-btn-small" id="btn-scenario-back" data-i18n="scenario.back">BACK</button>
     </div>
 
     <!-- Settings Screen -->
     <div id="settings-screen" class="menu-screen" style="display:none;">
-        <h2 class="screen-title">SETTINGS</h2>
+        <h2 class="screen-title" data-i18n="settings.title">SETTINGS</h2>
         <div class="settings-list">
             <div class="setting-row">
-                <span class="setting-label">MUSIC</span>
+                <span class="setting-label" data-i18n="settings.music">MUSIC</span>
                 <input type="range" class="setting-slider" id="slider-music" min="0" max="100" value="70">
                 <span class="setting-value" id="val-music">70%</span>
             </div>
             <div class="setting-row">
-                <span class="setting-label">SFX</span>
+                <span class="setting-label" data-i18n="settings.sfx">SFX</span>
                 <input type="range" class="setting-slider" id="slider-sfx" min="0" max="100" value="80">
                 <span class="setting-value" id="val-sfx">80%</span>
             </div>
             <div class="setting-row">
-                <span class="setting-label">SCREEN SHAKE</span>
+                <span class="setting-label" data-i18n="settings.screenShake">SCREEN SHAKE</span>
                 <label class="setting-toggle">
                     <input type="checkbox" id="toggle-shake" checked>
                     <span class="toggle-track"></span>
                 </label>
             </div>
             <div class="setting-row">
-                <span class="setting-label">TUTORIAL</span>
+                <span class="setting-label" data-i18n="settings.tutorial">TUTORIAL</span>
                 <label class="setting-toggle">
                     <input type="checkbox" id="toggle-tutorial" checked>
                     <span class="toggle-track"></span>
                 </label>
             </div>
             <div class="setting-row">
-                <span class="setting-label">DIFFICULTY</span>
+                <span class="setting-label" data-i18n="settings.difficulty">DIFFICULTY</span>
                 <div class="difficulty-selector" id="diff-selector-settings">
-                    <button class="diff-btn" data-diff="easy">EASY</button>
-                    <button class="diff-btn active" data-diff="normal">NORMAL</button>
-                    <button class="diff-btn" data-diff="hard">HARD</button>
+                    <button class="diff-btn" data-diff="easy" data-i18n="difficulty.easy">EASY</button>
+                    <button class="diff-btn active" data-diff="normal" data-i18n="difficulty.normal">NORMAL</button>
+                    <button class="diff-btn" data-diff="hard" data-i18n="difficulty.hard">HARD</button>
                 </div>
             </div>
-            <div class="setting-section-header">CONTROLS</div>
-            <div class="keybind-row"><span class="keybind-label">MAGNET</span><button class="keybind-btn" data-action="tower1">1</button></div>
-            <div class="keybind-row"><span class="keybind-label">SIGN</span><button class="keybind-btn" data-action="tower2">2</button></div>
-            <div class="keybind-row"><span class="keybind-label">MOP</span><button class="keybind-btn" data-action="tower3">3</button></div>
-            <div class="keybind-row"><span class="keybind-label">UBIK</span><button class="keybind-btn" data-action="tower4">4</button></div>
-            <div class="keybind-row"><span class="keybind-label">POT PLANT</span><button class="keybind-btn" data-action="tower5">5</button></div>
-            <div class="keybind-row"><span class="keybind-label">SELL</span><button class="keybind-btn" data-action="sell">X</button></div>
-            <div class="keybind-row"><span class="keybind-label">PAUSE</span><button class="keybind-btn" data-action="pause">SPACE</button></div>
-            <button class="menu-btn menu-btn-small" id="btn-reset-keybinds" style="margin-top:8px;">RESET TO DEFAULT</button>
-            <div class="setting-section-header-controller">CONTROLLER</div>
+            <div class="setting-section-header" data-i18n="settings.controls">CONTROLS</div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.magnet">MAGNET</span><button class="keybind-btn" data-action="tower1">1</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.sign">SIGN</span><button class="keybind-btn" data-action="tower2">2</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.mop">MOP</span><button class="keybind-btn" data-action="tower3">3</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.ubik">UBIK</span><button class="keybind-btn" data-action="tower4">4</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.potplant">POT PLANT</span><button class="keybind-btn" data-action="tower5">5</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.sell">SELL</span><button class="keybind-btn" data-action="sell">X</button></div>
+            <div class="keybind-row"><span class="keybind-label" data-i18n="keybind.pause">PAUSE</span><button class="keybind-btn" data-action="pause">SPACE</button></div>
+            <button class="menu-btn menu-btn-small" id="btn-reset-keybinds" style="margin-top:8px;" data-i18n="settings.resetKeybinds">RESET TO DEFAULT</button>
+            <div class="setting-section-header-controller" data-i18n="settings.controller">CONTROLLER</div>
             <div class="setting-row">
-                <span class="setting-label">STICK SENSITIVITY</span>
+                <span class="setting-label" data-i18n="settings.stickSens">STICK SENSITIVITY</span>
                 <input type="range" class="setting-slider" id="slider-gp-sensitivity" min="1" max="10" value="5" step="1">
                 <span class="setting-value" id="val-gp-sensitivity">5</span>
             </div>
             <div class="setting-row">
-                <span class="setting-label">DEADZONE</span>
+                <span class="setting-label" data-i18n="settings.deadzone">DEADZONE</span>
                 <input type="range" class="setting-slider" id="slider-gp-deadzone" min="5" max="30" value="15" step="1">
                 <span class="setting-value" id="val-gp-deadzone">15%</span>
             </div>
             <div class="setting-row">
-                <span class="setting-label">VIBRATION</span>
+                <span class="setting-label" data-i18n="settings.vibration">VIBRATION</span>
                 <label class="setting-toggle">
                     <input type="checkbox" id="toggle-gp-vibration" checked>
                     <span class="toggle-track"></span>
                 </label>
             </div>
+            <div class="setting-section-header" data-i18n="settings.language">LANGUAGE</div>
+            <div class="setting-row language-selector-row">
+                <button class="diff-btn lang-prev" id="lang-prev">◀</button>
+                <span class="lang-display" id="lang-display">English</span>
+                <button class="diff-btn lang-next" id="lang-next">▶</button>
+            </div>
         </div>
-        <button class="menu-btn menu-btn-small" id="btn-settings-back">BACK</button>
+        <button class="menu-btn menu-btn-small" id="btn-settings-back" data-i18n="settings.back">BACK</button>
     </div>
 
     <!-- Credits Screen -->
     <div id="credits-screen" class="menu-screen" style="display:none;">
-        <h2 class="screen-title">CREDITS</h2>
+        <h2 class="screen-title" data-i18n="credits.title">CREDITS</h2>
         <div class="credits-content">
             <div class="credit-section">
-                <div class="credit-role">DESIGN & DEVELOPMENT</div>
-                <div class="credit-name">Timothy Graham</div>
+                <div class="credit-role" data-i18n="credits.role.design">DESIGN & DEVELOPMENT</div>
+                <div class="credit-name" data-i18n="credits.name.design">Timothy Graham</div>
             </div>
             <div class="credit-section">
-                <div class="credit-role">BUILT WITH</div>
-                <div class="credit-name">Three.js + Vite</div>
+                <div class="credit-role" data-i18n="credits.role.engine">BUILT WITH</div>
+                <div class="credit-name" data-i18n="credits.name.engine">Three.js + Vite</div>
             </div>
             <div class="credit-section">
-                <div class="credit-role">FONT</div>
-                <div class="credit-name">Bangers by Vernon Adams</div>
+                <div class="credit-role" data-i18n="credits.role.font">FONT</div>
+                <div class="credit-name" data-i18n="credits.name.font">Bangers by Vernon Adams</div>
             </div>
-            <div class="credit-section tagline-credit">Your toilet. Your rules.</div>
+            <div class="credit-section tagline-credit" data-i18n="credits.tagline">Your toilet. Your rules.</div>
         </div>
-        <button class="menu-btn menu-btn-small" id="btn-credits-back">BACK</button>
+        <button class="menu-btn menu-btn-small" id="btn-credits-back" data-i18n="settings.back">BACK</button>
     </div>
 
     <!-- Collection Screen -->
     <div id="collection-screen" class="menu-screen" style="display:none;">
-        <h2 class="screen-title">COLLECTION</h2>
+        <h2 class="screen-title" data-i18n="collection.title">COLLECTION</h2>
         <div class="collection-progress-wrap">
             <div class="collection-progress-bar">
                 <div class="collection-progress-fill" id="collection-progress-fill"></div>
@@ -512,15 +530,15 @@
             <div class="collection-progress-text" id="collection-progress-text">0 / 0 DISCOVERED</div>
         </div>
         <div class="collection-filters" id="collection-filters">
-            <button class="collection-filter active" data-filter="all">ALL</button>
-            <button class="collection-filter" data-filter="common">COMMON</button>
-            <button class="collection-filter" data-filter="rare">RARE</button>
-            <button class="collection-filter" data-filter="legendary">LEGENDARY</button>
+            <button class="collection-filter active" data-filter="all" data-i18n="collection.filter.all">ALL</button>
+            <button class="collection-filter" data-filter="common" data-i18n="collection.filter.common">COMMON</button>
+            <button class="collection-filter" data-filter="rare" data-i18n="collection.filter.rare">RARE</button>
+            <button class="collection-filter" data-filter="legendary" data-i18n="collection.filter.legendary">LEGENDARY</button>
         </div>
         <div class="collection-scroll">
             <div class="collection-grid" id="collection-grid"></div>
         </div>
-        <button class="menu-btn menu-btn-small" id="btn-collection-back">BACK</button>
+        <button class="menu-btn menu-btn-small" id="btn-collection-back" data-i18n="collection.back">BACK</button>
     </div>
 
     <!-- Collection Tooltip (floating, positioned via JS) -->
@@ -533,10 +551,10 @@
     <!-- Confirmation Dialog -->
     <div id="confirm-dialog" class="menu-screen" style="display:none;">
         <div class="confirm-box">
-            <div class="confirm-text" id="confirm-text">Are you sure?</div>
+            <div class="confirm-text" id="confirm-text" data-i18n="confirm.are_you_sure">Are you sure?</div>
             <div class="confirm-buttons">
-                <button class="menu-btn" id="confirm-yes">YES</button>
-                <button class="menu-btn menu-btn-small" id="confirm-no">CANCEL</button>
+                <button class="menu-btn" id="confirm-yes" data-i18n="confirm.yes">YES</button>
+                <button class="menu-btn menu-btn-small" id="confirm-no" data-i18n="confirm.cancel">CANCEL</button>
             </div>
         </div>
     </div>
@@ -544,10 +562,10 @@
     <!-- Devotion Picker Modal -->
     <div id="devotion-picker" style="display:none;">
         <div class="devotion-box">
-            <div class="devotion-title">DEVOTION</div>
-            <div class="devotion-subtitle">Choose 2 tower types to devote to.<br>All other towers will be destroyed (full refund).</div>
+            <div class="devotion-title" data-i18n="devotion.title">DEVOTION</div>
+            <div class="devotion-subtitle" data-i18n-html="devotion.subtitle">Choose 2 tower types to devote to.<br>All other towers will be destroyed (full refund).</div>
             <div class="devotion-cards" id="devotion-cards"></div>
-            <button class="menu-btn" id="devotion-confirm" disabled>CONFIRM</button>
+            <button class="menu-btn" id="devotion-confirm" disabled data-i18n="devotion.confirm">CONFIRM</button>
         </div>
     </div>
 
@@ -558,7 +576,7 @@
     <div id="tutorial-overlay" style="display:none;">
         <div id="tutorial-bubble">
             <div id="tutorial-text"></div>
-            <div id="tutorial-prompt">CLICK TO CONTINUE</div>
+            <div id="tutorial-prompt" data-i18n="tutorial.clickContinue">CLICK TO CONTINUE</div>
         </div>
     </div>
     <!-- Tutorial bouncy arrow pointer -->
@@ -572,37 +590,37 @@
     <!-- Game Over Screen -->
     <!-- Error Overlay -->
     <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.92); z-index:9999; justify-content:center; align-items:center; flex-direction:column; gap:20px;">
-        <h2 style="font-family:'Bangers',sans-serif; font-size:48px; color:var(--pal-danger,#ff6b7a); letter-spacing:4px; text-shadow:3px 4px 0px #1a1a1a;">SOMETHING WENT WRONG</h2>
+        <h2 data-i18n="error.title" style="font-family:'Bangers',sans-serif; font-size:48px; color:var(--pal-danger,#ff6b7a); letter-spacing:4px; text-shadow:3px 4px 0px #1a1a1a;">SOMETHING WENT WRONG</h2>
         <p id="error-message" style="font-family:'Bangers',sans-serif; font-size:18px; color:#fff; letter-spacing:1px; max-width:500px; text-align:center; opacity:0.7;"></p>
-        <button onclick="location.reload()" style="font-family:'Bangers',sans-serif; padding:14px 44px; font-size:24px; background:var(--pal-gold,#ffd93d); color:#1a1a1a; border:4px solid #1a1a1a; border-radius:14px; box-shadow:3px 4px 0px #1a1a1a; cursor:pointer; letter-spacing:3px; text-transform:uppercase;">RESTART</button>
+        <button data-i18n="error.restart" onclick="location.reload()" style="font-family:'Bangers',sans-serif; padding:14px 44px; font-size:24px; background:var(--pal-gold,#ffd93d); color:#1a1a1a; border:4px solid #1a1a1a; border-radius:14px; box-shadow:3px 4px 0px #1a1a1a; cursor:pointer; letter-spacing:3px; text-transform:uppercase;">RESTART</button>
     </div>
 
     <div id="game-over-screen">
-        <h1>OCCUPIED</h1>
-        <div class="subtitle" id="game-over-subtitle">They broke through the door!</div>
+        <h1 data-i18n="gameover.title">OCCUPIED</h1>
+        <div class="subtitle" id="game-over-subtitle" data-i18n="gameover.subtitle">They broke through the door!</div>
         <div class="stats" id="game-over-stats"></div>
         <a class="wishlist-btn demo-only" id="btn-wishlist-gameover" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
             <svg class="wishlist-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
-            WISHLIST ON STEAM
+            <span data-i18n="gameover.wishlist">WISHLIST ON STEAM</span>
         </a>
         <div class="gameover-buttons">
-            <button id="restart-btn">TRY AGAIN</button>
-            <button id="menu-btn-gameover" class="menu-btn menu-btn-small">MAIN MENU</button>
+            <button id="restart-btn" data-i18n="gameover.tryAgain">TRY AGAIN</button>
+            <button id="menu-btn-gameover" class="menu-btn menu-btn-small" data-i18n="gameover.mainMenu">MAIN MENU</button>
         </div>
     </div>
 
     <!-- Victory Screen (campaign wave 20 completion) -->
     <div id="victory-screen">
-        <h1>VICTORY!</h1>
-        <div class="subtitle">You held it in!</div>
+        <h1 data-i18n="victory.title">VICTORY!</h1>
+        <div class="subtitle" data-i18n="victory.subtitle">You held it in!</div>
         <div class="stats" id="victory-stats"></div>
         <a class="wishlist-btn demo-only" id="btn-wishlist-victory" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
             <svg class="wishlist-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
-            WISHLIST FOR THE FULL GAME
+            <span data-i18n="victory.wishlist">WISHLIST FOR THE FULL GAME</span>
         </a>
         <div class="gameover-buttons">
-            <button id="btn-victory-endless" class="menu-btn">PLAY ENDLESS MODE</button>
-            <button id="btn-victory-menu" class="menu-btn menu-btn-small">MAIN MENU</button>
+            <button id="btn-victory-endless" class="menu-btn" data-i18n="victory.playEndless">PLAY ENDLESS MODE</button>
+            <button id="btn-victory-menu" class="menu-btn menu-btn-small" data-i18n="victory.mainMenu">MAIN MENU</button>
         </div>
     </div>
 
@@ -1130,21 +1148,21 @@
         WAVE_EVENTS: {
             15: {
                 name: 'TACO TUESDAY',
-                announcement: "IT'S TACO TUESDAY!",
+                announcement: t('wave.event.office.taco'),
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.06, girls_group: 0.05, drunk_train: 0.04 },
             },
             20: {
                 name: 'THE LUNCH RUSH',
-                announcement: 'THE LUNCH RUSH!',
+                announcement: t('wave.event.office.lunch'),
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.16, panicker: 0.10, waddle: 0.05, girls_group: 0.05, drunk_train: 0.04 },
             },
             25: {
                 name: 'COFFEE KICKED IN',
-                announcement: 'THE COFFEE JUST KICKED IN!',
+                announcement: t('wave.event.office.coffee'),
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1152,14 +1170,14 @@
             },
             30: {
                 name: 'FOOD POISONING',
-                announcement: 'FOOD POISONING IN THE BREAK ROOM!',
+                announcement: t('wave.event.office.foodPoisoning'),
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { waddle: 0.25, panicker: 0.20, dancer: 0.20, polite: 0.15, vaulter: 0.10, girls_group: 0.10 },
             },
             35: {
                 name: 'WING NIGHT',
-                announcement: 'HALF-PRICE WING NIGHT!',
+                announcement: t('wave.event.office.wings'),
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1167,7 +1185,7 @@
             },
             40: {
                 name: 'FIRE DRILL',
-                announcement: 'FIRE DRILL — EVERYONE OUT!',
+                announcement: t('wave.event.office.fireDrill'),
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1175,14 +1193,14 @@
             },
             45: {
                 name: 'CHILI COOK-OFF',
-                announcement: 'THE CHILI COOK-OFF!',
+                announcement: t('wave.event.office.chili'),
                 enemyMult: 4.0,
                 spawnMult: 0.25,
                 weights: { waddle: 0.35, panicker: 0.30, powerwalker: 0.15, dancer: 0.10, girls_group: 0.10 },
             },
             50: {
                 name: 'BLACK FRIDAY',
-                announcement: 'BLACK FRIDAY!',
+                announcement: t('wave.event.office.blackFriday'),
                 enemyMult: 5.0,
                 spawnMult: 0.15,
                 speedMult: 1.8,
@@ -1218,21 +1236,21 @@
         FOREST_WAVE_EVENTS: {
             15: {
                 name: 'BERRY SEASON',
-                announcement: "IT'S BERRY SEASON!",
+                announcement: t('wave.event.forest.berry'),
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.06, moose: 0.10, raccoon_group: 0.05, ant_train: 0.04 },
             },
             20: {
                 name: 'MIGRATION',
-                announcement: 'THE GREAT MIGRATION!',
+                announcement: t('wave.event.forest.migration'),
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { deer: 0.35, moose: 0.25, squirrel: 0.16, fox: 0.10, bear: 0.05, raccoon_group: 0.05, ant_train: 0.04 },
             },
             25: {
                 name: 'FULL MOON',
-                announcement: 'FULL MOON FRENZY!',
+                announcement: t('wave.event.forest.fullMoon'),
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1240,14 +1258,14 @@
             },
             30: {
                 name: 'FOREST FIRE',
-                announcement: 'FOREST FIRE — EVERYONE FLEE!',
+                announcement: t('wave.event.forest.fire'),
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { bear: 0.25, fox: 0.20, squirrel: 0.20, deer: 0.15, kangaroo: 0.10, raccoon_group: 0.10 },
             },
             35: {
                 name: 'HIBERNATION PANIC',
-                announcement: 'LAST CHANCE BEFORE HIBERNATION!',
+                announcement: t('wave.event.forest.hibernation'),
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1255,7 +1273,7 @@
             },
             40: {
                 name: 'STAMPEDE',
-                announcement: 'STAMPEDE!',
+                announcement: t('wave.event.forest.stampede'),
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1291,21 +1309,21 @@
         OCEAN_WAVE_EVENTS: {
             15: {
                 name: 'FEEDING FRENZY',
-                announcement: "IT'S A FEEDING FRENZY!",
+                announcement: t('wave.event.ocean.feeding'),
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.16, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             20: {
                 name: 'TIDAL WAVE',
-                announcement: 'TIDAL WAVE INCOMING!',
+                announcement: t('wave.event.ocean.tidal'),
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { dolphin: 0.30, seaturtle: 0.21, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             25: {
                 name: 'BLOOD MOON',
-                announcement: 'BLOOD MOON TIDE!',
+                announcement: t('wave.event.ocean.bloodMoon'),
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1313,14 +1331,14 @@
             },
             30: {
                 name: 'PIRATE ARMADA',
-                announcement: 'THE PIRATE ARMADA ATTACKS!',
+                announcement: t('wave.event.ocean.pirate'),
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { pirate: 0.35, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, frog: 0.05, jellyfish_group: 0.05 },
             },
             35: {
                 name: 'KRAKEN STIRS',
-                announcement: 'THE KRAKEN STIRS THE DEEP!',
+                announcement: t('wave.event.ocean.kraken'),
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1328,7 +1346,7 @@
             },
             40: {
                 name: 'MAELSTROM',
-                announcement: 'MAELSTROM!',
+                announcement: t('wave.event.ocean.maelstrom'),
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1364,21 +1382,21 @@
         AIRPLANE_WAVE_EVENTS: {
             15: {
                 name: 'TURBULENCE',
-                announcement: "WE'RE HITTING TURBULENCE!",
+                announcement: t('wave.event.airplane.turbulence'),
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { stumbler: 0.35, nervous: 0.20, business: 0.16, attendant: 0.10, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             20: {
                 name: 'MEAL SERVICE',
-                announcement: 'MEAL SERVICE IS OVER!',
+                announcement: t('wave.event.airplane.meal'),
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.11, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             25: {
                 name: 'SEATBELT SIGN OFF',
-                announcement: 'THE SEATBELT SIGN IS OFF!',
+                announcement: t('wave.event.airplane.seatbelt'),
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1386,14 +1404,14 @@
             },
             30: {
                 name: 'BAD FISH',
-                announcement: 'SOMEONE ATE THE FISH!',
+                announcement: t('wave.event.airplane.fish'),
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { stumbler: 0.30, nervous: 0.20, attendant: 0.15, business: 0.15, hurdler: 0.10, unruly_group: 0.10 },
             },
             35: {
                 name: 'DUTY FREE',
-                announcement: 'DUTY FREE TROLLEY INCOMING!',
+                announcement: t('wave.event.airplane.dutyFree'),
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1401,7 +1419,7 @@
             },
             40: {
                 name: 'EMERGENCY LANDING',
-                announcement: 'BRACE FOR IMPACT!',
+                announcement: t('wave.event.airplane.brace'),
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1409,14 +1427,14 @@
             },
             45: {
                 name: 'OPEN BAR',
-                announcement: 'OPEN BAR IN FIRST CLASS!',
+                announcement: t('wave.event.airplane.openBar'),
                 enemyMult: 4.0,
                 spawnMult: 0.25,
                 weights: { unruly_group: 0.30, stumbler: 0.25, nervous: 0.20, business: 0.15, attendant: 0.10 },
             },
             50: {
                 name: 'FINAL DESCENT',
-                announcement: 'FINAL DESCENT — ALL PASSENGERS!',
+                announcement: t('wave.event.airplane.finalDescent'),
                 enemyMult: 5.0,
                 spawnMult: 0.15,
                 speedMult: 1.8,
@@ -1600,7 +1618,7 @@
                 if (logo) {
                     const badge = document.createElement('div');
                     badge.className = 'demo-badge';
-                    badge.textContent = 'DEMO';
+                    badge.textContent = t('hud.demo');
                     logo.parentElement.insertBefore(badge, logo.nextSibling);
                 }
             } else {
@@ -2815,7 +2833,7 @@
             document.getElementById('btn-campaign').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 this._menuMode = 'campaign';
-                document.getElementById('scenario-screen-title').textContent = 'CAMPAIGN';
+                document.getElementById('scenario-screen-title').textContent = t('scenario.title.campaign');
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
                 this._updateScenarioLocks();
@@ -2823,11 +2841,11 @@
             document.getElementById('btn-endless').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 if (!this._isAnyScenarioCompleted()) {
-                    this._showConfirm('Complete a campaign first to unlock Endless Mode!', () => {});
+                    this._showConfirm(t('confirm.endlessLocked'), () => {});
                     return;
                 }
                 this._menuMode = 'endless';
-                document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
+                document.getElementById('scenario-screen-title').textContent = t('scenario.title.endless');
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
                 this._updateScenarioLocks();
@@ -2913,7 +2931,7 @@
                 this._setupScenario(scenario);
                 if (this._hasSave(scenario, this._menuMode)) {
                     this._showConfirm(
-                        'A saved game exists. Start a new game? (Save will be deleted)',
+                        t('confirm.saveOverwrite'),
                         () => {
                             this._deleteSave();
                             if (window.SFX) SFX.play('ui_game_start');
@@ -3148,7 +3166,7 @@
                 document.getElementById('victory-screen').classList.remove('active');
                 this.state = 'title';
                 this._menuMode = 'endless';
-                document.getElementById('scenario-screen-title').textContent = 'ENDLESS MODE';
+                document.getElementById('scenario-screen-title').textContent = t('scenario.title.endless');
                 showScreen('scenario-screen');
                 this._updateContinueButtons();
                 this._updateBestStats();
@@ -3174,11 +3192,11 @@
                 const success = this._saveGame();
                 if (success) {
                     this._saveBestStats();
-                    this.announceWave('GAME SAVED');
+                    this.announceWave(t('game.saved'));
                     // Close the tab/window
                     setTimeout(() => window.close(), 300);
                 } else {
-                    this.announceWave('SAVE FAILED — STORAGE FULL?');
+                    this.announceWave(t('game.saveFailed'));
                 }
             });
 
@@ -3195,14 +3213,14 @@
                     this.announceWave('');
                     if (window.Music) Music.play('title');
                 } else {
-                    this.announceWave('SAVE FAILED — STORAGE FULL?');
+                    this.announceWave(t('game.saveFailed'));
                 }
             });
 
             document.getElementById('btn-quit-no-save').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 this._showConfirm(
-                    'Quit without saving? All progress will be lost.',
+                    t('confirm.quitNoSave'),
                     () => {
                         document.getElementById('pause-overlay').classList.remove('active');
                         this.state = 'title';
@@ -3332,6 +3350,39 @@
                     if (this._gamepadManager) this._gamepadManager.setVibration(pauseGpVib.checked);
                 });
             }
+
+            // Language picker (main settings)
+            const langPrev = document.getElementById('lang-prev');
+            const langNext = document.getElementById('lang-next');
+            const langDisplay = document.getElementById('lang-display');
+            // Language picker (pause settings)
+            const pauseLangPrev = document.getElementById('pause-lang-prev');
+            const pauseLangNext = document.getElementById('pause-lang-next');
+            const pauseLangDisplay = document.getElementById('pause-lang-display');
+
+            const updateLangDisplays = () => {
+                const code = getLanguage();
+                const lang = LANGUAGES.find(l => l.code === code);
+                const label = lang ? lang.nativeName : code;
+                if (langDisplay) langDisplay.textContent = label;
+                if (pauseLangDisplay) pauseLangDisplay.textContent = label;
+            };
+            updateLangDisplays();
+
+            const cycleLang = (dir) => {
+                const code = getLanguage();
+                const idx = LANGUAGES.findIndex(l => l.code === code);
+                const nextIdx = (idx + dir + LANGUAGES.length) % LANGUAGES.length;
+                setLanguage(LANGUAGES[nextIdx].code).then(() => {
+                    updateLangDisplays();
+                });
+                if (window.SFX) SFX.play('ui_click');
+            };
+
+            if (langPrev) langPrev.addEventListener('click', () => cycleLang(-1));
+            if (langNext) langNext.addEventListener('click', () => cycleLang(1));
+            if (pauseLangPrev) pauseLangPrev.addEventListener('click', () => cycleLang(-1));
+            if (pauseLangNext) pauseLangNext.addEventListener('click', () => cycleLang(1));
 
             // Menu hover sounds
             document.querySelectorAll('.menu-btn, .scenario-continue-btn').forEach(btn => {
@@ -3483,7 +3534,7 @@
                 }
             }
             if (h.coins) h.coins.textContent = this.coins;
-            if (h.wave) h.wave.textContent = `WAVE ${this.wave}`;
+            if (h.wave) h.wave.textContent = t('hud.wave', { n: this.wave });
             if (h.score) h.score.textContent = this.score;
             // Difficulty badge
             if (!h.diffBadge) h.diffBadge = document.getElementById('difficulty-badge');
@@ -3619,32 +3670,32 @@
         _showCoordinatedPopup() {
             const messages = {
                 office: [
-                    "They organized a group bathroom break!",
-                    "Someone sent a calendar invite to the bathroom!",
-                    "Synchronized desperation!",
-                    "They're coordinating their urgent needs!",
-                    "The whole team needs to go... RIGHT NOW!",
+                    t('coordinated.office.0'),
+                    t('coordinated.office.1'),
+                    t('coordinated.office.2'),
+                    t('coordinated.office.3'),
+                    t('coordinated.office.4'),
                 ],
                 forest: [
-                    "The herd is moving as one!",
-                    "They all ate the same berries!",
-                    "Pack instinct... for the outhouse!",
-                    "Nature calls... the whole forest answers!",
-                    "Coordinated stampede!",
+                    t('coordinated.forest.0'),
+                    t('coordinated.forest.1'),
+                    t('coordinated.forest.2'),
+                    t('coordinated.forest.3'),
+                    t('coordinated.forest.4'),
                 ],
                 ocean: [
-                    "The pod is charging in formation!",
-                    "They're swimming in sync!",
-                    "Coordinated bathroom dive!",
-                    "The whole school needs to go!",
-                    "Tidal wave of desperation!",
+                    t('coordinated.ocean.0'),
+                    t('coordinated.ocean.1'),
+                    t('coordinated.ocean.2'),
+                    t('coordinated.ocean.3'),
+                    t('coordinated.ocean.4'),
                 ],
                 airplane: [
-                    "The whole row needs to go... NOW!",
-                    "The seatbelt sign turned off and EVERYONE stood up!",
-                    "Synchronized lavatory rush!",
-                    "All passengers in Row 12 — EMERGENCY!",
-                    "Turbulence hit and now they ALL need to go!",
+                    t('coordinated.airplane.0'),
+                    t('coordinated.airplane.1'),
+                    t('coordinated.airplane.2'),
+                    t('coordinated.airplane.3'),
+                    t('coordinated.airplane.4'),
                 ],
             };
             const scenario = this._currentScenario || 'office';
@@ -3826,12 +3877,12 @@
             if (step === 0) {
                 // Intro — center screen
                 this._showTutorialBubble(
-                    "They want YOUR toilet!<br>Don't let them in!"
+                    t('tutorial.step0')
                 );
             } else if (step === 1) {
                 // Coin Magnet — bubble next to the button
                 this._showTutorialBubble(
-                    "Grab a Coin Magnet!<br>It collects coins for you!",
+                    t('tutorial.step1'),
                     { highlight: '.tower-btn[data-tower="coinmagnet"]',
                       pointerAt: '.tower-btn[data-tower="coinmagnet"]',
                       nearElement: '.tower-btn[data-tower="coinmagnet"]',
@@ -3840,7 +3891,7 @@
             } else if (step === 2) {
                 // Place magnet — closer to toilet so coins collect nearby
                 this._showTutorialBubble(
-                    "Place it on the floor!",
+                    t('tutorial.step2'),
                     { pointerAtWorld: { x: 0, y: 0.1, z: 24 },
                       nearWorld: { x: 0, y: 0.1, z: 24 },
                       passthrough: true }
@@ -3848,7 +3899,7 @@
             } else if (step === 3) {
                 // Ubik Spray — bubble next to the button
                 this._showTutorialBubble(
-                    "Now grab the Ubik Spray!<br>It damages enemies!",
+                    t('tutorial.step3'),
                     { highlight: '.tower-btn[data-tower="ubik"]',
                       pointerAt: '.tower-btn[data-tower="ubik"]',
                       nearElement: '.tower-btn[data-tower="ubik"]',
@@ -3857,7 +3908,7 @@
             } else if (step === 4) {
                 // Place ubik — in front of magnet (higher Z = closer to enemies)
                 this._showTutorialBubble(
-                    "Place it in front of the magnet!<br>It'll zap enemies before they pass!",
+                    t('tutorial.step4'),
                     { pointerAtWorld: { x: 0, y: 0.1, z: 34 },
                       nearWorld: { x: 0, y: 0.1, z: 34 },
                       passthrough: true }
@@ -3869,7 +3920,7 @@
             } else if (step === 6) {
                 // First enemy spawned — center screen
                 this._showTutorialBubble(
-                    "Here they come!<br>Sit back and watch!",
+                    t('tutorial.step6'),
                     { autoAdvance: true, delay: 3500, passthrough: true }
                 );
             } else if (step === 7) {
@@ -3878,12 +3929,12 @@
             } else if (step === 8) {
                 // Upgrade selection — click to continue, then drones spawn
                 this._showTutorialBubble(
-                    "Nice work! Pick an upgrade<br>to power up!"
+                    t('tutorial.step8')
                 );
             } else if (step === 9) {
                 // Sell tip — point at the sell button
                 this._showTutorialBubble(
-                    "Need coins? Sell a tower!<br>Press <b>X</b> or click the red button!",
+                    t('tutorial.step9'),
                     { highlight: '#sell-btn',
                       pointerAt: '#sell-btn',
                       nearElement: '#sell-btn' }
@@ -4234,7 +4285,7 @@
             if (this._shouldShowTutorial()) {
                 this._startTutorial();
             } else {
-                this.announceWave("DON'T LET THEM REACH THE TOILET!");
+                this.announceWave(t('wave.dontLetThem'));
             }
 
             // Airplane flavor text — dual-access toilet tooltip
@@ -4242,7 +4293,7 @@
                 setTimeout(() => {
                     if (this.state !== 'playing') return;
                     const el = document.getElementById('wave-announce');
-                    el.textContent = 'THIS PLANE IS EQUIPPED WITH A DUAL-ACCESS TOILET, FOR MAXIMUM CONVENIENCE';
+                    el.textContent = t('wave.airplaneHint');
                     el.classList.remove('visible');
                     el.classList.add('hint');
                     void el.offsetWidth;
@@ -4471,7 +4522,7 @@
             this._saveBestStats();
             const modeLabel = this._gameMode === 'endless' ? ' (ENDLESS)' : '';
             const stats = document.getElementById('game-over-stats');
-            stats.innerHTML = `${modeLabel ? '<span style="color:var(--pal-gold)">' + modeLabel + '</span><br>' : ''}Survived to Wave ${this.wave}<br>Score: ${this.score}<br>Enemies repelled: ${this._totalRepelled || 0}`;
+            stats.innerHTML = t('gameover.stats', { wave: this.wave, score: this.score, repelled: this._totalRepelled || 0 });
             document.getElementById('game-over-screen').classList.add('active');
         },
 
@@ -4692,7 +4743,7 @@
             // Update progress bar
             const stats = this._getCollectionStats();
             const total = stats.total;
-            document.getElementById('collection-progress-text').textContent = total.found + ' / ' + total.total + ' DISCOVERED';
+            document.getElementById('collection-progress-text').textContent = t('collection.discovered', { found: total.found, total: total.total });
             const pct = total.total > 0 ? (total.found / total.total * 100) : 0;
             document.getElementById('collection-progress-fill').style.width = pct + '%';
 
@@ -4700,9 +4751,9 @@
             document.querySelectorAll('.collection-filter').forEach(btn => {
                 const f = btn.dataset.filter;
                 if (f === 'all') {
-                    btn.textContent = 'ALL (' + stats.total.found + ')';
+                    btn.textContent = t('collection.filter.allCount', { n: stats.total.found });
                 } else {
-                    btn.textContent = f.toUpperCase() + ' (' + stats[f].found + '/' + stats[f].total + ')';
+                    btn.textContent = t('collection.filter.count', { rarity: t('collection.filter.' + f), found: stats[f].found, total: stats[f].total });
                 }
                 if (f === this._collectionFilter) btn.classList.add('active');
                 else btn.classList.remove('active');
@@ -4711,10 +4762,10 @@
 
         _showCollectionTooltip(e, upgrade) {
             const tip = document.getElementById('collection-tooltip');
-            document.getElementById('coltip-name').textContent = upgrade.name;
-            document.getElementById('coltip-rarity').textContent = upgrade.rarity.toUpperCase();
+            document.getElementById('coltip-name').textContent = t('upgrade.' + upgrade.id + '.name');
+            document.getElementById('coltip-rarity').textContent = t('upgrade.rarity.' + upgrade.rarity);
             document.getElementById('coltip-rarity').dataset.rarity = upgrade.rarity;
-            document.getElementById('coltip-desc').textContent = upgrade.description;
+            document.getElementById('coltip-desc').textContent = t('upgrade.' + upgrade.id + '.desc');
             tip.classList.add('visible');
 
             // Position near the card
@@ -4857,7 +4908,7 @@
                 if (el) {
                     const w = s.wave > 0 ? s.wave : '--';
                     const sc = s.score > 0 ? s.score : '--';
-                    el.innerHTML = `<span class="stat-item">Best Wave: ${w}</span><span class="stat-item">High Score: ${sc}</span>`;
+                    el.innerHTML = `<span class="stat-item">${w > 0 ? t('scenario.stat.bestWave', { n: w }) : t('scenario.stat.bestWaveNone')}</span><span class="stat-item">${sc > 0 ? t('scenario.stat.highScore', { n: sc }) : t('scenario.stat.highScoreNone')}</span>`;
                 }
             }
         },
@@ -5009,7 +5060,7 @@
                 if (!data) return false;
                 if (data.version !== 1) {
                     this._showConfirm(
-                        'Save file is from an older version and is incompatible. Start fresh?',
+                        t('confirm.saveVersion'),
                         () => { this._deleteSave(); }
                     );
                     return false;
@@ -5258,7 +5309,7 @@
 
                 // 10. Update HUD
                 this.updateHUD();
-                this.announceWave(`WAVE ${this.wave} — GAME LOADED`);
+                this.announceWave(t('wave.loaded', { n: this.wave }));
 
                 // Unlock towers up to current wave
                 this._applyTowerLocks(this.wave);
@@ -5321,7 +5372,7 @@
                 }
             });
             if (unlocked.length > 0) {
-                this.announceWave(`NEW TOWER: ${unlocked.join(' + ').toUpperCase()}!`);
+                this.announceWave(t('tower.unlock', { name: unlocked.join(' + ').toUpperCase() }));
                 if (window.SFX) SFX.play('wave_clear');
             }
         },
@@ -5349,7 +5400,7 @@
             const minutes = Math.floor(elapsed / 60);
             const seconds = elapsed % 60;
             const stats = document.getElementById('victory-stats');
-            stats.innerHTML = `Waves Survived: ${this.wave}<br>Score: ${this.score}<br>Enemies Repelled: ${this._totalRepelled || 0}<br>Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            stats.innerHTML = t('victory.stats', { wave: this.wave, score: this.score, repelled: this._totalRepelled || 0, time: minutes + ':' + seconds.toString().padStart(2, '0') });
             document.getElementById('victory-screen').classList.add('active');
         },
 
@@ -5386,21 +5437,21 @@
         _getUnlockRequirement(scenario) {
             // Demo mode: show "full game" message for all locked scenarios
             if (window.IS_DEMO && scenario !== 'office') {
-                return 'Available in the full game!';
+                return t('unlock.demo');
             }
 
             switch (scenario) {
                 case 'forest': {
                     const progress = this._bestStats.office.wave;
-                    return `Reach Wave 10 in The Office (${progress}/10)`;
+                    return t('unlock.office_10', { n: progress });
                 }
-                case 'ocean': return 'Complete The Office campaign';
+                case 'ocean': return t('unlock.office_campaign');
                 case 'airplane': {
                     let count = 0;
                     for (const s of ['office', 'forest', 'ocean', 'airplane']) {
                         if (this._isScenarioCompleted(s)) count++;
                     }
-                    return `Complete 2 campaigns (${count}/2)`;
+                    return t('unlock.campaigns_2', { n: count });
                 }
                 default: return '';
             }
@@ -6015,14 +6066,14 @@
             ctx.clearRect(0, 0, 256, 80);
             ctx.save();
             ctx.translate(128, 40);
-            ctx.font = 'bold 38px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(38, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.strokeStyle = '#1a1a2e';
             ctx.lineWidth = 4;
-            ctx.strokeText(`SELL +${refund}`, 0, 0);
+            ctx.strokeText(t('canvas.sellPreview', { n: refund }), 0, 0);
             ctx.fillStyle = '#ffd93d';
-            ctx.fillText(`SELL +${refund}`, 0, 0);
+            ctx.fillText(t('canvas.sellPreview', { n: refund }), 0, 0);
             ctx.restore();
             this._sellPreviewSprite.material.map.needsUpdate = true;
             this._sellPreviewSprite.position.set(found.gridX, 4.5, found.gridZ);
@@ -6227,7 +6278,7 @@
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(96, 48);
             ctx.rotate(rot);
-            ctx.font = 'bold 56px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(56, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const words = ['TRIP!', 'CRASH!', 'SPLAT!', 'BONK!', 'OOF!'];
@@ -6971,7 +7022,7 @@
                 void val.offsetWidth;
                 val.classList.add('bump-heal');
                 if (delta) {
-                    delta.textContent = 'FULL HEAL!';
+                    delta.textContent = t('canvas.fullHeal');
                     delta.className = 'hud-delta';
                     void delta.offsetWidth;
                     delta.className = 'hud-delta show-positive';
@@ -8126,28 +8177,14 @@
             this._attritionTimer = 0;
 
             // Announce with enemy introduction on key waves
-            let msg = `WAVE ${this.wave}`;
+            let msg = t('wave.announce', { n: this.wave });
             if (event) {
                 msg += ` — ${event.announcement}`;
                 if (window.SFX) SFX.play('wave_event');
-            } else if (this._currentScenario === 'forest') {
-                if (this.wave === 3) msg += ' — SQUIRRELS!';
-                else if (this.wave === 5) msg += ' — SOMETHING BIG IN THE WOODS...';
-                else if (this.wave === 7) msg += ' — A FOX ON THE PROWL!';
-                else if (this.wave === 9) msg += ' — MOOSE INCOMING!';
-                else if (this.wave === 10) msg += ' — RACCOON RAID!';
-            } else if (this._currentScenario === 'ocean') {
-                if (this.wave === 3) msg += ' — FLYING FISH ATTACK!';
-                else if (this.wave === 5) msg += ' — A SHARK IS CIRCLING...';
-                else if (this.wave === 7) msg += ' — PIRATES ON THE HORIZON!';
-                else if (this.wave === 9) msg += ' — AN ANCIENT SHELL APPROACHES...';
-                else if (this.wave === 10) msg += ' — THE WATER GLOWS!';
             } else {
-                if (this.wave === 3) msg += ` — THEY'RE DANCING!`;
-                else if (this.wave === 5) msg += ' — SOMETHING BIG IS COMING...';
-                else if (this.wave === 7) msg += ` — SOMEONE'S LOSING IT!`;
-                else if (this.wave === 9) msg += ' — POWER WALKERS!';
-                else if (this.wave === 10) msg += ` — THEY'RE ALL GOING TOGETHER`;
+                const introKey = `wave.intro.${this._currentScenario}.${this.wave}`;
+                const introText = t(introKey);
+                if (introText !== introKey) msg += introText;
             }
             if (window.SFX && !event) {
                 const scenarioStart = 'wave_start_' + this._currentScenario;
@@ -8747,7 +8784,7 @@
                     this.updateHUD();
                     if (window.SFX) { SFX.play('wave_clear'); SFX.play('coin_bonus'); }
                     if (!this._tutorialActive) {
-                        this.announceWave(`WAVE ${this.wave} CLEARED  +${waveBonus}`);
+                        this.announceWave(t('wave.cleared', { n: this.wave, bonus: waveBonus }));
                     }
                     this._spawnCoinText(0, 30, waveBonus);
 
@@ -11734,7 +11771,7 @@
             const rot = (Math.random() - 0.5) * 0.1;
             ctx.translate(96, 40);
             ctx.rotate(rot);
-            ctx.font = '52px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(52, false);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const text = `+${amount}`;
@@ -11772,20 +11809,20 @@
             ctx.translate(128, 64);
             ctx.rotate(rot);
             // Big chunky "SOLD!" text
-            ctx.font = 'bold 72px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(72, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             // Danger-red outline
             ctx.strokeStyle = '#1a1a2e';
             ctx.lineWidth = 7;
-            ctx.strokeText('SOLD!', 0, 0);
+            ctx.strokeText(t('canvas.sold'), 0, 0);
             // Gold fill
             ctx.fillStyle = '#ffd93d';
-            ctx.fillText('SOLD!', 0, 0);
+            ctx.fillText(t('canvas.sold'), 0, 0);
             // Inner highlight
             ctx.strokeStyle = '#fff4d9';
             ctx.lineWidth = 1.5;
-            ctx.strokeText('SOLD!', -1, -1);
+            ctx.strokeText(t('canvas.sold'), -1, -1);
 
             const texture = new THREE.CanvasTexture(canvas);
             const mat = new THREE.SpriteMaterial({
@@ -11878,7 +11915,7 @@
             const rot = (Math.random() - 0.5) * 0.15;
             ctx.translate(64, 32);
             ctx.rotate(rot);
-            ctx.font = `bold ${fontSize}px Bangers, Impact, sans-serif`;
+            ctx.font = getCanvasFont(fontSize, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const text = `${rounded}`;
@@ -11914,7 +11951,7 @@
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(64, 32);
             ctx.rotate(rot);
-            ctx.font = 'bold 48px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(48, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const words = ['?', '?!', 'HUH?', 'OOF!'];
@@ -11950,10 +11987,10 @@
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(96, 48);
             ctx.rotate(rot);
-            ctx.font = 'bold 56px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(56, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const words = ['POW!', 'WHAP!', 'SMACK!', 'THWACK!'];
+            const words = [t('canvas.mop.pow'), t('canvas.mop.whap'), t('canvas.mop.smack'), t('canvas.mop.thwack')];
             const text = words[Math.floor(Math.random() * words.length)];
             // Purple text with black outline
             ctx.strokeStyle = '#1a1a2e';
@@ -12513,7 +12550,7 @@
 
             // Text
             const fontSize = text.length > 4 ? 44 : 58;
-            ctx.font = `bold ${fontSize}px Bangers, Impact, sans-serif`;
+            ctx.font = getCanvasFont(fontSize, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.strokeStyle = '#1a1a2e';
@@ -12578,14 +12615,14 @@
             ctx.stroke();
 
             // Curse symbols
-            ctx.font = 'bold 52px Bangers, Impact, sans-serif';
+            ctx.font = getCanvasFont(52, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ff6b7a';
             ctx.strokeStyle = '#1a1a2e';
             ctx.lineWidth = 4;
-            ctx.strokeText('@#$%!', 160, 68);
-            ctx.fillText('@#$%!', 160, 68);
+            ctx.strokeText(t('canvas.curse'), 160, 68);
+            ctx.fillText(t('canvas.curse'), 160, 68);
 
             const texture = new THREE.CanvasTexture(canvas);
             const mat = new THREE.SpriteMaterial({

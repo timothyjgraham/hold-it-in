@@ -8,6 +8,7 @@
 import { PALETTE } from '../data/palette.js';
 import { toonMat } from '../shaders/toonMaterials.js';
 import { draw3DUpgradeIcon } from './UpgradeIconRenderer.js';
+import { t } from '../i18n.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 
@@ -64,9 +65,40 @@ const UPGRADE_STAT_PREVIEWS = {
     L8:  [{ label: 'Mop Knockback', text: '3x', beneficial: true }],
 };
 
+// Map stat label English text → i18n key
+const STAT_LABEL_KEYS = {
+    'Magnet Range': 'upgrade.stat.magnetRange',
+    'Magnet HP': 'upgrade.stat.magnetHP',
+    'Coin Value': 'upgrade.stat.coinValue',
+    'Sign HP': 'upgrade.stat.signHP',
+    'Sign Slow': 'upgrade.stat.signSlow',
+    'Bash DMG': 'upgrade.stat.bashDMG',
+    'Mop Arc': 'upgrade.stat.mopArc',
+    'Mop DMG': 'upgrade.stat.mopDMG',
+    'Mop Cooldown': 'upgrade.stat.mopCooldown',
+    'Mop Knockback': 'upgrade.stat.mopKnockback',
+    'Mop HP': 'upgrade.stat.mopHP',
+    'Ubik Cooldown': 'upgrade.stat.ubikCooldown',
+    'Pot Stun': 'upgrade.stat.potStun',
+    'Tower DMG': 'upgrade.stat.towerDMG',
+    'Tower HP': 'upgrade.stat.towerHP',
+    'Pot Cost': 'upgrade.stat.potCost',
+    'Pot HP': 'upgrade.stat.potHP',
+    'Coin Drop': 'upgrade.stat.coinDrop',
+    'Tower Cost': 'upgrade.stat.towerCost',
+    'Sell Refund': 'upgrade.stat.sellRefund',
+    'Door HP': 'upgrade.stat.doorHP',
+    'Collision Stun': 'upgrade.stat.collisionStun',
+};
+
 function _getUpgradeStatPreview(upgrade) {
     if (!upgrade || !upgrade.id) return [];
-    return UPGRADE_STAT_PREVIEWS[upgrade.id] || [];
+    const stats = UPGRADE_STAT_PREVIEWS[upgrade.id];
+    if (!stats) return [];
+    return stats.map(s => ({
+        ...s,
+        label: STAT_LABEL_KEYS[s.label] ? t(STAT_LABEL_KEYS[s.label]) : s.label,
+    }));
 }
 
 // ─── SCREEN FLASH OVERLAY ───────────────────────────────────────────────────
@@ -1092,7 +1124,7 @@ export class UpgradeSelectionUI {
         ctx.textBaseline = 'middle';
         ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
         ctx.font = "bold 32px 'Bangers', sans-serif";
-        ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
+        ctx.fillText(t('upgrade.rarity.' + rarity), cW / 2, bannerH / 2);
 
         // ── Icon — centered, prominent ──
         const iconSize = 300;
@@ -1101,13 +1133,14 @@ export class UpgradeSelectionUI {
         draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
         // ── Name — centered below icon ──
-        const nameFontSize = upgrade.name.length > 18 ? 48 : upgrade.name.length > 12 ? 54 : 62;
+        const upgradeName = t('upgrade.' + upgrade.id + '.name');
+        const nameFontSize = upgradeName.length > 18 ? 48 : upgradeName.length > 12 ? 54 : 62;
         ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         const nameMaxW = 680;
-        const nameWords = upgrade.name.split(' ');
+        const nameWords = upgradeName.split(' ');
         const nameLines = [];
         let curLine = nameWords[0];
         for (let w = 1; w < nameWords.length; w++) {
@@ -1153,7 +1186,8 @@ export class UpgradeSelectionUI {
         const previewLineH = 40;
         const previewTotalH = previews.length > 0 ? previews.length * previewLineH + 12 : 0;
 
-        if (upgrade.description) {
+        const upgradeDesc = t('upgrade.' + upgrade.id + '.desc');
+        if (upgradeDesc) {
             const descMaxW = 700;
             const descAreaTop = dividerY + 16;
             const descAreaBot = cH - 16 - previewTotalH;
@@ -1167,7 +1201,7 @@ export class UpgradeSelectionUI {
                 ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
                 descLineH = descFontSize + 10;
 
-                const dWords = upgrade.description.split(' ');
+                const dWords = upgradeDesc.split(' ');
                 dLines = [];
                 let dLine = dWords[0] || '';
                 for (let w = 1; w < dWords.length; w++) {

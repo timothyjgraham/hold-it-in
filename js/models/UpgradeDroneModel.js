@@ -7,6 +7,7 @@
 import { PALETTE, OUTLINE_WIDTH } from '../data/palette.js';
 import { toonMat, outlineMatStatic, outlineMatJittery } from '../shaders/toonMaterials.js';
 import { draw3DUpgradeIcon } from '../ui/UpgradeIconRenderer.js';
+import { t, getCanvasFont } from '../i18n.js';
 
 // ─── BODY DIMENSIONS (universal — same shape for every rarity) ──────────────
 
@@ -142,7 +143,7 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
-    ctx.font = "bold 32px 'Bangers', sans-serif";
+    ctx.font = getCanvasFont(32, true);
     ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
 
     // ── ICON — centered, prominent ──
@@ -157,13 +158,14 @@ function createPlacardTexture(upgrade, rarity) {
     draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
     // ── NAME — centered below icon ──
-    const nameFontSize = upgrade.name.length > 18 ? 48 : upgrade.name.length > 12 ? 54 : 62;
-    ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
+    const upgradeName = t('upgrade.' + upgrade.id + '.name');
+    const nameFontSize = upgradeName.length > 18 ? 48 : upgradeName.length > 12 ? 54 : 62;
+    ctx.font = getCanvasFont(nameFontSize, true);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const nameMaxW = 680;
-    const nameWords = upgrade.name.split(' ');
+    const nameWords = upgradeName.split(' ');
     const nameLines = [];
     let currentLine = nameWords[0];
     for (let i = 1; i < nameWords.length; i++) {
@@ -205,7 +207,8 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.restore();
 
     // ── DESCRIPTION (auto-scaling font) ──
-    if (upgrade.description) {
+    const upgradeDesc = t('upgrade.' + upgrade.id + '.desc');
+    if (upgradeDesc) {
         const descMaxW = 700;
         const descAreaTop = dividerY + 16;
         const descAreaBot = cH - 16;
@@ -216,10 +219,10 @@ function createPlacardTexture(upgrade, rarity) {
 
         // Shrink font until description fits available area
         for (; descFontSize >= 24; descFontSize -= 2) {
-            ctx.font = `${descFontSize}px 'Bangers', sans-serif`;
+            ctx.font = getCanvasFont(descFontSize, false);
             descLineH = descFontSize + 10;
 
-            const words = upgrade.description.split(' ');
+            const words = upgradeDesc.split(' ');
             descLines = [];
             let line = words[0] || '';
             for (let w = 1; w < words.length; w++) {

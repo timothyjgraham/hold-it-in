@@ -2,6 +2,7 @@
 
 import { CONFIG } from './data/config.js';
 import { PALETTE, OUTLINE_WIDTH, injectCSSPalette } from './data/palette.js';
+import { t, setLanguage, getLanguage, getCanvasFont, applyHTMLTranslations, initI18n, LANGUAGES } from './i18n.js';
 import { createToilet, updateToilet } from './models/ToiletModel.js';
 import { AnimationController } from './animation/AnimationController.js';
 import { getAnimationClip, disposeAnimationCache } from './animation/AnimationLibrary.js';
@@ -86,6 +87,15 @@ window.IS_DEMO = typeof __IS_DEMO__ !== 'undefined' ? __IS_DEMO__ : false;
 
 // Inject CSS palette variables
 injectCSSPalette();
+
+// i18n — expose to window for inline script access
+window.t = t;
+window.setLanguage = setLanguage;
+window.getLanguage = getLanguage;
+window.getCanvasFont = getCanvasFont;
+window.applyHTMLTranslations = applyHTMLTranslations;
+window.initI18n = initI18n;
+window.LANGUAGES = LANGUAGES;
 
 // Initialize 3D icon offscreen renderer
 initIconRenderer();
@@ -204,6 +214,8 @@ window.ScenarioIconRenderer = {
     disposeScenarioIcons,
 };
 
-// Initialize game
+// Initialize i18n then game
 window.Game = Game;
-Game.init();
+initI18n().then(() => {
+    Game.init();
+});

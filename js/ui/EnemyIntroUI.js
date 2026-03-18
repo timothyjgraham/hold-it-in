@@ -11,6 +11,7 @@ import { ENEMY_VISUAL_CONFIG } from '../data/enemyConfig.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from '../models/UpgradeDroneModel.js';
 import { createEnemyModel } from '../models/EnemyModelFactory.js';
 import { AnimationController } from '../animation/AnimationController.js';
+import { t, getCanvasFont } from '../i18n.js';
 
 // ─── TIMING CONSTANTS ────────────────────────────────────────────────────────
 
@@ -72,15 +73,16 @@ function _createIntroSignTexture(enemyType) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = hexCSS(PALETTE.ink);
-    ctx.font = "52px 'Bangers', sans-serif";
-    ctx.fillText(data.tagline, cW / 2, barH / 2);
+    ctx.font = getCanvasFont(52, false);
+    ctx.fillText(t('enemy.' + enemyType + '.tag'), cW / 2, barH / 2);
 
     // Enemy name (large)
     ctx.fillStyle = hexCSS(PALETTE.ink);
-    const nameLen = data.name.length;
+    const enemyName = t('enemy.' + enemyType + '.name');
+    const nameLen = enemyName.length;
     const nameFontSize = nameLen > 18 ? 96 : nameLen > 14 ? 112 : 130;
-    ctx.font = `bold ${nameFontSize}px 'Bangers', sans-serif`;
-    ctx.fillText(data.name, cW / 2, barH + 130);
+    ctx.font = getCanvasFont(nameFontSize, true);
+    ctx.fillText(enemyName, cW / 2, barH + 130);
 
     // Divider line
     const dividerY = barH + 225;
@@ -93,12 +95,12 @@ function _createIntroSignTexture(enemyType) {
 
     // Trait bullets
     ctx.fillStyle = hexCSS(PALETTE.ink);
-    ctx.font = "62px 'Bangers', sans-serif";
+    ctx.font = getCanvasFont(62, false);
     ctx.textAlign = 'center';
     const traitStartY = dividerY + 80;
     const traitLineH = 82;
     for (let i = 0; i < data.traits.length; i++) {
-        ctx.fillText('• ' + data.traits[i], cW / 2, traitStartY + i * traitLineH);
+        ctx.fillText('• ' + t('enemy.' + enemyType + '.t' + (i + 1)), cW / 2, traitStartY + i * traitLineH);
     }
 
     const texture = new THREE.CanvasTexture(canvas);
@@ -138,7 +140,7 @@ function _ensureTapTextElement() {
         pointer-events: none;
         user-select: none;
     `;
-    _tapTextEl.textContent = 'CLICK TO CONTINUE';
+    _tapTextEl.textContent = t('intro.clickContinue');
     document.body.appendChild(_tapTextEl);
     return _tapTextEl;
 }
