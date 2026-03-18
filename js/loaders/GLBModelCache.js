@@ -16,7 +16,7 @@ const MANIFEST = {
     seaturtle: 'models/ocean/turtle.glb',
     jellyfish: 'models/ocean/jellyfish.glb',
     flyfish:   'models/ocean/fish_lowpoly.glb',
-    boat:      'models/ocean/boat-row-small.glb',
+    // boat removed — embedded texture causes decode errors; pirate uses procedural fallback
     // KayKit airplane models removed — all airplane enemies use procedural geometry
 };
 

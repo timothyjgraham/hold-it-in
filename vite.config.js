@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import path from 'path'
 
 export default defineConfig({
   root: '.',
@@ -11,5 +12,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets'
+  },
+  resolve: {
+    alias: [
+      // Redirect bare 'three' imports to the global window.THREE
+      // (loaded via lib/three.min.js) so Vite doesn't bundle a second copy.
+      { find: /^three$/, replacement: path.resolve(__dirname, 'js/lib/three-global.js') }
+    ]
   }
 })
