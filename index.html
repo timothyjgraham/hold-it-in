@@ -6709,7 +6709,6 @@
                 p.mesh.scale.setScalar(0.3 + fade * 0.7);
                 if (p.life <= 0) {
                     this.scene.remove(p.mesh);
-                    p.mesh.geometry.dispose();
                     p.mesh.material.dispose();
                     this._droneTrailParticles.splice(i, 1);
                 }
@@ -6756,11 +6755,12 @@
                         if (!ud._trailTimer) ud._trailTimer = 0;
                         ud._trailTimer += dt;
                         const interval = ud.rarity === 'legendary' ? 0.04 : 0.08;
+                        if (!this._trailParticleGeo) this._trailParticleGeo = new THREE.SphereGeometry(0.04, 4, 4);
                         while (ud._trailTimer >= interval) {
                             ud._trailTimer -= interval;
                             const color = ud.rarity === 'legendary' ? PALETTE.rarityLegendary : PALETTE.rarityRare;
                             const fadeTime = ud.rarity === 'legendary' ? 0.6 : 0.4;
-                            const geo = new THREE.SphereGeometry(0.04, 4, 4);
+                            const geo = this._trailParticleGeo;
                             const mat = new THREE.MeshBasicMaterial({
                                 color, transparent: true, opacity: 1, depthWrite: false,
                             });
@@ -6797,6 +6797,7 @@
 
                     if (ud._settleTimer >= 0.5) {
                         ud.state = 'hovering';
+                        ud._iconFrozen = true;
                         drone.rotation.set(0, 0, 0);
                     }
 
@@ -6857,7 +6858,6 @@
             if (this._droneTrailParticles) {
                 for (const p of this._droneTrailParticles) {
                     this.scene.remove(p.mesh);
-                    p.mesh.geometry.dispose();
                     p.mesh.material.dispose();
                 }
                 this._droneTrailParticles = [];

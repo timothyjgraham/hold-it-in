@@ -19,7 +19,7 @@ const HOVER_EXTRA_TILT = 0.1;     // Extra tilt toward camera when hovered
 const COMMON_SELECT_DUR = 0.6;
 const RARE_SELECT_DUR = 0.9;
 const LEGENDARY_SELECT_DUR = 1.4;
-const REJECTED_EXIT_DUR = 1.2;
+const REJECTED_EXIT_DUR = 1.5;
 const REJECTED_STAGGER = 0.2;
 
 // Slowmo
@@ -514,12 +514,12 @@ export class UpgradeSelectionUI {
     }
 
     _applyBrightness(drone, brightness) {
-        drone.traverse(child => {
-            if (child.isMesh && child.material) {
+        const meshes = drone.userData._meshes || [];
+        for (const child of meshes) {
+            if (child.material) {
                 const mats = Array.isArray(child.material) ? child.material : [child.material];
                 for (const mat of mats) {
                     if (mat.isMeshToonMaterial && mat.color) {
-                        // Store original color on first encounter
                         if (!mat._origColor) {
                             mat._origColor = mat.color.clone();
                         }
@@ -527,7 +527,7 @@ export class UpgradeSelectionUI {
                     }
                 }
             }
-        });
+        }
     }
 
     // ─── CAMERA-FACING TILT ──────────────────────────────────────────────
@@ -799,16 +799,16 @@ export class UpgradeSelectionUI {
             let target;
             if (windows.length > 0) {
                 const win = windows[Math.floor(Math.random() * windows.length)];
-                target = new THREE.Vector3(win.x + (win.x < 0 ? -4 : 4), win.y, win.z);
+                target = new THREE.Vector3(win.x + (win.x < 0 ? -12 : 12), 45, win.z);
             } else {
-                target = new THREE.Vector3((Math.random() - 0.5) * 30, 5, 70);
+                target = new THREE.Vector3((Math.random() - 0.5) * 30, 45, 70);
             }
 
-            // Build sad exit flight path (lower arc)
+            // Build upward exit flight path (zip off-screen)
             const startPos = drone.position.clone();
             const midPoint = new THREE.Vector3(
                 (startPos.x + target.x) / 2,
-                Math.min(startPos.y, target.y) - 2, // Lower arc = sad
+                startPos.y + 3, // Rise upward
                 (startPos.z + target.z) / 2
             );
 
@@ -872,20 +872,6 @@ export class UpgradeSelectionUI {
                     drone.rotation.y = Math.atan2(dir.x, dir.z);
                     drone.rotation.x = -Math.min(0.3, dir.length() * 0.1);
                 }
-            }
-
-            // Fade out in last 30%
-            if (t > 0.7) {
-                const fade = 1 - (t - 0.7) / 0.3;
-                drone.traverse(child => {
-                    if (child.isMesh && child.material) {
-                        const mats = Array.isArray(child.material) ? child.material : [child.material];
-                        for (const mat of mats) {
-                            mat.transparent = true;
-                            mat.opacity = fade;
-                        }
-                    }
-                });
             }
 
             if (t >= 1) ud.state = 'done';
@@ -973,6 +959,20 @@ export class UpgradeSelectionUI {
         this._cardDropProgress = 0;
 
         selDrone.userData.state = 'cardDrop';
+
+        // Set up exit flight curve for selected drone body
+        const droneStart = selDrone.position.clone();
+        const exitX = droneStart.x + (Math.random() - 0.5) * 10;
+        const exitMid = new THREE.Vector3(
+            (droneStart.x + exitX) / 2,
+            droneStart.y + 5,
+            droneStart.z
+        );
+        const exitEnd = new THREE.Vector3(exitX, 45, droneStart.z);
+        selDrone.userData._cardExitCurve = new THREE.CatmullRomCurve3([
+            droneStart, exitMid, exitEnd,
+        ], false, 'catmullrom', 0.3);
+        selDrone.userData._cardExitProgress = 0;
     }
 
     _createCardDropElement(upgrade, screenX, screenY) {
@@ -1284,19 +1284,17 @@ export class UpgradeSelectionUI {
             }
         }
 
-        // Fade out the 3D drone body
+        // Fly selected drone body off-screen (accelerating)
         const selDrone = this.drones[this.selectedIndex];
-        if (t > 0.2) {
-            const fade = Math.max(0, 1 - (t - 0.2) / 0.5);
-            selDrone.traverse(child => {
-                if (child.isMesh && child.material) {
-                    const mats = Array.isArray(child.material) ? child.material : [child.material];
-                    for (const mat of mats) {
-                        mat.transparent = true;
-                        mat.opacity = fade;
-                    }
-                }
-            });
+        if (selDrone.userData._cardExitCurve) {
+            selDrone.userData._cardExitProgress += dt / CARD_DROP_DUR;
+            const ep = Math.min(1, selDrone.userData._cardExitProgress);
+            const et = ep * ep; // Accelerating easing
+            const pos = new THREE.Vector3();
+            selDrone.userData._cardExitCurve.getPoint(et, pos);
+            selDrone.position.copy(pos);
+            // Tilt forward as it flies up
+            selDrone.rotation.x = -ep * 0.4;
         }
 
         if (t >= 1) {

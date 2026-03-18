@@ -854,7 +854,7 @@ export function updateUpgradeDrone(drone, dt) {
     }
 
     // ── ANIMATED 3D ICON on placard (throttled to every 3rd frame) ─────
-    if (ud.placardTexture && ud.placardTexture._iconCanvas) {
+    if (ud.placardTexture && ud.placardTexture._iconCanvas && !ud._iconFrozen) {
         ud._iconFrame++;
         if (ud._iconFrame % 3 === 0) {
             const tex = ud.placardTexture;
