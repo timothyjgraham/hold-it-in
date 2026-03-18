@@ -9631,7 +9631,7 @@
                 // Reached the door? Start bashing it
                 const doorZ = this._layout ? this._layout.doorZ : 9;
                 const bashRange = doorZ + 1.5;
-                if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0) {
+                if (e.z <= bashRange && this.doorGroup && this.doorGroup.userData.doorHP > 0 && e.stunTimer <= 0) {
                     // Stop at the door
                     e.z = Math.max(e.z, bashRange);
                     e.mesh.position.z = e.z;
