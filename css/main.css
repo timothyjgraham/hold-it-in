@@ -2463,9 +2463,7 @@ canvas {
     border: 2px solid var(--pal-ink, #1a1a2e);
     background: var(--pal-gold, #ffd93d);
     color: var(--pal-ink, #1a1a2e);
-    position: absolute;
-    right: 8px;
-    top: 8px;
+    align-self: center;
 }
 
 /* ===== KEYBIND CONTROLS ===== */

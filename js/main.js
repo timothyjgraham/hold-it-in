@@ -215,7 +215,6 @@ window.ScenarioIconRenderer = {
 };
 
 // Initialize i18n then game
-window.Game = Game;
 initI18n().then(() => {
-    Game.init();
+    window.Game.init();
 });

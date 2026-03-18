@@ -110,8 +110,8 @@
                     <span class="icon" data-i18n="hud.pts">PTS</span>
                 </div>
             </div>
+            <span id="difficulty-badge" class="difficulty-badge" data-i18n="difficulty.normal">NORMAL</span>
         </div>
-        <span id="difficulty-badge" class="difficulty-badge" data-i18n="difficulty.normal">NORMAL</span>
     </div>
 
     <!-- Wave badge (positioned above door in 3D) -->
@@ -1148,21 +1148,21 @@
         WAVE_EVENTS: {
             15: {
                 name: 'TACO TUESDAY',
-                announcement: t('wave.event.office.taco'),
+                announcementKey: 'wave.event.office.taco',
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { waddle: 0.35, polite: 0.20, dancer: 0.20, panicker: 0.10, powerwalker: 0.06, girls_group: 0.05, drunk_train: 0.04 },
             },
             20: {
                 name: 'THE LUNCH RUSH',
-                announcement: t('wave.event.office.lunch'),
+                announcementKey: 'wave.event.office.lunch',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { polite: 0.35, dancer: 0.25, powerwalker: 0.16, panicker: 0.10, waddle: 0.05, girls_group: 0.05, drunk_train: 0.04 },
             },
             25: {
                 name: 'COFFEE KICKED IN',
-                announcement: t('wave.event.office.coffee'),
+                announcementKey: 'wave.event.office.coffee',
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1170,14 +1170,14 @@
             },
             30: {
                 name: 'FOOD POISONING',
-                announcement: t('wave.event.office.foodPoisoning'),
+                announcementKey: 'wave.event.office.foodPoisoning',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { waddle: 0.25, panicker: 0.20, dancer: 0.20, polite: 0.15, vaulter: 0.10, girls_group: 0.10 },
             },
             35: {
                 name: 'WING NIGHT',
-                announcement: t('wave.event.office.wings'),
+                announcementKey: 'wave.event.office.wings',
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1185,7 +1185,7 @@
             },
             40: {
                 name: 'FIRE DRILL',
-                announcement: t('wave.event.office.fireDrill'),
+                announcementKey: 'wave.event.office.fireDrill',
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1193,14 +1193,14 @@
             },
             45: {
                 name: 'CHILI COOK-OFF',
-                announcement: t('wave.event.office.chili'),
+                announcementKey: 'wave.event.office.chili',
                 enemyMult: 4.0,
                 spawnMult: 0.25,
                 weights: { waddle: 0.35, panicker: 0.30, powerwalker: 0.15, dancer: 0.10, girls_group: 0.10 },
             },
             50: {
                 name: 'BLACK FRIDAY',
-                announcement: t('wave.event.office.blackFriday'),
+                announcementKey: 'wave.event.office.blackFriday',
                 enemyMult: 5.0,
                 spawnMult: 0.15,
                 speedMult: 1.8,
@@ -1236,21 +1236,21 @@
         FOREST_WAVE_EVENTS: {
             15: {
                 name: 'BERRY SEASON',
-                announcement: t('wave.event.forest.berry'),
+                announcementKey: 'wave.event.forest.berry',
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { bear: 0.35, deer: 0.20, squirrel: 0.20, fox: 0.06, moose: 0.10, raccoon_group: 0.05, ant_train: 0.04 },
             },
             20: {
                 name: 'MIGRATION',
-                announcement: t('wave.event.forest.migration'),
+                announcementKey: 'wave.event.forest.migration',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { deer: 0.35, moose: 0.25, squirrel: 0.16, fox: 0.10, bear: 0.05, raccoon_group: 0.05, ant_train: 0.04 },
             },
             25: {
                 name: 'FULL MOON',
-                announcement: t('wave.event.forest.fullMoon'),
+                announcementKey: 'wave.event.forest.fullMoon',
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1258,14 +1258,14 @@
             },
             30: {
                 name: 'FOREST FIRE',
-                announcement: t('wave.event.forest.fire'),
+                announcementKey: 'wave.event.forest.fire',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { bear: 0.25, fox: 0.20, squirrel: 0.20, deer: 0.15, kangaroo: 0.10, raccoon_group: 0.10 },
             },
             35: {
                 name: 'HIBERNATION PANIC',
-                announcement: t('wave.event.forest.hibernation'),
+                announcementKey: 'wave.event.forest.hibernation',
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1273,7 +1273,7 @@
             },
             40: {
                 name: 'STAMPEDE',
-                announcement: t('wave.event.forest.stampede'),
+                announcementKey: 'wave.event.forest.stampede',
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1309,21 +1309,21 @@
         OCEAN_WAVE_EVENTS: {
             15: {
                 name: 'FEEDING FRENZY',
-                announcement: t('wave.event.ocean.feeding'),
+                announcementKey: 'wave.event.ocean.feeding',
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { shark: 0.35, dolphin: 0.20, flyfish: 0.16, pirate: 0.10, seaturtle: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             20: {
                 name: 'TIDAL WAVE',
-                announcement: t('wave.event.ocean.tidal'),
+                announcementKey: 'wave.event.ocean.tidal',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { dolphin: 0.30, seaturtle: 0.21, flyfish: 0.20, pirate: 0.10, shark: 0.10, jellyfish_group: 0.05, seahorse_train: 0.04 },
             },
             25: {
                 name: 'BLOOD MOON',
-                announcement: t('wave.event.ocean.bloodMoon'),
+                announcementKey: 'wave.event.ocean.bloodMoon',
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1331,14 +1331,14 @@
             },
             30: {
                 name: 'PIRATE ARMADA',
-                announcement: t('wave.event.ocean.pirate'),
+                announcementKey: 'wave.event.ocean.pirate',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { pirate: 0.35, shark: 0.20, flyfish: 0.15, dolphin: 0.10, seaturtle: 0.10, frog: 0.05, jellyfish_group: 0.05 },
             },
             35: {
                 name: 'KRAKEN STIRS',
-                announcement: t('wave.event.ocean.kraken'),
+                announcementKey: 'wave.event.ocean.kraken',
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1346,7 +1346,7 @@
             },
             40: {
                 name: 'MAELSTROM',
-                announcement: t('wave.event.ocean.maelstrom'),
+                announcementKey: 'wave.event.ocean.maelstrom',
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1382,21 +1382,21 @@
         AIRPLANE_WAVE_EVENTS: {
             15: {
                 name: 'TURBULENCE',
-                announcement: t('wave.event.airplane.turbulence'),
+                announcementKey: 'wave.event.airplane.turbulence',
                 enemyMult: 2.5,
                 spawnMult: 0.5,
                 weights: { stumbler: 0.35, nervous: 0.20, business: 0.16, attendant: 0.10, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             20: {
                 name: 'MEAL SERVICE',
-                announcement: t('wave.event.airplane.meal'),
+                announcementKey: 'wave.event.airplane.meal',
                 enemyMult: 3.0,
                 spawnMult: 0.4,
                 weights: { nervous: 0.30, business: 0.25, stumbler: 0.15, attendant: 0.11, marshal: 0.10, unruly_group: 0.05, trolley_train: 0.04 },
             },
             25: {
                 name: 'SEATBELT SIGN OFF',
-                announcement: t('wave.event.airplane.seatbelt'),
+                announcementKey: 'wave.event.airplane.seatbelt',
                 enemyMult: 2.5,
                 spawnMult: 0.35,
                 speedMult: 1.5,
@@ -1404,14 +1404,14 @@
             },
             30: {
                 name: 'BAD FISH',
-                announcement: t('wave.event.airplane.fish'),
+                announcementKey: 'wave.event.airplane.fish',
                 enemyMult: 3.5,
                 spawnMult: 0.3,
                 weights: { stumbler: 0.30, nervous: 0.20, attendant: 0.15, business: 0.15, hurdler: 0.10, unruly_group: 0.10 },
             },
             35: {
                 name: 'DUTY FREE',
-                announcement: t('wave.event.airplane.dutyFree'),
+                announcementKey: 'wave.event.airplane.dutyFree',
                 enemyMult: 3.0,
                 spawnMult: 0.3,
                 speedMult: 1.4,
@@ -1419,7 +1419,7 @@
             },
             40: {
                 name: 'EMERGENCY LANDING',
-                announcement: t('wave.event.airplane.brace'),
+                announcementKey: 'wave.event.airplane.brace',
                 enemyMult: 4.0,
                 spawnMult: 0.2,
                 speedMult: 1.6,
@@ -1427,14 +1427,14 @@
             },
             45: {
                 name: 'OPEN BAR',
-                announcement: t('wave.event.airplane.openBar'),
+                announcementKey: 'wave.event.airplane.openBar',
                 enemyMult: 4.0,
                 spawnMult: 0.25,
                 weights: { unruly_group: 0.30, stumbler: 0.25, nervous: 0.20, business: 0.15, attendant: 0.10 },
             },
             50: {
                 name: 'FINAL DESCENT',
-                announcement: t('wave.event.airplane.finalDescent'),
+                announcementKey: 'wave.event.airplane.finalDescent',
                 enemyMult: 5.0,
                 spawnMult: 0.15,
                 speedMult: 1.8,
@@ -8179,7 +8179,7 @@
             // Announce with enemy introduction on key waves
             let msg = t('wave.announce', { n: this.wave });
             if (event) {
-                msg += ` — ${event.announcement}`;
+                msg += ` — ${t(event.announcementKey)}`;
                 if (window.SFX) SFX.play('wave_event');
             } else {
                 const introKey = `wave.intro.${this._currentScenario}.${this.wave}`;
@@ -13123,6 +13123,7 @@
             }
         },
     };
+    window.Game = Game;
     </script>
 
     <!-- Module entry point (loads after Game is defined) -->
