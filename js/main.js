@@ -81,6 +81,9 @@ import {
     createAirplanePassengers,
 } from './models/AirplaneEnvironmentModels.js';
 
+// Demo flag — set via VITE_DEMO=true at build time
+window.IS_DEMO = typeof __IS_DEMO__ !== 'undefined' ? __IS_DEMO__ : false;
+
 // Inject CSS palette variables
 injectCSSPalette();
 

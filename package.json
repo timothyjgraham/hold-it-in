@@ -6,15 +6,23 @@
   "main": "electron-main.js",
   "scripts": {
     "dev": "vite",
+    "dev:demo": "cross-env VITE_DEMO=true vite",
     "build": "vite build",
+    "build:demo": "cross-env VITE_DEMO=true vite build",
+    "build:web": "cross-env VITE_DEMO=true vite build --outDir dist-web",
     "preview": "vite preview",
     "compress-audio": "bash scripts/compress-audio.sh",
     "electron:dev": "vite build && electron .",
     "electron:build": "vite build && electron-builder",
     "electron:build-mac": "vite build && electron-builder --mac",
-    "electron:build-win": "vite build && electron-builder --win"
+    "electron:build-win": "vite build && electron-builder --win",
+    "package:demo": "cross-env VITE_DEMO=true vite build && electron-builder --dir",
+    "package:demo:mac": "cross-env VITE_DEMO=true vite build && electron-builder --mac --dir",
+    "package:demo:win": "cross-env VITE_DEMO=true vite build && electron-builder --win --dir",
+    "package:demo:linux": "cross-env VITE_DEMO=true vite build && electron-builder --linux --dir"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
     "fbx2gltf": "^0.9.7-p1",

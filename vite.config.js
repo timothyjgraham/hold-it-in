@@ -9,6 +9,9 @@ export default defineConfig({
     open: true
   },
   base: './',
+  define: {
+    __IS_DEMO__: JSON.stringify(process.env.VITE_DEMO === 'true'),
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets'

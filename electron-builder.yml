@@ -8,6 +8,23 @@ files:
   - electron-preload.js
 mac:
   category: public.app-category.games
-  target: dmg
+  target:
+    - target: dmg
+      arch:
+        - universal
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  notarize: true
 win:
-  target: nsis
+  target:
+    - target: nsis
+      arch:
+        - x64
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Game

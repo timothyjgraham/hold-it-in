@@ -965,6 +965,65 @@ canvas {
     opacity: 1;
 }
 
+/* ===== DEMO / WISHLIST ===== */
+.demo-only {
+    display: none;
+}
+
+.demo-badge {
+    font-family: 'Bangers', sans-serif;
+    font-size: 28px;
+    letter-spacing: 8px;
+    color: var(--pal-gold, #ffd93d);
+    text-shadow: 2px 3px 0px var(--pal-ink, #1a1a1a);
+    margin-top: -8px;
+    margin-bottom: 8px;
+    animation: jitter-slow 2s ease-in-out infinite;
+}
+
+.wishlist-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Bangers', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
+    color: #67c1f5;
+    border: 3px solid #67c1f5;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(103, 193, 245, 0.3), 3px 4px 0px var(--pal-ink, #1a1a1a);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    margin-top: 12px;
+}
+
+.wishlist-btn:hover {
+    transform: scale(1.06) rotate(-0.5deg);
+    box-shadow: 0 0 20px rgba(103, 193, 245, 0.5), 4px 5px 0px var(--pal-ink, #1a1a1a);
+    background: linear-gradient(135deg, #2a475e 0%, #3d6b8e 100%);
+    color: #fff;
+}
+
+.wishlist-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 8px rgba(103, 193, 245, 0.2), 1px 2px 0px var(--pal-ink, #1a1a1a);
+}
+
+.wishlist-btn .wishlist-icon {
+    flex-shrink: 0;
+}
+
+.wishlist-btn-inline {
+    font-size: 18px;
+    padding: 10px 24px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
 /* ===== GAME OVER ===== */
 #game-over-screen {
     position: absolute;

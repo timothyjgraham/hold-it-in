@@ -328,6 +328,10 @@
             <button class="menu-btn menu-btn-small" id="btn-settings">SETTINGS</button>
             <button class="menu-btn menu-btn-small" id="btn-credits">CREDITS</button>
         </div>
+        <a class="wishlist-btn demo-only" id="btn-wishlist-title" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
+            <svg class="wishlist-icon" viewBox="0 0 24 24" width="22" height="22"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+            WISHLIST ON STEAM
+        </a>
     </div>
 
     <!-- Scenario Select Screen (shared by campaign & endless) -->
@@ -403,6 +407,10 @@
                 </div>
             </div>
         </div>
+        <a class="wishlist-btn wishlist-btn-inline demo-only" id="btn-wishlist-scenario" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
+            <svg class="wishlist-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+            WISHLIST TO UNLOCK ALL SCENARIOS
+        </a>
         <button class="menu-btn menu-btn-small" id="btn-scenario-back">BACK</button>
     </div>
 
@@ -573,6 +581,10 @@
         <h1>OCCUPIED</h1>
         <div class="subtitle" id="game-over-subtitle">They broke through the door!</div>
         <div class="stats" id="game-over-stats"></div>
+        <a class="wishlist-btn demo-only" id="btn-wishlist-gameover" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
+            <svg class="wishlist-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+            WISHLIST ON STEAM
+        </a>
         <div class="gameover-buttons">
             <button id="restart-btn">TRY AGAIN</button>
             <button id="menu-btn-gameover" class="menu-btn menu-btn-small">MAIN MENU</button>
@@ -584,6 +596,10 @@
         <h1>VICTORY!</h1>
         <div class="subtitle">You held it in!</div>
         <div class="stats" id="victory-stats"></div>
+        <a class="wishlist-btn demo-only" id="btn-wishlist-victory" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
+            <svg class="wishlist-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+            WISHLIST FOR THE FULL GAME
+        </a>
         <div class="gameover-buttons">
             <button id="btn-victory-endless" class="menu-btn">PLAY ENDLESS MODE</button>
             <button id="btn-victory-menu" class="menu-btn menu-btn-small">MAIN MENU</button>
@@ -1576,6 +1592,20 @@
             this._setupUI();
             this._loadBestStats();
             this._updateScenarioLocks();
+
+            // Demo mode: show wishlist buttons, add DEMO badge to title
+            if (window.IS_DEMO) {
+                document.querySelectorAll('.demo-only').forEach(el => el.style.display = '');
+                const logo = document.querySelector('.title-logo');
+                if (logo) {
+                    const badge = document.createElement('div');
+                    badge.className = 'demo-badge';
+                    badge.textContent = 'DEMO';
+                    logo.parentElement.insertBefore(badge, logo.nextSibling);
+                }
+            } else {
+                document.querySelectorAll('.demo-only').forEach(el => el.style.display = 'none');
+            }
 
             // Initialize 3D scenario icons
             if (window.ScenarioIconRenderer) {
@@ -5335,6 +5365,9 @@
         },
 
         _isScenarioUnlocked(scenario) {
+            // Demo mode: only Office is playable
+            if (window.IS_DEMO && scenario !== 'office') return false;
+
             switch (scenario) {
                 case 'office': return true;
                 case 'forest': return this._bestStats.office.wave >= 10;
@@ -5351,6 +5384,11 @@
         },
 
         _getUnlockRequirement(scenario) {
+            // Demo mode: show "full game" message for all locked scenarios
+            if (window.IS_DEMO && scenario !== 'office') {
+                return 'Available in the full game!';
+            }
+
             switch (scenario) {
                 case 'forest': {
                     const progress = this._bestStats.office.wave;
