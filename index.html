@@ -3184,7 +3184,7 @@
 
             // Tutorial overlay — click to advance
             document.getElementById('tutorial-overlay').addEventListener('click', () => {
-                if (this._tutorialActive && (this._tutorialStep === 0 || this._tutorialStep === 8)) {
+                if (this._tutorialActive && (this._tutorialStep === 0 || this._tutorialStep === 8 || this._tutorialStep === 9)) {
                     if (window.SFX) SFX.play('ui_click');
                     this._advanceTutorial();
                 }

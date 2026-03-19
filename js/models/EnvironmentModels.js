@@ -648,6 +648,8 @@ export function createOfficePeek() {
     const potMat = matWood();
     const leafMat = toonMat(PALETTE.success);
 
+    const FURN_SCALE = 1.5;
+
     // ─── Helper: build a desk with monitor ─────────────────────────────────
     function buildDesk() {
         const deskGroup = new THREE.Group();
@@ -684,6 +686,7 @@ export function createOfficePeek() {
         standBase.position.set(-0.2, 1.48, -0.4);
         deskGroup.add(standBase);
 
+        deskGroup.scale.setScalar(FURN_SCALE);
         return deskGroup;
     }
 
@@ -717,6 +720,7 @@ export function createOfficePeek() {
             chairGroup.add(wheel);
         }
 
+        chairGroup.scale.setScalar(FURN_SCALE);
         return chairGroup;
     }
 
@@ -766,6 +770,7 @@ export function createOfficePeek() {
             handle.position.set(0, dy + 0.12, 0.44);
             fg.add(handle);
         }
+        fg.scale.setScalar(FURN_SCALE);
         return fg;
     }
 
@@ -793,6 +798,7 @@ export function createOfficePeek() {
             leaf.castShadow = true;
             pg.add(leaf);
         }
+        pg.scale.setScalar(FURN_SCALE);
         return pg;
     }
 
@@ -827,6 +833,7 @@ export function createOfficePeek() {
         led.position.set(0.6, 0.95, 0.76);
         pg.add(led);
 
+        pg.scale.setScalar(FURN_SCALE);
         return pg;
     }
 
@@ -865,6 +872,7 @@ export function createOfficePeek() {
             marker.position.set(-0.4 + m * 0.4, -1.03, 0.1);
             wg.add(marker);
         }
+        wg.scale.setScalar(FURN_SCALE);
         return wg;
     }
 
@@ -910,7 +918,645 @@ export function createOfficePeek() {
                 if (bx > 1.0) break;
             }
         }
+        bg.scale.setScalar(FURN_SCALE);
         return bg;
+    }
+
+    // ─── Helper: add desk clutter based on index ─────────────────────────
+    function addDeskClutter(deskGroup, idx) {
+        // Coffee mug (most desks)
+        if (idx % 3 !== 1) {
+            const mugColors = [0xcc4444, 0x4488cc, 0xf0f0e8, 0x44aa44, 0xeecc44];
+            const mugMat = toonMat(mugColors[idx % mugColors.length]);
+            const mugBody = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 0.09, 0.2, 8), mugMat);
+            mugBody.position.set(0.8, 1.56, 0.15);
+            mugBody.castShadow = true;
+            deskGroup.add(mugBody);
+            // Handle (torus)
+            const handle = new THREE.Mesh(
+                new THREE.TorusGeometry(0.06, 0.015, 6, 8), mugMat);
+            handle.position.set(0.9, 1.56, 0.15);
+            handle.rotation.y = Math.PI / 2;
+            deskGroup.add(handle);
+        }
+
+        // Paper stacks (every other desk)
+        if (idx % 2 === 0) {
+            const paperMat = matWhite();
+            const numSheets = 2 + (idx % 3);
+            for (let s = 0; s < numSheets; s++) {
+                const sheet = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.55, 0.008, 0.7), paperMat);
+                sheet.position.set(0.5, 1.46 + s * 0.009, -0.15);
+                sheet.rotation.y = (s * 0.04) - 0.02;
+                deskGroup.add(sheet);
+            }
+        }
+
+        // Desk lamp (rare)
+        if (idx % 7 === 0) {
+            const lampMat = matDark();
+            const lampBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8), lampMat);
+            lampBase.position.set(1.1, 1.48, -0.3);
+            deskGroup.add(lampBase);
+            const lampArm = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6), lampMat);
+            lampArm.position.set(1.1, 1.83, -0.3);
+            lampArm.rotation.z = 0.2;
+            deskGroup.add(lampArm);
+            const lampShade = new THREE.Mesh(
+                new THREE.ConeGeometry(0.15, 0.12, 8), lampMat);
+            lampShade.position.set(1.17, 2.18, -0.3);
+            lampShade.rotation.z = Math.PI;
+            deskGroup.add(lampShade);
+        }
+
+        // Photo frame
+        if (idx % 4 === 2) {
+            const frameMat = matWood();
+            const frame = new THREE.Mesh(
+                new THREE.BoxGeometry(0.25, 0.3, 0.03), frameMat);
+            frame.position.set(1.0, 1.62, -0.55);
+            frame.rotation.x = -0.2;
+            deskGroup.add(frame);
+            const photo = new THREE.Mesh(
+                new THREE.BoxGeometry(0.19, 0.24, 0.01), matWhite());
+            photo.position.set(1.0, 1.62, -0.53);
+            photo.rotation.x = -0.2;
+            deskGroup.add(photo);
+        }
+
+        // Sticky notes on monitor area
+        if (idx % 3 === 2) {
+            const stickyColors = [0xffee77, 0xff99aa, 0x99eebb, 0xaaccff];
+            for (let s = 0; s < 1 + (idx % 2); s++) {
+                const stickyMat = toonMat(stickyColors[(idx + s) % stickyColors.length]);
+                const sticky = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.15, 0.12, 0.005), stickyMat);
+                sticky.position.set(-0.2 + 0.5 * s + 0.3, 2.7, -0.37);
+                sticky.rotation.z = (s - 0.5) * 0.1;
+                deskGroup.add(sticky);
+            }
+        }
+
+        // Pen holder
+        if (idx % 5 === 3) {
+            const holderMat = matDark();
+            const holder = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8), holderMat);
+            holder.position.set(0.6, 1.55, 0.35);
+            deskGroup.add(holder);
+            // Pens
+            const penColors = [0x2222cc, 0xcc2222, 0x222222];
+            for (let p = 0; p < 3; p++) {
+                const pen = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.01, 0.01, 0.22, 4),
+                    toonMat(penColors[p]));
+                pen.position.set(0.6 + (p - 1) * 0.02, 1.7, 0.35 + (p - 1) * 0.01);
+                pen.rotation.x = (p - 1) * 0.15;
+                pen.rotation.z = (p - 1) * 0.1;
+                deskGroup.add(pen);
+            }
+        }
+
+        // Mouse + mousepad
+        if (idx % 2 === 1) {
+            const padMat = matDark();
+            const pad = new THREE.Mesh(
+                new THREE.BoxGeometry(0.45, 0.01, 0.35), padMat);
+            pad.position.set(0.65, 1.47, 0.15);
+            deskGroup.add(pad);
+            const mouse = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.04, 0.12), matInk());
+            mouse.position.set(0.65, 1.49, 0.15);
+            deskGroup.add(mouse);
+        }
+    }
+
+    // ─── Helper: build a seated worker NPC ───────────────────────────────
+    function buildSeatedWorker(idx) {
+        const wg = new THREE.Group();
+        const shirtColors = [0xe8e0d8, 0x98b8a0, 0xc8a8a8, 0xb0b8c8, 0xe8d8b8, 0xd0c0b0, 0xddd0c0, 0xa8c0b0];
+        const skinTones = [0xffccaa, 0xd4a070, 0xf0c090, 0x8b6848, 0xe8b888, 0xc49060];
+        const hairColors = [0x3a2a1a, 0x1a1a1a, 0xc89050, 0x5a3a2a, 0x8a4a2a, 0x2a2a2a, 0x887050];
+
+        const shirtMat = toonMat(shirtColors[idx % shirtColors.length]);
+        const skinMat = toonMat(skinTones[idx % skinTones.length]);
+        const hairMat = toonMat(hairColors[idx % hairColors.length]);
+        const pantsMat = matDark();
+        const shoeMat = matInk();
+
+        const isHunched = (idx % 3 === 0);
+        const forwardLean = isHunched ? 0.25 : 0.08 + (idx % 5) * 0.03;
+
+        // Torso
+        const torso = new THREE.Mesh(
+            new THREE.BoxGeometry(0.45, 0.55, 0.25), shirtMat);
+        torso.position.set(0, 1.45, 0);
+        torso.rotation.x = forwardLean;
+        torso.castShadow = true;
+        wg.add(torso);
+
+        // Head
+        const headY = isHunched ? 1.75 : 1.85;
+        const headZ = isHunched ? 0.1 : 0.05;
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 8, 8), skinMat);
+        head.position.set(0, headY, headZ);
+        head.castShadow = true;
+        wg.add(head);
+
+        // Hair (hemisphere on top)
+        const hair = new THREE.Mesh(
+            new THREE.SphereGeometry(0.21, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+        hair.position.set(0, headY, headZ);
+        hair.castShadow = true;
+        wg.add(hair);
+
+        // Upper arms (from shoulders)
+        for (const sx of [-1, 1]) {
+            const upperArm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.3, 0.1), shirtMat);
+            upperArm.position.set(sx * 0.28, 1.35, 0.05);
+            upperArm.rotation.x = 0.4;
+            wg.add(upperArm);
+
+            // Forearm reaching forward (typing pose)
+            const forearm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.09, 0.25, 0.09), skinMat);
+            forearm.position.set(sx * 0.28, 1.2, 0.22);
+            forearm.rotation.x = 1.2;
+            wg.add(forearm);
+        }
+
+        // Thighs (horizontal)
+        for (const sx of [-1, 1]) {
+            const thigh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.16, 0.14, 0.4), pantsMat);
+            thigh.position.set(sx * 0.13, 0.95, 0.1);
+            wg.add(thigh);
+        }
+
+        // Shoes
+        for (const sx of [-1, 1]) {
+            const shoe = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.08, 0.18), shoeMat);
+            shoe.position.set(sx * 0.13, 0.38, 0.25);
+            wg.add(shoe);
+        }
+
+        // Optional glasses
+        if (idx % 4 === 1) {
+            const glassesMat = matDark();
+            for (const sx of [-1, 1]) {
+                const lens = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.05, 0.01, 4, 8), glassesMat);
+                lens.position.set(sx * 0.08, headY, headZ + 0.18);
+                wg.add(lens);
+            }
+            const bridge = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.01, 0.01), glassesMat);
+            bridge.position.set(0, headY, headZ + 0.2);
+            wg.add(bridge);
+        }
+
+        // Optional tie
+        if (idx % 5 === 0) {
+            const tieColors = [0xcc2222, 0x2244aa, 0x338844, 0x884422];
+            const tieMat = toonMat(tieColors[idx % tieColors.length]);
+            const tieKnot = new THREE.Mesh(
+                new THREE.BoxGeometry(0.06, 0.06, 0.04), tieMat);
+            tieKnot.position.set(0, 1.65, 0.13);
+            wg.add(tieKnot);
+            const tieBody = new THREE.Mesh(
+                new THREE.BoxGeometry(0.05, 0.2, 0.03), tieMat);
+            tieBody.position.set(0, 1.5, 0.13);
+            wg.add(tieBody);
+        }
+
+        // Scale up so workers are clearly visible above desk furniture
+        wg.scale.setScalar(FURN_SCALE);
+
+        return wg;
+    }
+
+    // ─── Helper: build a fluorescent ceiling panel ───────────────────────
+    function buildFluorescentPanel() {
+        const fg = new THREE.Group();
+        // Housing
+        const housing = new THREE.Mesh(
+            new THREE.BoxGeometry(2.5, 0.08, 0.8), matWhite());
+        housing.position.y = 0.04;
+        fg.add(housing);
+        // Diffuser panel (slightly emissive)
+        const diffuserMat = toonMat(PALETTE.white, {
+            emissive: PALETTE.fillWarm,
+            emissiveIntensity: 0.3,
+        });
+        const diffuser = new THREE.Mesh(
+            new THREE.BoxGeometry(2.3, 0.03, 0.65), diffuserMat);
+        diffuser.position.y = -0.01;
+        fg.add(diffuser);
+        fg.scale.setScalar(FURN_SCALE);
+        return fg;
+    }
+
+    // ─── Helper: build a notice board ────────────────────────────────────
+    function buildNoticeBoard() {
+        const ng = new THREE.Group();
+        const corkMat = toonMat(0xc8a870);
+        const frameMat = matWood();
+
+        // Cork board
+        const board = new THREE.Mesh(
+            new THREE.BoxGeometry(2.5, 1.8, 0.06), corkMat);
+        board.castShadow = true;
+        ng.add(board);
+
+        // Frame edges
+        const fTop = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.08), frameMat);
+        fTop.position.y = 0.93;
+        ng.add(fTop);
+        const fBot = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.08), frameMat);
+        fBot.position.y = -0.93;
+        ng.add(fBot);
+        const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.92, 0.08), frameMat);
+        fLeft.position.x = -1.28;
+        ng.add(fLeft);
+        const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.92, 0.08), frameMat);
+        fRight.position.x = 1.28;
+        ng.add(fRight);
+
+        // Pinned papers
+        const paperColors = [0xfff8e0, 0xe8f0ff, 0xffe8e8, 0xe8ffe8, 0xfff0d0, 0xf0e8ff];
+        const pinColors = [0xcc2222, 0x2244cc, 0x44aa44, 0xeecc22, 0xcc44aa, 0x4488cc];
+        const paperData = [
+            { x: -0.7, y: 0.4, w: 0.6, h: 0.45, rot: 0.05 },
+            { x: 0.5, y: 0.5, w: 0.5, h: 0.55, rot: -0.08 },
+            { x: -0.3, y: -0.3, w: 0.55, h: 0.4, rot: 0.12 },
+            { x: 0.7, y: -0.2, w: 0.45, h: 0.5, rot: -0.03 },
+            { x: 0.0, y: 0.2, w: 0.5, h: 0.6, rot: 0.02 },
+            { x: -0.6, y: -0.1, w: 0.4, h: 0.35, rot: -0.1 },
+        ];
+        for (let i = 0; i < paperData.length; i++) {
+            const pd = paperData[i];
+            const paper = new THREE.Mesh(
+                new THREE.BoxGeometry(pd.w, pd.h, 0.005),
+                toonMat(paperColors[i % paperColors.length]));
+            paper.position.set(pd.x, pd.y, 0.035);
+            paper.rotation.z = pd.rot;
+            ng.add(paper);
+            // Pin
+            const pin = new THREE.Mesh(
+                new THREE.SphereGeometry(0.025, 6, 6),
+                toonMat(pinColors[i % pinColors.length]));
+            pin.position.set(pd.x, pd.y + pd.h * 0.35, 0.05);
+            ng.add(pin);
+        }
+        ng.scale.setScalar(FURN_SCALE);
+        return ng;
+    }
+
+    // ─── Helper: build a wall clock ──────────────────────────────────────
+    function buildWallClock() {
+        const cg = new THREE.Group();
+        // Face (white disc)
+        const face = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.6, 0.6, 0.05, 16), matWhite());
+        face.rotation.x = Math.PI / 2;
+        cg.add(face);
+        // Rim
+        const rim = new THREE.Mesh(
+            new THREE.TorusGeometry(0.6, 0.04, 8, 24), matInk());
+        cg.add(rim);
+        // Hour markers
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const dot = new THREE.Mesh(
+                new THREE.SphereGeometry(0.025, 4, 4), matInk());
+            dot.position.set(Math.sin(angle) * 0.48, Math.cos(angle) * 0.48, 0.03);
+            cg.add(dot);
+        }
+        // Hour hand
+        const hourHand = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.3, 0.02), matInk());
+        hourHand.position.set(0, 0.12, 0.04);
+        hourHand.rotation.z = -0.8;
+        cg.add(hourHand);
+        // Minute hand
+        const minuteHand = new THREE.Mesh(
+            new THREE.BoxGeometry(0.03, 0.42, 0.02), matInk());
+        minuteHand.position.set(0, 0.18, 0.04);
+        minuteHand.rotation.z = 0.4;
+        cg.add(minuteHand);
+        // Center dot
+        const center = new THREE.Mesh(
+            new THREE.SphereGeometry(0.04, 6, 6), matDark());
+        center.position.z = 0.04;
+        cg.add(center);
+        cg.scale.setScalar(FURN_SCALE);
+        return cg;
+    }
+
+    // ─── Helper: build a fire extinguisher ───────────────────────────────
+    function buildFireExtinguisher() {
+        const fg = new THREE.Group();
+        const redMat = matDanger();
+        // Wall bracket
+        const bracket = new THREE.Mesh(
+            new THREE.BoxGeometry(0.3, 0.5, 0.06), matDark());
+        bracket.position.set(0, 0.8, -0.05);
+        fg.add(bracket);
+        // Body cylinder
+        const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.12, 0.12, 0.7, 8), redMat);
+        body.position.set(0, 0.6, 0);
+        body.castShadow = true;
+        fg.add(body);
+        // Valve top
+        const valve = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.06, 0.08, 0.1, 8), chromeMat);
+        valve.position.set(0, 1.0, 0);
+        fg.add(valve);
+        // Handle
+        const handleBar = new THREE.Mesh(
+            new THREE.BoxGeometry(0.15, 0.04, 0.04), chromeMat);
+        handleBar.position.set(0, 1.08, 0);
+        fg.add(handleBar);
+        // Hose
+        const hose = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6), matInk());
+        hose.position.set(0.08, 0.85, 0.06);
+        hose.rotation.z = 0.6;
+        fg.add(hose);
+        fg.scale.setScalar(FURN_SCALE);
+        return fg;
+    }
+
+    // ─── Helper: build a waste bin ───────────────────────────────────────
+    function buildWasteBin() {
+        const bg = new THREE.Group();
+        // Tapered cylinder body
+        const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.3, 0.22, 0.6, 8), matDark());
+        body.position.y = 0.3;
+        body.castShadow = true;
+        bg.add(body);
+        // Crumpled paper balls
+        const paperMat = matWhite();
+        const ballPositions = [[0.05, 0.55, 0.02], [-0.08, 0.5, 0.06], [0.04, 0.58, -0.05]];
+        for (const [bx, by, bz] of ballPositions) {
+            const ball = new THREE.Mesh(
+                new THREE.SphereGeometry(0.06 + Math.random() * 0.03, 5, 5), paperMat);
+            ball.position.set(bx, by, bz);
+            bg.add(ball);
+        }
+        bg.scale.setScalar(FURN_SCALE);
+        return bg;
+    }
+
+    // ─── Helper: build a break room counter ──────────────────────────────
+    function buildBreakCounter() {
+        const cg = new THREE.Group();
+        // Cabinet base (white)
+        const cabinet = new THREE.Mesh(
+            new THREE.BoxGeometry(4.0, 1.3, 0.8), matWhite());
+        cabinet.position.set(0, 0.65, 0);
+        cabinet.castShadow = true;
+        cabinet.receiveShadow = true;
+        cg.add(cabinet);
+        // Counter top (fixture material)
+        const top = new THREE.Mesh(
+            new THREE.BoxGeometry(4.1, 0.08, 0.9), matFixture());
+        top.position.set(0, 1.34, 0);
+        top.receiveShadow = true;
+        cg.add(top);
+        // Cabinet door lines
+        const doorLineMat = matDark();
+        for (let d = 0; d < 4; d++) {
+            const doorLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.02, 1.1, 0.01), doorLineMat);
+            doorLine.position.set(-1.5 + d * 1.0, 0.6, 0.41);
+            cg.add(doorLine);
+        }
+        // Handles
+        for (let d = 0; d < 3; d++) {
+            const handleGrip = new THREE.Mesh(
+                new THREE.BoxGeometry(0.06, 0.15, 0.04), chromeMat);
+            handleGrip.position.set(-1.0 + d * 1.0, 0.85, 0.43);
+            cg.add(handleGrip);
+        }
+        cg.scale.setScalar(FURN_SCALE);
+        return cg;
+    }
+
+    // ─── Helper: build a round break table ───────────────────────────────
+    function buildBreakTable() {
+        const tg = new THREE.Group();
+        // Round table top
+        const tableTop = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.0, 1.0, 0.08, 16), matWhite());
+        tableTop.position.y = 1.4;
+        tableTop.castShadow = true;
+        tableTop.receiveShadow = true;
+        tg.add(tableTop);
+        // Chrome pedestal
+        const pedestal = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.08, 1.32, 8), chromeMat);
+        pedestal.position.y = 0.7;
+        tg.add(pedestal);
+        // Pedestal base
+        const base = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.5, 0.5, 0.06, 12), chromeMat);
+        base.position.y = 0.03;
+        tg.add(base);
+        // 3 chairs around the table (scaled down)
+        for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2 + 0.3;
+            const chair = buildChair();
+            chair.scale.set(0.85, 0.85, 0.85);
+            chair.position.set(Math.sin(angle) * 1.6, 0, Math.cos(angle) * 1.6);
+            chair.rotation.y = angle + Math.PI;
+            tg.add(chair);
+        }
+        tg.scale.setScalar(FURN_SCALE);
+        return tg;
+    }
+
+    // ─── Helper: build a vending machine ─────────────────────────────────
+    function buildVendingMachine() {
+        const vg = new THREE.Group();
+        // Main body (dark)
+        const body = new THREE.Mesh(
+            new THREE.BoxGeometry(1.8, 4.0, 1.2), matDark());
+        body.position.y = 2.0;
+        body.castShadow = true;
+        vg.add(body);
+        // Glass front (translucent)
+        const glassMat = toonMat(PALETTE.rimCool, {
+            transparent: true,
+            opacity: 0.25,
+        });
+        const glass = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 2.8, 0.02), glassMat);
+        glass.position.set(0, 2.4, 0.61);
+        vg.add(glass);
+        // Snack rectangles behind glass
+        const snackColors = [0xcc2222, 0x2244cc, 0x44aa44, 0xeecc44, 0xcc44aa, 0xff8833,
+            0x2288aa, 0xaa4422, 0x44cc88, 0x8844cc, 0xcc8844, 0x4488cc];
+        let snackIdx = 0;
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 3; col++) {
+                const snack = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.3, 0.35, 0.15),
+                    toonMat(snackColors[snackIdx % snackColors.length]));
+                snack.position.set(-0.4 + col * 0.4, 3.3 - row * 0.65, 0.4);
+                vg.add(snack);
+                snackIdx++;
+            }
+        }
+        // Pickup slot
+        const slot = new THREE.Mesh(
+            new THREE.BoxGeometry(1.2, 0.4, 0.15), matInk());
+        slot.position.set(0, 0.6, 0.53);
+        vg.add(slot);
+        // Payment panel
+        const payPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 0.6, 0.04), matFixture());
+        payPanel.position.set(0.8, 2.5, 0.62);
+        vg.add(payPanel);
+        // Top brand panel
+        const brandPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(1.5, 0.4, 0.03),
+            toonMat(0xcc3333));
+        brandPanel.position.set(0, 3.7, 0.61);
+        vg.add(brandPanel);
+        vg.scale.setScalar(FURN_SCALE);
+        return vg;
+    }
+
+    // ─── Helper: build a coat rack ───────────────────────────────────────
+    function buildCoatRack() {
+        const rg = new THREE.Group();
+        const poleMat = matDark();
+        // Center pole
+        const pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.04, 0.04, 3.5, 8), poleMat);
+        pole.position.y = 1.75;
+        pole.castShadow = true;
+        rg.add(pole);
+        // Disc base
+        const baseDisk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.4, 0.4, 0.06, 12), poleMat);
+        baseDisk.position.y = 0.03;
+        rg.add(baseDisk);
+        // Hook arms at top (4 directions)
+        for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            const hook = new THREE.Mesh(
+                new THREE.BoxGeometry(0.03, 0.03, 0.3), poleMat);
+            hook.position.set(Math.sin(angle) * 0.15, 3.4, Math.cos(angle) * 0.15);
+            hook.rotation.y = angle;
+            rg.add(hook);
+            // Hook tip (downward)
+            const tip = new THREE.Mesh(
+                new THREE.BoxGeometry(0.03, 0.12, 0.03), poleMat);
+            tip.position.set(Math.sin(angle) * 0.3, 3.35, Math.cos(angle) * 0.3);
+            rg.add(tip);
+        }
+        // 2 draped coats
+        const coatColors = [0x2a2a3a, 0x5a4a3a];
+        for (let c = 0; c < 2; c++) {
+            const angle = (c / 4) * Math.PI * 2;
+            const coat = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4, 0.8, 0.15),
+                toonMat(coatColors[c]));
+            coat.position.set(Math.sin(angle) * 0.25, 2.9, Math.cos(angle) * 0.25);
+            coat.rotation.z = (c - 0.5) * 0.15;
+            coat.castShadow = true;
+            rg.add(coat);
+        }
+        rg.scale.setScalar(FURN_SCALE);
+        return rg;
+    }
+
+    // ─── Helper: build an umbrella stand ─────────────────────────────────
+    function buildUmbrellaStand() {
+        const ug = new THREE.Group();
+        // Dark cylinder container
+        const container = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.18, 0.6, 8), matDark());
+        container.position.y = 0.3;
+        container.castShadow = true;
+        ug.add(container);
+        // Umbrella shafts poking out
+        const umbrellaColors = [0x2222aa, 0x222222];
+        for (let u = 0; u < 2; u++) {
+            const shaft = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.015, 0.015, 0.9, 6),
+                toonMat(umbrellaColors[u]));
+            shaft.position.set((u - 0.5) * 0.08, 0.7, (u - 0.5) * 0.04);
+            shaft.rotation.z = (u - 0.5) * 0.12;
+            ug.add(shaft);
+            // Curved handle
+            const handle = new THREE.Mesh(
+                new THREE.TorusGeometry(0.05, 0.012, 4, 8, Math.PI),
+                toonMat(umbrellaColors[u]));
+            handle.position.set((u - 0.5) * 0.08 + (u - 0.5) * 0.06, 1.15, (u - 0.5) * 0.04);
+            handle.rotation.z = (u - 0.5) * 0.12;
+            ug.add(handle);
+        }
+        ug.scale.setScalar(FURN_SCALE);
+        return ug;
+    }
+
+    // ─── Helper: add content to a whiteboard ─────────────────────────────
+    function addWhiteboardContent(wbGroup, seed) {
+        const s = seed || 0;
+        const contentColors = [0xcc2222, 0x2244cc, 0x222222, 0x22aa44];
+
+        // Horizontal lines (simulating writing)
+        const lineMat = toonMat(contentColors[s % contentColors.length]);
+        const numLines = 3 + (s % 3);
+        for (let l = 0; l < numLines; l++) {
+            const lineWidth = 0.8 + ((s + l) % 4) * 0.3;
+            const line = new THREE.Mesh(
+                new THREE.BoxGeometry(lineWidth, 0.03, 0.005), lineMat);
+            line.position.set(-0.3 + (l % 2) * 0.2, 0.6 - l * 0.22, 0.05);
+            wbGroup.add(line);
+        }
+
+        // Diagram elements (box or circle)
+        const diagMat = toonMat(contentColors[(s + 1) % contentColors.length]);
+        if (s % 2 === 0) {
+            // Rectangle diagram
+            const rect = new THREE.Mesh(
+                new THREE.BoxGeometry(0.6, 0.4, 0.005), diagMat);
+            rect.position.set(0.7, -0.3, 0.05);
+            wbGroup.add(rect);
+            // Arrow line
+            const arrow = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4, 0.025, 0.005), diagMat);
+            arrow.position.set(0.3, -0.3, 0.05);
+            wbGroup.add(arrow);
+        } else {
+            // Circle diagram (torus)
+            const circle = new THREE.Mesh(
+                new THREE.TorusGeometry(0.2, 0.015, 6, 12), diagMat);
+            circle.position.set(0.7, -0.4, 0.05);
+            wbGroup.add(circle);
+        }
+
+        // A few short lines under the diagram (labels)
+        const labelMat = toonMat(contentColors[(s + 2) % contentColors.length]);
+        for (let l = 0; l < 2; l++) {
+            const label = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4 + l * 0.15, 0.025, 0.005), labelMat);
+            label.position.set(-0.5, -0.5 - l * 0.18, 0.05);
+            wbGroup.add(label);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1230,58 +1876,78 @@ export function createOfficePeek() {
     // DESKS + CHAIRS — populate the office in rows
     // ════════════════════════════════════════════════════════════════════════
 
-    // Left row (x = -20, facing right)
-    const leftDeskPositions = [22, 30, 38, 46];
-    for (const z of leftDeskPositions) {
+    let deskIdx = 0;
+
+    // Positions where NPC workers will sit — skip standalone chairs here
+    const occupiedChairs = new Set([
+        '-18,22', '-18,30', '-18,46', '-18,54',
+        '-26,30', '-26,38',
+        '18,22', '18,38', '18,46', '18,54',
+        '26,22', '26,38',
+    ]);
+
+    // Left inner row (x = -20, facing right) — extended to z=62
+    for (const z of [22, 30, 38, 46, 54, 62]) {
         const d = buildDesk();
         d.position.set(-20, 0, z);
         d.rotation.y = Math.PI / 2;
+        addDeskClutter(d, deskIdx++);
         group.add(d);
 
-        const c = buildChair();
-        c.position.set(-18, 0, z);
-        c.rotation.y = -0.3 + Math.random() * 0.6;
-        group.add(c);
+        if (!occupiedChairs.has(`-18,${z}`)) {
+            const c = buildChair();
+            c.position.set(-18, 0, z);
+            c.rotation.y = -0.3 + Math.random() * 0.6;
+            group.add(c);
+        }
     }
 
-    // Left outer row (x = -28, facing right)
-    for (const z of [22, 30, 38, 46]) {
+    // Left outer row (x = -28, facing right) — extended to z=54
+    for (const z of [22, 30, 38, 46, 54]) {
         const d = buildDesk();
         d.position.set(-28, 0, z);
         d.rotation.y = Math.PI / 2;
+        addDeskClutter(d, deskIdx++);
         group.add(d);
 
-        const c = buildChair();
-        c.position.set(-26, 0, z);
-        c.rotation.y = -0.2 + Math.random() * 0.4;
-        group.add(c);
+        if (!occupiedChairs.has(`-26,${z}`)) {
+            const c = buildChair();
+            c.position.set(-26, 0, z);
+            c.rotation.y = -0.2 + Math.random() * 0.4;
+            group.add(c);
+        }
     }
 
-    // Right row (x = 20, facing left)
-    const rightDeskPositions = [22, 30, 38, 46];
-    for (const z of rightDeskPositions) {
+    // Right inner row (x = 20, facing left) — extended to z=62
+    for (const z of [22, 30, 38, 46, 54, 62]) {
         const d = buildDesk();
         d.position.set(20, 0, z);
         d.rotation.y = -Math.PI / 2;
+        addDeskClutter(d, deskIdx++);
         group.add(d);
 
-        const c = buildChair();
-        c.position.set(18, 0, z);
-        c.rotation.y = Math.PI + (-0.3 + Math.random() * 0.6);
-        group.add(c);
+        if (!occupiedChairs.has(`18,${z}`)) {
+            const c = buildChair();
+            c.position.set(18, 0, z);
+            c.rotation.y = Math.PI + (-0.3 + Math.random() * 0.6);
+            group.add(c);
+        }
     }
 
-    // Right outer row (x = 28, facing left)
-    for (const z of [22, 30, 38, 46]) {
+    // Right outer row (x = 28, facing left) — extended to z=54
+    for (const z of [22, 30, 38, 46, 54]) {
         const d = buildDesk();
         d.position.set(28, 0, z);
         d.rotation.y = -Math.PI / 2;
+        addDeskClutter(d, deskIdx++);
         group.add(d);
 
-        const c = buildChair();
-        c.position.set(26, 0, z);
-        c.rotation.y = Math.PI + (-0.2 + Math.random() * 0.4);
-        group.add(c);
+        if (!occupiedChairs.has(`26,${z}`)) {
+            const c = buildChair();
+            c.position.set(26, 0, z);
+            c.rotation.y = Math.PI + (-0.2 + Math.random() * 0.4);
+            group.add(c);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1325,6 +1991,7 @@ export function createOfficePeek() {
 
     coolerGroup.position.set(16, 0, 18);
     coolerGroup.rotation.y = -Math.PI / 2;
+    coolerGroup.scale.setScalar(FURN_SCALE);
     group.add(coolerGroup);
 
     // Second water cooler on far left
@@ -1375,16 +2042,19 @@ export function createOfficePeek() {
     // ════════════════════════════════════════════════════════════════════════
 
     const wb1 = buildWhiteboard();
+    addWhiteboardContent(wb1, 0);
     wb1.position.set(-35.8, 3.5, 30);
     wb1.rotation.y = Math.PI / 2;
     group.add(wb1);
 
     const wb2 = buildWhiteboard();
+    addWhiteboardContent(wb2, 1);
     wb2.position.set(35.8, 3.5, 40);
     wb2.rotation.y = -Math.PI / 2;
     group.add(wb2);
 
     const wb3 = buildWhiteboard();
+    addWhiteboardContent(wb3, 2);
     wb3.position.set(-35.8, 3.5, 45);
     wb3.rotation.y = Math.PI / 2;
     group.add(wb3);
@@ -1520,6 +2190,263 @@ export function createOfficePeek() {
     carpet.position.set(0, 0.01, 42);
     carpet.receiveShadow = true;
     group.add(carpet);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // NPC WORKERS — seated at desks
+    // ════════════════════════════════════════════════════════════════════════
+
+    const workerPlacements = [
+        // Left side workers (rotation.y = -PI/2 to face desk at -x)
+        { x: -18, z: 22, ry: -Math.PI / 2 },
+        { x: -18, z: 30, ry: -Math.PI / 2 },
+        { x: -18, z: 46, ry: -Math.PI / 2 },
+        { x: -26, z: 30, ry: -Math.PI / 2 },
+        { x: -26, z: 38, ry: -Math.PI / 2 },
+        { x: -18, z: 54, ry: -Math.PI / 2 },
+        // Right side workers (rotation.y = PI/2 to face desk at +x)
+        { x: 18, z: 22, ry: Math.PI / 2 },
+        { x: 18, z: 38, ry: Math.PI / 2 },
+        { x: 18, z: 46, ry: Math.PI / 2 },
+        { x: 26, z: 22, ry: Math.PI / 2 },
+        { x: 26, z: 38, ry: Math.PI / 2 },
+        { x: 18, z: 54, ry: Math.PI / 2 },
+    ];
+    for (let wi = 0; wi < workerPlacements.length; wi++) {
+        const wp = workerPlacements[wi];
+        const worker = buildSeatedWorker(wi);
+        worker.position.set(wp.x, 0, wp.z);
+        worker.rotation.y = wp.ry;
+        group.add(worker);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CEILING FLUORESCENT LIGHTS — grid of panels at y=5.9
+    // ════════════════════════════════════════════════════════════════════════
+
+    const ceilingLightPositions = [
+        // Over desk areas
+        { x: -24, z: 22 }, { x: -24, z: 34 }, { x: -24, z: 46 }, { x: -24, z: 58 },
+        { x: 24, z: 22 }, { x: 24, z: 34 }, { x: 24, z: 46 }, { x: 24, z: 58 },
+        // Over the center lane
+        { x: 0, z: 22 }, { x: 0, z: 34 }, { x: 0, z: 46 }, { x: 0, z: 58 },
+        // Over the entrance area
+        { x: 0, z: 16 }, { x: -12, z: 16 },
+    ];
+    for (const cp of ceilingLightPositions) {
+        const panel = buildFluorescentPanel();
+        panel.position.set(cp.x, 5.9, cp.z);
+        group.add(panel);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // BREAK ROOM AREA — far left (x=-26 to -34, z=58-64)
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Break counter
+    const breakCounter = buildBreakCounter();
+    breakCounter.position.set(-30, 0, 60);
+    breakCounter.rotation.y = Math.PI / 2;
+    group.add(breakCounter);
+
+    // Coffee machine on counter (small brown box with dark front)
+    const coffeeMachine = new THREE.Group();
+    const cmBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.7, 0.5), matDark());
+    cmBody.position.y = 0.35;
+    cmBody.castShadow = true;
+    coffeeMachine.add(cmBody);
+    const cmTop = new THREE.Mesh(
+        new THREE.BoxGeometry(0.55, 0.08, 0.45), matFixture());
+    cmTop.position.y = 0.74;
+    coffeeMachine.add(cmTop);
+    const cmNozzle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 0.15, 6), chromeMat);
+    cmNozzle.position.set(0, 0.3, 0.25);
+    coffeeMachine.add(cmNozzle);
+    coffeeMachine.position.set(-30, 1.38, 58.5);
+    coffeeMachine.scale.setScalar(FURN_SCALE);
+    group.add(coffeeMachine);
+
+    // Microwave on counter
+    const microwave = new THREE.Group();
+    const mwBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.5, 0.5), matWhite());
+    mwBody.position.y = 0.25;
+    mwBody.castShadow = true;
+    microwave.add(mwBody);
+    const mwDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.35, 0.02), matDark());
+    mwDoor.position.set(-0.1, 0.25, 0.26);
+    microwave.add(mwDoor);
+    const mwPanel = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.35, 0.02), matFixture());
+    mwPanel.position.set(0.3, 0.25, 0.26);
+    microwave.add(mwPanel);
+    microwave.position.set(-30, 1.38, 61);
+    microwave.scale.setScalar(FURN_SCALE);
+    group.add(microwave);
+
+    // Mini fridge
+    const miniFridge = new THREE.Group();
+    const fridgeBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 1.2, 0.7), matWhite());
+    fridgeBody.position.y = 0.6;
+    fridgeBody.castShadow = true;
+    miniFridge.add(fridgeBody);
+    const fridgeHandle = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.5, 0.06), chromeMat);
+    fridgeHandle.position.set(0.35, 0.8, 0.38);
+    miniFridge.add(fridgeHandle);
+    miniFridge.position.set(-34, 0, 62);
+    miniFridge.scale.setScalar(FURN_SCALE);
+    group.add(miniFridge);
+
+    // Break table with chairs
+    const breakTable = buildBreakTable();
+    breakTable.position.set(-24, 0, 62);
+    group.add(breakTable);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // VENDING MACHINE — far right
+    // ════════════════════════════════════════════════════════════════════════
+
+    const vendingMachine = buildVendingMachine();
+    vendingMachine.position.set(34, 0, 60);
+    vendingMachine.rotation.y = -Math.PI / 2;
+    group.add(vendingMachine);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ENTRANCE AREA — near end (z=14-18)
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Coat rack
+    const coatRack = buildCoatRack();
+    coatRack.position.set(-17, 0, 15);
+    group.add(coatRack);
+
+    // Umbrella stand
+    const umbrellaStand = buildUmbrellaStand();
+    umbrellaStand.position.set(-17, 0, 16.5);
+    group.add(umbrellaStand);
+
+    // Notice boards at entrance (on inner partitions, facing into lane)
+    const nbEntryLeft = buildNoticeBoard();
+    nbEntryLeft.position.set(-15.4, 2.5, 18);
+    nbEntryLeft.rotation.y = Math.PI / 2;
+    group.add(nbEntryLeft);
+
+    const nbEntryRight = buildNoticeBoard();
+    nbEntryRight.position.set(15.4, 2.5, 18);
+    nbEntryRight.rotation.y = -Math.PI / 2;
+    group.add(nbEntryRight);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // WALL DECORATIONS
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Wall clock (left wall)
+    const wallClock = buildWallClock();
+    wallClock.position.set(-35.8, 4.0, 22);
+    wallClock.rotation.y = Math.PI / 2;
+    group.add(wallClock);
+
+    // Fire extinguisher (right wall)
+    const fireExt = buildFireExtinguisher();
+    fireExt.position.set(35.8, 2.0, 55);
+    fireExt.rotation.y = -Math.PI / 2;
+    group.add(fireExt);
+
+    // Additional notice board on right wall
+    const nbRightWall = buildNoticeBoard();
+    nbRightWall.position.set(35.8, 3.0, 28);
+    nbRightWall.rotation.y = -Math.PI / 2;
+    group.add(nbRightWall);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // WASTE BINS — scattered near desks
+    // ════════════════════════════════════════════════════════════════════════
+
+    const wasteBinPositions = [
+        { x: -19, z: 24 },
+        { x: -27, z: 40 },
+        { x: 19, z: 32 },
+        { x: 27, z: 48 },
+        { x: -19, z: 56 },
+        { x: 19, z: 56 },
+    ];
+    for (const wbp of wasteBinPositions) {
+        const bin = buildWasteBin();
+        bin.position.set(wbp.x, 0, wbp.z);
+        group.add(bin);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // EXTRA PARTITIONS — for the extended desk area
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Inner lane at z=64
+    for (const sx of [-15.5, 15.5]) {
+        const ep = buildCubiclePartition(6.0, partitionHeight);
+        ep.position.set(sx, 0, 64);
+        ep.rotation.y = Math.PI / 2;
+        group.add(ep);
+    }
+
+    // Middle row at z=58
+    for (const sx of [-24, 24]) {
+        const ep = buildCubiclePartition(6.0, partitionHeight);
+        ep.position.set(sx, 0, 58);
+        ep.rotation.y = Math.PI / 2;
+        group.add(ep);
+    }
+
+    // Cross-partitions for extension area
+    for (const x of [-20, -28]) {
+        for (const z of [50, 58]) {
+            const cp = buildCubiclePartition(4.0, partitionHeight);
+            cp.position.set(x, 0, z);
+            group.add(cp);
+        }
+    }
+    for (const x of [20, 28]) {
+        for (const z of [50, 58]) {
+            const cp = buildCubiclePartition(4.0, partitionHeight);
+            cp.position.set(x, 0, z);
+            group.add(cp);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // EXTRA FILING CABINETS
+    // ════════════════════════════════════════════════════════════════════════
+
+    const extraFcPositions = [
+        { x: -20, z: 58, ry: Math.PI / 2 },
+        { x: 20, z: 58, ry: -Math.PI / 2 },
+        { x: -28, z: 50, ry: Math.PI / 2 },
+    ];
+    for (const efp of extraFcPositions) {
+        const efc = buildFilingCabinet();
+        efc.position.set(efp.x, 0, efp.z);
+        efc.rotation.y = efp.ry;
+        group.add(efc);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // EXTRA PLANTS
+    // ════════════════════════════════════════════════════════════════════════
+
+    const extraPlantPositions = [
+        { x: -16, z: 56 },
+        { x: 16, z: 56 },
+        { x: -33, z: 60 },
+        { x: 33, z: 60 },
+    ];
+    for (const epp of extraPlantPositions) {
+        const ep = buildPlant();
+        ep.position.set(epp.x, 0, epp.z);
+        group.add(ep);
+    }
 
     return group;
 }
