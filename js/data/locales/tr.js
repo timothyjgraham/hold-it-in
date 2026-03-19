@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'OFİSİ OYNA',
 
     // --- GAME OVER ---
-    'gameover.title':           'DOLU',
+    'gameover.title':           'İÇERİ GİRDİLER',
     'gameover.subtitle':        'Kapıyı kırdılar!',
     'gameover.stats':           'Dalga {{wave}} kadar hayatta kaldın<br>Puan: {{score}}<br>Püskürtülen düşmanlar: {{repelled}}',
     'gameover.tryAgain':        'TEKRAR DENE',
@@ -155,7 +155,7 @@ export default {
 
     // --- VICTORY ---
     'victory.title':            'ZAFER!',
-    'victory.subtitle':         'Tuttun!',
+    'victory.subtitle':         'Ne rahatlatıcı.',
     'victory.stats':            'Hayatta Kalınan Dalgalar: {{wave}}<br>Puan: {{score}}<br>Püskürtülen Düşmanlar: {{repelled}}<br>Süre: {{time}}',
     'victory.playEndless':      'SONSUZ MODU OYNA',
     'victory.mainMenu':         'ANA MENÜ',

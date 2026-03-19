@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       '사무실 플레이',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           '사용 중',
+    'gameover.title':           '들어왔다!',
     'gameover.subtitle':        '문이 뚫렸다!',
     'gameover.stats':           '웨이브 {{wave}}까지 생존<br>점수: {{score}}<br>격퇴한 적: {{repelled}}',
     'gameover.tryAgain':        '다시 도전',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            '승리!',
-    'victory.subtitle':         '끝까지 참아냈다!',
+    'victory.subtitle':         '시원하다.',
     'victory.stats':            '생존 웨이브: {{wave}}<br>점수: {{score}}<br>격퇴한 적: {{repelled}}<br>시간: {{time}}',
     'victory.playEndless':      '끝없는 모드 플레이',
     'victory.mainMenu':         '메인 메뉴',

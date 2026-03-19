@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       "GIOCA L'UFFICIO",
 
     // --- GAME OVER ---
-    'gameover.title':           'OCCUPATO',
+    'gameover.title':           'SONO ENTRATI',
     'gameover.subtitle':        'Hanno sfondato la porta!',
     'gameover.stats':           'Sopravvissuto fino all\'ondata {{wave}}<br>Punteggio: {{score}}<br>Nemici respinti: {{repelled}}',
     'gameover.tryAgain':        'RIPROVA',
@@ -155,7 +155,7 @@ export default {
 
     // --- VICTORY ---
     'victory.title':            'VITTORIA!',
-    'victory.subtitle':         'Ce l\'hai fatta a trattenerti!',
+    'victory.subtitle':         'Che sollievo.',
     'victory.stats':            'Ondate sopravvissute: {{wave}}<br>Punteggio: {{score}}<br>Nemici respinti: {{repelled}}<br>Tempo: {{time}}',
     'victory.playEndless':      'GIOCA MODALITÀ INFINITA',
     'victory.mainMenu':         'MENU PRINCIPALE',

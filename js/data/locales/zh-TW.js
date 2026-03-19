@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       '前往辦公室',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           '使用中',
+    'gameover.title':           '他們闖進來了',
     'gameover.subtitle':        '門被突破了！',
     'gameover.stats':           '存活至第 {{wave}} 波<br>分數：{{score}}<br>擊退敵人：{{repelled}}',
     'gameover.tryAgain':        '再試一次',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            '勝利！',
-    'victory.subtitle':         '你忍住了！',
+    'victory.subtitle':         '舒暢無比。',
     'victory.stats':            '存活波次：{{wave}}<br>分數：{{score}}<br>擊退敵人：{{repelled}}<br>時間：{{time}}',
     'victory.playEndless':      '進入無盡模式',
     'victory.mainMenu':         '主選單',

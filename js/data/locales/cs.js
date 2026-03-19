@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'HRÁT KANCELÁŘ',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'OBSAZENO',
+    'gameover.title':           'DOSTALI SE DOVNITŘ',
     'gameover.subtitle':        'Prorazili dveře!',
     'gameover.stats':           'Přežil jsi do vlny {{wave}}<br>Skóre: {{score}}<br>Odražených nepřátel: {{repelled}}',
     'gameover.tryAgain':        'ZKUSIT ZNOVU',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'VÍTĚZSTVÍ!',
-    'victory.subtitle':         'Udržel jsi to!',
+    'victory.subtitle':         'To je úleva.',
     'victory.stats':            'Přežité vlny: {{wave}}<br>Skóre: {{score}}<br>Odražení nepřátelé: {{repelled}}<br>Čas: {{time}}',
     'victory.playEndless':      'HRÁT NEKONEČNÝ MÓD',
     'victory.mainMenu':         'HLAVNÍ MENU',

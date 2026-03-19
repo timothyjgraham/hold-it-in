@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'SPEEL HET KANTOOR',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'BEZET',
+    'gameover.title':           'ZE ZIJN BINNEN',
     'gameover.subtitle':        'Ze zijn door de deur gebroken!',
     'gameover.stats':           'Overleefd tot Golf {{wave}}<br>Score: {{score}}<br>Vijanden afgeslagen: {{repelled}}',
     'gameover.tryAgain':        'OPNIEUW PROBEREN',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'OVERWINNING!',
-    'victory.subtitle':         'Je hebt het opgehouden!',
+    'victory.subtitle':         'Wat een opluchting.',
     'victory.stats':            'Golven overleefd: {{wave}}<br>Score: {{score}}<br>Vijanden afgeslagen: {{repelled}}<br>Tijd: {{time}}',
     'victory.playEndless':      'SPEEL EINDELOZE MODUS',
     'victory.mainMenu':         'HOOFDMENU',

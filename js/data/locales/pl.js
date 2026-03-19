@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'GRAJ W BIURZE',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'ZAJĘTE',
+    'gameover.title':           'WESZLI',
     'gameover.subtitle':        'Wyważyli drzwi!',
     'gameover.stats':           'Przetrwano do Fali {{wave}}<br>Wynik: {{score}}<br>Odparci wrogowie: {{repelled}}',
     'gameover.tryAgain':        'SPRÓBUJ PONOWNIE',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'ZWYCIĘSTWO!',
-    'victory.subtitle':         'Wytrzymałeś!',
+    'victory.subtitle':         'Cóż za ulga.',
     'victory.stats':            'Przetrwane Fale: {{wave}}<br>Wynik: {{score}}<br>Odparci Wrogowie: {{repelled}}<br>Czas: {{time}}',
     'victory.playEndless':      'GRAJ W TRYBIE NIESKOŃCZONYM',
     'victory.mainMenu':         'MENU GŁÓWNE',

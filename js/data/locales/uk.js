@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'ГРАТИ В ОФІСІ',
 
     // --- GAME OVER ---
-    'gameover.title':           'ЗАЙНЯТО',
+    'gameover.title':           'ВОНИ ПРОРВАЛИСЯ',
     'gameover.subtitle':        'Вони прорвалися крізь двері!',
     'gameover.stats':           'Протримався до хвилі {{wave}}<br>Очки: {{score}}<br>Ворогів відбито: {{repelled}}',
     'gameover.tryAgain':        'СПРОБУВАТИ ЗНОВУ',
@@ -155,7 +155,7 @@ export default {
 
     // --- VICTORY ---
     'victory.title':            'ПЕРЕМОГА!',
-    'victory.subtitle':         'Ти витримав!',
+    'victory.subtitle':         'Яке полегшення.',
     'victory.stats':            'Хвиль пережито: {{wave}}<br>Очки: {{score}}<br>Ворогів відбито: {{repelled}}<br>Час: {{time}}',
     'victory.playEndless':      'ГРАТИ НЕСКІНЧЕННИЙ РЕЖИМ',
     'victory.mainMenu':         'ГОЛОВНЕ МЕНЮ',

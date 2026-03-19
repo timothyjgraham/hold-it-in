@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'JOUER AU BUREAU',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'OCCUPÉ',
+    'gameover.title':           'ILS SONT ENTRÉS',
     'gameover.subtitle':        'Ils ont enfoncé la porte !',
     'gameover.stats':           'Survécu jusqu\'à la Vague {{wave}}<br>Score : {{score}}<br>Ennemis repoussés : {{repelled}}',
     'gameover.tryAgain':        'RÉESSAYER',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'VICTOIRE !',
-    'victory.subtitle':         'Vous avez tenu bon !',
+    'victory.subtitle':         'Quel soulagement.',
     'victory.stats':            'Vagues Survécues : {{wave}}<br>Score : {{score}}<br>Ennemis Repoussés : {{repelled}}<br>Temps : {{time}}',
     'victory.playEndless':      'JOUER EN MODE INFINI',
     'victory.mainMenu':         'MENU PRINCIPAL',

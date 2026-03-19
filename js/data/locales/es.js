@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'JUGAR LA OFICINA',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'OCUPADO',
+    'gameover.title':           '¡HAN ENTRADO!',
     'gameover.subtitle':        '¡Han derribado la puerta!',
     'gameover.stats':           'Sobreviviste hasta la oleada {{wave}}<br>Puntuación: {{score}}<br>Enemigos rechazados: {{repelled}}',
     'gameover.tryAgain':        'REINTENTAR',
@@ -155,7 +155,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            '¡VICTORIA!',
-    'victory.subtitle':         '¡Lo has aguantado!',
+    'victory.subtitle':         'Dulce alivio.',
     'victory.stats':            'Oleadas sobrevividas: {{wave}}<br>Puntuación: {{score}}<br>Enemigos rechazados: {{repelled}}<br>Tiempo: {{time}}',
     'victory.playEndless':      'JUGAR MODO INFINITO',
     'victory.mainMenu':         'MENÚ PRINCIPAL',

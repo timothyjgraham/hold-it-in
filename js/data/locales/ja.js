@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'オフィスをプレイ',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           '使用中',
+    'gameover.title':           '入られた！',
     'gameover.subtitle':        'ドアが突破された！',
     'gameover.stats':           'ウェーブ {{wave}} まで生存<br>スコア: {{score}}<br>撃退した敵: {{repelled}}',
     'gameover.tryAgain':        'もう一度',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            '勝利！',
-    'victory.subtitle':         '我慢し切った！',
+    'victory.subtitle':         '極上の解放感。',
     'victory.stats':            '生存ウェーブ: {{wave}}<br>スコア: {{score}}<br>撃退した敵: {{repelled}}<br>時間: {{time}}',
     'victory.playEndless':      'エンドレスモードをプレイ',
     'victory.mainMenu':         'メインメニュー',

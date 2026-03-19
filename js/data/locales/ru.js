@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'ИГРАТЬ В ОФИС',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'ЗАНЯТО',
+    'gameover.title':           'ОНИ ПРОРВАЛИСЬ',
     'gameover.subtitle':        'Они прорвались через дверь!',
     'gameover.stats':           'Дожил до волны {{wave}}<br>Счёт: {{score}}<br>Врагов отбито: {{repelled}}',
     'gameover.tryAgain':        'ПОПРОБОВАТЬ ЕЩЁ',
@@ -155,7 +155,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'ПОБЕДА!',
-    'victory.subtitle':         'Ты выдержал!',
+    'victory.subtitle':         'Какое облегчение.',
     'victory.stats':            'Пережитых волн: {{wave}}<br>Счёт: {{score}}<br>Врагов отбито: {{repelled}}<br>Время: {{time}}',
     'victory.playEndless':      'ИГРАТЬ В БЕСКОНЕЧНОМ РЕЖИМЕ',
     'victory.mainMenu':         'ГЛАВНОЕ МЕНЮ',

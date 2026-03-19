@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'เล่นออฟฟิศ',
 
     // --- GAME OVER ---
-    'gameover.title':           'ไม่ว่าง',
+    'gameover.title':           'พวกเขาเข้ามาแล้ว',
     'gameover.subtitle':        'พวกเขาพังประตูเข้ามาแล้ว!',
     'gameover.stats':           'รอดชีวิตถึงเวฟ {{wave}}<br>คะแนน: {{score}}<br>ศัตรูที่ขับไล่: {{repelled}}',
     'gameover.tryAgain':        'ลองอีกครั้ง',
@@ -155,7 +155,7 @@ export default {
 
     // --- VICTORY ---
     'victory.title':            'ชัยชนะ!',
-    'victory.subtitle':         'คุณกลั้นไว้ได้!',
+    'victory.subtitle':         'โล่งใจสุดๆ',
     'victory.stats':            'เวฟที่รอดชีวิต: {{wave}}<br>คะแนน: {{score}}<br>ศัตรูที่ขับไล่: {{repelled}}<br>เวลา: {{time}}',
     'victory.playEndless':      'เล่นโหมดไม่สิ้นสุด',
     'victory.mainMenu':         'เมนูหลัก',

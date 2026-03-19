@@ -145,7 +145,7 @@ export default {
     'confirm.playOffice':       'JÁTSSZ AZ IRODÁBAN',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'FOGLALT',
+    'gameover.title':           'BEJUTOTTAK',
     'gameover.subtitle':        'Áttörték az ajtót!',
     'gameover.stats':           'Túlélted a {{wave}}. hullámig<br>Pontszám: {{score}}<br>Visszavert ellenségek: {{repelled}}',
     'gameover.tryAgain':        'ÚJRA',
@@ -154,7 +154,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'GYŐZELEM!',
-    'victory.subtitle':         'Kibírtad!',
+    'victory.subtitle':         'Micsoda megkönnyebbülés.',
     'victory.stats':            'Túlélt hullámok: {{wave}}<br>Pontszám: {{score}}<br>Visszavert ellenségek: {{repelled}}<br>Idő: {{time}}',
     'victory.playEndless':      'VÉGTELEN MÓD JÁTSZÁSA',
     'victory.mainMenu':         'FŐMENÜ',

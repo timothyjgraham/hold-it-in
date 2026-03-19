@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       'DAS BÜRO SPIELEN',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           'BESETZT',
+    'gameover.title':           'SIE SIND DRIN',
     'gameover.subtitle':        'Sie haben die Tür durchbrochen!',
     'gameover.stats':           'Überlebt bis Welle {{wave}}<br>Punkte: {{score}}<br>Abgewehrte Feinde: {{repelled}}',
     'gameover.tryAgain':        'NOCHMAL VERSUCHEN',
@@ -155,7 +155,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            'SIEG!',
-    'victory.subtitle':         'Du hast durchgehalten!',
+    'victory.subtitle':         'Was für eine Erleichterung.',
     'victory.stats':            'Überlebte Wellen: {{wave}}<br>Punkte: {{score}}<br>Abgewehrte Feinde: {{repelled}}<br>Zeit: {{time}}',
     'victory.playEndless':      'ENDLOSMODUS SPIELEN',
     'victory.mainMenu':         'HAUPTMENÜ',

@@ -146,7 +146,7 @@ export default {
     'confirm.playOffice':       '开始办公室关卡',
 
     // ─── GAME OVER ───────────────────────────────────────────────────────
-    'gameover.title':           '有人了',
+    'gameover.title':           '他们闯进来了',
     'gameover.subtitle':        '他们冲破了门！',
     'gameover.stats':           '存活到第 {{wave}} 波<br>得分：{{score}}<br>击退敌人：{{repelled}}',
     'gameover.tryAgain':        '再试一次',
@@ -155,7 +155,7 @@ export default {
 
     // ─── VICTORY ─────────────────────────────────────────────────────────
     'victory.title':            '胜利！',
-    'victory.subtitle':         '你守住了！',
+    'victory.subtitle':         '舒畅无比。',
     'victory.stats':            '存活波次：{{wave}}<br>得分：{{score}}<br>击退敌人：{{repelled}}<br>用时：{{time}}',
     'victory.playEndless':      '进入无尽模式',
     'victory.mainMenu':         '主菜单',
