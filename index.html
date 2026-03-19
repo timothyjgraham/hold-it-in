@@ -12948,6 +12948,92 @@
                 this._updateAirplaneEffects(this.clock.elapsedTime, rawDt);
             }
 
+            // --- NPC worker idle animations (office scenario) ---
+            if (this.officeGroup && this.officeGroup.userData.npcWorkers) {
+                const workers = this.officeGroup.userData.npcWorkers;
+                const et = this.clock.elapsedTime;
+                for (let i = 0; i < workers.length; i++) {
+                    const a = workers[i].userData.anim;
+                    if (!a) continue;
+                    const phase = a.phaseOffset;
+
+                    // Typing head bob — gentle sine on Y
+                    a.head.position.y = a.baseHeadY + Math.sin(et * 4.2 + phase) * 0.02;
+                    a.hair.position.y = a.head.position.y;
+
+                    // Typing hands — forearms alternate bob + slight rotation
+                    const typeSin = Math.sin(et * 5.7 + phase);
+                    a.forearms[0].position.y = a.baseForearmY + typeSin * 0.015;
+                    a.forearms[0].rotation.x = a.baseForearmRotX + typeSin * 0.04;
+                    a.forearms[1].position.y = a.baseForearmY - typeSin * 0.015;
+                    a.forearms[1].rotation.x = a.baseForearmRotX - typeSin * 0.04;
+
+                    // Head turns — smooth turn ±0.3 rad, hold, return (every 8-15s)
+                    a.headTurnTimer -= rawDt;
+                    if (a.headTurnPhase === 'idle' && a.headTurnTimer <= 0) {
+                        a.headTurnPhase = 'turning';
+                        a.headTurnTarget = (Math.random() < 0.5 ? -1 : 1) * (0.2 + Math.random() * 0.1);
+                        a.headTurnTimer = 1.0;
+                    } else if (a.headTurnPhase === 'turning') {
+                        a.headTurnAngle += (a.headTurnTarget - a.headTurnAngle) * rawDt * 4;
+                        a.headTurnTimer -= rawDt;
+                        if (a.headTurnTimer <= 0) {
+                            a.headTurnAngle = a.headTurnTarget;
+                            a.headTurnPhase = 'holding';
+                            a.headTurnHoldTimer = 1.0 + Math.random() * 0.5;
+                        }
+                    } else if (a.headTurnPhase === 'holding') {
+                        a.headTurnHoldTimer -= rawDt;
+                        if (a.headTurnHoldTimer <= 0) {
+                            a.headTurnPhase = 'returning';
+                            a.headTurnTimer = 1.0;
+                        }
+                    } else if (a.headTurnPhase === 'returning') {
+                        a.headTurnAngle += (0 - a.headTurnAngle) * rawDt * 4;
+                        a.headTurnTimer -= rawDt;
+                        if (a.headTurnTimer <= 0) {
+                            a.headTurnAngle = 0;
+                            a.headTurnPhase = 'idle';
+                            a.headTurnTimer = 8 + Math.random() * 7;
+                        }
+                    }
+                    a.head.rotation.y = a.headTurnAngle;
+                    a.hair.rotation.y = a.headTurnAngle;
+
+                    // Lean-back stretch — workers 2 & 7 only (every 20-35s)
+                    if (a.workerIdx === 2 || a.workerIdx === 7) {
+                        a.stretchTimer -= rawDt;
+                        if (a.stretchPhase === 'idle' && a.stretchTimer <= 0) {
+                            a.stretchPhase = 'leaning';
+                            a.stretchTimer = 0.8;
+                        } else if (a.stretchPhase === 'leaning') {
+                            a.stretchProgress = Math.min(1, a.stretchProgress + rawDt / 0.8);
+                            a.stretchTimer -= rawDt;
+                            if (a.stretchTimer <= 0) {
+                                a.stretchProgress = 1;
+                                a.stretchPhase = 'holding';
+                                a.stretchTimer = 0.6;
+                            }
+                        } else if (a.stretchPhase === 'holding') {
+                            a.stretchTimer -= rawDt;
+                            if (a.stretchTimer <= 0) {
+                                a.stretchPhase = 'returning';
+                                a.stretchTimer = 0.6;
+                            }
+                        } else if (a.stretchPhase === 'returning') {
+                            a.stretchProgress = Math.max(0, a.stretchProgress - rawDt / 0.6);
+                            a.stretchTimer -= rawDt;
+                            if (a.stretchTimer <= 0) {
+                                a.stretchProgress = 0;
+                                a.stretchPhase = 'idle';
+                                a.stretchTimer = 20 + Math.random() * 15;
+                            }
+                        }
+                        a.torso.rotation.x = a.baseTorsoRotX - a.stretchProgress * 0.15;
+                    }
+                }
+            }
+
             // Title screen water animation
             if (this._titleWaterMesh && this._titleWaterMesh.material && this._titleWaterMesh.material.uniforms) {
                 this._titleWaterMesh.material.uniforms.uTime.value = this.clock.elapsedTime;

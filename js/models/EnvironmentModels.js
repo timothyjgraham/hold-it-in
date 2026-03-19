@@ -648,7 +648,7 @@ export function createOfficePeek() {
     const potMat = matWood();
     const leafMat = toonMat(PALETTE.success);
 
-    const FURN_SCALE = 1.5;
+    const FURN_SCALE = 2.5;
 
     // ─── Helper: build a desk with monitor ─────────────────────────────────
     function buildDesk() {
@@ -843,24 +843,24 @@ export function createOfficePeek() {
         const boardMat = matWhite();
         const wbFrameMat = matFixture();
 
-        const board = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.08), boardMat);
+        const board = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.0, 0.08), boardMat);
         board.castShadow = true;
         wg.add(board);
 
-        const fh = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.06, 0.1), wbFrameMat);
+        const fh = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.06, 0.1), wbFrameMat);
         fh.position.y = 1.03;
         wg.add(fh);
-        const fb = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.06, 0.1), wbFrameMat);
+        const fb = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.06, 0.1), wbFrameMat);
         fb.position.y = -1.03;
         wg.add(fb);
         const fl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.12, 0.1), wbFrameMat);
-        fl.position.x = -1.53;
+        fl.position.x = -1.13;
         wg.add(fl);
         const fr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.12, 0.1), wbFrameMat);
-        fr.position.x = 1.53;
+        fr.position.x = 1.13;
         wg.add(fr);
 
-        const tray = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.15), wbFrameMat);
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.15), wbFrameMat);
         tray.position.set(0, -1.08, 0.08);
         wg.add(tray);
 
@@ -923,39 +923,60 @@ export function createOfficePeek() {
     }
 
     // ─── Helper: add desk clutter based on index ─────────────────────────
+    // Items use exclusive zones to avoid clipping:
+    //   Right-front (x~0.7, z~0.2): mug OR mouse+pad (mutually exclusive)
+    //   Right-back  (x~1.0, z~-0.5): photo frame OR lamp (mutually exclusive)
+    //   Center-back (x~0.5, z~-0.15): paper stack (doesn't conflict)
+    //   Monitor face (z~-0.37): sticky notes (doesn't conflict)
     function addDeskClutter(deskGroup, idx) {
-        // Coffee mug (most desks)
-        if (idx % 3 !== 1) {
+        const slot = idx % 5; // 0-4 determines which right-front item
+
+        // Right-front zone — pick ONE item
+        if (slot === 0 || slot === 2 || slot === 4) {
+            // Coffee mug
             const mugColors = [0xcc4444, 0x4488cc, 0xf0f0e8, 0x44aa44, 0xeecc44];
             const mugMat = toonMat(mugColors[idx % mugColors.length]);
             const mugBody = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.1, 0.09, 0.2, 8), mugMat);
-            mugBody.position.set(0.8, 1.56, 0.15);
+            mugBody.position.set(0.8, 1.56, 0.2);
             mugBody.castShadow = true;
             deskGroup.add(mugBody);
-            // Handle (torus)
             const handle = new THREE.Mesh(
                 new THREE.TorusGeometry(0.06, 0.015, 6, 8), mugMat);
-            handle.position.set(0.9, 1.56, 0.15);
+            handle.position.set(0.9, 1.56, 0.2);
             handle.rotation.y = Math.PI / 2;
             deskGroup.add(handle);
-        }
-
-        // Paper stacks (every other desk)
-        if (idx % 2 === 0) {
-            const paperMat = matWhite();
-            const numSheets = 2 + (idx % 3);
-            for (let s = 0; s < numSheets; s++) {
-                const sheet = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.55, 0.008, 0.7), paperMat);
-                sheet.position.set(0.5, 1.46 + s * 0.009, -0.15);
-                sheet.rotation.y = (s * 0.04) - 0.02;
-                deskGroup.add(sheet);
+        } else if (slot === 1) {
+            // Mouse + mousepad
+            const pad = new THREE.Mesh(
+                new THREE.BoxGeometry(0.45, 0.01, 0.35), matDark());
+            pad.position.set(0.65, 1.47, 0.2);
+            deskGroup.add(pad);
+            const mouse = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.04, 0.12), matInk());
+            mouse.position.set(0.65, 1.49, 0.2);
+            deskGroup.add(mouse);
+        } else {
+            // Pen holder
+            const holder = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8), matDark());
+            holder.position.set(0.7, 1.55, 0.35);
+            deskGroup.add(holder);
+            const penColors = [0x2222cc, 0xcc2222, 0x222222];
+            for (let p = 0; p < 3; p++) {
+                const pen = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.01, 0.01, 0.22, 4),
+                    toonMat(penColors[p]));
+                pen.position.set(0.7 + (p - 1) * 0.02, 1.7, 0.35 + (p - 1) * 0.01);
+                pen.rotation.x = (p - 1) * 0.15;
+                pen.rotation.z = (p - 1) * 0.1;
+                deskGroup.add(pen);
             }
         }
 
-        // Desk lamp (rare)
+        // Right-back zone — pick ONE item (or none)
         if (idx % 7 === 0) {
+            // Desk lamp (rare)
             const lampMat = matDark();
             const lampBase = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8), lampMat);
@@ -971,13 +992,10 @@ export function createOfficePeek() {
             lampShade.position.set(1.17, 2.18, -0.3);
             lampShade.rotation.z = Math.PI;
             deskGroup.add(lampShade);
-        }
-
-        // Photo frame
-        if (idx % 4 === 2) {
-            const frameMat = matWood();
+        } else if (idx % 4 === 2) {
+            // Photo frame
             const frame = new THREE.Mesh(
-                new THREE.BoxGeometry(0.25, 0.3, 0.03), frameMat);
+                new THREE.BoxGeometry(0.25, 0.3, 0.03), matWood());
             frame.position.set(1.0, 1.62, -0.55);
             frame.rotation.x = -0.2;
             deskGroup.add(frame);
@@ -988,50 +1006,28 @@ export function createOfficePeek() {
             deskGroup.add(photo);
         }
 
-        // Sticky notes on monitor area
-        if (idx % 3 === 2) {
+        // Center-back zone — paper stack (occasional)
+        if (idx % 3 === 0) {
+            const paperMat = matWhite();
+            const numSheets = 2 + (idx % 3);
+            for (let s = 0; s < numSheets; s++) {
+                const sheet = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.55, 0.008, 0.7), paperMat);
+                sheet.position.set(0.5, 1.46 + s * 0.009, -0.15);
+                sheet.rotation.y = (s * 0.04) - 0.02;
+                deskGroup.add(sheet);
+            }
+        }
+
+        // Monitor face — sticky notes (occasional, never conflicts)
+        if (idx % 5 === 2) {
             const stickyColors = [0xffee77, 0xff99aa, 0x99eebb, 0xaaccff];
-            for (let s = 0; s < 1 + (idx % 2); s++) {
-                const stickyMat = toonMat(stickyColors[(idx + s) % stickyColors.length]);
-                const sticky = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.15, 0.12, 0.005), stickyMat);
-                sticky.position.set(-0.2 + 0.5 * s + 0.3, 2.7, -0.37);
-                sticky.rotation.z = (s - 0.5) * 0.1;
-                deskGroup.add(sticky);
-            }
-        }
-
-        // Pen holder
-        if (idx % 5 === 3) {
-            const holderMat = matDark();
-            const holder = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8), holderMat);
-            holder.position.set(0.6, 1.55, 0.35);
-            deskGroup.add(holder);
-            // Pens
-            const penColors = [0x2222cc, 0xcc2222, 0x222222];
-            for (let p = 0; p < 3; p++) {
-                const pen = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.01, 0.01, 0.22, 4),
-                    toonMat(penColors[p]));
-                pen.position.set(0.6 + (p - 1) * 0.02, 1.7, 0.35 + (p - 1) * 0.01);
-                pen.rotation.x = (p - 1) * 0.15;
-                pen.rotation.z = (p - 1) * 0.1;
-                deskGroup.add(pen);
-            }
-        }
-
-        // Mouse + mousepad
-        if (idx % 2 === 1) {
-            const padMat = matDark();
-            const pad = new THREE.Mesh(
-                new THREE.BoxGeometry(0.45, 0.01, 0.35), padMat);
-            pad.position.set(0.65, 1.47, 0.15);
-            deskGroup.add(pad);
-            const mouse = new THREE.Mesh(
-                new THREE.BoxGeometry(0.08, 0.04, 0.12), matInk());
-            mouse.position.set(0.65, 1.49, 0.15);
-            deskGroup.add(mouse);
+            const stickyMat = toonMat(stickyColors[idx % stickyColors.length]);
+            const sticky = new THREE.Mesh(
+                new THREE.BoxGeometry(0.15, 0.12, 0.005), stickyMat);
+            sticky.position.set(0.1, 2.7, -0.37);
+            sticky.rotation.z = 0.05;
+            deskGroup.add(sticky);
         }
     }
 
@@ -1075,7 +1071,8 @@ export function createOfficePeek() {
         hair.castShadow = true;
         wg.add(hair);
 
-        // Upper arms (from shoulders)
+        // Upper arms + forearms (from shoulders)
+        const forearms = [];
         for (const sx of [-1, 1]) {
             const upperArm = new THREE.Mesh(
                 new THREE.BoxGeometry(0.1, 0.3, 0.1), shirtMat);
@@ -1089,9 +1086,10 @@ export function createOfficePeek() {
             forearm.position.set(sx * 0.28, 1.2, 0.22);
             forearm.rotation.x = 1.2;
             wg.add(forearm);
+            forearms.push(forearm);
         }
 
-        // Thighs (horizontal)
+        // Thighs (horizontal, seated)
         for (const sx of [-1, 1]) {
             const thigh = new THREE.Mesh(
                 new THREE.BoxGeometry(0.16, 0.14, 0.4), pantsMat);
@@ -1099,11 +1097,19 @@ export function createOfficePeek() {
             wg.add(thigh);
         }
 
+        // Shins (vertical, hanging down from seat)
+        for (const sx of [-1, 1]) {
+            const shin = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.4, 0.12), pantsMat);
+            shin.position.set(sx * 0.13, 0.6, 0.28);
+            wg.add(shin);
+        }
+
         // Shoes
         for (const sx of [-1, 1]) {
             const shoe = new THREE.Mesh(
-                new THREE.BoxGeometry(0.1, 0.08, 0.18), shoeMat);
-            shoe.position.set(sx * 0.13, 0.38, 0.25);
+                new THREE.BoxGeometry(0.12, 0.08, 0.2), shoeMat);
+            shoe.position.set(sx * 0.13, 0.38, 0.32);
             wg.add(shoe);
         }
 
@@ -1139,6 +1145,29 @@ export function createOfficePeek() {
         // Scale up so workers are clearly visible above desk furniture
         wg.scale.setScalar(FURN_SCALE);
 
+        // Store animation refs for NPC idle anims
+        wg.userData.anim = {
+            head,
+            hair,
+            torso,
+            forearms,
+            baseHeadY: headY,
+            baseHeadZ: headZ,
+            baseTorsoRotX: forwardLean,
+            baseForearmY: 1.2,
+            baseForearmRotX: 1.2,
+            // Head turn state
+            headTurnAngle: 0,
+            headTurnTarget: 0,
+            headTurnTimer: 8 + idx * 2.3,  // staggered initial delay
+            headTurnPhase: 'idle', // 'idle' | 'turning' | 'holding' | 'returning'
+            headTurnHoldTimer: 0,
+            // Lean-back stretch state
+            stretchTimer: 20 + idx * 3.7,
+            stretchPhase: 'idle', // 'idle' | 'leaning' | 'holding' | 'returning'
+            stretchProgress: 0,
+        };
+
         return wg;
     }
 
@@ -1171,22 +1200,22 @@ export function createOfficePeek() {
 
         // Cork board
         const board = new THREE.Mesh(
-            new THREE.BoxGeometry(2.5, 1.8, 0.06), corkMat);
+            new THREE.BoxGeometry(2.0, 1.8, 0.06), corkMat);
         board.castShadow = true;
         ng.add(board);
 
         // Frame edges
-        const fTop = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.08), frameMat);
+        const fTop = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.06, 0.08), frameMat);
         fTop.position.y = 0.93;
         ng.add(fTop);
-        const fBot = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, 0.08), frameMat);
+        const fBot = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.06, 0.08), frameMat);
         fBot.position.y = -0.93;
         ng.add(fBot);
         const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.92, 0.08), frameMat);
-        fLeft.position.x = -1.28;
+        fLeft.position.x = -1.03;
         ng.add(fLeft);
         const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.92, 0.08), frameMat);
-        fRight.position.x = 1.28;
+        fRight.position.x = 1.03;
         ng.add(fRight);
 
         // Pinned papers
@@ -1873,82 +1902,74 @@ export function createOfficePeek() {
     group.add(exitSignGroup);
 
     // ════════════════════════════════════════════════════════════════════════
-    // DESKS + CHAIRS — populate the office in rows
+    // DESKS + CHAIRS — sparse layout with pod pairs & standalone desks
     // ════════════════════════════════════════════════════════════════════════
 
-    let deskIdx = 0;
+    // Data-driven desk layout: 14 desks in clusters with open floor gaps
+    // ry: desk rotation (PI/2 = front faces +X, -PI/2 = front faces -X)
+    // angle: slight extra rotation for standalone variety
+    // workerRy: explicit rotation for NPC (worker model faces +Z; PI/2 = face -X, -PI/2 = face +X)
+    // chairX: X position of chair/worker (on the front side of the desk)
+    const deskLayout = [
+        // ── Left side ──
+        // Pod A: two desks facing each other at z=22,30
+        { x: -20, z: 22, ry: Math.PI / 2, angle: 0,     hasWorker: true,  chairX: -17.5, workerRy: -Math.PI / 2 },   // faces +X, worker faces -X (toward desk)
+        { x: -20, z: 30, ry: Math.PI / 2, angle: 0,     hasWorker: true,  chairX: -17.5, workerRy: -Math.PI / 2 },   // faces +X, same orientation
+        // Standalone angled
+        { x: -27, z: 26, ry: Math.PI / 2, angle: 0.12,  hasWorker: false, chairX: -24.5, workerRy: -Math.PI / 2 },
+        // Standalone angled
+        { x: -20, z: 42, ry: Math.PI / 2, angle: -0.08, hasWorker: true,  chairX: -17.5, workerRy: -Math.PI / 2 },
+        // Pod B: two desks at z=48,56
+        { x: -27, z: 48, ry: Math.PI / 2, angle: 0,     hasWorker: true,  chairX: -24.5, workerRy: -Math.PI / 2 },
+        { x: -27, z: 56, ry: Math.PI / 2, angle: 0,     hasWorker: false, chairX: -24.5, workerRy: -Math.PI / 2 },
 
-    // Positions where NPC workers will sit — skip standalone chairs here
-    const occupiedChairs = new Set([
-        '-18,22', '-18,30', '-18,46', '-18,54',
-        '-26,30', '-26,38',
-        '18,22', '18,38', '18,46', '18,54',
-        '26,22', '26,38',
-    ]);
+        // ── Right side ──
+        // Standalone angled
+        { x: 20,  z: 22, ry: -Math.PI / 2, angle: 0.1,  hasWorker: true,  chairX: 17.5, workerRy: Math.PI / 2 },  // faces -X, worker faces +X (toward desk)
+        // Pod C: two desks facing each other at z=34,42
+        { x: 20,  z: 34, ry: -Math.PI / 2, angle: 0,    hasWorker: true,  chairX: 17.5, workerRy: Math.PI / 2 },
+        { x: 20,  z: 42, ry: -Math.PI / 2, angle: 0,    hasWorker: true,  chairX: 17.5, workerRy: Math.PI / 2 },
+        // Standalone angled
+        { x: 28,  z: 30, ry: -Math.PI / 2, angle: -0.1, hasWorker: false, chairX: 25.5, workerRy: Math.PI / 2 },
+        // Standalone
+        { x: 28,  z: 46, ry: -Math.PI / 2, angle: 0,    hasWorker: true,  chairX: 25.5, workerRy: Math.PI / 2 },
+        // Pod D: two desks at z=52,60
+        { x: 20,  z: 52, ry: -Math.PI / 2, angle: 0,    hasWorker: true,  chairX: 17.5, workerRy: Math.PI / 2 },
+        { x: 20,  z: 60, ry: -Math.PI / 2, angle: 0,    hasWorker: false, chairX: 17.5, workerRy: Math.PI / 2 },
+        // Standalone angled
+        { x: 28,  z: 58, ry: -Math.PI / 2, angle: 0.08, hasWorker: true,  chairX: 25.5, workerRy: Math.PI / 2 },
+    ];
 
-    // Left inner row (x = -20, facing right) — extended to z=62
-    for (const z of [22, 30, 38, 46, 54, 62]) {
+    const npcWorkers = [];
+    let workerIdx = 0;
+
+    for (let di = 0; di < deskLayout.length; di++) {
+        const dl = deskLayout[di];
         const d = buildDesk();
-        d.position.set(-20, 0, z);
-        d.rotation.y = Math.PI / 2;
-        addDeskClutter(d, deskIdx++);
+        d.position.set(dl.x, 0, dl.z);
+        d.rotation.y = dl.ry + dl.angle;
+        addDeskClutter(d, di);
         group.add(d);
 
-        if (!occupiedChairs.has(`-18,${z}`)) {
+        if (dl.hasWorker) {
+            const worker = buildSeatedWorker(workerIdx);
+            worker.position.set(dl.chairX, 0, dl.z);
+            worker.rotation.y = dl.workerRy;
+            worker.userData.anim.phaseOffset = workerIdx * 1.7;
+            worker.userData.anim.workerIdx = workerIdx;
+            group.add(worker);
+            npcWorkers.push(worker);
+            workerIdx++;
+        } else {
             const c = buildChair();
-            c.position.set(-18, 0, z);
-            c.rotation.y = -0.3 + Math.random() * 0.6;
+            c.position.set(dl.chairX, 0, dl.z);
+            c.rotation.y = dl.workerRy + (-0.3 + Math.random() * 0.6);
             group.add(c);
         }
     }
 
-    // Left outer row (x = -28, facing right) — extended to z=54
-    for (const z of [22, 30, 38, 46, 54]) {
-        const d = buildDesk();
-        d.position.set(-28, 0, z);
-        d.rotation.y = Math.PI / 2;
-        addDeskClutter(d, deskIdx++);
-        group.add(d);
-
-        if (!occupiedChairs.has(`-26,${z}`)) {
-            const c = buildChair();
-            c.position.set(-26, 0, z);
-            c.rotation.y = -0.2 + Math.random() * 0.4;
-            group.add(c);
-        }
-    }
-
-    // Right inner row (x = 20, facing left) — extended to z=62
-    for (const z of [22, 30, 38, 46, 54, 62]) {
-        const d = buildDesk();
-        d.position.set(20, 0, z);
-        d.rotation.y = -Math.PI / 2;
-        addDeskClutter(d, deskIdx++);
-        group.add(d);
-
-        if (!occupiedChairs.has(`18,${z}`)) {
-            const c = buildChair();
-            c.position.set(18, 0, z);
-            c.rotation.y = Math.PI + (-0.3 + Math.random() * 0.6);
-            group.add(c);
-        }
-    }
-
-    // Right outer row (x = 28, facing left) — extended to z=54
-    for (const z of [22, 30, 38, 46, 54]) {
-        const d = buildDesk();
-        d.position.set(28, 0, z);
-        d.rotation.y = -Math.PI / 2;
-        addDeskClutter(d, deskIdx++);
-        group.add(d);
-
-        if (!occupiedChairs.has(`26,${z}`)) {
-            const c = buildChair();
-            c.position.set(26, 0, z);
-            c.rotation.y = Math.PI + (-0.2 + Math.random() * 0.4);
-            group.add(c);
-        }
-    }
+    // Store NPC worker refs on group for animation in _animate()
+    group.userData.npcWorkers = npcWorkers;
 
     // ════════════════════════════════════════════════════════════════════════
     // WATER COOLER
@@ -2005,12 +2026,11 @@ export function createOfficePeek() {
     // ════════════════════════════════════════════════════════════════════════
 
     const fcPositions = [
-        { x: -20, z: 26, ry: Math.PI / 2 },
-        { x: -28, z: 35, ry: Math.PI / 2 },
-        { x: 20, z: 26, ry: -Math.PI / 2 },
-        { x: 28, z: 42, ry: -Math.PI / 2 },
-        { x: -20, z: 50, ry: Math.PI / 2 },
-        { x: 20, z: 50, ry: -Math.PI / 2 },
+        { x: -20, z: 36, ry: Math.PI / 2 },
+        { x: 20, z: 28, ry: -Math.PI / 2 },
+        { x: 28, z: 38, ry: -Math.PI / 2 },
+        { x: -27, z: 52, ry: Math.PI / 2 },
+        { x: 20, z: 48, ry: -Math.PI / 2 },
     ];
     for (const fp of fcPositions) {
         const fc = buildFilingCabinet();
@@ -2023,13 +2043,14 @@ export function createOfficePeek() {
     // POTTED PLANTS — decorative touches
     // ════════════════════════════════════════════════════════════════════════
 
+    // Plants near walls are pulled in to x=±31 so they don't block wall items
     const plantPositions = [
         { x: 16, z: 20 },
         { x: -16, z: 18 },
-        { x: -33, z: 25 },
-        { x: 33, z: 25 },
-        { x: -33, z: 45 },
-        { x: 33, z: 45 },
+        { x: -31, z: 22 },
+        { x: 31, z: 22 },
+        { x: -31, z: 52 },
+        { x: 31, z: 46 },
     ];
     for (const pp of plantPositions) {
         const plant = buildPlant();
@@ -2041,23 +2062,62 @@ export function createOfficePeek() {
     // WHITEBOARDS — on the office walls
     // ════════════════════════════════════════════════════════════════════════
 
+    // Wall items must fit in gaps BETWEEN windows.
+    // Windows at z=24,35,46,57 (each 5 wide) → gaps:
+    //   z=12.5–21.5 (9u), z=26.5–32.5 (6u), z=37.5–43.5 (6u),
+    //   z=48.5–54.5 (6u), z=59.5–67.5 (8u)
+    // Whiteboard: 2.2×2.5 = 5.5 wide | Bookshelf: 2.4×2.5 = 6.0 wide
+    // Notice board: 2.0×2.5 = 5.0 wide | Clock: 1.2×2.5 = 3.0 wide
+
+    // ── Left wall (x = -35.8) ──
+    // Gap 1 (12.5–21.5): whiteboard at z=17
     const wb1 = buildWhiteboard();
     addWhiteboardContent(wb1, 0);
-    wb1.position.set(-35.8, 3.5, 30);
+    wb1.position.set(-35.8, 3.5, 17);
     wb1.rotation.y = Math.PI / 2;
     group.add(wb1);
 
+    // Gap 2 (26.5–32.5): bookshelf at z=29.5
+    const bs1 = buildBookshelf();
+    bs1.position.set(-35.5, 0, 29.5);
+    bs1.rotation.y = Math.PI / 2;
+    group.add(bs1);
+
+    // Gap 3 (37.5–43.5): whiteboard at z=40.5
+    const wb3 = buildWhiteboard();
+    addWhiteboardContent(wb3, 2);
+    wb3.position.set(-35.8, 3.5, 40.5);
+    wb3.rotation.y = Math.PI / 2;
+    group.add(wb3);
+
+    // Gap 4 (48.5–54.5): empty (fire ext on right wall uses this gap)
+
+    // ── Right wall (x = 35.8) ──
+    // Gap 2 (26.5–32.5): notice board at z=29.5
+    // (moved from separate section below)
+    const nbRightWallInline = buildNoticeBoard();
+    nbRightWallInline.position.set(35.8, 3.0, 29.5);
+    nbRightWallInline.rotation.y = -Math.PI / 2;
+    group.add(nbRightWallInline);
+
+    // Gap 3 (37.5–43.5): whiteboard at z=40.5
     const wb2 = buildWhiteboard();
     addWhiteboardContent(wb2, 1);
-    wb2.position.set(35.8, 3.5, 40);
+    wb2.position.set(35.8, 3.5, 40.5);
     wb2.rotation.y = -Math.PI / 2;
     group.add(wb2);
 
-    const wb3 = buildWhiteboard();
-    addWhiteboardContent(wb3, 2);
-    wb3.position.set(-35.8, 3.5, 45);
-    wb3.rotation.y = Math.PI / 2;
-    group.add(wb3);
+    // Gap 4 (48.5–54.5): bookshelf at z=51.5
+    const bs2 = buildBookshelf();
+    bs2.position.set(35.5, 0, 51.5);
+    bs2.rotation.y = -Math.PI / 2;
+    group.add(bs2);
+
+    // Gap 5 (59.5–67.5): bookshelf at z=63
+    const bs3 = buildBookshelf();
+    bs3.position.set(35.5, 0, 63);
+    bs3.rotation.y = -Math.PI / 2;
+    group.add(bs3);
 
     // ════════════════════════════════════════════════════════════════════════
     // PRINTERS — in the aisles
@@ -2069,28 +2129,9 @@ export function createOfficePeek() {
     group.add(printer1);
 
     const printer2 = buildPrinter();
-    printer2.position.set(24, 0, 42);
+    printer2.position.set(24, 0, 48);
     printer2.rotation.y = -Math.PI / 2;
     group.add(printer2);
-
-    // ════════════════════════════════════════════════════════════════════════
-    // BOOKSHELVES — against the office walls
-    // ════════════════════════════════════════════════════════════════════════
-
-    const bs1 = buildBookshelf();
-    bs1.position.set(-35.5, 0, 40.5);
-    bs1.rotation.y = Math.PI / 2;
-    group.add(bs1);
-
-    const bs2 = buildBookshelf();
-    bs2.position.set(35.5, 0, 36);
-    bs2.rotation.y = -Math.PI / 2;
-    group.add(bs2);
-
-    const bs3 = buildBookshelf();
-    bs3.position.set(35.5, 0, 50);
-    bs3.rotation.y = -Math.PI / 2;
-    group.add(bs3);
 
     // ════════════════════════════════════════════════════════════════════════
     // CUBICLE WALL PARTITIONS — frame the lane and create cubicle rows
@@ -2137,20 +2178,21 @@ export function createOfficePeek() {
         group.add(rp);
     }
 
-    // Cross-partitions (run along X) to create cubicle cells
-    for (const x of [-20, -28]) {
-        for (const z of [26, 34, 42]) {
-            const cp = buildCubiclePartition(4.0, partitionHeight);
-            cp.position.set(x, 0, z);
-            group.add(cp);
-        }
-    }
-    for (const x of [20, 28]) {
-        for (const z of [26, 34, 42]) {
-            const cp = buildCubiclePartition(4.0, partitionHeight);
-            cp.position.set(x, 0, z);
-            group.add(cp);
-        }
+    // Cross-partitions (run along X) — only frame desk clusters, leave open floor gaps
+    const crossPartitions = [
+        // Left: frame Pod A cluster
+        { x: -20, z: 26 },
+        // Left: frame Pod B cluster
+        { x: -27, z: 52 },
+        // Right: frame Pod C cluster
+        { x: 20, z: 38 },
+        // Right: frame Pod D cluster
+        { x: 20, z: 56 },
+    ];
+    for (const cp of crossPartitions) {
+        const part = buildCubiclePartition(4.0, partitionHeight);
+        part.position.set(cp.x, 0, cp.z);
+        group.add(part);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -2191,52 +2233,8 @@ export function createOfficePeek() {
     carpet.receiveShadow = true;
     group.add(carpet);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // NPC WORKERS — seated at desks
-    // ════════════════════════════════════════════════════════════════════════
-
-    const workerPlacements = [
-        // Left side workers (rotation.y = -PI/2 to face desk at -x)
-        { x: -18, z: 22, ry: -Math.PI / 2 },
-        { x: -18, z: 30, ry: -Math.PI / 2 },
-        { x: -18, z: 46, ry: -Math.PI / 2 },
-        { x: -26, z: 30, ry: -Math.PI / 2 },
-        { x: -26, z: 38, ry: -Math.PI / 2 },
-        { x: -18, z: 54, ry: -Math.PI / 2 },
-        // Right side workers (rotation.y = PI/2 to face desk at +x)
-        { x: 18, z: 22, ry: Math.PI / 2 },
-        { x: 18, z: 38, ry: Math.PI / 2 },
-        { x: 18, z: 46, ry: Math.PI / 2 },
-        { x: 26, z: 22, ry: Math.PI / 2 },
-        { x: 26, z: 38, ry: Math.PI / 2 },
-        { x: 18, z: 54, ry: Math.PI / 2 },
-    ];
-    for (let wi = 0; wi < workerPlacements.length; wi++) {
-        const wp = workerPlacements[wi];
-        const worker = buildSeatedWorker(wi);
-        worker.position.set(wp.x, 0, wp.z);
-        worker.rotation.y = wp.ry;
-        group.add(worker);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // CEILING FLUORESCENT LIGHTS — grid of panels at y=5.9
-    // ════════════════════════════════════════════════════════════════════════
-
-    const ceilingLightPositions = [
-        // Over desk areas
-        { x: -24, z: 22 }, { x: -24, z: 34 }, { x: -24, z: 46 }, { x: -24, z: 58 },
-        { x: 24, z: 22 }, { x: 24, z: 34 }, { x: 24, z: 46 }, { x: 24, z: 58 },
-        // Over the center lane
-        { x: 0, z: 22 }, { x: 0, z: 34 }, { x: 0, z: 46 }, { x: 0, z: 58 },
-        // Over the entrance area
-        { x: 0, z: 16 }, { x: -12, z: 16 },
-    ];
-    for (const cp of ceilingLightPositions) {
-        const panel = buildFluorescentPanel();
-        panel.position.set(cp.x, 5.9, cp.z);
-        group.add(panel);
-    }
+    // NPC workers are now placed inline with the desk layout above
+    // (see deskLayout array and group.userData.npcWorkers)
 
     // ════════════════════════════════════════════════════════════════════════
     // BREAK ROOM AREA — far left (x=-26 to -34, z=58-64)
@@ -2344,23 +2342,17 @@ export function createOfficePeek() {
     // WALL DECORATIONS
     // ════════════════════════════════════════════════════════════════════════
 
-    // Wall clock (left wall)
+    // Wall clock — left wall, gap 4 (48.5–54.5), z=51.5
     const wallClock = buildWallClock();
-    wallClock.position.set(-35.8, 4.0, 22);
+    wallClock.position.set(-35.8, 4.0, 51.5);
     wallClock.rotation.y = Math.PI / 2;
     group.add(wallClock);
 
-    // Fire extinguisher (right wall)
+    // Fire extinguisher — right wall, gap 1 (12.5–21.5), z=17
     const fireExt = buildFireExtinguisher();
-    fireExt.position.set(35.8, 2.0, 55);
+    fireExt.position.set(35.8, 2.0, 17);
     fireExt.rotation.y = -Math.PI / 2;
     group.add(fireExt);
-
-    // Additional notice board on right wall
-    const nbRightWall = buildNoticeBoard();
-    nbRightWall.position.set(35.8, 3.0, 28);
-    nbRightWall.rotation.y = -Math.PI / 2;
-    group.add(nbRightWall);
 
     // ════════════════════════════════════════════════════════════════════════
     // WASTE BINS — scattered near desks
@@ -2368,11 +2360,10 @@ export function createOfficePeek() {
 
     const wasteBinPositions = [
         { x: -19, z: 24 },
-        { x: -27, z: 40 },
-        { x: 19, z: 32 },
-        { x: 27, z: 48 },
-        { x: -19, z: 56 },
-        { x: 19, z: 56 },
+        { x: -26, z: 50 },
+        { x: 19, z: 36 },
+        { x: 27, z: 44 },
+        { x: 19, z: 54 },
     ];
     for (const wbp of wasteBinPositions) {
         const bin = buildWasteBin();
@@ -2400,36 +2391,11 @@ export function createOfficePeek() {
         group.add(ep);
     }
 
-    // Cross-partitions for extension area
-    for (const x of [-20, -28]) {
-        for (const z of [50, 58]) {
-            const cp = buildCubiclePartition(4.0, partitionHeight);
-            cp.position.set(x, 0, z);
-            group.add(cp);
-        }
-    }
-    for (const x of [20, 28]) {
-        for (const z of [50, 58]) {
-            const cp = buildCubiclePartition(4.0, partitionHeight);
-            cp.position.set(x, 0, z);
-            group.add(cp);
-        }
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // EXTRA FILING CABINETS
-    // ════════════════════════════════════════════════════════════════════════
-
-    const extraFcPositions = [
-        { x: -20, z: 58, ry: Math.PI / 2 },
-        { x: 20, z: 58, ry: -Math.PI / 2 },
-        { x: -28, z: 50, ry: Math.PI / 2 },
-    ];
-    for (const efp of extraFcPositions) {
-        const efc = buildFilingCabinet();
-        efc.position.set(efp.x, 0, efp.z);
-        efc.rotation.y = efp.ry;
-        group.add(efc);
+    // Cross-partition for extension area — single partition near Pod D
+    {
+        const cp = buildCubiclePartition(4.0, partitionHeight);
+        cp.position.set(28, 0, 54);
+        group.add(cp);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -2439,8 +2405,8 @@ export function createOfficePeek() {
     const extraPlantPositions = [
         { x: -16, z: 56 },
         { x: 16, z: 56 },
-        { x: -33, z: 60 },
-        { x: 33, z: 60 },
+        { x: -31, z: 63 },
+        { x: 31, z: 60 },
     ];
     for (const epp of extraPlantPositions) {
         const ep = buildPlant();
