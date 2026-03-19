@@ -1600,6 +1600,14 @@
                 window.PlayerModelLoader ? PlayerModelLoader.preloadAll().catch(e => {
                     console.warn('Player model preload failed:', e);
                 }) : Promise.resolve(),
+                window.IconModelCache ? IconModelCache.preloadAll().then(() => {
+                    // Clear ALL icon caches so GLB models are used on next render
+                    if (window.clearIconCache) clearIconCache();
+                    if (window.clearIconRenderCache) clearIconRenderCache();
+                    console.log('[Icons] Switched to GLB icon pack models');
+                }).catch(e => {
+                    console.warn('Icon pack preload failed, using procedural icons:', e);
+                }) : Promise.resolve(),
             ]);
 
             // Build the scene — title screen water background

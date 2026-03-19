@@ -1,8 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — 3D Upgrade Icon Factory                                     ║
-// ║  Thin orchestrator: imports 73 unique icon builders from tier files       ║
-// ║  + 9 legacy tower-type aliases for backward compatibility.                ║
-// ║  All fit within ~2 unit bounding box, use PALETTE materials + outlines.   ║
+// ║  Returns THREE.Group models for upgrade icons.                            ║
+// ║  Prefers GLB pack models when available; falls back to procedural.        ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import {
@@ -13,16 +12,17 @@ import {
 import { COMMON_ICON_BUILDERS } from './icons/commonIcons.js';
 import { RARE_ICON_BUILDERS } from './icons/rareIcons.js';
 import { LEGENDARY_ICON_BUILDERS } from './icons/legendaryIcons.js';
+import { ICON_PACK_MAP } from '../data/iconPackMapping.js';
+import { IconModelCache } from '../loaders/IconModelCache.js';
 
 // ─── SHARED ──────────────────────────────────────────────────────────────────
 
 const _cache = {};
 
 // ─── BUILDER MAP ─────────────────────────────────────────────────────────────
-// Legacy tower-type keys (backward compat) + all 73 per-upgrade builders.
 
 const _builders = {
-    // Legacy keys — kept for any code still referencing tower-type strings
+    // Legacy tower-type keys (backward compat)
     magnet: miniMagnet,
     coin:   miniCoin,
     sign:   miniSign,
@@ -42,16 +42,40 @@ const _builders = {
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
 /**
- * Create a 3D icon model. Returns a cloned THREE.Group from cache.
+ * Create a 3D icon model. Prefers GLB pack model if available, falls back to procedural.
+ * Returns a cloned THREE.Group.
  *
- * @param {string} iconKey — upgrade ID (C1, R23, L5, etc.) or legacy key (magnet, coin, etc.)
+ * @param {string} iconKey — upgrade ID (C1, R23, L5, etc.) or legacy key
  * @returns {THREE.Group}
  */
 export function createIconModel(iconKey) {
     const key = iconKey || 'star';
+
     if (!_cache[key]) {
-        const builder = _builders[key] || _builders.star;
-        _cache[key] = builder();
+        // Try GLB pack model first
+        const packEntry = ICON_PACK_MAP[key];
+        if (packEntry && IconModelCache.loaded) {
+            const group = IconModelCache.getIconGroup(packEntry.model, packEntry.scale);
+            if (group) {
+                _cache[key] = group;
+            }
+        }
+
+        // Fallback to procedural builder
+        if (!_cache[key]) {
+            const builder = _builders[key] || _builders.star;
+            _cache[key] = builder();
+        }
     }
+
     return _cache[key].clone();
+}
+
+/**
+ * Clear the icon cache (call when IconModelCache finishes loading to re-render with GLB models).
+ */
+export function clearIconCache() {
+    for (const key in _cache) {
+        delete _cache[key];
+    }
 }

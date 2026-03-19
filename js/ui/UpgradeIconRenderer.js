@@ -343,6 +343,21 @@ export function create3DIconDataURL(iconKey, rarity, size, time) {
 }
 
 /**
+ * Clear all cached icon clones and data URLs without destroying the renderer.
+ * Call after IconModelCache finishes loading to force re-render with GLB models.
+ */
+export function clearIconRenderCache() {
+    for (const key in _iconClones) {
+        delete _iconClones[key];
+    }
+    for (const key in _dataURLCache) {
+        delete _dataURLCache[key];
+    }
+    _currentIcon = null;
+    _currentKey = '';
+}
+
+/**
  * Clean up offscreen renderer resources.
  */
 export function disposeIconRenderer() {

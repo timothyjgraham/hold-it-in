@@ -650,17 +650,15 @@ export function miniTower() {
     const g = new THREE.Group();
     const mat = toonMat(PALETTE.fixture);
 
-    // Base
-    const baseGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
-    addWithOutline(g, baseGeo, mat, { y: -0.25 });
-
-    // Body
-    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.4, 8);
-    addWithOutline(g, bodyGeo, mat, { y: 0 });
-
-    // Top sphere
-    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
-    addWithOutline(g, topGeo, toonMat(PALETTE.glow), { y: 0.25 });
+    // Squat wide base
+    addWithOutline(g, new THREE.CylinderGeometry(0.16, 0.19, 0.08, 10), mat, { y: -0.22 });
+    // Wide short body
+    addWithOutline(g, new THREE.CylinderGeometry(0.12, 0.16, 0.24, 10), mat, { y: -0.06 });
+    // Flat disc cap (NOT a sphere)
+    addWithOutline(g, new THREE.CylinderGeometry(0.14, 0.12, 0.04, 10), mat, { y: 0.08 });
+    // Glowing lens on top
+    addWithOutline(g, new THREE.CylinderGeometry(0.06, 0.06, 0.03, 8),
+        toonMat(PALETTE.glow, { emissive: PALETTE.gold, emissiveIntensity: 0.4 }), { y: 0.12 });
 
     return g;
 }
@@ -769,22 +767,20 @@ export function dottedOutlineTower() {
     const ghostMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.2 });
     const dotMat = toonMat(PALETTE.fixture, { transparent: true, opacity: 0.5 });
 
-    // Ghost base
-    const baseGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
-    const base = new THREE.Mesh(baseGeo, ghostMat);
-    base.position.y = -0.25;
+    // Ghost squat base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 0.08, 8), ghostMat);
+    base.position.y = -0.22;
     g.add(base);
 
-    // Ghost body
-    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.4, 8);
-    const body = new THREE.Mesh(bodyGeo, ghostMat);
+    // Ghost wide body
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.24, 8), ghostMat);
+    body.position.y = -0.06;
     g.add(body);
 
-    // Ghost top
-    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
-    const top = new THREE.Mesh(topGeo, ghostMat);
-    top.position.y = 0.25;
-    g.add(top);
+    // Ghost flat cap (NOT a sphere)
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.04, 8), ghostMat);
+    cap.position.y = 0.08;
+    g.add(cap);
 
     // Dotted outline — small spheres along silhouette
     const dotGeo = new THREE.SphereGeometry(0.02, 4, 4);
@@ -792,9 +788,8 @@ export function dottedOutlineTower() {
     for (let i = 0; i < dotCount; i++) {
         const a = (i / dotCount) * Math.PI * 2;
         const dot = new THREE.Mesh(dotGeo, dotMat);
-        // Alternate between body edge and base edge
-        const yLevel = i < 8 ? 0 : -0.25;
-        const r = i < 8 ? 0.12 : 0.17;
+        const yLevel = i < 8 ? -0.06 : -0.22;
+        const r = i < 8 ? 0.14 : 0.18;
         dot.position.set(Math.cos(a) * r, yLevel, Math.sin(a) * r);
         g.add(dot);
     }

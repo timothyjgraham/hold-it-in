@@ -1,565 +1,468 @@
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║  HOLD IT IN — Common Tier Upgrade Icons (C1–C20)                          ║
+// ║  Each icon = ONE clear symbolic object, 3-8 geometry pieces, polished.    ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 import { PALETTE } from '../../data/palette.js';
 import { toonMat, matGold, matDanger, matSign, matMop, matUbik, matPotplant } from '../../shaders/toonMaterials.js';
-import {
-    ol, addWithOutline,
-    miniMagnet, miniCoin, miniSign, miniMop, miniSpray, miniPot, miniStar, miniChain, miniDoor,
-    lightningBolt, shieldShape, shockwaveRings, springCoil, arrowUp, arrowDown,
-    circularArrows, clockFace, crosshair, priceTag, splashDroplets, bubbles,
-    flameShape, explosionBurst, skullShape, heartShape, puddleDisc, coinStack,
-    miniTower, capsuleFigure, sparkSpheres, motionLines,
-    tortoiseDome, impactStar, hpCross,
-} from './iconPrimitives.js';
+import { ol, addWithOutline } from './iconPrimitives.js';
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+
+// Reusable extruded lightning bolt shape
+function _boltGeo(scale = 1) {
+    const s = new THREE.Shape();
+    s.moveTo(0.06 * scale, 0.28 * scale);
+    s.lineTo(0.18 * scale, 0.28 * scale);
+    s.lineTo(0.04 * scale, 0.04 * scale);
+    s.lineTo(0.14 * scale, 0.04 * scale);
+    s.lineTo(-0.06 * scale, -0.28 * scale);
+    s.lineTo(-0.18 * scale, -0.28 * scale);
+    s.lineTo(-0.02 * scale, -0.02 * scale);
+    s.lineTo(-0.12 * scale, -0.02 * scale);
+    s.closePath();
+    const geo = new THREE.ExtrudeGeometry(s, {
+        depth: 0.08 * scale, bevelEnabled: true,
+        bevelThickness: 0.02 * scale, bevelSize: 0.02 * scale, bevelSegments: 1,
+    });
+    geo.center();
+    return geo;
+}
+
+// Reusable horseshoe magnet: returns group. R=arc radius, t=tube thickness
+function _magnet(R = 0.36, t = 0.09) {
+    const g = new THREE.Group();
+    addWithOutline(g, new THREE.TorusGeometry(R, t, 12, 20, Math.PI),
+        matDanger(), { y: 0.1 }, { x: -Math.PI / 2 });
+    const tipGeo = new THREE.CylinderGeometry(t + 0.01, t + 0.01, 0.22, 10);
+    const tipMat = toonMat(PALETTE.fixture);
+    addWithOutline(g, tipGeo, tipMat, { x: -R, y: -0.01 });
+    addWithOutline(g, tipGeo, tipMat, { x: R, y: -0.01 });
+    return g;
+}
+
+// Reusable A-frame sign: returns group
+function _aframeSign(w = 0.5, h = 0.6) {
+    const g = new THREE.Group();
+    const sm = matSign();
+    const panel = new THREE.BoxGeometry(w, h, 0.04);
+    addWithOutline(g, panel, sm, { z: 0.1, y: 0.05 }, { x: 0.18 });
+    addWithOutline(g, panel, sm, { z: -0.1, y: 0.05 }, { x: -0.18 });
+    addWithOutline(g, new THREE.BoxGeometry(w, 0.05, 0.05), toonMat(PALETTE.fixture), { y: h / 2 + 0.03 });
+    // Exclamation mark on front
+    addWithOutline(g, new THREE.CylinderGeometry(0.025, 0.025, 0.15, 6),
+        toonMat(PALETTE.ink), { y: 0.12, z: 0.14 }, { x: 0.18 });
+    addWithOutline(g, new THREE.SphereGeometry(0.03, 6, 6),
+        toonMat(PALETTE.ink), { y: -0.02, z: 0.14 });
+    // Feet
+    const foot = new THREE.BoxGeometry(0.16, 0.05, 0.22);
+    addWithOutline(g, foot, sm, { x: -w * 0.36, y: -h / 2 + 0.02 });
+    addWithOutline(g, foot, sm, { x: w * 0.36, y: -h / 2 + 0.02 });
+    return g;
+}
+
+// Reusable spray can: returns group
+function _sprayCan() {
+    const g = new THREE.Group();
+    const R = 0.17, H = 0.48;
+    addWithOutline(g, new THREE.CylinderGeometry(R, R, H, 12), matUbik());
+    addWithOutline(g, new THREE.SphereGeometry(R, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+        matUbik(), { y: H / 2 });
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(R + 0.003, R + 0.003, 0.1, 12), toonMat(PALETTE.white)));
+    addWithOutline(g, new THREE.CylinderGeometry(0.035, 0.05, 0.06, 6),
+        toonMat(PALETTE.fixture), { y: H / 2 + 0.06 });
+    return g;
+}
+
+// Reusable mop: returns group
+function _mop() {
+    const g = new THREE.Group();
+    addWithOutline(g, new THREE.CylinderGeometry(0.04, 0.04, 0.65, 8),
+        toonMat(PALETTE.wood), { y: 0.1 });
+    addWithOutline(g, new THREE.SphereGeometry(0.22, 10, 8), matMop(),
+        { y: -0.28 }, null, { x: 1.3, y: 0.65, z: 1.0 });
+    return g;
+}
+
+// Reusable pot: returns group
+function _pot() {
+    const g = new THREE.Group();
+    addWithOutline(g, new THREE.CylinderGeometry(0.28, 0.18, 0.32, 10), matPotplant(), { y: -0.3 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.3, 0.3, 0.05, 10), matPotplant(), { y: -0.12 });
+    addWithOutline(g, new THREE.SphereGeometry(0.2, 8, 6), toonMat(PALETTE.success), { y: 0.08 });
+    return g;
+}
+
+// Reusable extruded shield
+function _shieldGeo() {
+    const s = new THREE.Shape();
+    const w = 0.35, h = 0.5;
+    s.moveTo(0, -h / 2);
+    s.quadraticCurveTo(-w * 1.2, -h * 0.05, -w, h * 0.25);
+    s.lineTo(-w, h * 0.35);
+    s.quadraticCurveTo(0, h * 0.55, 0, h / 2);
+    s.quadraticCurveTo(0, h * 0.55, w, h * 0.35);
+    s.lineTo(w, h * 0.25);
+    s.quadraticCurveTo(w * 1.2, -h * 0.05, 0, -h / 2);
+    const geo = new THREE.ExtrudeGeometry(s, {
+        depth: 0.08, bevelEnabled: true,
+        bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 1,
+    });
+    geo.center();
+    return geo;
+}
 
 // ─── C1: Overclocked Magnet ────────────────────────────────────────────────────
-// Horseshoe magnet with 2 shockwave rings expanding from it + spark spheres
 function buildC1() {
     const g = new THREE.Group();
-
-    const magnet = miniMagnet();
-    magnet.position.y = 0.15;
-    g.add(magnet);
-
-    const rings = shockwaveRings(2, 0.35);
-    rings.position.y = -0.15;
-    g.add(rings);
-
-    const sparks = sparkSpheres(5, 0.25);
-    sparks.position.y = -0.1;
-    g.add(sparks);
-
+    const mag = _magnet(0.38, 0.1);
+    g.add(mag);
+    // Lightning bolt between poles
+    addWithOutline(g, _boltGeo(1), toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.5 }),
+        { y: -0.15 });
     return g;
 }
 
 // ─── C2: Double Dip ────────────────────────────────────────────────────────────
-// Gold coin tilted at 30 deg with small magnet above + curved torus arc connecting
 function buildC2() {
     const g = new THREE.Group();
-
-    const coin = miniCoin();
-    coin.rotation.z = Math.PI / 6;
-    coin.position.y = -0.25;
-    g.add(coin);
-
-    const magnet = miniMagnet();
-    magnet.scale.setScalar(0.6);
-    magnet.position.y = 0.35;
-    g.add(magnet);
-
-    const arcGeo = new THREE.TorusGeometry(0.3, 0.02, 6, 12, Math.PI);
-    const arc = new THREE.Mesh(arcGeo, matGold());
-    arc.rotation.z = Math.PI;
-    arc.position.set(0.05, 0.05, 0);
-    g.add(arc);
-
+    const gold = matGold();
+    const coinGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.06, 18);
+    // Back coin
+    addWithOutline(g, coinGeo, gold, { x: -0.08, y: 0.05, z: -0.08 },
+        { x: Math.PI / 2 + 0.15, z: -0.1 });
+    // Front coin (overlapping)
+    addWithOutline(g, coinGeo, gold, { x: 0.08, y: -0.05, z: 0.08 },
+        { x: Math.PI / 2 - 0.15, z: 0.1 });
     return g;
 }
 
-// ─── C3: Magnet Durability (Coin Resonance) ───────────────────────────────────
-// Magnet with ascending gold rings around it (coins buffing the shockwave) + upward arrow
+// ─── C3: Magnet Durability ─────────────────────────────────────────────────────
 function buildC3() {
     const g = new THREE.Group();
-
-    // Central magnet
-    const magnet = miniMagnet();
-    magnet.position.y = -0.05;
-    g.add(magnet);
-
-    // Ascending gold rings — each represents a collected coin buffing the shockwave
-    const ringMat = matGold();
-    const ringCounts = 4;
-    for (let i = 0; i < ringCounts; i++) {
-        const r = 0.22 + i * 0.08;
-        const ringGeo = new THREE.TorusGeometry(r, 0.025, 6, 16);
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.y = -0.2 + i * 0.12;
-        ring.rotation.x = Math.PI / 2;
-        g.add(ring);
-    }
-
-    // Small upward arrow showing scaling/accumulation
-    const arrow = arrowUp(0.4);
-    arrow.position.set(0.45, 0.15, 0);
-    arrow.scale.setScalar(0.6);
-    g.add(arrow);
-
+    // Shield behind
+    addWithOutline(g, _shieldGeo(), toonMat(PALETTE.wall), { z: -0.08 });
+    // Magnet in front
+    const mag = _magnet(0.3, 0.08);
+    mag.position.z = 0.04;
+    g.add(mag);
     return g;
 }
 
 // ─── C4: Reinforced Signs ──────────────────────────────────────────────────────
-// Warning sign with thick torus frame border, 4 bolt spheres at corners
 function buildC4() {
     const g = new THREE.Group();
-
-    const sign = miniSign();
+    const sign = _aframeSign();
     g.add(sign);
-
-    const frameGeo = new THREE.TorusGeometry(0.42, 0.04, 8, 3);
-    addWithOutline(g, frameGeo, toonMat(PALETTE.fixture), { y: 0.02, z: -0.02 });
-
-    const boltGeo = new THREE.SphereGeometry(0.04, 6, 6);
+    // 3 hex bolts on front
+    const boltGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.04, 6);
     const boltMat = toonMat(PALETTE.fixture);
-    const bolts = [
-        { x: -0.32, y: -0.2 }, { x: 0.32, y: -0.2 },
-        { x: -0.16, y: 0.3 }, { x: 0.16, y: 0.3 },
-    ];
-    for (const b of bolts) {
-        addWithOutline(g, boltGeo, boltMat, { x: b.x, y: b.y, z: 0.07 });
+    for (const [x, y] of [[-0.15, -0.12], [0.15, -0.12], [0, 0.22]]) {
+        addWithOutline(g, boltGeo, boltMat, { x, y, z: 0.16 }, { x: Math.PI / 2 });
     }
-
     return g;
 }
 
 // ─── C5: Extra Slippery ────────────────────────────────────────────────────────
-// Warning sign on flat puddle disc, 3 splash droplets arcing off
 function buildC5() {
     const g = new THREE.Group();
-
-    const puddle = puddleDisc(0.55);
-    puddle.position.y = -0.35;
-    g.add(puddle);
-
-    const sign = miniSign();
-    sign.scale.setScalar(0.8);
-    sign.position.y = 0.1;
+    const sign = _aframeSign(0.45, 0.55);
+    sign.position.y = 0.08;
     g.add(sign);
-
-    const drops = splashDroplets(3);
-    drops.position.set(0.15, -0.15, 0.1);
-    g.add(drops);
-
+    // Puddle underneath
+    addWithOutline(g, new THREE.CylinderGeometry(0.5, 0.55, 0.03, 16),
+        toonMat(PALETTE.ubik, { transparent: true, opacity: 0.4 }), { y: -0.32 });
     return g;
 }
 
 // ─── C6: Prickly Signs ─────────────────────────────────────────────────────────
-// Warning sign with 8-10 small cone spikes radiating from edges
 function buildC6() {
     const g = new THREE.Group();
-
-    const sign = miniSign();
+    const sign = _aframeSign(0.45, 0.55);
     g.add(sign);
-
-    const spikeGeo = new THREE.ConeGeometry(0.04, 0.18, 5);
+    // 8 spikes radiating from sign
+    const spikeGeo = new THREE.ConeGeometry(0.04, 0.16, 5);
     const spikeMat = toonMat(PALETTE.fixture);
-    const count = 9;
-    for (let i = 0; i < count; i++) {
-        const angle = (i / count) * Math.PI * 2;
-        const r = 0.38;
-        const spike = new THREE.Mesh(spikeGeo, spikeMat);
-        spike.position.set(Math.cos(angle) * r, Math.sin(angle) * r * 0.75 + 0.02, 0);
-        spike.rotation.z = angle - Math.PI / 2;
-        g.add(spike);
-
-        const olSpike = new THREE.Mesh(spikeGeo, ol());
-        olSpike.position.copy(spike.position);
-        olSpike.rotation.copy(spike.rotation);
-        g.add(olSpike);
+    const spikes = [
+        { x: -0.14, y: 0.12, z: 0.15, rx: Math.PI / 2 },
+        { x: 0.14, y: 0.12, z: 0.15, rx: Math.PI / 2 },
+        { x: 0, y: -0.05, z: 0.15, rx: Math.PI / 2 },
+        { x: 0.25, y: 0.05, z: 0, rz: -Math.PI / 2 },
+        { x: -0.25, y: 0.05, z: 0, rz: Math.PI / 2 },
+        { x: 0.25, y: -0.12, z: 0, rz: -Math.PI / 2 },
+        { x: -0.25, y: -0.12, z: 0, rz: Math.PI / 2 },
+        { x: 0, y: 0.22, z: 0.15, rx: Math.PI / 2 },
+    ];
+    for (const s of spikes) {
+        addWithOutline(g, spikeGeo, spikeMat,
+            { x: s.x, y: s.y, z: s.z },
+            { x: s.rx || 0, z: s.rz || 0 });
     }
-
     return g;
 }
 
 // ─── C7: Industrial Mop Head ───────────────────────────────────────────────────
-// Giant wide mop head (squished hemisphere), thick handle, 180 deg torus arc
 function buildC7() {
     const g = new THREE.Group();
-
     // Thick handle
-    const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.65, 6);
-    addWithOutline(g, handleGeo, toonMat(PALETTE.wood), { y: 0.15 });
-
-    // Giant wide squished hemisphere mop head
-    const headGeo = new THREE.SphereGeometry(0.32, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    addWithOutline(g, headGeo, matMop(), { y: -0.22 }, { x: Math.PI }, { x: 1.6, y: 0.6, z: 1.2 });
-
-    // 180 deg arc indicator above
-    const arcGeo = new THREE.TorusGeometry(0.25, 0.025, 6, 12, Math.PI);
-    addWithOutline(g, arcGeo, toonMat(PALETTE.success), { y: 0.5 }, { z: Math.PI / 2 });
-
+    addWithOutline(g, new THREE.CylinderGeometry(0.04, 0.04, 0.65, 8), toonMat(PALETTE.wood), { y: 0.15 });
+    // Extra-wide rectangular mop head
+    addWithOutline(g, new THREE.BoxGeometry(0.7, 0.12, 0.25), matMop(), { y: -0.28 });
     return g;
 }
 
 // ─── C8: Quick Sweep ───────────────────────────────────────────────────────────
-// Mop + small clock face overlay + motion streak lines
 function buildC8() {
     const g = new THREE.Group();
-
-    const mop = miniMop();
-    mop.position.x = -0.15;
+    const mop = _mop();
+    mop.position.x = -0.12;
     g.add(mop);
-
-    const clock = clockFace(0.3);
-    clock.position.set(0.25, 0.2, 0.1);
-    g.add(clock);
-
-    const lines = motionLines(3, 0.25);
-    lines.position.set(0.1, -0.1, 0);
-    g.add(lines);
-
+    // Clock face (white disc + 2 hands)
+    const clockGrp = new THREE.Group();
+    clockGrp.rotation.x = Math.PI / 2;
+    addWithOutline(clockGrp, new THREE.CylinderGeometry(0.2, 0.2, 0.04, 16), toonMat(PALETTE.white));
+    addWithOutline(clockGrp, new THREE.TorusGeometry(0.2, 0.018, 6, 16), toonMat(PALETTE.fixture));
+    const ink = toonMat(PALETTE.ink);
+    clockGrp.add(new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.015), ink));
+    clockGrp.children[clockGrp.children.length - 1].position.set(0, 0.06, 0.025);
+    clockGrp.children[clockGrp.children.length - 1].rotation.z = -0.3;
+    clockGrp.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.1, 0.015), ink));
+    clockGrp.children[clockGrp.children.length - 1].position.set(0, 0.04, 0.025);
+    clockGrp.children[clockGrp.children.length - 1].rotation.z = 0.8;
+    clockGrp.position.set(0.25, 0.2, 0);
+    g.add(clockGrp);
     return g;
 }
 
 // ─── C9: Heavy Mop ────────────────────────────────────────────────────────────
-// Oversized thick box-shaped mop head, reinforced handle, impact star at tip
 function buildC9() {
     const g = new THREE.Group();
-
-    // Reinforced handle
-    const handleGeo = new THREE.CylinderGeometry(0.04, 0.035, 0.6, 6);
-    addWithOutline(g, handleGeo, toonMat(PALETTE.wood), { y: 0.1 });
-
-    // Metal band reinforcement
-    const bandGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.06, 8);
-    addWithOutline(g, bandGeo, toonMat(PALETTE.fixture), { y: -0.1 });
-
-    // Oversized thick box mop head
-    const headGeo = new THREE.BoxGeometry(0.5, 0.18, 0.3);
-    addWithOutline(g, headGeo, matMop(), { y: -0.3 });
-
-    // Impact star at bottom tip
-    const star = miniStar();
-    star.scale.setScalar(0.35);
-    star.position.set(0, -0.45, 0.1);
-    g.add(star);
-
+    // Thick reinforced handle
+    addWithOutline(g, new THREE.CylinderGeometry(0.045, 0.04, 0.6, 8), toonMat(PALETTE.wood), { y: 0.12 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.06, 0.06, 0.04, 8), toonMat(PALETTE.fixture), { y: -0.08 });
+    // Massive wide mop head
+    addWithOutline(g, new THREE.BoxGeometry(0.6, 0.18, 0.3), matMop(), { y: -0.28 });
+    // Impact star below
+    const starS = new THREE.Shape();
+    for (let i = 0; i < 12; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 6;
+        const r = i % 2 === 0 ? 0.16 : 0.08;
+        if (i === 0) starS.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+        else starS.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    starS.closePath();
+    const starGeo = new THREE.ExtrudeGeometry(starS, { depth: 0.05, bevelEnabled: false });
+    starGeo.center();
+    addWithOutline(g, starGeo, matGold(), { y: -0.42 });
     return g;
 }
 
 // ─── C10: Extra Absorbent ──────────────────────────────────────────────────────
-// Mop with armor bands on handle + HP cross near mop head — "tougher mop"
 function buildC10() {
     const g = new THREE.Group();
-
-    // Handle
-    const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 6);
-    addWithOutline(g, handleGeo, toonMat(PALETTE.wood), { y: 0.1 });
-
-    // Armor bands on handle
-    const bandMat = toonMat(PALETTE.fixture);
-    const bandGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8);
-    for (const y of [-0.05, 0.1, 0.25]) {
-        addWithOutline(g, bandGeo, bandMat, { y });
-    }
-
-    // Mop head
-    const headGeo = new THREE.SphereGeometry(0.22, 10, 8);
-    addWithOutline(g, headGeo, matMop(), { y: -0.25 }, null, { x: 1.3, y: 0.7, z: 1.0 });
-
-    // HP cross near mop head
-    const cross = hpCross(0.25);
-    cross.position.set(0.35, -0.15, 0.1);
-    g.add(cross);
-
+    const mop = _mop();
+    g.add(mop);
+    // Green HP cross
+    const hm = toonMat(PALETTE.success, { emissive: PALETTE.success, emissiveIntensity: 0.4 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.04, 0.04, 0.18, 6), hm, { x: 0.35, y: -0.15 }, { z: Math.PI / 2 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.04, 0.04, 0.18, 6), hm, { x: 0.35, y: -0.15 });
     return g;
 }
 
 // ─── C11: Pressure Washer ──────────────────────────────────────────────────────
-// Spray can with elongated narrow nozzle + tight bright cylinder beam
 function buildC11() {
     const g = new THREE.Group();
-
-    const spray = miniSpray();
-    spray.position.x = -0.1;
-    g.add(spray);
-
-    // Elongated narrow nozzle
-    const nozzleGeo = new THREE.CylinderGeometry(0.02, 0.035, 0.25, 6);
-    addWithOutline(g, nozzleGeo, toonMat(PALETTE.fixture),
-        { x: 0.15, y: 0.32 }, { z: -Math.PI / 6 });
-
-    // Tight bright beam
-    const beamGeo = new THREE.CylinderGeometry(0.02, 0.04, 0.5, 8);
-    const beamMat = toonMat(PALETTE.ubik, {
-        emissive: PALETTE.ubik, emissiveIntensity: 0.5,
-        transparent: true, opacity: 0.6,
-    });
-    const beam = new THREE.Mesh(beamGeo, beamMat);
-    beam.position.set(0.35, 0.5, 0);
-    beam.rotation.z = -Math.PI / 6;
+    const can = _sprayCan();
+    can.position.set(-0.08, -0.1, 0);
+    g.add(can);
+    // Long nozzle
+    addWithOutline(g, new THREE.CylinderGeometry(0.02, 0.04, 0.25, 6),
+        toonMat(PALETTE.fixture), { x: 0.12, y: 0.22 }, { z: -0.3 });
+    // Tight beam
+    const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.03, 0.4, 8),
+        toonMat(PALETTE.ubik, { emissive: PALETTE.ubik, emissiveIntensity: 0.5, transparent: true, opacity: 0.5 }));
+    beam.position.set(0.28, 0.42, 0);
+    beam.rotation.z = -0.3;
     g.add(beam);
-
     return g;
 }
 
 // ─── C12: Wide Spray ───────────────────────────────────────────────────────────
-// Spray can with wide translucent cone in ubik green
 function buildC12() {
     const g = new THREE.Group();
-
-    const spray = miniSpray();
-    spray.position.y = -0.1;
-    g.add(spray);
-
-    // Wide translucent cone spray
-    const coneGeo = new THREE.ConeGeometry(0.45, 0.6, 12, 1, true);
-    const coneMat = toonMat(PALETTE.ubik, {
-        transparent: true, opacity: 0.25,
-        emissive: PALETTE.ubik, emissiveIntensity: 0.3,
-        side: THREE.DoubleSide,
-    });
-    const cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.y = 0.55;
-    cone.rotation.z = Math.PI;
+    const can = _sprayCan();
+    can.position.y = -0.12;
+    g.add(can);
+    // Wide cone
+    const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.5, 0.45, 14, 1, true),
+        toonMat(PALETTE.ubik, { transparent: true, opacity: 0.2, emissive: PALETTE.ubik, emissiveIntensity: 0.25, side: THREE.DoubleSide }));
+    cone.position.y = 0.46;
+    cone.rotation.x = Math.PI;
     g.add(cone);
-
     return g;
 }
 
 // ─── C13: Corrosive Formula ────────────────────────────────────────────────────
-// Spray can with small skull overlay + green acid droplets dripping
 function buildC13() {
     const g = new THREE.Group();
-
-    const spray = miniSpray();
-    spray.position.x = -0.15;
-    g.add(spray);
-
-    const skull = skullShape();
-    skull.scale.setScalar(0.55);
-    skull.position.set(0.25, 0.1, 0.15);
-    g.add(skull);
-
-    // Green acid droplets
-    const acidGeo = new THREE.SphereGeometry(0.035, 6, 6);
-    const acidMat = toonMat(PALETTE.ubik, { emissive: PALETTE.ubik, emissiveIntensity: 0.4 });
-    const drips = [
-        { x: -0.2, y: -0.4, z: 0.05 },
-        { x: -0.05, y: -0.45, z: -0.03 },
-        { x: 0.1, y: -0.5, z: 0.07 },
-    ];
-    for (const p of drips) {
-        addWithOutline(g, acidGeo, acidMat, p);
-    }
-
+    const can = _sprayCan();
+    g.add(can);
+    // Skull on front
+    const bone = toonMat(PALETTE.white);
+    addWithOutline(g, new THREE.SphereGeometry(0.11, 8, 6), bone, { y: 0.0, z: 0.2 });
+    const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), bone);
+    jaw.position.set(0, -0.09, 0.2); jaw.scale.set(1.1, 0.6, 0.8); g.add(jaw);
+    const eye = toonMat(PALETTE.ink);
+    addWithOutline(g, new THREE.SphereGeometry(0.03, 5, 5), eye, { x: -0.04, y: 0.02, z: 0.28 });
+    addWithOutline(g, new THREE.SphereGeometry(0.03, 5, 5), eye, { x: 0.04, y: 0.02, z: 0.28 });
     return g;
 }
 
 // ─── C14: Rapid Spray ──────────────────────────────────────────────────────────
-// Spray can with 3 angled small cones (spray bursts) + speed line cylinders
 function buildC14() {
     const g = new THREE.Group();
-
-    const spray = miniSpray();
-    spray.position.y = -0.1;
-    g.add(spray);
-
-    // 3 angled spray burst cones
-    const burstGeo = new THREE.ConeGeometry(0.1, 0.25, 8);
-    const burstMat = toonMat(PALETTE.ubik, { transparent: true, opacity: 0.5 });
-    const angles = [-0.3, 0, 0.3];
-    for (const a of angles) {
-        const burst = new THREE.Mesh(burstGeo, burstMat);
-        burst.position.set(Math.sin(a) * 0.15, 0.35, 0);
-        burst.rotation.z = a;
-        g.add(burst);
-    }
-
-    // Speed lines
-    const lines = motionLines(3, 0.2);
-    lines.position.set(0.15, 0.1, 0);
-    g.add(lines);
-
+    const can = _sprayCan();
+    g.add(can);
+    // Lightning bolt on front
+    addWithOutline(g, _boltGeo(0.55),
+        toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.5 }),
+        { y: -0.02, z: 0.2 });
     return g;
 }
 
 // ─── C15: Spring-Loaded Pot ────────────────────────────────────────────────────
-// Pot plant sitting atop spring coil, slight upward offset
 function buildC15() {
     const g = new THREE.Group();
-
-    const coil = springCoil(0.18, 0.4, 4);
-    coil.position.y = -0.25;
-    g.add(coil);
-
-    const pot = miniPot();
+    // Chunky spring (torus rings stacked)
+    const springMat = toonMat(PALETTE.fixture);
+    for (let i = 0; i < 4; i++) {
+        addWithOutline(g, new THREE.TorusGeometry(0.15, 0.03, 6, 12), springMat,
+            { y: -0.42 + i * 0.08 }, { x: Math.PI / 2 });
+    }
+    // Pot on top
+    const pot = _pot();
+    pot.position.y = 0.15;
     pot.scale.setScalar(0.8);
-    pot.position.y = 0.2;
     g.add(pot);
-
     return g;
 }
 
 // ─── C16: Cactus Pot ───────────────────────────────────────────────────────────
-// Terracotta pot + tall cactus (cylinder + sphere top) with small cone thorns
 function buildC16() {
     const g = new THREE.Group();
-
-    // Terracotta pot
-    const potGeo = new THREE.CylinderGeometry(0.25, 0.16, 0.3, 8);
-    addWithOutline(g, potGeo, matPotplant(), { y: -0.35 });
-
-    const rimGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.05, 8);
-    addWithOutline(g, rimGeo, matPotplant(), { y: -0.18 });
-
-    // Cactus body
-    const cactusMat = toonMat(PALETTE.success);
-    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.55, 8);
-    addWithOutline(g, bodyGeo, cactusMat, { y: 0.08 });
-
-    // Cactus top sphere
-    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
-    addWithOutline(g, topGeo, cactusMat, { y: 0.38 });
-
-    // Small cone thorns
-    const thornGeo = new THREE.ConeGeometry(0.02, 0.08, 4);
+    // Pot
+    addWithOutline(g, new THREE.CylinderGeometry(0.28, 0.18, 0.3, 10), matPotplant(), { y: -0.32 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.3, 0.3, 0.05, 10), matPotplant(), { y: -0.15 });
+    // Cactus body + arm
+    const cm = toonMat(PALETTE.success);
+    addWithOutline(g, new THREE.CylinderGeometry(0.12, 0.14, 0.55, 10), cm, { y: 0.12 });
+    addWithOutline(g, new THREE.SphereGeometry(0.12, 10, 6), cm, { y: 0.42 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.06, 0.07, 0.18, 8), cm,
+        { x: 0.2, y: 0.2 }, { z: -Math.PI / 3 });
+    addWithOutline(g, new THREE.SphereGeometry(0.06, 6, 6), cm, { x: 0.28, y: 0.3 });
+    // Thorns (6 prominent ones)
+    const thornGeo = new THREE.ConeGeometry(0.025, 0.1, 4);
     const thornMat = toonMat(PALETTE.cream);
-    const thornAngles = [0, 0.7, 1.4, 2.1, 2.8, 3.5, 4.2, 4.9, 5.6];
-    for (let i = 0; i < thornAngles.length; i++) {
-        const a = thornAngles[i];
-        const ty = -0.05 + (i % 3) * 0.15;
+    for (const [a, y] of [[0, 0.0], [1.8, 0.0], [3.6, 0.0], [0.9, 0.2], [2.7, 0.2], [4.5, 0.2]]) {
         const thorn = new THREE.Mesh(thornGeo, thornMat);
-        thorn.position.set(Math.cos(a) * 0.12, ty, Math.sin(a) * 0.12);
-        thorn.lookAt(Math.cos(a) * 2, ty, Math.sin(a) * 2);
+        thorn.position.set(Math.cos(a) * 0.15, y, Math.sin(a) * 0.15);
+        thorn.lookAt(Math.cos(a) * 2, y, Math.sin(a) * 2);
         thorn.rotation.x += Math.PI / 2;
         g.add(thorn);
+        const o = new THREE.Mesh(thornGeo, ol());
+        o.position.copy(thorn.position); o.rotation.copy(thorn.rotation); g.add(o);
     }
-
     return g;
 }
 
 // ─── C17: Glass Cannon ─────────────────────────────────────────────────────────
-// Translucent/cracked mini tower (glass material) + massive explosion burst behind it
+// Actual cannon — barrel on two wheels. Everyone knows what a cannon looks like.
 function buildC17() {
     const g = new THREE.Group();
-
-    // Glass tower — translucent with cracks
-    const glassMat = toonMat(PALETTE.white, {
-        transparent: true, opacity: 0.4,
-        emissive: PALETTE.glow, emissiveIntensity: 0.3,
-    });
-
-    // Tower base
-    const baseGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
-    addWithOutline(g, baseGeo, glassMat, { y: -0.25 });
-
-    // Tower body
-    const bodyGeo = new THREE.CylinderGeometry(0.1, 0.12, 0.4, 8);
-    addWithOutline(g, bodyGeo, glassMat, { y: 0 });
-
-    // Tower top
-    const topGeo = new THREE.SphereGeometry(0.1, 8, 6);
-    addWithOutline(g, topGeo, glassMat, { y: 0.25 });
-
-    // Crack lines across the glass tower
-    const crackMat = toonMat(PALETTE.ink);
-    const crackGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.2, 4);
-    const cracks = [
-        { pos: { x: 0.08, y: 0.05, z: 0.08 }, rot: { z: 0.5, x: 0.3 } },
-        { pos: { x: -0.06, y: -0.1, z: 0.09 }, rot: { z: -0.4, x: -0.2 } },
-        { pos: { x: 0.04, y: -0.18, z: -0.06 }, rot: { z: 0.7, x: 0.4 } },
-    ];
-    for (const c of cracks) {
-        const crack = new THREE.Mesh(crackGeo, crackMat);
-        crack.position.set(c.pos.x, c.pos.y, c.pos.z);
-        crack.rotation.set(c.rot.x || 0, 0, c.rot.z || 0);
-        g.add(crack);
-    }
-
-    // Massive explosion burst behind/above the tower
-    const burst = explosionBurst(0.45);
-    burst.position.set(0.1, 0.2, -0.15);
-    g.add(burst);
-
+    const metalMat = toonMat(PALETTE.fixture);
+    const woodMat = toonMat(PALETTE.wood);
+    // Barrel (cylinder, slightly tapered, tilted up)
+    addWithOutline(g, new THREE.CylinderGeometry(0.1, 0.14, 0.65, 10),
+        metalMat, { y: 0.08 }, { z: Math.PI / 6 });
+    // Barrel muzzle ring
+    addWithOutline(g, new THREE.TorusGeometry(0.1, 0.025, 6, 12),
+        metalMat, { x: -0.16, y: 0.4 }, { z: Math.PI / 6, x: Math.PI / 2 });
+    // Barrel base ring
+    addWithOutline(g, new THREE.TorusGeometry(0.14, 0.025, 6, 12),
+        metalMat, { x: 0.16, y: -0.24 }, { z: Math.PI / 6, x: Math.PI / 2 });
+    // Carriage (wooden box under barrel)
+    addWithOutline(g, new THREE.BoxGeometry(0.35, 0.12, 0.3), woodMat, { y: -0.25 });
+    // Two wheels (torus side-on)
+    const wheelGeo = new THREE.TorusGeometry(0.15, 0.04, 8, 16);
+    addWithOutline(g, wheelGeo, woodMat, { x: 0, y: -0.35, z: 0.2 });
+    addWithOutline(g, wheelGeo, woodMat, { x: 0, y: -0.35, z: -0.2 });
     return g;
 }
 
 // ─── C18: Slow and Steady ──────────────────────────────────────────────────────
-// Tortoise shell dome with impact star hammering from above — "slower attacks, bigger damage"
+// Turtle — dome shell, head poking out front, 4 stubby legs. Unmistakable.
 function buildC18() {
     const g = new THREE.Group();
-
-    // Tortoise shell dome
-    const dome = tortoiseDome(0.4);
-    dome.position.y = -0.2;
-    g.add(dome);
-
-    // Flat base under dome
-    const baseGeo = new THREE.CylinderGeometry(0.42, 0.45, 0.04, 12);
-    addWithOutline(g, baseGeo, toonMat(PALETTE.wood), { y: -0.22 });
-
-    // Large impact star hammering from above
-    const star = impactStar(0.3);
-    star.position.set(0, 0.35, 0.05);
-    g.add(star);
-
-    // Impact lines connecting star to dome
-    const lineMat = toonMat(PALETTE.gold, { transparent: true, opacity: 0.4 });
-    const lineGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.25, 4);
-    for (const x of [-0.12, 0, 0.12]) {
-        const line = new THREE.Mesh(lineGeo, lineMat);
-        line.position.set(x, 0.15, 0.05);
-        g.add(line);
+    const shellMat = toonMat(PALETTE.fixture, { emissive: PALETTE.wood, emissiveIntensity: 0.15 });
+    const skinMat = toonMat(PALETTE.success);
+    // Shell dome (big half-sphere)
+    addWithOutline(g, new THREE.SphereGeometry(0.38, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+        shellMat, { y: -0.1 });
+    // Shell belly disc
+    addWithOutline(g, new THREE.CylinderGeometry(0.38, 0.38, 0.04, 14),
+        toonMat(PALETTE.wood), { y: -0.12 });
+    // Head (poking out front)
+    addWithOutline(g, new THREE.SphereGeometry(0.12, 8, 8), skinMat,
+        { z: 0.38, y: -0.05 });
+    // Two eyes (small dark dots on head)
+    const eyeMat = toonMat(PALETTE.ink);
+    addWithOutline(g, new THREE.SphereGeometry(0.03, 5, 5), eyeMat, { x: -0.05, z: 0.48, y: 0.0 });
+    addWithOutline(g, new THREE.SphereGeometry(0.03, 5, 5), eyeMat, { x: 0.05, z: 0.48, y: 0.0 });
+    // 4 stubby legs
+    const legGeo = new THREE.CylinderGeometry(0.07, 0.08, 0.12, 8);
+    for (const [x, z] of [[0.22, 0.2], [-0.22, 0.2], [0.22, -0.2], [-0.22, -0.2]]) {
+        addWithOutline(g, legGeo, skinMat, { x, y: -0.2, z });
     }
-
     return g;
 }
 
 // ─── C19: Bargain Bin ──────────────────────────────────────────────────────────
-// Cracked pot (with gap) + price tag dangling from rim
+// Shopping cart 🛒 — wire frame basket on wheels. "Bargain bin" = store/shopping.
 function buildC19() {
     const g = new THREE.Group();
-
-    // Cracked pot — use cylinder with partial arc to show gap
-    const potGeo = new THREE.CylinderGeometry(0.24, 0.15, 0.32, 8, 1, false, 0.3, Math.PI * 1.7);
-    addWithOutline(g, potGeo, matPotplant(), { y: -0.1 });
-
-    // Rim (also with gap)
-    const rimGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8, 1, false, 0.3, Math.PI * 1.7);
-    addWithOutline(g, rimGeo, matPotplant(), { y: 0.07 });
-
-    // Crack line accent (thin dark cylinder along gap)
-    const crackGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4);
-    const crack = new THREE.Mesh(crackGeo, toonMat(PALETTE.ink));
-    crack.position.set(0.22, -0.08, 0.08);
-    crack.rotation.z = 0.15;
-    g.add(crack);
-
-    // Price tag dangling from rim
-    const tag = priceTag(0.3, 0.4);
-    tag.position.set(-0.15, 0.35, 0.15);
-    tag.rotation.z = 0.2;
-    g.add(tag);
-
+    const wireMat = toonMat(PALETTE.fixture);
+    // Basket body (wire frame look — box with visible edges)
+    addWithOutline(g, new THREE.BoxGeometry(0.5, 0.35, 0.3), wireMat, { y: 0.0 });
+    // Handle bar (horizontal at top back)
+    addWithOutline(g, new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6), wireMat,
+        { y: 0.25, z: -0.15 }, { z: Math.PI / 2 });
+    // Handle uprights
+    addWithOutline(g, new THREE.CylinderGeometry(0.02, 0.02, 0.2, 6), wireMat,
+        { x: -0.22, y: 0.25, z: -0.15 });
+    addWithOutline(g, new THREE.CylinderGeometry(0.02, 0.02, 0.2, 6), wireMat,
+        { x: 0.22, y: 0.25, z: -0.15 });
+    // 4 wheels
+    const wheelGeo = new THREE.TorusGeometry(0.06, 0.02, 6, 10);
+    for (const [x, z] of [[-0.2, 0.12], [0.2, 0.12], [-0.2, -0.12], [0.2, -0.12]]) {
+        addWithOutline(g, wheelGeo, toonMat(PALETTE.ink), { x, y: -0.24, z });
+    }
     return g;
 }
 
 // ─── C20: Static Charge ────────────────────────────────────────────────────────
-// Magnet + lightning bolt crackling between two pole tips + spark particles
 function buildC20() {
     const g = new THREE.Group();
-
-    const magnet = miniMagnet();
-    magnet.position.y = 0.15;
-    g.add(magnet);
-
-    // Lightning bolt between poles
-    const bolt = lightningBolt(0.5);
-    bolt.position.set(0, -0.1, 0.05);
-    bolt.scale.set(0.7, 0.7, 0.7);
-    g.add(bolt);
-
-    // Spark particles around pole tips
-    const sparkMat = toonMat(PALETTE.gold, {
-        emissive: PALETTE.gold, emissiveIntensity: 0.6,
-    });
-    const sparkGeo = new THREE.SphereGeometry(0.025, 4, 4);
-    const sparkPositions = [
-        { x: -0.3, y: -0.05, z: 0.05 },
-        { x: 0.3, y: -0.05, z: 0.05 },
-        { x: -0.25, y: 0.05, z: -0.03 },
-        { x: 0.25, y: 0.05, z: -0.03 },
-        { x: -0.28, y: -0.1, z: 0.08 },
-        { x: 0.28, y: -0.1, z: 0.08 },
-    ];
-    for (const p of sparkPositions) {
-        const spark = new THREE.Mesh(sparkGeo, sparkMat);
-        spark.position.set(p.x, p.y, p.z);
-        g.add(spark);
-    }
-
+    // Big bold lightning bolt (dominant)
+    addWithOutline(g, _boltGeo(1.2),
+        toonMat(PALETTE.gold, { emissive: PALETTE.gold, emissiveIntensity: 0.6 }),
+        { y: -0.05 });
+    // Small magnet at top
+    const mag = _magnet(0.2, 0.05);
+    mag.position.set(0, 0.38, 0);
+    mag.scale.setScalar(0.7);
+    g.add(mag);
     return g;
 }
 

@@ -17,8 +17,8 @@ import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './m
 import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
 import { SuperMedicDrone } from './systems/SuperMedicDrone.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
-import { createIconModel } from './models/UpgradeIconFactory.js';
-import { initIconRenderer, create3DIconDataURL, draw3DUpgradeIcon, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
+import { createIconModel, clearIconCache } from './models/UpgradeIconFactory.js';
+import { initIconRenderer, create3DIconDataURL, draw3DUpgradeIcon, disposeIconRenderer, clearIconRenderCache } from './ui/UpgradeIconRenderer.js';
 import {
     initScenarioIcons, startScenarioIcons, stopScenarioIcons,
     setScenarioHover, triggerScenarioClick, triggerScenarioDenied,
@@ -32,6 +32,7 @@ import { Music } from './systems/MusicManager.js';
 import { GamepadManager } from './input/GamepadManager.js';
 import { GLBModelCache } from './loaders/GLBModelCache.js';
 import { PlayerModelLoader } from './loaders/PlayerModelLoader.js';
+import { IconModelCache } from './loaders/IconModelCache.js';
 import { ENEMY_DEATH_VOCAL } from './data/soundConfig.js';
 import {
     toonMat, outlineMatStatic, matWall, matTileLight, matTileDark, matFixture, matWood,
@@ -201,6 +202,8 @@ window.createIconDataURL = function(iconKey, rarityOrSize, size, time) {
     return create3DIconDataURL(iconKey, rarityOrSize || 'common', size || 64, time || 0);
 };
 window.createIconModel = createIconModel;
+window.clearIconCache = clearIconCache;
+window.clearIconRenderCache = clearIconRenderCache;
 window.draw3DUpgradeIcon = draw3DUpgradeIcon;
 window.disposeIconRenderer = disposeIconRenderer;
 window.outlineMatStatic = outlineMatStatic;
@@ -211,6 +214,7 @@ window.SFX = SFX;
 window.Music = Music;
 window.ENEMY_DEATH_VOCAL = ENEMY_DEATH_VOCAL;
 window.GLBModelCache = GLBModelCache;
+window.IconModelCache = IconModelCache;
 window.PlayerModelLoader = PlayerModelLoader;
 window.GamepadManager = GamepadManager;
 window.ScenarioIconRenderer = {
