@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'CLIQUEZ POUR CONTINUER',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'LE FRAPPEUR POLI',
+    'enemy.polite.tag':         'Excusez-moi, il y a quelqu\'un ?',
+    'enemy.polite.t1':          'L\'ennemi de base',
+    'enemy.polite.t2':          'Marche poliment vers les toilettes',
+    'enemy.polite.t3':          'Facile à arrêter — pour l\'instant',
+
+    'enemy.deer.name':          'LE CERF',
+    'enemy.deer.tag':           'Une créature douce approche...',
+    'enemy.deer.t1':            'Le visiteur forestier de base',
+    'enemy.deer.t2':            'Marche calmement vers les latrines',
+    'enemy.deer.t3':            'Facile à effrayer — pour l\'instant',
+
+    'enemy.dolphin.name':       'LE DAUPHIN',
+    'enemy.dolphin.tag':        'Une forme amicale dans l\'eau !',
+    'enemy.dolphin.t1':         'La créature marine de base',
+    'enemy.dolphin.t2':         'Nage joyeusement vers le radeau',
+    'enemy.dolphin.t3':         'Facile à rediriger — pour l\'instant',
+
+    'enemy.nervous.name':       'LE PASSAGER NERVEUX',
+    'enemy.nervous.tag':        'Quelqu\'un se retient depuis le décollage.',
+    'enemy.nervous.t1':         'Le passager de base',
+    'enemy.nervous.t2':         'Avance nerveusement dans l\'allée',
+    'enemy.nervous.t3':         'Facile à retarder — pour l\'instant',
+
     // Office enemies
     'enemy.dancer.name':        'LE DANSEUR DU PIPI',
     'enemy.dancer.tag':         'Quelqu\'un d\'autre est pressé !',

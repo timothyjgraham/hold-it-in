@@ -4473,25 +4473,33 @@
             const list = document.getElementById('bestiary-list');
             list.innerHTML = '';
             const scenario = this._currentScenario || 'office';
-            const waveMap = window.INTRO_WAVE_MAP ? INTRO_WAVE_MAP[scenario] : null;
-            const introData = window.ENEMY_INTRO_DATA;
-            if (!waveMap || !introData) return;
+
+            // Full bestiary: baseline (wave 1) + intro enemies + jumpers (wave 11)
+            const BESTIARY_MAP = {
+                office:   { 1: 'polite', 3: 'dancer', 5: 'waddle', 7: 'panicker', 8: 'drunk', 9: 'powerwalker', 10: 'girls', 11: 'vaulter' },
+                forest:   { 1: 'deer', 3: 'squirrel', 5: 'bear', 7: 'fox', 8: 'ant', 9: 'moose', 10: 'raccoon', 11: 'kangaroo' },
+                ocean:    { 1: 'dolphin', 3: 'flyfish', 5: 'shark', 7: 'pirate', 8: 'seahorse', 9: 'seaturtle', 10: 'jellyfish', 11: 'frog' },
+                airplane: { 1: 'nervous', 3: 'business', 5: 'stumbler', 7: 'attendant', 8: 'trolley', 9: 'marshal', 10: 'unruly', 11: 'hurdler' },
+            };
+
+            const waveMap = BESTIARY_MAP[scenario];
+            if (!waveMap) return;
 
             // Map enemy type → palette color key
             const colorMap = {
                 // Office
-                dancer: 'dancer', waddle: 'waddle', panicker: 'panicker',
-                powerwalker: 'power', girls: 'girls', drunk: 'drunk',
+                polite: 'polite', dancer: 'dancer', waddle: 'waddle', panicker: 'panicker',
+                powerwalker: 'power', girls: 'girls', drunk: 'drunk', vaulter: 'vaulter',
                 // Forest
-                squirrel: 'forestSquirrel', bear: 'forestBear', fox: 'forestFox',
-                moose: 'forestMoose', raccoon: 'forestRaccoon', ant: 'forestAnt',
+                deer: 'forestDeer', squirrel: 'forestSquirrel', bear: 'forestBear', fox: 'forestFox',
+                moose: 'forestMoose', raccoon: 'forestRaccoon', ant: 'forestAnt', kangaroo: 'forestKangaroo',
                 // Ocean
-                flyfish: 'oceanFlyfish', shark: 'oceanShark', pirate: 'oceanPirate',
-                seaturtle: 'oceanTurtle', jellyfish: 'oceanJelly', seahorse: 'oceanSeahorse',
+                dolphin: 'oceanDolphin', flyfish: 'oceanFlyfish', shark: 'oceanShark', pirate: 'oceanPirate',
+                seaturtle: 'oceanTurtle', jellyfish: 'oceanJelly', seahorse: 'oceanSeahorse', frog: 'oceanFrog',
                 // Airplane
-                business: 'airplaneBusiness', stumbler: 'airplaneStumbler',
+                nervous: 'airplaneNervous', business: 'airplaneBusiness', stumbler: 'airplaneStumbler',
                 attendant: 'airplaneAttendant', marshal: 'airplaneMarshal',
-                unruly: 'airplaneUnruly', trolley: 'airplaneTrolley',
+                unruly: 'airplaneUnruly', trolley: 'airplaneTrolley', hurdler: 'airplaneHurdler',
             };
 
             const waves = Object.keys(waveMap).map(Number).sort((a, b) => a - b);
@@ -4499,8 +4507,6 @@
             for (const w of waves) {
                 if (w > this.wave) continue;
                 const type = waveMap[w];
-                const data = introData[type];
-                if (!data) continue;
                 count++;
 
                 const palKey = colorMap[type] || 'polite';
@@ -8330,7 +8336,7 @@
             if (event) {
                 msg += ` — ${t(event.announcementKey)}`;
                 if (window.SFX) SFX.play('wave_event');
-            } else {
+            } else if (this.wave >= 3) {
                 const introKey = `wave.intro.${this._currentScenario}.${this.wave}`;
                 const introText = t(introKey);
                 if (introText !== introKey) msg += introText;

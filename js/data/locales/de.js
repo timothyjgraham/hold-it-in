@@ -313,6 +313,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'KLICKEN ZUM FORTFAHREN',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'DER HÖFLICHE KLOPFER',
+    'enemy.polite.tag':         'Entschuldigung, ist da jemand drin?',
+    'enemy.polite.t1':          'Der einfachste Gegner',
+    'enemy.polite.t2':          'Geht höflich auf die Toilette zu',
+    'enemy.polite.t3':          'Leicht aufzuhalten — vorerst',
+
+    'enemy.deer.name':          'DER HIRSCH',
+    'enemy.deer.tag':           'Ein sanftes Geschöpf nähert sich...',
+    'enemy.deer.t1':            'Der einfachste Waldbesucher',
+    'enemy.deer.t2':            'Geht ruhig auf das Klohäuschen zu',
+    'enemy.deer.t3':            'Leicht zu erschrecken — vorerst',
+
+    'enemy.dolphin.name':       'DER DELFIN',
+    'enemy.dolphin.tag':        'Eine freundliche Gestalt im Wasser!',
+    'enemy.dolphin.t1':         'Das einfachste Meerestier',
+    'enemy.dolphin.t2':         'Schwimmt fröhlich auf das Floß zu',
+    'enemy.dolphin.t3':         'Leicht umzulenken — vorerst',
+
+    'enemy.nervous.name':       'DER NERVÖSE FLIEGER',
+    'enemy.nervous.tag':        'Jemand hält es schon seit dem Start aus.',
+    'enemy.nervous.t1':         'Der einfachste Passagier',
+    'enemy.nervous.t2':         'Schlurft nervös durch den Gang',
+    'enemy.nervous.t3':         'Leicht aufzuhalten — vorerst',
+
     // Office enemies
     'enemy.dancer.name':        'DER PIPI-TÄNZER',
     'enemy.dancer.tag':         'Noch jemand kann nicht mehr!',

@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'KLIKNIJ, ABY KONTYNUOWAĆ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'GRZECZNY PUKACZ',
+    'enemy.polite.tag':         'Przepraszam, jest tam ktoś?',
+    'enemy.polite.t1':          'Podstawowy wróg',
+    'enemy.polite.t2':          'Grzecznie idzie w stronę toalety',
+    'enemy.polite.t3':          'Łatwy do zatrzymania — na razie',
+
+    'enemy.deer.name':          'JELEŃ',
+    'enemy.deer.tag':           'Łagodne stworzenie się zbliża...',
+    'enemy.deer.t1':            'Podstawowy leśny gość',
+    'enemy.deer.t2':            'Spokojnie idzie w stronę wychodka',
+    'enemy.deer.t3':            'Łatwy do spłoszenia — na razie',
+
+    'enemy.dolphin.name':       'DELFIN',
+    'enemy.dolphin.tag':        'Przyjazna postać w wodzie!',
+    'enemy.dolphin.t1':         'Podstawowa morska istota',
+    'enemy.dolphin.t2':         'Radośnie płynie w stronę tratwy',
+    'enemy.dolphin.t3':         'Łatwy do przekierowania — na razie',
+
+    'enemy.nervous.name':       'ZDENERWOWANY PASAŻER',
+    'enemy.nervous.tag':        'Ktoś wytrzymuje od samego startu.',
+    'enemy.nervous.t1':         'Podstawowy pasażer',
+    'enemy.nervous.t2':         'Nerwowo człapie alejką',
+    'enemy.nervous.t3':         'Łatwy do opóźnienia — na razie',
+
     // Office enemies
     'enemy.dancer.name':        'TAŃCZĄCY DESPERAT',
     'enemy.dancer.tag':         'Ktoś inny też nie wytrzymuje!',

@@ -313,6 +313,31 @@ export default {
     // --- ENEMY INTRO ---
     'intro.clickContinue':      'คลิกเพื่อดำเนินการต่อ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'คนเคาะประตูสุภาพ',
+    'enemy.polite.tag':         'ขอโทษนะคะ มีคนอยู่ในนั้นไหม?',
+    'enemy.polite.t1':          'ศัตรูพื้นฐาน',
+    'enemy.polite.t2':          'เดินอย่างสุภาพมุ่งหน้าไปห้องน้ำ',
+    'enemy.polite.t3':          'หยุดง่าย — ตอนนี้นะ',
+
+    'enemy.deer.name':          'กวาง',
+    'enemy.deer.tag':           'สัตว์น่ารักกำลังเข้ามา...',
+    'enemy.deer.t1':            'ผู้มาเยือนป่าพื้นฐาน',
+    'enemy.deer.t2':            'เดินอย่างสงบไปที่ส้วม',
+    'enemy.deer.t3':            'ตกใจง่าย — ตอนนี้นะ',
+
+    'enemy.dolphin.name':       'โลมา',
+    'enemy.dolphin.tag':        'เงาเป็นมิตรในน้ำ!',
+    'enemy.dolphin.t1':         'สัตว์ทะเลพื้นฐาน',
+    'enemy.dolphin.t2':         'ว่ายน้ำอย่างร่าเริงไปที่แพ',
+    'enemy.dolphin.t3':         'เปลี่ยนทิศทางง่าย — ตอนนี้นะ',
+
+    'enemy.nervous.name':       'ผู้โดยสารขี้กังวล',
+    'enemy.nervous.tag':        'มีคนกลั้นมาตั้งแต่เครื่องขึ้น',
+    'enemy.nervous.t1':         'ผู้โดยสารพื้นฐาน',
+    'enemy.nervous.t2':         'เดินงุ่มง่ามไปตามทางเดิน',
+    'enemy.nervous.t3':         'ถ่วงเวลาง่าย — ตอนนี้นะ',
+
     // Office enemies
     'enemy.dancer.name':        'นักเต้นปวดฉี่',
     'enemy.dancer.tag':         'มีคนอื่นปวดจะแตกแล้ว!',

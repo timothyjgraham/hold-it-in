@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      '點擊繼續',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        '有禮貌的敲門者',
+    'enemy.polite.tag':         '不好意思，裡面有人嗎？',
+    'enemy.polite.t1':          '最基礎的敵人',
+    'enemy.polite.t2':          '禮貌地走向廁所',
+    'enemy.polite.t3':          '很容易阻止——目前是',
+
+    'enemy.deer.name':          '小鹿',
+    'enemy.deer.tag':           '一隻溫馴的生物靠近了……',
+    'enemy.deer.t1':            '最基礎的森林訪客',
+    'enemy.deer.t2':            '悠閒地走向茅房',
+    'enemy.deer.t3':            '很容易嚇跑——目前是',
+
+    'enemy.dolphin.name':       '海豚',
+    'enemy.dolphin.tag':        '水中出現了友善的身影！',
+    'enemy.dolphin.t1':         '最基礎的海洋生物',
+    'enemy.dolphin.t2':         '歡快地游向木筏',
+    'enemy.dolphin.t3':         '很容易引開——目前是',
+
+    'enemy.nervous.name':       '緊張旅客',
+    'enemy.nervous.tag':        '有人從起飛就一直在憋。',
+    'enemy.nervous.t1':         '最基礎的乘客',
+    'enemy.nervous.t2':         '焦躁地在走道裡挪步',
+    'enemy.nervous.t3':         '很容易拖延——目前是',
+
     // Office enemies
     'enemy.dancer.name':        '尿急舞者',
     'enemy.dancer.tag':         '又有人快忍不住了！',

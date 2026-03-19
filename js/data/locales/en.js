@@ -314,6 +314,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'CLICK TO CONTINUE',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'THE POLITE KNOCKER',
+    'enemy.polite.tag':         'Excuse me, is anyone in there?',
+    'enemy.polite.t1':          'The basic enemy',
+    'enemy.polite.t2':          'Politely walks toward the toilet',
+    'enemy.polite.t3':          'Easy to stop — for now',
+
+    'enemy.deer.name':          'THE DEER',
+    'enemy.deer.tag':           'A gentle creature approaches...',
+    'enemy.deer.t1':            'The basic forest visitor',
+    'enemy.deer.t2':            'Walks calmly toward the outhouse',
+    'enemy.deer.t3':            'Easily spooked — for now',
+
+    'enemy.dolphin.name':       'THE DOLPHIN',
+    'enemy.dolphin.tag':        'A friendly shape in the water!',
+    'enemy.dolphin.t1':         'The basic sea creature',
+    'enemy.dolphin.t2':         'Swims cheerfully toward the raft',
+    'enemy.dolphin.t3':         'Easy to redirect — for now',
+
+    'enemy.nervous.name':       'THE NERVOUS FLYER',
+    'enemy.nervous.tag':        "Someone's been holding it since takeoff.",
+    'enemy.nervous.t1':         'The basic passenger',
+    'enemy.nervous.t2':         'Shuffles anxiously down the aisle',
+    'enemy.nervous.t3':         'Easy to delay — for now',
+
     // Office enemies
     'enemy.dancer.name':        'THE PEE DANCER',
     'enemy.dancer.tag':         'Someone else is busting to go!',

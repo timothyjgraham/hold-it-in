@@ -313,6 +313,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'НАЖМИ, ЧТОБЫ ПРОДОЛЖИТЬ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'ВЕЖЛИВЫЙ СТУЧАТЕЛЬ',
+    'enemy.polite.tag':         'Извините, там кто-нибудь есть?',
+    'enemy.polite.t1':          'Базовый враг',
+    'enemy.polite.t2':          'Вежливо идёт к туалету',
+    'enemy.polite.t3':          'Легко остановить — пока что',
+
+    'enemy.deer.name':          'ОЛЕНЬ',
+    'enemy.deer.tag':           'Нежное создание приближается...',
+    'enemy.deer.t1':            'Базовый лесной гость',
+    'enemy.deer.t2':            'Спокойно идёт к уборной',
+    'enemy.deer.t3':            'Легко спугнуть — пока что',
+
+    'enemy.dolphin.name':       'ДЕЛЬФИН',
+    'enemy.dolphin.tag':        'Дружелюбный силуэт в воде!',
+    'enemy.dolphin.t1':         'Базовое морское существо',
+    'enemy.dolphin.t2':         'Весело плывёт к плоту',
+    'enemy.dolphin.t3':         'Легко перенаправить — пока что',
+
+    'enemy.nervous.name':       'НЕРВНЫЙ ПАССАЖИР',
+    'enemy.nervous.tag':        'Кто-то терпит с самого взлёта.',
+    'enemy.nervous.t1':         'Базовый пассажир',
+    'enemy.nervous.t2':         'Нервно шаркает по проходу',
+    'enemy.nervous.t3':         'Легко задержать — пока что',
+
     // Office enemies
     'enemy.dancer.name':        'ТАНЦОР НУЖДЫ',
     'enemy.dancer.tag':         'Ещё кому-то приспичило!',

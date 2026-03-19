@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'KATTINTS A FOLYTATÁSHOZ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'AZ UDVARIAS KOPOGÓ',
+    'enemy.polite.tag':         'Elnézést, van ott valaki?',
+    'enemy.polite.t1':          'Az alap ellenség',
+    'enemy.polite.t2':          'Udvariasan sétál a WC felé',
+    'enemy.polite.t3':          'Könnyű megállítani — egyelőre',
+
+    'enemy.deer.name':          'A SZARVAS',
+    'enemy.deer.tag':           'Egy szelíd teremtmény közeledik...',
+    'enemy.deer.t1':            'Az alap erdei látogató',
+    'enemy.deer.t2':            'Nyugodtan sétál a budi felé',
+    'enemy.deer.t3':            'Könnyen elriasztható — egyelőre',
+
+    'enemy.dolphin.name':       'A DELFIN',
+    'enemy.dolphin.tag':        'Egy barátságos alak a vízben!',
+    'enemy.dolphin.t1':         'Az alap tengeri lény',
+    'enemy.dolphin.t2':         'Vidáman úszik a tutaj felé',
+    'enemy.dolphin.t3':         'Könnyen elterelhető — egyelőre',
+
+    'enemy.nervous.name':       'AZ IDEGES UTAS',
+    'enemy.nervous.tag':        'Valaki a felszállás óta visszatartja.',
+    'enemy.nervous.t1':         'Az alap utas',
+    'enemy.nervous.t2':         'Idegesen csoszog a folyosón',
+    'enemy.nervous.t3':         'Könnyű feltartani — egyelőre',
+
     // Office enemies
     'enemy.dancer.name':        'A PISITÁNCOS',
     'enemy.dancer.tag':         'Valaki más is nagyon szorít!',

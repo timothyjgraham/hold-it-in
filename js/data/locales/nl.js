@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'KLIK OM DOOR TE GAAN',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'DE BELEEFDE KLOPPER',
+    'enemy.polite.tag':         'Pardon, is daar iemand?',
+    'enemy.polite.t1':          'De basisvijand',
+    'enemy.polite.t2':          'Loopt beleefd naar het toilet',
+    'enemy.polite.t3':          'Makkelijk te stoppen — voorlopig',
+
+    'enemy.deer.name':          'HET HERT',
+    'enemy.deer.tag':           'Een zachtaardig wezen nadert...',
+    'enemy.deer.t1':            'De basisbezoeker van het bos',
+    'enemy.deer.t2':            'Loopt rustig naar het buitenhuisje',
+    'enemy.deer.t3':            'Makkelijk af te schrikken — voorlopig',
+
+    'enemy.dolphin.name':       'DE DOLFIJN',
+    'enemy.dolphin.tag':        'Een vriendelijke vorm in het water!',
+    'enemy.dolphin.t1':         'Het basiszeedier',
+    'enemy.dolphin.t2':         'Zwemt vrolijk naar het vlot',
+    'enemy.dolphin.t3':         'Makkelijk om te leiden — voorlopig',
+
+    'enemy.nervous.name':       'DE NERVEUZE VLIEGER',
+    'enemy.nervous.tag':        'Iemand houdt het al op sinds het opstijgen.',
+    'enemy.nervous.t1':         'De basispassagier',
+    'enemy.nervous.t2':         'Schuifelt zenuwachtig door het gangpad',
+    'enemy.nervous.t3':         'Makkelijk te vertragen — voorlopig',
+
     // Office enemies
     'enemy.dancer.name':        'DE PLASDANSER',
     'enemy.dancer.tag':         'Iemand anders moet ook HEEL nodig!',

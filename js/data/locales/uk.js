@@ -313,6 +313,31 @@ export default {
     // --- ENEMY INTRO ---
     'intro.clickContinue':      'КЛАЦНИ, ЩОБ ПРОДОВЖИТИ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'ВВІЧЛИВИЙ СТУКАЧ',
+    'enemy.polite.tag':         'Перепрошую, там хтось є?',
+    'enemy.polite.t1':          'Базовий ворог',
+    'enemy.polite.t2':          'Ввічливо йде до туалету',
+    'enemy.polite.t3':          'Легко зупинити — поки що',
+
+    'enemy.deer.name':          'ОЛЕНЬ',
+    'enemy.deer.tag':           'Лагідне створіння наближається...',
+    'enemy.deer.t1':            'Базовий лісовий гість',
+    'enemy.deer.t2':            'Спокійно йде до вбиральні',
+    'enemy.deer.t3':            'Легко злякати — поки що',
+
+    'enemy.dolphin.name':       'ДЕЛЬФІН',
+    'enemy.dolphin.tag':        'Привітний силует у воді!',
+    'enemy.dolphin.t1':         'Базова морська істота',
+    'enemy.dolphin.t2':         'Весело пливе до плоту',
+    'enemy.dolphin.t3':         'Легко перенаправити — поки що',
+
+    'enemy.nervous.name':       'НЕРВОВИЙ ПАСАЖИР',
+    'enemy.nervous.tag':        'Хтось тримається ще з моменту зльоту.',
+    'enemy.nervous.t1':         'Базовий пасажир',
+    'enemy.nervous.t2':         'Нервово шаркає по проходу',
+    'enemy.nervous.t3':         'Легко затримати — поки що',
+
     // Office enemies
     'enemy.dancer.name':        'ТАНЦЮРИСТ',
     'enemy.dancer.tag':         'Ще хтось не може стриматися!',

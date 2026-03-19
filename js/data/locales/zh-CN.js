@@ -313,6 +313,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      '点击继续',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        '礼貌敲门者',
+    'enemy.polite.tag':         '不好意思，里面有人吗？',
+    'enemy.polite.t1':          '最基础的敌人',
+    'enemy.polite.t2':          '礼貌地走向厕所',
+    'enemy.polite.t3':          '很容易阻止——目前是',
+
+    'enemy.deer.name':          '小鹿',
+    'enemy.deer.tag':           '一只温顺的生物靠近了……',
+    'enemy.deer.t1':            '最基础的森林访客',
+    'enemy.deer.t2':            '悠闲地走向茅房',
+    'enemy.deer.t3':            '很容易吓跑——目前是',
+
+    'enemy.dolphin.name':       '海豚',
+    'enemy.dolphin.tag':        '水中出现了友善的身影！',
+    'enemy.dolphin.t1':         '最基础的海洋生物',
+    'enemy.dolphin.t2':         '欢快地游向木筏',
+    'enemy.dolphin.t3':         '很容易引开——目前是',
+
+    'enemy.nervous.name':       '紧张旅客',
+    'enemy.nervous.tag':        '有人从起飞就一直在憋。',
+    'enemy.nervous.t1':         '最基础的乘客',
+    'enemy.nervous.t2':         '焦躁地在过道里挪步',
+    'enemy.nervous.t3':         '很容易拖延——目前是',
+
     // Office enemies
     'enemy.dancer.name':        '尿意舞者',
     'enemy.dancer.tag':         '又有人憋不住了！',

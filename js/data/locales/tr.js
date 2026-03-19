@@ -313,6 +313,31 @@ export default {
     // --- ENEMY INTRO ---
     'intro.clickContinue':      'DEVAM ETMEK İÇİN TIKLA',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'KİBAR KAPICI',
+    'enemy.polite.tag':         'Affedersiniz, içeride biri var mı?',
+    'enemy.polite.t1':          'Temel düşman',
+    'enemy.polite.t2':          'Kibarca tuvalete doğru yürür',
+    'enemy.polite.t3':          'Durdurmak kolay — şimdilik',
+
+    'enemy.deer.name':          'GEYİK',
+    'enemy.deer.tag':           'Zarif bir yaratık yaklaşıyor...',
+    'enemy.deer.t1':            'Temel orman ziyaretçisi',
+    'enemy.deer.t2':            'Sakin sakin hela doğru yürür',
+    'enemy.deer.t3':            'Korkutması kolay — şimdilik',
+
+    'enemy.dolphin.name':       'YUNUS',
+    'enemy.dolphin.tag':        'Suda dost canlısı bir şekil!',
+    'enemy.dolphin.t1':         'Temel deniz canlısı',
+    'enemy.dolphin.t2':         'Neşeyle sala doğru yüzer',
+    'enemy.dolphin.t3':         'Yönlendirmek kolay — şimdilik',
+
+    'enemy.nervous.name':       'GERGİN YOLCU',
+    'enemy.nervous.tag':        'Birisi kalkıştan beri tutuyormuş.',
+    'enemy.nervous.t1':         'Temel yolcu',
+    'enemy.nervous.t2':         'Gergin gergin koridorda ilerler',
+    'enemy.nervous.t3':         'Geciktirmek kolay — şimdilik',
+
     // Office enemies
     'enemy.dancer.name':        'ÇİŞ DANSÇISI',
     'enemy.dancer.tag':         'Bir başkası da sıkışmış!',

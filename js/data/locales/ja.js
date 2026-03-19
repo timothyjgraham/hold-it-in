@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'クリックして続ける',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        '礼儀正しいノッカー',
+    'enemy.polite.tag':         'すみません、どなたかいますか？',
+    'enemy.polite.t1':          '基本的な敵',
+    'enemy.polite.t2':          '丁寧にトイレへ向かう',
+    'enemy.polite.t3':          '止めるのは簡単 — 今のところは',
+
+    'enemy.deer.name':          'シカ',
+    'enemy.deer.tag':           'おとなしい生き物が近づいてくる…',
+    'enemy.deer.t1':            '基本的な森の訪問者',
+    'enemy.deer.t2':            '静かに外便所へ歩いていく',
+    'enemy.deer.t3':            '驚かしやすい — 今のところは',
+
+    'enemy.dolphin.name':       'イルカ',
+    'enemy.dolphin.tag':        '水中にフレンドリーな影！',
+    'enemy.dolphin.t1':         '基本的な海の生き物',
+    'enemy.dolphin.t2':         '楽しそうにいかだへ泳いでくる',
+    'enemy.dolphin.t3':         '誘導しやすい — 今のところは',
+
+    'enemy.nervous.name':       'ナーバスな乗客',
+    'enemy.nervous.tag':        '離陸から我慢してた人がいる。',
+    'enemy.nervous.t1':         '基本的な乗客',
+    'enemy.nervous.t2':         'そわそわと通路を進む',
+    'enemy.nervous.t3':         '足止めしやすい — 今のところは',
+
     // Office enemies
     'enemy.dancer.name':        'おしっこダンサー',
     'enemy.dancer.tag':         '他にも我慢できない人が！',

@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      '클릭하여 계속',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        '예의 바른 노커',
+    'enemy.polite.tag':         '실례합니다, 안에 누구 계세요?',
+    'enemy.polite.t1':          '기본 적',
+    'enemy.polite.t2':          '공손하게 화장실로 걸어감',
+    'enemy.polite.t3':          '막기 쉬움 — 지금은',
+
+    'enemy.deer.name':          '사슴',
+    'enemy.deer.tag':           '온순한 생물이 다가온다...',
+    'enemy.deer.t1':            '기본 숲 방문자',
+    'enemy.deer.t2':            '조용히 야외 화장실로 걸어감',
+    'enemy.deer.t3':            '놀래키기 쉬움 — 지금은',
+
+    'enemy.dolphin.name':       '돌고래',
+    'enemy.dolphin.tag':        '물속에 친근한 그림자!',
+    'enemy.dolphin.t1':         '기본 해양 생물',
+    'enemy.dolphin.t2':         '즐겁게 뗏목을 향해 헤엄침',
+    'enemy.dolphin.t3':         '방향 전환 쉬움 — 지금은',
+
+    'enemy.nervous.name':       '긴장한 승객',
+    'enemy.nervous.tag':        '이륙부터 참아온 사람이 있다.',
+    'enemy.nervous.t1':         '기본 승객',
+    'enemy.nervous.t2':         '초조하게 통로를 따라 이동',
+    'enemy.nervous.t3':         '지연시키기 쉬움 — 지금은',
+
     // Office enemies
     'enemy.dancer.name':        '오줌 댄서',
     'enemy.dancer.tag':         '다른 누군가도 급하다!',

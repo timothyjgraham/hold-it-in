@@ -313,6 +313,31 @@ export default {
     // --- ENEMY INTRO ---
     'intro.clickContinue':      'CLICCA PER CONTINUARE',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'IL BUSSATORE EDUCATO',
+    'enemy.polite.tag':         'Scusi, c\'è qualcuno lì dentro?',
+    'enemy.polite.t1':          'Il nemico base',
+    'enemy.polite.t2':          'Cammina educatamente verso il bagno',
+    'enemy.polite.t3':          'Facile da fermare — per ora',
+
+    'enemy.deer.name':          'IL CERVO',
+    'enemy.deer.tag':           'Una creatura gentile si avvicina...',
+    'enemy.deer.t1':            'Il visitatore base del bosco',
+    'enemy.deer.t2':            'Cammina con calma verso la latrina',
+    'enemy.deer.t3':            'Facile da spaventare — per ora',
+
+    'enemy.dolphin.name':       'IL DELFINO',
+    'enemy.dolphin.tag':        'Una sagoma amichevole nell\'acqua!',
+    'enemy.dolphin.t1':         'La creatura marina base',
+    'enemy.dolphin.t2':         'Nuota allegramente verso la zattera',
+    'enemy.dolphin.t3':         'Facile da deviare — per ora',
+
+    'enemy.nervous.name':       'IL PASSEGGERO NERVOSO',
+    'enemy.nervous.tag':        'Qualcuno si trattiene dal decollo.',
+    'enemy.nervous.t1':         'Il passeggero base',
+    'enemy.nervous.t2':         'Avanza nervosamente lungo il corridoio',
+    'enemy.nervous.t3':         'Facile da ritardare — per ora',
+
     // Office enemies
     'enemy.dancer.name':        'IL BALLERINO DELLA PIPÌ',
     'enemy.dancer.tag':         "Qualcun altro non ce la fa più!",

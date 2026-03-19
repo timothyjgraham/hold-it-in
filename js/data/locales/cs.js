@@ -312,6 +312,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'KLIKNI PRO POKRAČOVÁNÍ',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'ZDVOŘILÝ KLEPAČ',
+    'enemy.polite.tag':         'Promiňte, je tam někdo?',
+    'enemy.polite.t1':          'Základní nepřítel',
+    'enemy.polite.t2':          'Zdvořile kráčí k záchodu',
+    'enemy.polite.t3':          'Snadné ho zastavit — zatím',
+
+    'enemy.deer.name':          'JELEN',
+    'enemy.deer.tag':           'Mírumilovné stvoření se blíží...',
+    'enemy.deer.t1':            'Základní lesní návštěvník',
+    'enemy.deer.t2':            'Klidně kráčí k kadibudce',
+    'enemy.deer.t3':            'Snadno se vyplaší — zatím',
+
+    'enemy.dolphin.name':       'DELFÍN',
+    'enemy.dolphin.tag':        'Přátelská postava ve vodě!',
+    'enemy.dolphin.t1':         'Základní mořský tvor',
+    'enemy.dolphin.t2':         'Vesele plave směrem k voru',
+    'enemy.dolphin.t3':         'Snadné ho přesměrovat — zatím',
+
+    'enemy.nervous.name':       'NERVÓZNÍ CESTUJÍCÍ',
+    'enemy.nervous.tag':        'Někdo se drží od samého vzletu.',
+    'enemy.nervous.t1':         'Základní pasažér',
+    'enemy.nervous.t2':         'Nervózně šourá uličkou',
+    'enemy.nervous.t3':         'Snadné ho zdržet — zatím',
+
     // Office enemies
     'enemy.dancer.name':        'ČŮRACÍ TANEČNÍK',
     'enemy.dancer.tag':         'Někdo další to sotva drží!',

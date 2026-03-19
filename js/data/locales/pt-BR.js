@@ -313,6 +313,31 @@ export default {
     // ─── ENEMY INTRO ─────────────────────────────────────────────────────
     'intro.clickContinue':      'CLIQUE PARA CONTINUAR',
 
+    // Baseline enemies (wave 1 — no intro screen, used in bestiary)
+    'enemy.polite.name':        'O EDUCADINHO',
+    'enemy.polite.tag':         'Com licença, tem alguém aí?',
+    'enemy.polite.t1':          'O inimigo básico',
+    'enemy.polite.t2':          'Anda educadamente até o banheiro',
+    'enemy.polite.t3':          'Fácil de parar — por enquanto',
+
+    'enemy.deer.name':          'O CERVO',
+    'enemy.deer.tag':           'Uma criatura gentil se aproxima...',
+    'enemy.deer.t1':            'O visitante básico da floresta',
+    'enemy.deer.t2':            'Anda calmamente até a casinha',
+    'enemy.deer.t3':            'Fácil de assustar — por enquanto',
+
+    'enemy.dolphin.name':       'O GOLFINHO',
+    'enemy.dolphin.tag':        'Uma figura amigável na água!',
+    'enemy.dolphin.t1':         'A criatura marinha básica',
+    'enemy.dolphin.t2':         'Nada alegremente até a balsa',
+    'enemy.dolphin.t3':         'Fácil de redirecionar — por enquanto',
+
+    'enemy.nervous.name':       'O PASSAGEIRO NERVOSO',
+    'enemy.nervous.tag':        'Alguém tá segurando desde a decolagem.',
+    'enemy.nervous.t1':         'O passageiro básico',
+    'enemy.nervous.t2':         'Vai arrastando os pés pelo corredor',
+    'enemy.nervous.t3':         'Fácil de atrasar — por enquanto',
+
     // Office enemies
     'enemy.dancer.name':        'O DANÇARINO DO XIXI',
     'enemy.dancer.tag':         'Mais alguém tá se segurando!',
