@@ -100,8 +100,13 @@ export const IconModelCache = {
      * Get a cloned THREE.Group for the given model name.
      * Applies toon material + outline. Auto-scales to fit ~1.6 unit box.
      * Returns null if model not found.
+     *
+     * @param {string} modelName - Model name from GLB
+     * @param {number} [scaleOverride] - Scale multiplier
+     * @param {number} [color] - Hex color for main toon material (uses atlas texture if omitted)
+     * @param {number} [accent] - Hex color for secondary/detail meshes (auto-derived if omitted)
      */
-    getIconGroup(modelName, scaleOverride) {
+    getIconGroup(modelName, scaleOverride, color, accent) {
         const entry = _models.get(modelName);
         if (!entry) {
             console.warn(`[IconModelCache] Model "${modelName}" not found`);
@@ -110,22 +115,44 @@ export const IconModelCache = {
 
         const g = new THREE.Group();
 
-        // Create toon material using the atlas texture
-        const mat = new THREE.MeshToonMaterial({
-            map: _atlasTexture,
-            gradientMap: _getGradientMap(),
-        });
+        if (color !== undefined && entry.meshes.length > 1) {
+            // Multi-mesh with color: sort by bounding box volume, largest gets main color, rest get accent
+            const accentColor = accent !== undefined ? accent : _deriveAccent(color);
+            const mainMat = toonMat(color);
+            const accentMat = toonMat(accentColor);
 
-        // Add each mesh with outline
-        for (const meshData of entry.meshes) {
-            const geo = meshData.geometry.clone();
-            const mesh = new THREE.Mesh(geo, mat);
-            g.add(mesh);
+            // Sort meshes by volume (descending) to identify primary vs detail
+            const sorted = entry.meshes.slice().sort((a, b) => {
+                return _bboxVolume(b.geometry.boundingBox) - _bboxVolume(a.geometry.boundingBox);
+            });
 
-            // Outline mesh (inverted hull)
-            if (!_outlineMat) _outlineMat = outlineMatStatic(0.02);
-            const outline = new THREE.Mesh(geo, _outlineMat);
-            g.add(outline);
+            for (let i = 0; i < sorted.length; i++) {
+                const geo = sorted[i].geometry.clone();
+                const mesh = new THREE.Mesh(geo, i === 0 ? mainMat : accentMat);
+                g.add(mesh);
+
+                if (!_outlineMat) _outlineMat = outlineMatStatic(0.02);
+                const outline = new THREE.Mesh(geo, _outlineMat);
+                g.add(outline);
+            }
+        } else {
+            // Single-mesh or no color: uniform material
+            const mat = color !== undefined
+                ? toonMat(color)
+                : new THREE.MeshToonMaterial({
+                    map: _atlasTexture,
+                    gradientMap: _getGradientMap(),
+                });
+
+            for (const meshData of entry.meshes) {
+                const geo = meshData.geometry.clone();
+                const mesh = new THREE.Mesh(geo, mat);
+                g.add(mesh);
+
+                if (!_outlineMat) _outlineMat = outlineMatStatic(0.02);
+                const outline = new THREE.Mesh(geo, _outlineMat);
+                g.add(outline);
+            }
         }
 
         // Auto-scale to fit within target bounding box
@@ -156,6 +183,35 @@ export const IconModelCache = {
 };
 
 // ── Internal ────────────────────────────────────────────────────────────────
+
+/**
+ * Compute bounding box volume (for sorting primary vs detail meshes).
+ */
+function _bboxVolume(bbox) {
+    if (!bbox) return 0;
+    const s = new THREE.Vector3();
+    bbox.getSize(s);
+    return s.x * s.y * s.z;
+}
+
+/**
+ * Auto-derive an accent color by blending main color 55% toward PALETTE.cream.
+ * Gives a lighter, desaturated version that contrasts with any base color.
+ */
+function _deriveAccent(mainColor) {
+    const cream = PALETTE.cream; // 0xfff4d9
+    const blend = 0.55;
+    const r = ((mainColor >> 16) & 0xff);
+    const g = ((mainColor >> 8) & 0xff);
+    const b = (mainColor & 0xff);
+    const cr = ((cream >> 16) & 0xff);
+    const cg = ((cream >> 8) & 0xff);
+    const cb = (cream & 0xff);
+    const mr = Math.round(r * (1 - blend) + cr * blend);
+    const mg = Math.round(g * (1 - blend) + cg * blend);
+    const mb = Math.round(b * (1 - blend) + cb * blend);
+    return (mr << 16) | (mg << 8) | mb;
+}
 
 function _extractModel(node) {
     const meshes = [];

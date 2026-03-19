@@ -4974,25 +4974,23 @@
             }
         },
 
-        // Continuous rotation loop — renders 3 icons per frame, cycling through all
+        // Continuous rotation loop — renders all visible icons each frame (lightweight, no Sobel post-processing)
         _startCollectionIconLoop(items) {
             if (this._collectionAnimRAF) cancelAnimationFrame(this._collectionAnimRAF);
             if (!items.length || !window.draw3DUpgradeIcon) return;
 
-            const BATCH = 3;
-            let cursor = 0;
-
             const animate = () => {
                 const t = performance.now() / 1000;
-                const end = Math.min(cursor + BATCH, items.length);
-                for (let i = cursor; i < end; i++) {
+                for (let i = 0; i < items.length; i++) {
                     const item = items[i];
                     if (!item.canvas || !item.canvas.isConnected) continue;
+                    // Skip off-screen canvases for performance
+                    const rect = item.canvas.getBoundingClientRect();
+                    if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
                     const ctx = item.canvas.getContext('2d');
                     ctx.clearRect(0, 0, 128, 128);
-                    window.draw3DUpgradeIcon(ctx, item.iconKey, item.rarity, 64, 64, 128, t);
+                    window.draw3DUpgradeIcon(ctx, item.iconKey, item.rarity, 64, 64, 128, t, true);
                 }
-                cursor = end >= items.length ? 0 : end;
                 this._collectionAnimRAF = requestAnimationFrame(animate);
             };
             this._collectionAnimRAF = requestAnimationFrame(animate);

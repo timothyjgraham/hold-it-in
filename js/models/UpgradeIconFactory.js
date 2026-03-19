@@ -55,7 +55,7 @@ export function createIconModel(iconKey) {
         // Try GLB pack model first
         const packEntry = ICON_PACK_MAP[key];
         if (packEntry && IconModelCache.loaded) {
-            const group = IconModelCache.getIconGroup(packEntry.model, packEntry.scale);
+            const group = IconModelCache.getIconGroup(packEntry.model, packEntry.scale, packEntry.color, packEntry.accent);
             if (group) {
                 _cache[key] = group;
             }

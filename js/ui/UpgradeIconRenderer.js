@@ -279,14 +279,15 @@ function _borderlandsPostProcess(time) {
  * @param {number} cy - Center Y
  * @param {number} size - Bounding box size in pixels
  * @param {number} time - Elapsed time in seconds (drives rotation + glow)
+ * @param {boolean} [skipPostProcess=false] - Skip Sobel/cross-hatch for performance (models still have inverted-hull outlines)
  */
-export function draw3DUpgradeIcon(ctx, iconKey, rarity, cx, cy, size, time) {
+export function draw3DUpgradeIcon(ctx, iconKey, rarity, cx, cy, size, time, skipPostProcess) {
     if (!_renderer) return;
 
     _setupScene(iconKey, rarity || 'common', time || 0);
     _renderer.render(_scene, _camera);
 
-    const result = _borderlandsPostProcess(time);
+    const result = skipPostProcess ? _renderer.domElement : _borderlandsPostProcess(time);
     const half = size / 2;
     ctx.drawImage(result, cx - half, cy - half, size, size);
 }
