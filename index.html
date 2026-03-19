@@ -339,6 +339,7 @@
             <button class="menu-btn menu-btn-small" id="btn-collection" data-i18n="title.collection">COLLECTION</button>
             <button class="menu-btn menu-btn-small" id="btn-settings" data-i18n="title.settings">SETTINGS</button>
             <button class="menu-btn menu-btn-small" id="btn-credits" data-i18n="title.credits">CREDITS</button>
+            <button class="menu-btn menu-btn-small" id="btn-quit-game" data-i18n="title.quit">QUIT GAME</button>
         </div>
         <a class="wishlist-btn demo-only" id="btn-wishlist-title" href="https://store.steampowered.com/app/YOUR_STEAM_APP_ID/Hold_It_In/" target="_blank" rel="noopener">
             <svg class="wishlist-icon" viewBox="0 0 24 24" width="22" height="22"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
@@ -2869,6 +2870,10 @@
             document.getElementById('btn-credits').addEventListener('click', () => {
                 if (window.SFX) SFX.play('ui_click');
                 showScreen('credits-screen');
+            });
+            document.getElementById('btn-quit-game').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                window.close();
             });
 
             // Back buttons

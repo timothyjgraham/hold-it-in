@@ -10,6 +10,7 @@ export default {
     'title.collection':         'GYŰJTEMÉNY',
     'title.settings':           'BEÁLLÍTÁSOK',
     'title.credits':            'KÉSZÍTŐK',
+    'title.quit':               'KILÉPÉS',
     'title.wishlist':           'KÍVÁNSÁGLISTÁRA A STEAMEN',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

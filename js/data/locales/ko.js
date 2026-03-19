@@ -10,6 +10,7 @@ export default {
     'title.collection':         '컬렉션',
     'title.settings':           '설정',
     'title.credits':            '크레딧',
+    'title.quit':               '게임 종료',
     'title.wishlist':           'STEAM 위시리스트에 추가',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

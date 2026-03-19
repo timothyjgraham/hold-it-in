@@ -11,6 +11,7 @@ export default {
     'title.collection':         'COLECCIÓN',
     'title.settings':           'AJUSTES',
     'title.credits':            'CRÉDITOS',
+    'title.quit':               'SALIR',
     'title.wishlist':           'AÑADIR A LISTA DE DESEADOS EN STEAM',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

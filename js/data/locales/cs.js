@@ -10,6 +10,7 @@ export default {
     'title.collection':         'SBÍRKA',
     'title.settings':           'NASTAVENÍ',
     'title.credits':            'TVŮRCI',
+    'title.quit':               'UKONČIT',
     'title.wishlist':           'PŘIDAT NA STEAM SEZNAM PŘÁNÍ',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

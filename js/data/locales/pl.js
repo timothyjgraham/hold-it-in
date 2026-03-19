@@ -10,6 +10,7 @@ export default {
     'title.collection':         'KOLEKCJA',
     'title.settings':           'USTAWIENIA',
     'title.credits':            'TWÓRCY',
+    'title.quit':               'WYJŚCIE',
     'title.wishlist':           'DODAJ DO LISTY ŻYCZEŃ NA STEAM',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

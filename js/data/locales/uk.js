@@ -11,6 +11,7 @@ export default {
     'title.collection':         'КОЛЕКЦІЯ',
     'title.settings':           'НАЛАШТУВАННЯ',
     'title.credits':            'АВТОРИ',
+    'title.quit':               'ВИХІД',
     'title.wishlist':           'ДОДАТИ В БАЖАНЕ НА STEAM',
 
     // --- SCENARIO SELECT ---

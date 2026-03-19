@@ -10,6 +10,7 @@ export default {
     'title.collection':         '收藏',
     'title.settings':           '設定',
     'title.credits':            '製作團隊',
+    'title.quit':               '退出遊戲',
     'title.wishlist':           '加入 STEAM 願望清單',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

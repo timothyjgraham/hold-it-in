@@ -11,6 +11,7 @@ export default {
     'title.collection':         '收藏',
     'title.settings':           '设置',
     'title.credits':            '制作人员',
+    'title.quit':               '退出游戏',
     'title.wishlist':           '在STEAM上加入愿望单',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

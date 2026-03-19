@@ -11,6 +11,7 @@ export default {
     'title.collection':         'คอลเลกชัน',
     'title.settings':           'ตั้งค่า',
     'title.credits':            'เครดิต',
+    'title.quit':               'ออกเกม',
     'title.wishlist':           'เพิ่มลงรายการสิ่งที่อยากได้บน STEAM',
 
     // --- SCENARIO SELECT ---

@@ -11,6 +11,7 @@ export default {
     'title.collection':         'KOLEKSİYON',
     'title.settings':           'AYARLAR',
     'title.credits':            'YAPIMCILAR',
+    'title.quit':               'ÇIKIŞ',
     'title.wishlist':           "STEAM'DE İSTEK LİSTESİNE EKLE",
 
     // --- SCENARIO SELECT ---

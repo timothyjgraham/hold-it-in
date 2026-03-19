@@ -10,6 +10,7 @@ export default {
     'title.collection':         'COLLECTIE',
     'title.settings':           'INSTELLINGEN',
     'title.credits':            'CREDITS',
+    'title.quit':               'AFSLUITEN',
     'title.wishlist':           'VERLANGLIJST OP STEAM',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

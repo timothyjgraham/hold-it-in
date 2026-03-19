@@ -11,6 +11,7 @@ export default {
     'title.collection':         'SAMMLUNG',
     'title.settings':           'EINSTELLUNGEN',
     'title.credits':            'MITWIRKENDE',
+    'title.quit':               'BEENDEN',
     'title.wishlist':           'AUF DIE STEAM-WUNSCHLISTE',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────

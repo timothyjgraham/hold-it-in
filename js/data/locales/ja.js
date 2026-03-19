@@ -10,6 +10,7 @@ export default {
     'title.collection':         'コレクション',
     'title.settings':           '設定',
     'title.credits':            'クレジット',
+    'title.quit':               'ゲーム終了',
     'title.wishlist':           'STEAMでウィッシュリストに追加',
 
     // ─── SCENARIO SELECT ─────────────────────────────────────────────────
