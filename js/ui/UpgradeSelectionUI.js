@@ -1182,51 +1182,7 @@ export class UpgradeSelectionUI {
             ctx.restore();
         }
 
-        // Rare: inner glow border in violet
-        if (rarity === 'rare') {
-            ctx.strokeStyle = '#9b8ec4';
-            ctx.lineWidth = 10;
-            ctx.beginPath();
-            ctx.roundRect(6, 6, cW - 12, cH - 12, 16);
-            ctx.stroke();
-            const glowW = 24;
-            let grad;
-            grad = ctx.createLinearGradient(10, 0, 10 + glowW, 0);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-            grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(10, 10, glowW, cH - 20);
-            grad = ctx.createLinearGradient(cW - 10, 0, cW - 10 - glowW, 0);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-            grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(cW - 10 - glowW, 10, glowW, cH - 20);
-            grad = ctx.createLinearGradient(0, 10, 0, 10 + glowW);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-            grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(10, 10, cW - 20, glowW);
-            grad = ctx.createLinearGradient(0, cH - 10, 0, cH - 10 - glowW);
-            grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-            grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(10, cH - 10 - glowW, cW - 20, glowW);
-        }
-
-        // Border
-        if (rarity === 'legendary') {
-            ctx.strokeStyle = '#1a1a2e';
-            ctx.lineWidth = 10;
-            ctx.beginPath();
-            ctx.roundRect(4, 4, cW - 8, cH - 8, 18);
-            ctx.stroke();
-        } else if (rarity === 'common') {
-            ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.roundRect(4, 4, cW - 8, cH - 8, 18);
-            ctx.stroke();
-        }
+        // (No borders — icons render edge-to-edge without clipping)
 
         // ── Rarity banner (0-55px) ──
         const bannerH = 55;

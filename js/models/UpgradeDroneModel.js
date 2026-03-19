@@ -85,45 +85,7 @@ function createPlacardTexture(upgrade, rarity) {
         }
     }
 
-    // Rare: inner glow border in violet
-    if (rarity === 'rare') {
-        ctx.strokeStyle = '#9b8ec4';
-        ctx.lineWidth = 10;
-        ctx.strokeRect(6, 6, cW - 12, cH - 12);
-        const glowW = 24;
-        let grad;
-        grad = ctx.createLinearGradient(10, 0, 10 + glowW, 0);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-        grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(10, 10, glowW, cH - 20);
-        grad = ctx.createLinearGradient(cW - 10, 0, cW - 10 - glowW, 0);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-        grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(cW - 10 - glowW, 10, glowW, cH - 20);
-        grad = ctx.createLinearGradient(0, 10, 0, 10 + glowW);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-        grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(10, 10, cW - 20, glowW);
-        grad = ctx.createLinearGradient(0, cH - 10, 0, cH - 10 - glowW);
-        grad.addColorStop(0, 'rgba(155, 142, 196, 0.4)');
-        grad.addColorStop(1, 'rgba(155, 142, 196, 0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(10, cH - 10 - glowW, cW - 20, glowW);
-    }
-
-    // Border (common + legendary)
-    if (rarity === 'legendary') {
-        ctx.strokeStyle = '#1a1a2e';
-        ctx.lineWidth = 10;
-        ctx.strokeRect(4, 4, cW - 8, cH - 8);
-    } else if (rarity === 'common') {
-        ctx.strokeStyle = 'rgba(26, 26, 46, 0.25)';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(4, 4, cW - 8, cH - 8);
-    }
+    // (No borders — icons render edge-to-edge without clipping)
 
     // ── RARITY BANNER (0-55px) ──
     const bannerH = 55;
@@ -688,14 +650,6 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     placard.position.y = -chainLength - placardH / 2 + 0.05;
     placard.name = 'placard';
     signGroup.add(placard);
-
-    // Placard outline
-    const placardOutline = new THREE.Mesh(
-        new THREE.BoxGeometry(placardW + outlineW * 2, placardH + outlineW * 2, placardD + outlineW * 2),
-        outlineMatStatic(outlineW)
-    );
-    placardOutline.position.copy(placard.position);
-    signGroup.add(placardOutline);
 
     // Position sign group at bottom of drone body
     signGroup.position.y = -BODY_HALF_H - 0.1;
