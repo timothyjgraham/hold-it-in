@@ -2014,6 +2014,13 @@
                 });
                 this._floatingTexts = [];
             }
+            // Clear floating text sprite pool on reset
+            if (this._textSpritePool) {
+                this._textSpritePool.forEach(entry => {
+                    if (entry.mat) { if (entry.mat.map) entry.mat.map.dispose(); entry.mat.dispose(); }
+                });
+                this._textSpritePool = [];
+            }
 
             // Teardown environment (lights, env group contents)
             this._teardownEnvironment();
@@ -4077,10 +4084,19 @@
             // Clear floating texts
             this._floatingTexts.forEach(ft => {
                 this.scene.remove(ft.sprite);
-                ft.sprite.material.map.dispose();
-                ft.sprite.material.dispose();
+                if (ft.sprite.material) {
+                    if (ft.sprite.material.map) ft.sprite.material.map.dispose();
+                    ft.sprite.material.dispose();
+                }
             });
             this._floatingTexts = [];
+            // Clear sprite pool
+            if (this._textSpritePool) {
+                this._textSpritePool.forEach(entry => {
+                    if (entry.mat) { if (entry.mat.map) entry.mat.map.dispose(); entry.mat.dispose(); }
+                });
+                this._textSpritePool = [];
+            }
 
             // Clear door particles
             this._doorParticles.forEach(p => {
@@ -5528,11 +5544,13 @@
         // ============================
         // TOWER PLACEMENT
         // ============================
+        // Reusable Vector3 for raycasting — avoids per-frame allocation
+        _gridPosVec: new THREE.Vector3(),
         _getGridPos(screenX, screenY) {
             this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersect = new THREE.Vector3();
-            this.raycaster.ray.intersectPlane(this.groundPlane, intersect);
-            if (!intersect) return null;
+            const intersect = this._gridPosVec;
+            const hit = this.raycaster.ray.intersectPlane(this.groundPlane, intersect);
+            if (!hit) return null;
 
             const gs = CONFIG.grid;
             const gx = Math.round(intersect.x / gs) * gs;
@@ -6037,10 +6055,10 @@
                 this._sellHighlight.rotation.x = -Math.PI / 2;
                 this.scene.add(this._sellHighlight);
             }
-            const pulse = 0.9 + Math.sin(Date.now() * 0.008) * 0.15;
+            const pulse = 0.9 + Math.sin(this._frameTime * 0.008) * 0.15;
             this._sellHighlight.position.set(found.gridX, 0.08, found.gridZ);
             this._sellHighlight.scale.set(pulse, pulse, pulse);
-            this._sellHighlight.material.opacity = 0.35 + Math.sin(Date.now() * 0.006) * 0.15;
+            this._sellHighlight.material.opacity = 0.35 + Math.sin(this._frameTime * 0.006) * 0.15;
             this._sellHighlight.visible = true;
 
             // Show refund preview text
@@ -6055,36 +6073,40 @@
                 this._sellPreviewSprite.scale.set(3.5, 1.2, 1);
                 this.scene.add(this._sellPreviewSprite);
             }
-            // Calculate refund
+            // Calculate refund — only redraw canvas when hovered tower changes
             const um = this.upgradeManager;
             const refundPct = (um && um.hasUpgrade('R22')) ? 1.0 : 0.4;
             const costMult = um ? um.getModifier('towerCostMult') : 1.0;
             const baseCost = Math.max(5, Math.floor(found.def.cost * costMult));
             const refund = Math.floor(baseCost * refundPct);
-            // Redraw preview text
-            const ctx = this._sellPreviewCanvas.getContext('2d');
-            ctx.clearRect(0, 0, 256, 80);
-            ctx.save();
-            ctx.translate(128, 40);
-            ctx.font = getCanvasFont(38, true);
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.strokeStyle = '#1a1a2e';
-            ctx.lineWidth = 4;
-            ctx.strokeText(t('canvas.sellPreview', { n: refund }), 0, 0);
-            ctx.fillStyle = '#ffd93d';
-            ctx.fillText(t('canvas.sellPreview', { n: refund }), 0, 0);
-            ctx.restore();
-            this._sellPreviewSprite.material.map.needsUpdate = true;
+            if (this._sellPreviewTower !== found || this._sellPreviewRefund !== refund) {
+                this._sellPreviewTower = found;
+                this._sellPreviewRefund = refund;
+                const ctx = this._sellPreviewCanvas.getContext('2d');
+                ctx.clearRect(0, 0, 256, 80);
+                ctx.save();
+                ctx.translate(128, 40);
+                ctx.font = getCanvasFont(38, true);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.strokeStyle = '#1a1a2e';
+                ctx.lineWidth = 4;
+                ctx.strokeText(t('canvas.sellPreview', { n: refund }), 0, 0);
+                ctx.fillStyle = '#ffd93d';
+                ctx.fillText(t('canvas.sellPreview', { n: refund }), 0, 0);
+                ctx.restore();
+                this._sellPreviewSprite.material.map.needsUpdate = true;
+            }
             this._sellPreviewSprite.position.set(found.gridX, 4.5, found.gridZ);
             this._sellPreviewSprite.visible = true;
             // Bob animation
-            this._sellPreviewSprite.position.y = 4.5 + Math.sin(Date.now() * 0.004) * 0.15;
+            this._sellPreviewSprite.position.y = 4.5 + Math.sin(this._frameTime * 0.004) * 0.15;
         },
 
         _clearSellHighlight() {
             if (this._sellHighlight) this._sellHighlight.visible = false;
             if (this._sellPreviewSprite) this._sellPreviewSprite.visible = false;
+            this._sellPreviewTower = null;
         },
 
         // ============================
@@ -6270,11 +6292,11 @@
         },
 
         _spawnTripImpact(x, z) {
-            // Comic text sprite — "TRIP!", "CRASH!", etc.
-            const canvas = document.createElement('canvas');
-            canvas.width = 192;
-            canvas.height = 96;
-            const ctx = canvas.getContext('2d');
+            // Comic text sprite — "TRIP!", "CRASH!", etc. (pooled)
+            const entry = this._acquireTextSprite(192, 96);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 192, 96);
+            ctx.save();
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(96, 48);
             ctx.rotate(rot);
@@ -6289,18 +6311,15 @@
             ctx.strokeText(text, 0, 2);
             ctx.fillStyle = '#c4663a';
             ctx.fillText(text, 0, 2);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(spriteMat);
-            sprite.position.set(x, 3.5, z);
-            sprite.scale.set(3.5, 1.8, 1);
-            this.scene.add(sprite);
-            this._floatingTexts.push({ sprite, life: 0.8 });
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x, 3.5, z);
+            entry.sprite.scale.set(3.5, 1.8, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 0.8 });
 
             // Expanding impact ring
             const ringGeo = new THREE.RingGeometry(0.2, 0.5, 16);
@@ -6548,13 +6567,16 @@
             if (window.SFX) SFX.play('drone_fly');
         },
 
+        // Reusable objects for drone updates — avoids per-frame allocations
+        _dronePos: new THREE.Vector3(),
+        _droneVelocity: new THREE.Vector3(),
         _updateDrones(dt) {
             for (let i = this.activeDrones.length - 1; i >= 0; i--) {
                 const d = this.activeDrones[i];
                 d.time += dt;
 
                 const model = d.model;
-                let pos = new THREE.Vector3();
+                let pos = this._dronePos;
                 let done = false;
 
                 if (d.state === 'entering') {
@@ -6638,18 +6660,18 @@
 
                 // Drone tilt based on movement direction
                 const wobbleMult = d.isBarrier ? 3.0 : 1.0; // barrier = amplified wobble
-                const velocity = model.position.clone().sub(d.prevPos);
+                const velocity = this._droneVelocity.copy(model.position).sub(d.prevPos);
                 if (velocity.length() > 0.001) {
                     // Pitch forward when moving forward (in flight direction)
                     const speed = velocity.length() / Math.max(dt, 0.001);
                     const tiltAmount = Math.min(0.4, speed * 0.03) * (d.isBarrier ? 1.5 : 1.0);
 
                     // Bank into horizontal movement
-                    const horizDir = new THREE.Vector2(velocity.x, velocity.z);
-                    if (horizDir.length() > 0.001) {
-                        horizDir.normalize();
+                    const hLen = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+                    if (hLen > 0.001) {
+                        const hx = velocity.x / hLen, hz = velocity.z / hLen;
                         // Face direction of travel
-                        model.rotation.y = Math.atan2(horizDir.x, horizDir.y);
+                        model.rotation.y = Math.atan2(hx, hz);
                         // Pitch forward
                         model.rotation.x = -tiltAmount;
                         // Roll based on lateral acceleration (simplified)
@@ -6657,8 +6679,8 @@
                     }
                 } else {
                     // Hovering — slight wobble (amplified for barrier load)
-                    model.rotation.x = Math.sin(Date.now() * 0.003) * 0.02 * wobbleMult;
-                    model.rotation.z = Math.cos(Date.now() * 0.0025) * 0.02 * wobbleMult;
+                    model.rotation.x = Math.sin(this._frameTime * 0.003) * 0.02 * wobbleMult;
+                    model.rotation.z = Math.cos(this._frameTime * 0.0025) * 0.02 * wobbleMult;
                 }
                 d.prevPos.copy(model.position);
 
@@ -11667,7 +11689,7 @@
             }
 
             // Pulse animation for highlight
-            const pulse = 0.85 + Math.sin(Date.now() * 0.006) * 0.15;
+            const pulse = 0.85 + Math.sin(this._frameTime * 0.006) * 0.15;
             const def = this.TOWERS[this.selectedTower];
             const tw = def.tileWidth || 1;
 
@@ -11685,8 +11707,14 @@
             let canPlace = this.coins >= hoverCost;
             // R23: Devotion — block unlocked types
             if (canPlace && this.upgradeManager && this.upgradeManager.hasUpgrade('R23') && this._devotionTypes && this._devotionTypes.size >= 2 && !this._devotionTypes.has(this.selectedTower)) canPlace = false;
-            // R24: Skeleton Crew — cap at 6
-            if (canPlace && this.upgradeManager && this.upgradeManager.hasUpgrade('R24') && this.towers.filter(t => !t.dying && !t.delivering).length >= 6) canPlace = false;
+            // R24: Skeleton Crew — cap at 6 (count active towers without allocating an array)
+            if (canPlace && this.upgradeManager && this.upgradeManager.hasUpgrade('R24')) {
+                let activeTowerCount = 0;
+                for (let ti = 0; ti < this.towers.length; ti++) {
+                    if (!this.towers[ti].dying && !this.towers[ti].delivering) activeTowerCount++;
+                }
+                if (activeTowerCount >= 6) canPlace = false;
+            }
             for (let dx = 0; dx < tw && canPlace; dx++) {
                 const cellX = pos.x + (dx - Math.floor(tw / 2)) * gs;
                 if (cellX < -halfW || cellX > halfW || this._isCellOccupied(cellX, pos.z)) {
@@ -11726,27 +11754,29 @@
                 this._clearGhost();
                 const ghost = this._createTowerMesh(this.selectedTower, def);
                 this.ghostPreview = ghost.mesh;
+                // Cache mesh children list to avoid traverse() every frame
+                this._ghostMeshes = [];
                 this.ghostPreview.traverse(child => {
                     if (child.isMesh) {
                         child.material = child.material.clone();
                         child.material.transparent = true;
                         child.material.opacity = 0.4;
                         child.material.depthWrite = false;
+                        this._ghostMeshes.push(child);
                     }
                 });
                 this.scene.add(this.ghostPreview);
                 this._ghostType = this.selectedTower;
             }
             if (this.ghostPreview) {
-                const bob = Math.sin(Date.now() * 0.004) * 0.1;
+                const bob = Math.sin(this._frameTime * 0.004) * 0.1;
                 this.ghostPreview.position.set(pos.x, bob, pos.z);
                 this.ghostPreview.visible = true;
-                // Tint ghost red/green
-                this.ghostPreview.traverse(child => {
-                    if (child.isMesh) {
-                        child.material.opacity = canPlace ? 0.45 : 0.2;
-                    }
-                });
+                // Update opacity directly from cached mesh list (no traverse)
+                const opacity = canPlace ? 0.45 : 0.2;
+                for (let i = 0; i < this._ghostMeshes.length; i++) {
+                    this._ghostMeshes[i].material.opacity = opacity;
+                }
             }
         },
 
@@ -11755,6 +11785,42 @@
                 this.scene.remove(this.ghostPreview);
                 this.ghostPreview = null;
                 this._ghostType = null;
+                this._ghostMeshes = null;
+            }
+        },
+
+        // ============================
+        // FLOATING TEXT SPRITE POOL
+        // ============================
+        // Reuses canvas/texture/material/sprite objects to avoid GC pressure
+        _textSpritePool: [],
+        _acquireTextSprite(w, h) {
+            // Try to find a pooled sprite with matching canvas size
+            for (let i = this._textSpritePool.length - 1; i >= 0; i--) {
+                const entry = this._textSpritePool[i];
+                if (entry.canvas.width === w && entry.canvas.height === h) {
+                    this._textSpritePool.splice(i, 1);
+                    return entry;
+                }
+            }
+            // Create new if pool empty
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+            const sprite = new THREE.Sprite(mat);
+            return { canvas, texture, mat, sprite };
+        },
+        _releaseTextSprite(ft) {
+            this.scene.remove(ft.sprite);
+            ft.sprite.visible = false;
+            // Cap pool size to avoid unbounded growth
+            if (this._textSpritePool.length < 40) {
+                this._textSpritePool.push({ canvas: ft.canvas, texture: ft.sprite.material.map, mat: ft.sprite.material, sprite: ft.sprite });
+            } else {
+                ft.sprite.material.map.dispose();
+                ft.sprite.material.dispose();
             }
         },
 
@@ -11762,10 +11828,10 @@
         // FLOATING COIN TEXT
         // ============================
         _spawnCoinText(x, z, amount) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 192;
-            canvas.height = 80;
-            const ctx = canvas.getContext('2d');
+            const entry = this._acquireTextSprite(192, 80);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 192, 80);
+            ctx.save();
             // Slight random rotation for hand-drawn feel
             const rot = (Math.random() - 0.5) * 0.1;
             ctx.translate(96, 40);
@@ -11781,29 +11847,26 @@
             // Gold fill
             ctx.fillStyle = '#ffd93d';
             ctx.fillText(text, 0, 2);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(mat);
-            sprite.position.set(x, 3, z);
-            sprite.scale.set(3, 1.5, 1);
-            this.scene.add(sprite);
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x, 3, z);
+            entry.sprite.scale.set(3, 1.5, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
 
-            this._floatingTexts.push({ sprite, life: 1.2 });
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 1.2 });
         },
 
         // ============================
         // SELL VFX: "SOLD!" comic text
         // ============================
         _spawnSoldText(x, z) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 128;
-            const ctx = canvas.getContext('2d');
+            const entry = this._acquireTextSprite(256, 128);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 128);
+            ctx.save();
             const rot = (Math.random() - 0.5) * 0.2;
             ctx.translate(128, 64);
             ctx.rotate(rot);
@@ -11822,18 +11885,15 @@
             ctx.strokeStyle = '#fff4d9';
             ctx.lineWidth = 1.5;
             ctx.strokeText(t('canvas.sold'), -1, -1);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(mat);
-            sprite.position.set(x, 4, z);
-            sprite.scale.set(5, 2.5, 1);
-            this.scene.add(sprite);
-            this._floatingTexts.push({ sprite, life: 1.4 });
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x, 4, z);
+            entry.sprite.scale.set(5, 2.5, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 1.4 });
         },
 
         // ============================
@@ -11905,10 +11965,10 @@
             const sizeMult = Math.min(1.5, 0.7 + rounded * 0.03);
             const fontSize = Math.round(36 * sizeMult);
 
-            const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
+            const entry = this._acquireTextSprite(128, 64);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 128, 64);
+            ctx.save();
             // Random offset so numbers don't stack
             const offX = (Math.random() - 0.5) * 1.5;
             const rot = (Math.random() - 0.5) * 0.15;
@@ -11925,28 +11985,25 @@
             // Color fill
             ctx.fillStyle = color || '#faf5ef';
             ctx.fillText(text, 0, 0);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(mat);
-            sprite.position.set(x + offX, 3.5, z);
-            sprite.scale.set(2 * sizeMult, 1 * sizeMult, 1);
-            this.scene.add(sprite);
-            this._floatingTexts.push({ sprite, life: 0.9 });
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x + offX, 3.5, z);
+            entry.sprite.scale.set(2 * sizeMult, 1 * sizeMult, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 0.9 });
         },
 
         // ============================
         // BUMP POPUP VFX
         // ============================
         _spawnBumpPopup(x, z) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
+            const entry = this._acquireTextSprite(128, 64);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 128, 64);
+            ctx.save();
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(64, 32);
             ctx.rotate(rot);
@@ -11960,29 +12017,26 @@
             ctx.strokeText(text, 0, 2);
             ctx.fillStyle = '#fff4d9';
             ctx.fillText(text, 0, 2);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(spriteMat);
-            sprite.position.set(x, 3.5, z);
-            sprite.scale.set(2.5, 1.3, 1);
-            this.scene.add(sprite);
-            this._floatingTexts.push({ sprite, life: 0.8 });
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x, 3.5, z);
+            entry.sprite.scale.set(2.5, 1.3, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 0.8 });
         },
 
         // ============================
         // MOP IMPACT VFX
         // ============================
         _spawnMopImpact(x, z) {
-            // "POW!" text sprite — comic-book style
-            const canvas = document.createElement('canvas');
-            canvas.width = 192;
-            canvas.height = 96;
-            const ctx = canvas.getContext('2d');
+            // "POW!" text sprite — comic-book style (pooled)
+            const entry = this._acquireTextSprite(192, 96);
+            const ctx = entry.canvas.getContext('2d');
+            ctx.clearRect(0, 0, 192, 96);
+            ctx.save();
             const rot = (Math.random() - 0.5) * 0.3;
             ctx.translate(96, 48);
             ctx.rotate(rot);
@@ -11997,18 +12051,15 @@
             ctx.strokeText(text, 0, 2);
             ctx.fillStyle = '#9b59b6';
             ctx.fillText(text, 0, 2);
+            ctx.restore();
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMat = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            });
-            const sprite = new THREE.Sprite(spriteMat);
-            sprite.position.set(x, 3.5, z);
-            sprite.scale.set(3.5, 1.8, 1);
-            this.scene.add(sprite);
-            this._floatingTexts.push({ sprite, life: 0.8 });
+            entry.texture.needsUpdate = true;
+            entry.sprite.position.set(x, 3.5, z);
+            entry.sprite.scale.set(3.5, 1.8, 1);
+            entry.sprite.material.opacity = 1;
+            entry.sprite.visible = true;
+            this.scene.add(entry.sprite);
+            this._floatingTexts.push({ sprite: entry.sprite, canvas: entry.canvas, life: 0.8 });
 
             // Expanding impact ring
             const ringGeo = new THREE.RingGeometry(0.2, 0.5, 16);
@@ -12029,6 +12080,8 @@
         // ============================
         // HIT SPARKS (damage-proportional)
         // ============================
+        // Shared geometry cache for hit sparks — avoids creating new geometry per particle
+        _sparkGeoCache: {},
         _spawnHitSparks(x, z, damage, maxHp, color) {
             const ratio = Math.min(1, damage / (maxHp || 1));
             const count = 2 + Math.floor(4 * ratio);
@@ -12036,7 +12089,12 @@
 
             for (let i = 0; i < count; i++) {
                 const size = 0.06 + ratio * 0.08;
-                const geo = new THREE.TetrahedronGeometry(size, 0);
+                // Round size to nearest 0.02 for cache efficiency
+                const sizeKey = Math.round(size * 50);
+                if (!this._sparkGeoCache[sizeKey]) {
+                    this._sparkGeoCache[sizeKey] = new THREE.TetrahedronGeometry(sizeKey / 50, 0);
+                }
+                const geo = this._sparkGeoCache[sizeKey];
                 const mat = new THREE.MeshBasicMaterial({
                     color: sparkColor,
                     transparent: true,
@@ -12051,6 +12109,7 @@
 
                 this._doorParticles.push({
                     mesh: spark,
+                    sharedGeo: true, // geometry is cached, don't dispose it
                     vx: Math.cos(angle) * speed,
                     vy: 2 + Math.random() * 3,
                     vz: Math.sin(angle) * speed,
@@ -12717,6 +12776,9 @@
             const rawDt = Math.min(this.clock.getDelta(), 0.05); // Cap dt
             let dt = rawDt;
 
+            // Cache timestamp once per frame — avoids multiple Date.now() calls
+            this._frameTime = performance.now();
+
             // ─── Global hitstop — freeze everything briefly on big impacts ───
             if (this._globalHitstop > 0) {
                 this._globalHitstop -= rawDt;
@@ -12759,7 +12821,7 @@
 
             // Position wave badge centered above the enemy spawn door (north exit)
             if (this.camera) {
-                const exitTop = new THREE.Vector3(0, 7.5, 68);
+                const exitTop = (this._waveBadgeVec || (this._waveBadgeVec = new THREE.Vector3())).set(0, 7.5, 68);
                 exitTop.project(this.camera);
                 const wEl = document.getElementById('wave-display');
                 const hw = window.innerWidth / 2;
@@ -12784,9 +12846,15 @@
                 ft.sprite.position.y += 2.5 * dt;
                 ft.sprite.material.opacity = Math.max(0, ft.life / 0.5);
                 if (ft.life <= 0) {
-                    this.scene.remove(ft.sprite);
-                    ft.sprite.material.map.dispose();
-                    ft.sprite.material.dispose();
+                    if (ft.canvas) {
+                        // Pooled sprite — return to pool for reuse
+                        this._releaseTextSprite(ft);
+                    } else {
+                        // Legacy non-pooled sprite — dispose normally
+                        this.scene.remove(ft.sprite);
+                        ft.sprite.material.map.dispose();
+                        ft.sprite.material.dispose();
+                    }
                     this._floatingTexts.splice(i, 1);
                 }
             }
@@ -12843,7 +12911,7 @@
                 p.mesh.scale.set(s, s, s);
                 if (p.life <= 0 || p.mesh.position.y < -1) {
                     this.scene.remove(p.mesh);
-                    p.mesh.geometry.dispose();
+                    if (!p.sharedGeo) p.mesh.geometry.dispose();
                     p.mesh.material.dispose();
                     this._doorParticles.splice(i, 1);
                 }
