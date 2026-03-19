@@ -15,6 +15,7 @@ import { UPGRADE_MAP, ALL_UPGRADES } from './data/upgradeRegistry.js';
 import { PlayerCharacter } from './models/PlayerCharacter.js';
 import { createUpgradeDrone, updateUpgradeDrone, disposeUpgradeDrone } from './models/UpgradeDroneModel.js';
 import { MedicDroneSystem } from './systems/MedicDroneSystem.js';
+import { SuperMedicDrone } from './systems/SuperMedicDrone.js';
 import { UpgradeSelectionUI } from './ui/UpgradeSelectionUI.js';
 import { createIconModel } from './models/UpgradeIconFactory.js';
 import { initIconRenderer, create3DIconDataURL, draw3DUpgradeIcon, disposeIconRenderer } from './ui/UpgradeIconRenderer.js';
@@ -188,6 +189,7 @@ window.UpgradeSelectionUI = UpgradeSelectionUI;
 window.EnemyIntroUI = EnemyIntroUI;
 window.TowerIntroUI = TowerIntroUI;
 window.MedicDroneSystem = MedicDroneSystem;
+window.SuperMedicDrone = SuperMedicDrone;
 // Backward-compatible wrapper: old API was (iconKey, size), new adds rarity + time
 window.createIconDataURL = function(iconKey, rarityOrSize, size, time) {
     if (typeof rarityOrSize === 'number') {

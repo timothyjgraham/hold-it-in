@@ -1682,6 +1682,11 @@
                 this._dyingAnimControllers = new Set();
             }
 
+            // Super medivac claw drone (bulk corpse collection between waves)
+            if (window.SuperMedicDrone) {
+                this.superMedicDrone = new SuperMedicDrone();
+            }
+
             // Upgrade system
             if (window.UpgradeManager) {
                 this.upgradeManager = new UpgradeManager();
@@ -4028,6 +4033,10 @@
             // Clear medic drone system (release queued/in-flight corpses back to pool)
             if (this.medicDroneSystem) {
                 this.medicDroneSystem.cleanup(this.scene, this.enemyPool);
+            }
+            // Clear super medivac if active
+            if (this.superMedicDrone) {
+                this.superMedicDrone.cleanup(this.scene, this.enemyPool);
             }
 
             // Clear entities (6A: release to pool or dispose)
@@ -6984,6 +6993,23 @@
             if (window.Music) Music.unduck();
         },
 
+        /** Enter upgrade phase or go straight to next wave timer */
+        _enterUpgradePhaseOrTimer() {
+            if (this.upgradeManager && this.wave >= 1) {
+                const dronesSpawned = this._spawnUpgradeDrones();
+                if (dronesSpawned) {
+                    // Block next wave from starting while drones fly in + player selects
+                    this.waveTimer = 9999;
+                } else {
+                    // Drone spawning failed — skip upgrade phase, proceed normally
+                    this._setInterWaveTimer();
+                }
+            } else {
+                // Wave 0 (shouldn't happen) — go directly to next wave
+                this._setInterWaveTimer();
+            }
+        },
+
         /** Calculate and set the inter-wave timer for the next wave */
         _setInterWaveTimer() {
             const compositions = this._getWaveCompositions();
@@ -8814,19 +8840,18 @@
                     }
                     this._spawnCoinText(0, 30, waveBonus);
 
-                    // Enter upgrade selection phase (after wave 1+), or go straight to next wave timer
-                    if (this.upgradeManager && this.wave >= 1) {
-                        const dronesSpawned = this._spawnUpgradeDrones();
-                        if (dronesSpawned) {
-                            // Block next wave from starting while drones fly in + player selects
-                            this.waveTimer = 9999;
-                        } else {
-                            // Drone spawning failed — skip upgrade phase, proceed normally
-                            this._setInterWaveTimer();
-                        }
+                    // Check for super medivac — if 5+ corpses queued, claw drone clears them first
+                    const pendingCorpses = this.medicDroneSystem ? this.medicDroneSystem.getPendingCount() : 0;
+                    if (this.superMedicDrone && pendingCorpses >= 5) {
+                        // Block next wave while super medivac runs
+                        this.waveTimer = 9999;
+                        this.announceWave(t('wave.superMedivac'));
+                        this.superMedicDrone.trigger(this.medicDroneSystem, this.scene, () => {
+                            // Super medivac complete — now proceed to upgrade phase
+                            this._enterUpgradePhaseOrTimer();
+                        });
                     } else {
-                        // Wave 0 (shouldn't happen) — go directly to next wave
-                        this._setInterWaveTimer();
+                        this._enterUpgradePhaseOrTimer();
                     }
                 }
             }
@@ -13156,6 +13181,11 @@
                 // No medic drone system — advance immediately
                 this._tutorialWaitForMedic = false;
                 this._advanceTutorial();
+            }
+
+            // Update super medivac claw drone
+            if (this.superMedicDrone) {
+                this.superMedicDrone.update(dt, this.scene, this.enemyPool);
             }
 
             // Update upgrade drones

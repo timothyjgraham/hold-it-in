@@ -97,6 +97,14 @@ export const PALETTE = {
     medicCross:   0xe05050,   // Red cross accent — classic rescue, pops against cream
     medicBed:     0xddd2c0,   // Stretcher bed — matches tileLight, institutional
 
+    // ─── SUPER MEDIVAC (CLAW MACHINE) ─────────────────────────────────────
+    // Giant arcade claw crane that bulk-collects corpses between waves
+
+    superMedicBody:  0xe8b830,  // Industrial crane yellow — construction/arcade feel
+    superMedicClaw:  0x8a8a90,  // Brushed steel claw prongs — metallic, industrial
+    superMedicGlass: 0xc0e8f0,  // Translucent dome — arcade machine window blue
+    superMedicCable: 0x606068,  // Cable/chain — dark steel
+
     // ─── FOREST ENVIRONMENT ────────────────────────────────────────────────
     // Earthy greens and browns for the forest scenario
 

@@ -429,6 +429,36 @@ export class MedicDroneSystem {
         }
     }
 
+    /**
+     * Total corpses still pending: queued + being carried by active drones.
+     */
+    getPendingCount() {
+        let count = this._corpseQueue.filter(c => !c.collected).length;
+        for (const drone of this._activeDrones) {
+            // Targets not yet collected by this drone
+            count += Math.max(0, drone.targets.length - drone.targetIndex);
+        }
+        return count;
+    }
+
+    /**
+     * Steal all uncollected corpses from the queue (for super medivac takeover).
+     * Returns array of { model, position, birdies } entries removed from queue.
+     * Active drones keep whatever they already picked up — only steals the waiting queue.
+     */
+    stealCorpseQueue(scene) {
+        const stolen = [];
+        for (let i = this._corpseQueue.length - 1; i >= 0; i--) {
+            const c = this._corpseQueue[i];
+            if (c.collected) continue; // already assigned to an active drone
+            // Remove birdies — super medivac has its own VFX
+            if (c.birdies && c.birdies.parent) c.birdies.parent.remove(c.birdies);
+            stolen.push({ model: c.model, position: c.position.clone() });
+            this._corpseQueue.splice(i, 1);
+        }
+        return stolen;
+    }
+
     cleanup(scene, enemyPool) {
         for (const c of this._corpseQueue) {
             if (c.birdies && c.birdies.parent) c.birdies.parent.remove(c.birdies);

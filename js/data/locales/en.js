@@ -186,6 +186,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'WAVE {{n}}',
     'wave.cleared':             'WAVE {{n}} CLEARED  +{{bonus}}',
+    'wave.superMedivac':        'SUPER MEDIVAC INCOMING!',
     'wave.loaded':              'WAVE {{n}} — GAME LOADED',
     'wave.dontLetThem':         "DON'T LET THEM REACH THE TOILET!",
     'wave.airplaneHint':        'THIS PLANE IS EQUIPPED WITH A DUAL-ACCESS TOILET, FOR MAXIMUM CONVENIENCE',
