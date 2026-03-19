@@ -856,10 +856,11 @@ export function updateUpgradeDrone(drone, dt) {
         }
     }
 
-    // ── ANIMATED 3D ICON on placard (throttled to every 3rd frame) ─────
+    // ── ANIMATED 3D ICON on placard (throttled to every 6th frame) ─────
+    // Frozen once drones reach selection phase — CPU Sobel post-process is expensive
     if (ud.placardTexture && ud.placardTexture._iconCanvas && !ud._iconFrozen) {
         ud._iconFrame++;
-        if (ud._iconFrame % 3 === 0) {
+        if (ud._iconFrame % 6 === 0) {
             const tex = ud.placardTexture;
             const ctx = tex._iconCtx;
             const cx = 400, cy = 185, half = 152;

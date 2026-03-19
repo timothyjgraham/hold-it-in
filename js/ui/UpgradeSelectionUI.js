@@ -16,6 +16,11 @@ const HOVER_RISE = 0.3;           // Hovered drone rises this many units
 const DIM_BRIGHTNESS = 0.7;       // Non-hovered drones dim to this
 const HOVER_EXTRA_TILT = 0.1;     // Extra tilt toward camera when hovered
 
+// Scratch vectors — reused every frame to avoid GC pressure during animations
+const _scratchPos = new THREE.Vector3();
+const _scratchAhead = new THREE.Vector3();
+const _scratchDir = new THREE.Vector3();
+
 // Selection animation durations (seconds)
 const COMMON_SELECT_DUR = 0.6;
 const RARE_SELECT_DUR = 0.9;
@@ -174,13 +179,7 @@ function _spawnConfettiBurst(scene, position, colors, count, speed, lifetime) {
     for (let i = 0; i < count; i++) {
         const geo = geos[Math.floor(Math.random() * geos.length)];
         const color = colors[Math.floor(Math.random() * colors.length)];
-        const mat = new THREE.MeshBasicMaterial({
-            color: color,
-            transparent: true,
-            opacity: 1.0,
-            side: THREE.DoubleSide,
-            depthWrite: false,
-        });
+        const mat = _getBasicMat(color);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.copy(position);
         scene.add(mesh);
@@ -224,7 +223,7 @@ function _ensureDimElement() {
     return _dimEl;
 }
 
-// ─── SHARED PARTICLE GEOMETRY ────────────────────────────────────────────────
+// ─── SHARED PARTICLE GEOMETRY & MATERIAL POOLS ─────────────────────────────
 
 let _particleGeoSmall = null;
 let _particleGeoLarge = null;
@@ -237,16 +236,54 @@ function getParticleGeoLarge() {
     return _particleGeoLarge;
 }
 
+// Material pool keyed by color hex — each particle gets its own clone for
+// independent opacity, but cloning is far cheaper than full material creation
+const _basicMatPool = {};
+function _getBasicMat(color) {
+    const key = typeof color === 'number' ? color : (color.getHex ? color.getHex() : color);
+    if (!_basicMatPool[key]) {
+        _basicMatPool[key] = new THREE.MeshBasicMaterial({
+            color: key,
+            transparent: true,
+            opacity: 1.0,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+        });
+    }
+    return _basicMatPool[key].clone();
+}
+
+const _toonMatPool = {};
+function _getToonParticleMat(color) {
+    const key = typeof color === 'number' ? color : (color.getHex ? color.getHex() : color);
+    if (!_toonMatPool[key]) {
+        _toonMatPool[key] = toonMat(key, {
+            emissive: key,
+            emissiveIntensity: 0.5,
+        });
+    }
+    return _toonMatPool[key].clone();
+}
+
+const _toonGoldMatPool = {};
+function _getToonGoldMat(color) {
+    const key = typeof color === 'number' ? color : (color.getHex ? color.getHex() : color);
+    if (!_toonGoldMatPool[key]) {
+        _toonGoldMatPool[key] = toonMat(key, {
+            emissive: key,
+            emissiveIntensity: 0.6,
+        });
+    }
+    return _toonGoldMatPool[key].clone();
+}
+
 // ─── PARTICLE BURST SYSTEM ──────────────────────────────────────────────────
 
 function _spawnParticleBurst(scene, position, color, count, speed, lifetime) {
     const particles = [];
     for (let i = 0; i < count; i++) {
         const geo = getParticleGeoSmall();
-        const mat = toonMat(color, {
-            emissive: color,
-            emissiveIntensity: 0.5,
-        });
+        const mat = _getToonParticleMat(color);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.copy(position);
         scene.add(mesh);
@@ -271,10 +308,7 @@ function _spawnGoldShower(scene, cameraPos, count) {
     const spread = 20;
     for (let i = 0; i < count; i++) {
         const geo = getParticleGeoLarge();
-        const mat = toonMat(PALETTE.gold, {
-            emissive: PALETTE.gold,
-            emissiveIntensity: 0.6,
-        });
+        const mat = _getToonGoldMat(PALETTE.gold);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(
             cameraPos.x + (Math.random() - 0.5) * spread,
@@ -384,6 +418,8 @@ export class UpgradeSelectionUI {
             drone.userData._baseBrightness = 1.0;
             drone.userData._currentBrightness = 1.0;
             drone.userData._hoverRise = 0;
+            // Freeze animated icon — CPU Sobel post-process is too expensive during selection
+            drone.userData._iconFrozen = true;
             // Cache mesh array to avoid per-frame traverse in _updateHover
             const meshes = [];
             drone.traverse(child => { if (child.isMesh) meshes.push(child); });
@@ -891,18 +927,16 @@ export class UpgradeSelectionUI {
             const et = t * t; // Accelerating exit
 
             if (ud._exitCurve) {
-                const pos = new THREE.Vector3();
-                ud._exitCurve.getPoint(et, pos);
-                drone.position.copy(pos);
+                ud._exitCurve.getPoint(et, _scratchPos);
+                drone.position.copy(_scratchPos);
 
                 // Tilt in flight direction
                 const lookAhead = Math.min(1, et + 0.05);
-                const ahead = new THREE.Vector3();
-                ud._exitCurve.getPoint(lookAhead, ahead);
-                const dir = ahead.clone().sub(pos);
-                if (dir.length() > 0.001) {
-                    drone.rotation.y = Math.atan2(dir.x, dir.z);
-                    drone.rotation.x = -Math.min(0.3, dir.length() * 0.1);
+                ud._exitCurve.getPoint(lookAhead, _scratchAhead);
+                _scratchDir.subVectors(_scratchAhead, _scratchPos);
+                if (_scratchDir.length() > 0.001) {
+                    drone.rotation.y = Math.atan2(_scratchDir.x, _scratchDir.z);
+                    drone.rotation.x = -Math.min(0.3, _scratchDir.length() * 0.1);
                 }
             }
 
@@ -1344,8 +1378,9 @@ export class UpgradeSelectionUI {
     // ─── PARTICLE UPDATE ─────────────────────────────────────────────────
 
     _updateParticles(dt) {
-        for (let i = this._particles.length - 1; i >= 0; i--) {
-            const p = this._particles[i];
+        const arr = this._particles;
+        for (let i = arr.length - 1; i >= 0; i--) {
+            const p = arr[i];
             p.life -= dt;
             p.vy -= 6 * dt; // gravity
             p.mesh.position.x += p.vx * dt;
@@ -1363,16 +1398,16 @@ export class UpgradeSelectionUI {
 
             // Fade out
             const fade = Math.max(0, p.life / p.maxLife);
-            p.mesh.material.transparent = true;
             p.mesh.material.opacity = fade;
             const s = 0.5 + fade * 0.5;
             p.mesh.scale.setScalar(s);
 
             if (p.life <= 0) {
                 this._scene.remove(p.mesh);
-                p.mesh.geometry.dispose();
                 p.mesh.material.dispose();
-                this._particles.splice(i, 1);
+                // Swap-and-pop instead of splice to avoid O(n) array shift
+                arr[i] = arr[arr.length - 1];
+                arr.pop();
             }
         }
     }
@@ -1380,8 +1415,9 @@ export class UpgradeSelectionUI {
     // ─── SHOCKWAVE UPDATE ─────────────────────────────────────────────────
 
     _updateShockwaves(dt) {
-        for (let i = this._shockwaves.length - 1; i >= 0; i--) {
-            const sw = this._shockwaves[i];
+        const arr = this._shockwaves;
+        for (let i = arr.length - 1; i >= 0; i--) {
+            const sw = arr[i];
             sw.life -= dt;
             const t = 1 - sw.life / sw.maxLife; // 0→1
 
@@ -1398,7 +1434,9 @@ export class UpgradeSelectionUI {
                 this._scene.remove(sw.mesh);
                 sw.mesh.geometry.dispose();
                 sw.mesh.material.dispose();
-                this._shockwaves.splice(i, 1);
+                // Swap-and-pop instead of splice
+                arr[i] = arr[arr.length - 1];
+                arr.pop();
             }
         }
     }
@@ -1407,7 +1445,7 @@ export class UpgradeSelectionUI {
         if (!this._scene) return;
         for (const p of this._particles) {
             this._scene.remove(p.mesh);
-            p.mesh.geometry.dispose();
+            // Don't dispose shared geometry (getParticleGeoSmall/Large, confetti geos)
             p.mesh.material.dispose();
         }
         this._particles = [];
