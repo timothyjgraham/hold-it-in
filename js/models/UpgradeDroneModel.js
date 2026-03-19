@@ -857,8 +857,7 @@ export function updateUpgradeDrone(drone, dt) {
     }
 
     // ── ANIMATED 3D ICON on placard (throttled to every 6th frame) ─────
-    // Frozen once drones reach selection phase — CPU Sobel post-process is expensive
-    if (ud.placardTexture && ud.placardTexture._iconCanvas && !ud._iconFrozen) {
+    if (ud.placardTexture && ud.placardTexture._iconCanvas) {
         ud._iconFrame++;
         if (ud._iconFrame % 6 === 0) {
             const tex = ud.placardTexture;
@@ -876,8 +875,9 @@ export function updateUpgradeDrone(drone, dt) {
                 ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
             }
 
-            // Re-draw rotating 3D icon
-            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 300, performance.now() / 1000);
+            // Re-draw rotating 3D icon (skip Sobel post-process during selection for performance)
+            const skipPost = !!ud._iconSkipPostProcess;
+            draw3DUpgradeIcon(ctx, tex._iconKey, tex._iconRarity, cx, cy, 300, performance.now() / 1000, skipPost);
             tex.needsUpdate = true;
         }
     }

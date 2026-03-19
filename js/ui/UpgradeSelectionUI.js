@@ -511,8 +511,9 @@ export class UpgradeSelectionUI {
             drone.userData._baseBrightness = 1.0;
             drone.userData._currentBrightness = 1.0;
             drone.userData._hoverRise = 0;
-            // Freeze animated icon — CPU Sobel post-process is too expensive during selection
-            drone.userData._iconFrozen = true;
+            // Skip expensive Sobel post-process during selection — icons still rotate
+            // (inverted-hull outlines on 3D models are sufficient)
+            drone.userData._iconSkipPostProcess = true;
             // Cache mesh array to avoid per-frame traverse in _updateHover
             const meshes = [];
             drone.traverse(child => { if (child.isMesh) meshes.push(child); });
@@ -1390,7 +1391,7 @@ export class UpgradeSelectionUI {
             width: ${CARD_DROP_W}px;
             height: ${CARD_DROP_H}px;
             border-radius: 12px;
-            overflow: hidden;
+            overflow: visible;
             opacity: 0;
             box-shadow: ${shadowGlow};
             left: ${screenX - CARD_DROP_W / 2}px;
