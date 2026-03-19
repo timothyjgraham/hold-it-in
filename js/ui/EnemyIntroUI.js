@@ -402,7 +402,6 @@ export class EnemyIntroUI {
 
         // Position model to the LEFT of the info card
         this._enemyGroup.position.set(-5, groupY, 4);
-        this._enemyGroup.rotation.y = Math.PI; // face (+Z) toward camera
         this._enemyGroup.scale.setScalar(0); // pop-in starts at 0
 
         _setRenderOrder(this._enemyGroup, INTRO_RENDER_ORDER);
@@ -631,7 +630,7 @@ export class EnemyIntroUI {
 
         // Turntable rotation
         if (this._phase !== 'exiting') {
-            this._enemyGroup.rotation.y += 0.6 * dt;
+            this._enemyGroup.rotation.y += 0.3 * dt;
         }
     }
 

@@ -238,7 +238,7 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.05;
-    const eyeZ = headR * 0.90;  // front of head (faces +Z, forward direction)
+    const eyeZ = -headR * 0.90;  // front of head (faces -Z, toward camera)
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -258,14 +258,14 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.045, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.30);  // angled worried
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, -0.30);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -274,7 +274,7 @@ function _buildRigidPoliteKnocker(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.22, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -410,7 +410,7 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.30;
     const eyeY = headR * 0.08;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -432,13 +432,13 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
 
     const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
     pupilL.name = 'pupilL';
-    pupilL.position.set(-eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ + eyeSize * 0.2);
+    pupilL.position.set(-eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ - eyeSize * 0.2);
     boneMap.head.add(pupilL);
     parts.pupilL = pupilL;
 
     const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
     pupilR.name = 'pupilR';
-    pupilR.position.set(eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ + eyeSize * 0.2);
+    pupilR.position.set(eyeSpacing + eyeSize * 0.15, eyeY + eyeSize * 0.2, eyeZ - eyeSize * 0.2);
     boneMap.head.add(pupilR);
     parts.pupilR = pupilR;
 
@@ -446,14 +446,14 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.35);
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.26, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, -0.35);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -462,7 +462,7 @@ function _buildRigidPeeDancer(size, config, materials, boneMap) {
     const mouthGeo = new THREE.SphereGeometry(headR * 0.09, 6, 5);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.20, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.20, eyeZ - headR * 0.02);
     mouth.scale.set(1.0, 1.2, 0.5);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
@@ -589,7 +589,7 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.26;
     const eyeY = headR * 0.05;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -609,14 +609,14 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.28, headR * 0.06, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.18, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.18, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, -0.20);  // angled down inward — determined
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.18, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.18, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, 0.20);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -625,7 +625,7 @@ function _buildRigidWaddleTank(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.32, headR * 0.05, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.24, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.24, eyeZ - headR * 0.02);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -782,7 +782,7 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.08;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -804,13 +804,13 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
 
     const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
     pupilL.name = 'pupilL';
-    pupilL.position.set(-eyeSpacing, eyeY + eyeSize * 0.15, eyeZ + eyeSize * 0.2);
+    pupilL.position.set(-eyeSpacing, eyeY + eyeSize * 0.15, eyeZ - eyeSize * 0.2);
     boneMap.head.add(pupilL);
     parts.pupilL = pupilL;
 
     const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
     pupilR.name = 'pupilR';
-    pupilR.position.set(eyeSpacing, eyeY + eyeSize * 0.15, eyeZ + eyeSize * 0.2);
+    pupilR.position.set(eyeSpacing, eyeY + eyeSize * 0.15, eyeZ - eyeSize * 0.2);
     boneMap.head.add(pupilR);
     parts.pupilR = pupilR;
 
@@ -818,14 +818,14 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.20, headR * 0.04, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.30, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.30, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.40);  // very high arch
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.30, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.30, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, -0.40);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -834,7 +834,7 @@ function _buildRigidPanicker(size, config, materials, boneMap) {
     const mouthGeo = new THREE.SphereGeometry(headR * 0.12, 6, 5);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.22, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
     mouth.scale.set(1.0, 1.3, 0.5);  // tall oval scream
     boneMap.head.add(mouth);
     parts.mouth = mouth;
@@ -985,7 +985,7 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.26;
     const eyeY = headR * 0.02;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -1005,14 +1005,14 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.26, headR * 0.055, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.16, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.16, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, -0.08);  // slightly angled down — stern
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.16, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.16, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, 0.08);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -1021,7 +1021,7 @@ function _buildRigidPowerWalker(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.18, headR * 0.035, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.22, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -1179,7 +1179,7 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.26;
     const eyeY = headR * 0.05;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -1201,13 +1201,13 @@ function _buildRigidGirls(size, config, materials, boneMap) {
 
     const hlL = new THREE.Mesh(highlightGeo, highlightMat);
     hlL.name = 'eyeHighlightL';
-    hlL.position.set(-eyeSpacing + eyeSize * 0.2, eyeY + eyeSize * 0.25, eyeZ + eyeSize * 0.2);
+    hlL.position.set(-eyeSpacing + eyeSize * 0.2, eyeY + eyeSize * 0.25, eyeZ - eyeSize * 0.2);
     boneMap.head.add(hlL);
     parts.eyeHighlightL = hlL;
 
     const hlR = new THREE.Mesh(highlightGeo, highlightMat);
     hlR.name = 'eyeHighlightR';
-    hlR.position.set(eyeSpacing + eyeSize * 0.2, eyeY + eyeSize * 0.25, eyeZ + eyeSize * 0.2);
+    hlR.position.set(eyeSpacing + eyeSize * 0.2, eyeY + eyeSize * 0.25, eyeZ - eyeSize * 0.2);
     boneMap.head.add(hlR);
     parts.eyeHighlightR = hlR;
 
@@ -1215,14 +1215,14 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.18, headR * 0.035, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.15);  // gentle playful arch
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, -0.15);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -1231,7 +1231,7 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.16, headR * 0.03, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.18, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.18, eyeZ - headR * 0.02);
     mouth.rotation.set(0, 0, 0);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
@@ -1240,13 +1240,13 @@ function _buildRigidGirls(size, config, materials, boneMap) {
     const cornerGeo = new THREE.SphereGeometry(headR * 0.025, 4, 3);
     const cornerL = new THREE.Mesh(cornerGeo, faceMat);
     cornerL.name = 'smileCornerL';
-    cornerL.position.set(-headR * 0.10, -headR * 0.16, eyeZ + headR * 0.02);
+    cornerL.position.set(-headR * 0.10, -headR * 0.16, eyeZ - headR * 0.02);
     boneMap.head.add(cornerL);
     parts.smileCornerL = cornerL;
 
     const cornerR = new THREE.Mesh(cornerGeo, faceMat);
     cornerR.name = 'smileCornerR';
-    cornerR.position.set(headR * 0.10, -headR * 0.16, eyeZ + headR * 0.02);
+    cornerR.position.set(headR * 0.10, -headR * 0.16, eyeZ - headR * 0.02);
     boneMap.head.add(cornerR);
     parts.smileCornerR = cornerR;
 
@@ -1383,7 +1383,7 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     const snoutMesh = new THREE.Mesh(snoutGeo, materials.body);
     snoutMesh.name = 'snout';
     snoutMesh.rotation.x = Math.PI * 0.55; // angled slightly downward
-    snoutMesh.position.set(0, -headR * 0.18, headR * 0.78);
+    snoutMesh.position.set(0, -headR * 0.18, -headR * 0.78);
     boneMap.head.add(snoutMesh);
     parts.snout = snoutMesh;
 
@@ -1391,7 +1391,7 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     const noseGeo = new THREE.SphereGeometry(snoutR * 0.55, 6, 5);
     const nose = new THREE.Mesh(noseGeo, faceMat);
     nose.name = 'nose';
-    nose.position.set(0, -headR * 0.32, headR * 1.20);
+    nose.position.set(0, -headR * 0.32, -headR * 1.20);
     nose.scale.set(1.2, 0.8, 0.7);
     boneMap.head.add(nose);
     parts.nose = nose;
@@ -1401,7 +1401,7 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.42;
     const eyeY = headR * 0.12;
-    const eyeZ = headR * 0.52;
+    const eyeZ = -headR * 0.52;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -1669,14 +1669,14 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const cheekGeo = new THREE.SphereGeometry(cheekR, 6, 5);
     const cheekL = new THREE.Mesh(cheekGeo, materials.body);
     cheekL.name = 'cheekL';
-    cheekL.position.set(-headR * 0.58, -headR * 0.18, headR * 0.38);
+    cheekL.position.set(-headR * 0.58, -headR * 0.18, -headR * 0.38);
     cheekL.scale.set(1.0, 0.80, 0.90);
     boneMap.head.add(cheekL);
     parts.cheekL = cheekL;
 
     const cheekR2 = new THREE.Mesh(cheekGeo, materials.body);
     cheekR2.name = 'cheekR';
-    cheekR2.position.set(headR * 0.58, -headR * 0.18, headR * 0.38);
+    cheekR2.position.set(headR * 0.58, -headR * 0.18, -headR * 0.38);
     cheekR2.scale.set(1.0, 0.80, 0.90);
     boneMap.head.add(cheekR2);
     parts.cheekR = cheekR2;
@@ -1686,7 +1686,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const snoutGeo = new THREE.SphereGeometry(snoutR, 6, 5);
     const snoutMesh = new THREE.Mesh(snoutGeo, materials.body);
     snoutMesh.name = 'snout';
-    snoutMesh.position.set(0, -headR * 0.22, headR * 0.88);
+    snoutMesh.position.set(0, -headR * 0.22, -headR * 0.88);
     snoutMesh.scale.set(1.0, 0.80, 0.80);
     boneMap.head.add(snoutMesh);
     parts.snout = snoutMesh;
@@ -1695,7 +1695,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const noseGeo = new THREE.SphereGeometry(snoutR * 0.55, 5, 4);
     const nose = new THREE.Mesh(noseGeo, faceMat);
     nose.name = 'nose';
-    nose.position.set(0, -headR * 0.22, headR * 1.05);
+    nose.position.set(0, -headR * 0.22, -headR * 1.05);
     nose.scale.set(1.0, 0.70, 0.50);
     boneMap.head.add(nose);
     parts.nose = nose;
@@ -1705,7 +1705,7 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.32;
     const eyeY = headR * 0.12;
-    const eyeZ = headR * 0.72;
+    const eyeZ = -headR * 0.72;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -1727,13 +1727,13 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 
     const hlL = new THREE.Mesh(highlightGeo, highlightMat);
     hlL.name = 'hlL';
-    hlL.position.set(-eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ + eyeSize * 0.30);
+    hlL.position.set(-eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ - eyeSize * 0.30);
     boneMap.head.add(hlL);
     parts.hlL = hlL;
 
     const hlR = new THREE.Mesh(highlightGeo, highlightMat);
     hlR.name = 'hlR';
-    hlR.position.set(eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ + eyeSize * 0.30);
+    hlR.position.set(eyeSpacing + eyeSize * 0.18, eyeY + eyeSize * 0.20, eyeZ - eyeSize * 0.30);
     boneMap.head.add(hlR);
     parts.hlR = hlR;
 
@@ -1763,13 +1763,13 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
 
     const toothL = new THREE.Mesh(toothGeo, toothMat);
     toothL.name = 'toothL';
-    toothL.position.set(-snoutR * 0.22, -headR * 0.42, headR * 0.90);
+    toothL.position.set(-snoutR * 0.22, -headR * 0.42, -headR * 0.90);
     boneMap.head.add(toothL);
     parts.toothL = toothL;
 
     const toothR = new THREE.Mesh(toothGeo, toothMat);
     toothR.name = 'toothR';
-    toothR.position.set(snoutR * 0.22, -headR * 0.42, headR * 0.90);
+    toothR.position.set(snoutR * 0.22, -headR * 0.42, -headR * 0.90);
     boneMap.head.add(toothR);
     parts.toothR = toothR;
 
@@ -1938,7 +1938,7 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     const snout = new THREE.Mesh(snoutGeo, materials.body);
     snout.name = 'snout';
     snout.rotation.x = Math.PI * 0.52;
-    snout.position.set(0, -headR * 0.25, headR * 0.60);
+    snout.position.set(0, -headR * 0.25, -headR * 0.60);
     boneMap.snout.add(snout);
     parts.snout = snout;
 
@@ -1947,7 +1947,7 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.52;
     const eyeY = headR * 0.05;
-    const eyeZ = headR * 0.45;
+    const eyeZ = -headR * 0.45;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -1967,7 +1967,7 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.02, headR * 0.40);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.28, headR * 0.70);
+    mouth.position.set(0, -headR * 0.28, -headR * 0.70);
     mouth.rotation.y = 0.05; // slight curve hint
     boneMap.head.add(mouth);
     parts.mouth = mouth;
@@ -2121,14 +2121,14 @@ function _buildRigidFlyfish(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.10, headR * 0.40);
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.40);
     eyeL.scale.set(0.55, 1.0, 0.45);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.10, headR * 0.40);
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.40);
     eyeR.scale.set(0.55, 1.0, 0.45);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -2272,7 +2272,7 @@ function _buildRigidShark(size, config, materials, boneMap) {
     const snoutMesh = new THREE.Mesh(snoutGeo, materials.body);
     snoutMesh.name = 'snout';
     snoutMesh.rotation.x = Math.PI * 0.50;
-    snoutMesh.position.set(0, -headR * 0.20, headR * 0.50);
+    snoutMesh.position.set(0, -headR * 0.20, -headR * 0.50);
     snoutMesh.scale.set(1.30, 1.0, 0.70); // wide, flat
     boneMap.snout.add(snoutMesh);
     parts.snout = snoutMesh;
@@ -2284,14 +2284,14 @@ function _buildRigidShark(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.10, headR * 0.30);
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.30);
     eyeL.scale.set(0.50, 0.80, 0.40);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.10, headR * 0.30);
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.30);
     eyeR.scale.set(0.50, 0.80, 0.40);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -2301,7 +2301,7 @@ function _buildRigidShark(size, config, materials, boneMap) {
     const jawGeo = new THREE.BoxGeometry(jawW, headR * 0.10, headR * 0.50);
     const jaw = new THREE.Mesh(jawGeo, faceMat);
     jaw.name = 'jaw';
-    jaw.position.set(0, -headR * 0.42, headR * 0.60);
+    jaw.position.set(0, -headR * 0.42, -headR * 0.60);
     boneMap.head.add(jaw);
     parts.jaw = jaw;
 
@@ -2312,7 +2312,7 @@ function _buildRigidShark(size, config, materials, boneMap) {
         const tx = (i - 2) * jawW * 0.18;
         const tooth = new THREE.Mesh(toothGeo, toothMat);
         tooth.name = `tooth${i}`;
-        tooth.position.set(tx, -headR * 0.36, headR * 0.50 + i * 0.003);
+        tooth.position.set(tx, -headR * 0.36, -headR * 0.50 - i * 0.003);
         tooth.rotation.x = Math.PI; // point down
         boneMap.head.add(tooth);
         parts[`tooth${i}`] = tooth;
@@ -2450,7 +2450,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.08;
-    const eyeZ = headR * 0.88;
+    const eyeZ = -headR * 0.88;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -2470,7 +2470,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     const patchGeo = new THREE.BoxGeometry(headR * 0.18, headR * 0.14, headR * 0.04);
     const patch = new THREE.Mesh(patchGeo, faceMat);
     patch.name = 'eyepatch';
-    patch.position.set(eyeSpacing, eyeY, eyeZ + eyeSize * 0.30);
+    patch.position.set(eyeSpacing, eyeY, eyeZ - eyeSize * 0.30);
     boneMap.head.add(patch);
     parts.eyepatch = patch;
 
@@ -2478,7 +2478,7 @@ function _buildRigidPirate(size, config, materials, boneMap) {
     const strapGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.04, headR * 0.80);
     const strap = new THREE.Mesh(strapGeo, faceMat);
     strap.name = 'strap';
-    strap.position.set(eyeSpacing + headR * 0.08, eyeY + headR * 0.06, headR * 0.40);
+    strap.position.set(eyeSpacing + headR * 0.08, eyeY + headR * 0.06, -headR * 0.40);
     boneMap.head.add(strap);
     parts.strap = strap;
 
@@ -2673,14 +2673,14 @@ function _buildRigidSeaturtle(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.12, headR * 0.55);
+    eyeL.position.set(-eyeSpacing, headR * 0.12, -headR * 0.55);
     eyeL.scale.set(0.60, 1.0, 0.45);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.12, headR * 0.55);
+    eyeR.position.set(eyeSpacing, headR * 0.12, -headR * 0.55);
     eyeR.scale.set(0.60, 1.0, 0.45);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -2689,7 +2689,7 @@ function _buildRigidSeaturtle(size, config, materials, boneMap) {
     const beakGeo = new THREE.ConeGeometry(headR * 0.12, headR * 0.15, 4);
     const beak = new THREE.Mesh(beakGeo, faceMat);
     beak.name = 'beak';
-    beak.position.set(0, -headR * 0.15, headR * 0.80);
+    beak.position.set(0, -headR * 0.15, -headR * 0.80);
     beak.rotation.x = Math.PI * 0.60; // points down-forward
     boneMap.head.add(beak);
     parts.beak = beak;
@@ -3268,7 +3268,7 @@ function _addFace(parts, boneMap, headR, faceMat, opts = {}) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * (opts.eyeY || 0.05);
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
     const eyeScaleY = opts.eyeScaleY || 1.3;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
@@ -3290,14 +3290,14 @@ function _addFace(parts, boneMap, headR, faceMat, opts = {}) {
     const browAngle = opts.browAngle || 0;
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, browAngle);
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, -browAngle);
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -3315,7 +3315,7 @@ function _addFace(parts, boneMap, headR, faceMat, opts = {}) {
         const mouthGeo = new THREE.TorusGeometry(headR * 0.10, headR * 0.02, 4, 8, Math.PI);
         const mouth = new THREE.Mesh(mouthGeo, faceMat);
         mouth.name = 'mouth';
-        mouth.position.set(0, -headR * 0.22, eyeZ + headR * 0.02);
+        mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
         mouth.rotation.set(0, 0, Math.PI);
         boneMap.head.add(mouth);
         parts.mouth = mouth;
@@ -3324,7 +3324,7 @@ function _addFace(parts, boneMap, headR, faceMat, opts = {}) {
         const mouthGeo = new THREE.BoxGeometry(headR * mw, headR * 0.04, headR * 0.05);
         const mouth = new THREE.Mesh(mouthGeo, faceMat);
         mouth.name = 'mouth';
-        mouth.position.set(0, -headR * 0.22, eyeZ + headR * 0.02);
+        mouth.position.set(0, -headR * 0.22, eyeZ - headR * 0.02);
         if (opts.mouthAngle) mouth.rotation.set(0, 0, opts.mouthAngle);
         boneMap.head.add(mouth);
         parts.mouth = mouth;
@@ -3451,13 +3451,13 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.06;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
     // White eyeball
     const whiteMat = new THREE.MeshBasicMaterial({ color: PALETTE.white });
     const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.2, 6, 5);
     const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
     whiteL.name = 'whiteL';
-    whiteL.position.set(-eyeSpacing, eyeY, eyeZ - headR * 0.02);
+    whiteL.position.set(-eyeSpacing, eyeY, eyeZ + headR * 0.02);
     whiteL.scale.set(1.0, 1.3, 0.4);
     boneMap.head.add(whiteL);
     parts.whiteL = whiteL;
@@ -3483,7 +3483,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.05, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.24, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.24, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.35);
     boneMap.head.add(browL);
     parts.browL = browL;
@@ -3498,7 +3498,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.20, headR * 0.04, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.24, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.24, eyeZ - headR * 0.02);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -3518,13 +3518,13 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     const sweatMat = new THREE.MeshBasicMaterial({ color: PALETTE.nervousSweat, transparent: true, opacity: 0.8 });
     const sweat1 = new THREE.Mesh(sweatGeo, sweatMat);
     sweat1.name = 'sweat1';
-    sweat1.position.set(-headR * 0.60, headR * 0.30, headR * 0.50);
+    sweat1.position.set(-headR * 0.60, headR * 0.30, -headR * 0.50);
     sweat1.scale.set(0.6, 1.4, 0.5);
     boneMap.head.add(sweat1);
     parts.sweat1 = sweat1;
     const sweat2 = new THREE.Mesh(sweatGeo, sweatMat);
     sweat2.name = 'sweat2';
-    sweat2.position.set(headR * 0.55, headR * 0.45, headR * 0.40);
+    sweat2.position.set(headR * 0.55, headR * 0.45, -headR * 0.40);
     sweat2.scale.set(0.5, 1.2, 0.4);
     boneMap.head.add(sweat2);
     parts.sweat2 = sweat2;
@@ -3680,13 +3680,13 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.08;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
     // White eyeballs
     const whiteMat = new THREE.MeshBasicMaterial({ color: 0xeeffee });  // slightly green whites
     const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.3, 6, 5);
     const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
     whiteL.name = 'whiteL';
-    whiteL.position.set(-eyeSpacing, eyeY, eyeZ - headR * 0.02);
+    whiteL.position.set(-eyeSpacing, eyeY, eyeZ + headR * 0.02);
     whiteL.scale.set(1.0, 1.5, 0.4);
     boneMap.head.add(whiteL);
     parts.whiteL = whiteL;
@@ -3712,7 +3712,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.26, headR * 0.05, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.26, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, 0.40);
     boneMap.head.add(browL);
     parts.browL = browL;
@@ -3737,7 +3737,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const cheekMat = new THREE.MeshBasicMaterial({ color: 0x7ab87a, transparent: true, opacity: 0.45 });
     const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
     cheekL.name = 'cheekL';
-    cheekL.position.set(-headR * 0.38, -headR * 0.08, headR * 0.72);
+    cheekL.position.set(-headR * 0.38, -headR * 0.08, -headR * 0.72);
     cheekL.scale.set(1.0, 0.65, 0.3);
     boneMap.head.add(cheekL);
     parts.cheekL = cheekL;
@@ -3917,14 +3917,14 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
     const glassMat = new THREE.MeshBasicMaterial({ color: 0x0a0a14 });
     const glasses = new THREE.Mesh(glassGeo, glassMat);
     glasses.name = 'sunglasses';
-    glasses.position.set(0, headR * 0.06, headR * 0.92);
+    glasses.position.set(0, headR * 0.06, -headR * 0.92);
     boneMap.head.add(glasses);
     parts.sunglasses = glasses;
     // Frame — thin line above lenses
     const frameGeo = new THREE.BoxGeometry(glassW * 1.08, glassH * 0.18, headR * 0.06);
     const frame = new THREE.Mesh(frameGeo, glassMat);
     frame.name = 'frame';
-    frame.position.set(0, headR * 0.06 + glassH * 0.55, headR * 0.93);
+    frame.position.set(0, headR * 0.06 + glassH * 0.55, -headR * 0.93);
     boneMap.head.add(frame);
     parts.frame = frame;
 
@@ -3932,7 +3932,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.22, headR * 0.04, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.26, headR * 0.90);
+    mouth.position.set(0, -headR * 0.26, -headR * 0.90);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -4012,7 +4012,7 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.26;
     const eyeY = headR * 0.08;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
     eyeL.position.set(-eyeSpacing, eyeY, eyeZ);
@@ -4029,7 +4029,7 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.26, headR * 0.055, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.16, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.16, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, -0.38);  // angry V
     boneMap.head.add(browL);
     parts.browL = browL;
@@ -4140,7 +4140,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
     const eyeSpacing = headR * 0.28;
     const eyeY = headR * 0.05;
-    const eyeZ = headR * 0.90;
+    const eyeZ = -headR * 0.90;
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
@@ -4163,7 +4163,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const redNoseMat = new THREE.MeshBasicMaterial({ color: 0xdd3333 });
     const redNose = new THREE.Mesh(redNoseGeo, redNoseMat);
     redNose.name = 'redNose';
-    redNose.position.set(0, -headR * 0.08, headR * 0.95);
+    redNose.position.set(0, -headR * 0.08, -headR * 0.95);
     boneMap.head.add(redNose);
     parts.redNose = redNose;
 
@@ -4171,7 +4171,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const mouthGeo = new THREE.BoxGeometry(headR * 0.36, headR * 0.05, headR * 0.05);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.26, eyeZ + headR * 0.02);
+    mouth.position.set(0, -headR * 0.26, eyeZ - headR * 0.02);
     mouth.rotation.set(0, 0, 0.05); // slight lopsided grin
     boneMap.head.add(mouth);
     parts.mouth = mouth;
@@ -4180,14 +4180,14 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const browGeo = new THREE.BoxGeometry(headR * 0.24, headR * 0.045, headR * 0.05);
     const browL = new THREE.Mesh(browGeo, faceMat);
     browL.name = 'browL';
-    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browL.position.set(-eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browL.rotation.set(0, 0, -0.15); // droopy
     boneMap.head.add(browL);
     parts.browL = browL;
 
     const browR = new THREE.Mesh(browGeo, faceMat);
     browR.name = 'browR';
-    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ + headR * 0.02);
+    browR.position.set(eyeSpacing, eyeY + headR * 0.20, eyeZ - headR * 0.02);
     browR.rotation.set(0, 0, 0.15); // droopy
     boneMap.head.add(browR);
     parts.browR = browR;
@@ -4250,14 +4250,14 @@ function _buildRigidAnt(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.10, headR * 0.30);
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.30);
     eyeL.scale.set(0.80, 1.0, 0.70);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.10, headR * 0.30);
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.30);
     eyeR.scale.set(0.80, 1.0, 0.70);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -4269,14 +4269,14 @@ function _buildRigidAnt(size, config, materials, boneMap) {
 
     const antL = new THREE.Mesh(antGeo, materials.body);
     antL.name = 'antennaL';
-    antL.position.set(-headR * 0.30, headR * 0.55, headR * 0.40);
+    antL.position.set(-headR * 0.30, headR * 0.55, -headR * 0.40);
     antL.rotation.set(-0.80, -0.25, 0.20); // angled forward and outward
     boneMap.head.add(antL);
     parts.antennaL = antL;
 
     const antennR = new THREE.Mesh(antGeo, materials.body);
     antennR.name = 'antennaR';
-    antennR.position.set(headR * 0.30, headR * 0.55, headR * 0.40);
+    antennR.position.set(headR * 0.30, headR * 0.55, -headR * 0.40);
     antennR.rotation.set(-0.80, 0.25, -0.20); // mirror
     boneMap.head.add(antennR);
     parts.antennaR = antennR;
@@ -4285,13 +4285,13 @@ function _buildRigidAnt(size, config, materials, boneMap) {
     const tipGeo = new THREE.SphereGeometry(antR * 2.2, 5, 4);
     const tipL = new THREE.Mesh(tipGeo, materials.body);
     tipL.name = 'antennaTipL';
-    tipL.position.set(-headR * 0.30 - antLen * 0.15, headR * 0.55 + antLen * 0.55, headR * 0.40 + antLen * 0.60);
+    tipL.position.set(-headR * 0.30 - antLen * 0.15, headR * 0.55 + antLen * 0.55, -headR * 0.40 - antLen * 0.60);
     boneMap.head.add(tipL);
     parts.antennaTipL = tipL;
 
     const tipR = new THREE.Mesh(tipGeo, materials.body);
     tipR.name = 'antennaTipR';
-    tipR.position.set(headR * 0.30 + antLen * 0.15, headR * 0.55 + antLen * 0.55, headR * 0.40 + antLen * 0.60);
+    tipR.position.set(headR * 0.30 + antLen * 0.15, headR * 0.55 + antLen * 0.55, -headR * 0.40 - antLen * 0.60);
     boneMap.head.add(tipR);
     parts.antennaTipR = tipR;
 
@@ -4302,14 +4302,14 @@ function _buildRigidAnt(size, config, materials, boneMap) {
 
     const mandL = new THREE.Mesh(mandGeo, materials.body);
     mandL.name = 'mandibleL';
-    mandL.position.set(-headR * 0.22, -headR * 0.35, headR * 0.65);
+    mandL.position.set(-headR * 0.22, -headR * 0.35, -headR * 0.65);
     mandL.rotation.set(-0.50, 0.35, 0); // angle inward
     boneMap.head.add(mandL);
     parts.mandibleL = mandL;
 
     const mandibleR = new THREE.Mesh(mandGeo, materials.body);
     mandibleR.name = 'mandibleR';
-    mandibleR.position.set(headR * 0.22, -headR * 0.35, headR * 0.65);
+    mandibleR.position.set(headR * 0.22, -headR * 0.35, -headR * 0.65);
     mandibleR.rotation.set(-0.50, -0.35, 0); // mirror inward
     boneMap.head.add(mandibleR);
     parts.mandibleR = mandibleR;
@@ -4490,7 +4490,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const snout = new THREE.Mesh(snoutGeo, materials.body);
     snout.name = 'snout';
     snout.rotation.x = Math.PI * 0.52; // angled slightly downward
-    snout.position.set(0, -headR * 0.15, headR * 0.35);
+    snout.position.set(0, -headR * 0.15, -headR * 0.35);
     boneMap.snout.add(snout);
     parts.snout = snout;
 
@@ -4498,7 +4498,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const snoutTipGeo = new THREE.SphereGeometry(snoutR * 1.2, 5, 4);
     const snoutTip = new THREE.Mesh(snoutTipGeo, materials.body);
     snoutTip.name = 'snoutTip';
-    snoutTip.position.set(0, -headR * 0.15 - snoutLen * 0.45, headR * 0.35 + snoutLen * 0.35);
+    snoutTip.position.set(0, -headR * 0.15 - snoutLen * 0.45, -headR * 0.35 - snoutLen * 0.35);
     boneMap.snout.add(snoutTip);
     parts.snoutTip = snoutTip;
 
@@ -4509,14 +4509,14 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.10, headR * 0.35);
+    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.35);
     eyeL.scale.set(0.65, 1.10, 0.50);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.10, headR * 0.35);
+    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.35);
     eyeR.scale.set(0.65, 1.10, 0.50);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -5001,7 +5001,7 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
     const snout = new THREE.Mesh(snoutGeo, materials.body);
     snout.name = 'snout';
     snout.rotation.x = Math.PI * 0.52;
-    snout.position.set(0, -headR * 0.20, headR * 0.70);
+    snout.position.set(0, -headR * 0.20, -headR * 0.70);
     boneMap.head.add(snout);
     parts.snout = snout;
 
@@ -5009,7 +5009,7 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
     const noseGeo = new THREE.SphereGeometry(snoutR * 0.60, 6, 5);
     const nose = new THREE.Mesh(noseGeo, faceMat);
     nose.name = 'nose';
-    nose.position.set(0, -headR * 0.35, headR * 1.05);
+    nose.position.set(0, -headR * 0.35, -headR * 1.05);
     nose.scale.set(1.3, 0.8, 0.7);
     boneMap.head.add(nose);
     parts.nose = nose;
@@ -5021,14 +5021,14 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.15, headR * 0.50);
+    eyeL.position.set(-eyeSpacing, headR * 0.15, -headR * 0.50);
     eyeL.scale.set(0.7, 1.2, 0.5);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.15, headR * 0.50);
+    eyeR.position.set(eyeSpacing, headR * 0.15, -headR * 0.50);
     eyeR.scale.set(0.7, 1.2, 0.5);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
@@ -5245,14 +5245,14 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     // Eye bulges (colored, sit on top of head)
     const eyeBulgeL = new THREE.Mesh(eyeBulgeGeo, materials.body);
     eyeBulgeL.name = 'eyeBulgeL';
-    eyeBulgeL.position.set(-headR * 0.55, headR * 0.45, headR * 0.25);
+    eyeBulgeL.position.set(-headR * 0.55, headR * 0.45, -headR * 0.25);
     eyeBulgeL.scale.set(1.0, 1.1, 0.9);
     boneMap.head.add(eyeBulgeL);
     parts.eyeBulgeL = eyeBulgeL;
 
     const eyeBulgeR_m = new THREE.Mesh(eyeBulgeGeo, materials.body);
     eyeBulgeR_m.name = 'eyeBulgeR';
-    eyeBulgeR_m.position.set(headR * 0.55, headR * 0.45, headR * 0.25);
+    eyeBulgeR_m.position.set(headR * 0.55, headR * 0.45, -headR * 0.25);
     eyeBulgeR_m.scale.set(1.0, 1.1, 0.9);
     boneMap.head.add(eyeBulgeR_m);
     parts.eyeBulgeR = eyeBulgeR_m;
@@ -5261,14 +5261,14 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     const pupilGeo = new THREE.SphereGeometry(eyeBulgeR * 0.55, 6, 5);
     const pupilL = new THREE.Mesh(pupilGeo, faceMat);
     pupilL.name = 'eyeL';
-    pupilL.position.set(-headR * 0.55, headR * 0.48, headR * 0.52);
+    pupilL.position.set(-headR * 0.55, headR * 0.48, -headR * 0.52);
     pupilL.scale.set(1.3, 0.70, 0.40); // wide horizontal slits
     boneMap.head.add(pupilL);
     parts.eyeL = pupilL;
 
     const pupilR = new THREE.Mesh(pupilGeo, faceMat);
     pupilR.name = 'eyeR';
-    pupilR.position.set(headR * 0.55, headR * 0.48, headR * 0.52);
+    pupilR.position.set(headR * 0.55, headR * 0.48, -headR * 0.52);
     pupilR.scale.set(1.3, 0.70, 0.40);
     boneMap.head.add(pupilR);
     parts.eyeR = pupilR;
@@ -5277,7 +5277,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     const mouthGeo = new THREE.TorusGeometry(headR * 0.50, headR * 0.025, 4, 10, Math.PI);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.20, headR * 0.80);
+    mouth.position.set(0, -headR * 0.20, -headR * 0.80);
     mouth.rotation.set(0, 0, Math.PI);
     mouth.scale.set(1.0, 1.0, 0.40);
     boneMap.head.add(mouth);
@@ -5287,13 +5287,13 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     const nostrilGeo = new THREE.SphereGeometry(headR * 0.05, 4, 3);
     const nostrilL = new THREE.Mesh(nostrilGeo, faceMat);
     nostrilL.name = 'nostrilL';
-    nostrilL.position.set(-headR * 0.18, headR * 0.02, headR * 0.95);
+    nostrilL.position.set(-headR * 0.18, headR * 0.02, -headR * 0.95);
     boneMap.head.add(nostrilL);
     parts.nostrilL = nostrilL;
 
     const nostrilR = new THREE.Mesh(nostrilGeo, faceMat);
     nostrilR.name = 'nostrilR';
-    nostrilR.position.set(headR * 0.18, headR * 0.02, headR * 0.95);
+    nostrilR.position.set(headR * 0.18, headR * 0.02, -headR * 0.95);
     boneMap.head.add(nostrilR);
     parts.nostrilR = nostrilR;
 
