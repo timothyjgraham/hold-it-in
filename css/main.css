@@ -2566,6 +2566,65 @@ canvas {
     letter-spacing: 1px;
 }
 
+/* ===== BESTIARY PANEL (PAUSE MENU) ===== */
+#pause-bestiary {
+    flex-direction: column;
+    align-items: center;
+}
+.bestiary-panel {
+    background: var(--pal-cream, #fff4d9);
+    border: 3px solid var(--pal-ink, #1a1a2e);
+    border-radius: 12px;
+    box-shadow: 3px 4px 0px var(--pal-ink, #1a1a2e);
+    padding: 14px 18px;
+    max-height: 60vh;
+    overflow-y: auto;
+    width: 320px;
+}
+.bestiary-entry {
+    border-left: 4px solid var(--pal-ink, #1a1a2e);
+    padding: 8px 0 8px 12px;
+    margin-bottom: 10px;
+}
+.bestiary-entry:last-child {
+    margin-bottom: 0;
+}
+.bestiary-name {
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+.bestiary-tag {
+    font-family: 'Bangers', sans-serif;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--pal-charcoal, #2d2b3d);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+.bestiary-traits {
+    list-style: disc;
+    margin: 0;
+    padding-left: 18px;
+    font-family: 'Bangers', sans-serif;
+    font-size: 13px;
+    color: var(--pal-ink, #1a1a2e);
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+}
+.bestiary-traits li {
+    margin-bottom: 1px;
+}
+.bestiary-empty {
+    font-family: 'Bangers', sans-serif;
+    font-size: 15px;
+    color: var(--pal-charcoal, #2d2b3d);
+    text-align: center;
+    padding: 20px 0;
+    letter-spacing: 1px;
+}
+
 /* ===== TOWER TOOLTIP STATS ===== */
 .tip-stats {
     display: flex;

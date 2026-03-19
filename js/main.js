@@ -25,6 +25,7 @@ import {
     disposeScenarioIcons,
 } from './ui/ScenarioIconRenderer.js';
 import { EnemyIntroUI } from './ui/EnemyIntroUI.js';
+import { ENEMY_INTRO_DATA, INTRO_WAVE_MAP } from './data/enemyIntroData.js';
 import { TowerIntroUI } from './ui/TowerIntroUI.js';
 import { SFX } from './systems/SoundManager.js';
 import { Music } from './systems/MusicManager.js';
@@ -187,6 +188,8 @@ window.updateUpgradeDrone = updateUpgradeDrone;
 window.disposeUpgradeDrone = disposeUpgradeDrone;
 window.UpgradeSelectionUI = UpgradeSelectionUI;
 window.EnemyIntroUI = EnemyIntroUI;
+window.ENEMY_INTRO_DATA = ENEMY_INTRO_DATA;
+window.INTRO_WAVE_MAP = INTRO_WAVE_MAP;
 window.TowerIntroUI = TowerIntroUI;
 window.MedicDroneSystem = MedicDroneSystem;
 window.SuperMedicDrone = SuperMedicDrone;

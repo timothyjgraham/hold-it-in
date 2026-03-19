@@ -284,12 +284,13 @@ class SoundManager {
 
     _saveSettings() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                master: this._masterVolume,
-                sfx: this._categoryVolumes.sfx,
-                ui: this._categoryVolumes.ui,
-                ambient: this._categoryVolumes.ambient,
-            }));
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const s = saved ? JSON.parse(saved) : {};
+            s.master = this._masterVolume;
+            s.sfx = this._categoryVolumes.sfx;
+            s.ui = this._categoryVolumes.ui;
+            s.ambient = this._categoryVolumes.ambient;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
         } catch (_) { /* storage unavailable */ }
     }
 

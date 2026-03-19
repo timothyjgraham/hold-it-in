@@ -131,6 +131,7 @@
                 <button class="menu-btn" id="btn-resume" data-i18n="pause.resume">RESUME</button>
                 <button class="menu-btn menu-btn-small" id="btn-pause-settings" data-i18n="pause.settings">SETTINGS</button>
                 <button class="menu-btn menu-btn-small" id="btn-pause-howto" data-i18n="pause.howto">HOW TO PLAY</button>
+                <button class="menu-btn menu-btn-small" id="btn-pause-bestiary" data-i18n="pause.bestiary">ENEMIES</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-quit" data-i18n="pause.saveQuit">SAVE &amp; QUIT</button>
                 <button class="menu-btn menu-btn-small" id="btn-save-menu" data-i18n="pause.saveMenu">SAVE &amp; MAIN MENU</button>
                 <button class="menu-btn menu-btn-small menu-btn-danger" id="btn-quit-no-save" data-i18n="pause.quitNoSave">QUIT WITHOUT SAVING</button>
@@ -140,8 +141,8 @@
                 <div class="settings-list">
                     <div class="setting-row">
                         <span class="setting-label" data-i18n="settings.music">MUSIC</span>
-                        <input type="range" class="setting-slider" id="pause-slider-music" min="0" max="100" value="70">
-                        <span class="setting-value" id="pause-val-music">70%</span>
+                        <input type="range" class="setting-slider" id="pause-slider-music" min="0" max="100" value="50">
+                        <span class="setting-value" id="pause-val-music">50%</span>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label" data-i18n="settings.sfx">SFX</span>
@@ -200,6 +201,13 @@
                     <div class="howto-text" data-i18n="howto.tips_text">Combine towers for maximum effect — Signs slow enemies into Mop range. Sell towers you don't need to recoup coins!</div>
                 </div>
                 <button class="menu-btn menu-btn-small" id="btn-pause-howto-back" style="margin-top:12px;" data-i18n="settings.back">BACK</button>
+            </div>
+            <div id="pause-bestiary" style="display:none;">
+                <h2 class="screen-title" style="margin-top:0;" data-i18n="bestiary.title">ENEMIES</h2>
+                <div class="bestiary-panel" id="bestiary-list">
+                    <!-- Populated dynamically -->
+                </div>
+                <button class="menu-btn menu-btn-small" id="btn-pause-bestiary-back" style="margin-top:12px;" data-i18n="settings.back">BACK</button>
             </div>
         </div>
     </div>
@@ -433,8 +441,8 @@
         <div class="settings-list">
             <div class="setting-row">
                 <span class="setting-label" data-i18n="settings.music">MUSIC</span>
-                <input type="range" class="setting-slider" id="slider-music" min="0" max="100" value="70">
-                <span class="setting-value" id="val-music">70%</span>
+                <input type="range" class="setting-slider" id="slider-music" min="0" max="100" value="50">
+                <span class="setting-value" id="val-music">50%</span>
             </div>
             <div class="setting-row">
                 <span class="setting-label" data-i18n="settings.sfx">SFX</span>
@@ -3151,6 +3159,21 @@
                 document.getElementById('pause-text').style.display = '';
             });
 
+            // Enemy Bestiary (pause menu)
+            document.getElementById('btn-pause-bestiary').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('pause-buttons').style.display = 'none';
+                document.getElementById('pause-text').style.display = 'none';
+                this._populateBestiary();
+                document.getElementById('pause-bestiary').style.display = 'flex';
+            });
+            document.getElementById('btn-pause-bestiary-back').addEventListener('click', () => {
+                if (window.SFX) SFX.play('ui_click');
+                document.getElementById('pause-bestiary').style.display = 'none';
+                document.getElementById('pause-buttons').style.display = 'flex';
+                document.getElementById('pause-text').style.display = '';
+            });
+
             // Tutorial overlay — click to advance
             document.getElementById('tutorial-overlay').addEventListener('click', () => {
                 if (this._tutorialActive && (this._tutorialStep === 0 || this._tutorialStep === 8)) {
@@ -4446,6 +4469,79 @@
             if (sellHotkey) sellHotkey.textContent = this._keyDisplayName(this._keybinds.sell);
         },
 
+        _populateBestiary() {
+            const list = document.getElementById('bestiary-list');
+            list.innerHTML = '';
+            const scenario = this._currentScenario || 'office';
+            const waveMap = window.INTRO_WAVE_MAP ? INTRO_WAVE_MAP[scenario] : null;
+            const introData = window.ENEMY_INTRO_DATA;
+            if (!waveMap || !introData) return;
+
+            // Map enemy type → palette color key
+            const colorMap = {
+                // Office
+                dancer: 'dancer', waddle: 'waddle', panicker: 'panicker',
+                powerwalker: 'power', girls: 'girls', drunk: 'drunk',
+                // Forest
+                squirrel: 'forestSquirrel', bear: 'forestBear', fox: 'forestFox',
+                moose: 'forestMoose', raccoon: 'forestRaccoon', ant: 'forestAnt',
+                // Ocean
+                flyfish: 'oceanFlyfish', shark: 'oceanShark', pirate: 'oceanPirate',
+                seaturtle: 'oceanTurtle', jellyfish: 'oceanJelly', seahorse: 'oceanSeahorse',
+                // Airplane
+                business: 'airplaneBusiness', stumbler: 'airplaneStumbler',
+                attendant: 'airplaneAttendant', marshal: 'airplaneMarshal',
+                unruly: 'airplaneUnruly', trolley: 'airplaneTrolley',
+            };
+
+            const waves = Object.keys(waveMap).map(Number).sort((a, b) => a - b);
+            let count = 0;
+            for (const w of waves) {
+                if (w > this.wave) continue;
+                const type = waveMap[w];
+                const data = introData[type];
+                if (!data) continue;
+                count++;
+
+                const palKey = colorMap[type] || 'polite';
+                const hex = window.PALETTE ? PALETTE[palKey] : 0xd4a574;
+                const cssColor = '#' + hex.toString(16).padStart(6, '0');
+
+                const entry = document.createElement('div');
+                entry.className = 'bestiary-entry';
+                entry.style.borderLeftColor = cssColor;
+
+                const name = document.createElement('div');
+                name.className = 'bestiary-name';
+                name.style.color = cssColor;
+                name.textContent = t('enemy.' + type + '.name');
+
+                const tag = document.createElement('div');
+                tag.className = 'bestiary-tag';
+                tag.textContent = t('enemy.' + type + '.tag');
+
+                const traits = document.createElement('ul');
+                traits.className = 'bestiary-traits';
+                for (let i = 1; i <= 3; i++) {
+                    const li = document.createElement('li');
+                    li.textContent = t('enemy.' + type + '.t' + i);
+                    traits.appendChild(li);
+                }
+
+                entry.appendChild(name);
+                entry.appendChild(tag);
+                entry.appendChild(traits);
+                list.appendChild(entry);
+            }
+
+            if (count === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'bestiary-empty';
+                empty.textContent = t('bestiary.none');
+                list.appendChild(empty);
+            }
+        },
+
         _updateHowToKeys() {
             const map = { 'howto-tower1':'tower1', 'howto-tower2':'tower2', 'howto-tower3':'tower3',
                           'howto-tower4':'tower4', 'howto-tower5':'tower5', 'howto-sell':'sell', 'howto-pause':'pause' };
@@ -4537,6 +4633,7 @@
             // Reset pause settings/howto panels back to buttons view
             document.getElementById('pause-settings').style.display = 'none';
             document.getElementById('pause-howto').style.display = 'none';
+            document.getElementById('pause-bestiary').style.display = 'none';
             document.getElementById('pause-buttons').style.display = 'flex';
             document.getElementById('pause-text').style.display = '';
             document.getElementById('pause-overlay').classList.remove('active');
