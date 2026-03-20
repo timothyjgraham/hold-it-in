@@ -12952,6 +12952,7 @@
             if (this.officeGroup && this.officeGroup.userData.npcWorkers) {
                 const workers = this.officeGroup.userData.npcWorkers;
                 const et = this.clock.elapsedTime;
+                const _gs = (t) => t * t * (3 - 2 * t); // smoothstep easing
                 for (let i = 0; i < workers.length; i++) {
                     const a = workers[i].userData.anim;
                     if (!a) continue;
@@ -12961,12 +12962,186 @@
                     a.head.position.y = a.baseHeadY + Math.sin(et * 4.2 + phase) * 0.02;
                     a.hair.position.y = a.head.position.y;
 
+                    // --- Gesture state machine ---
+                    const gestureActive = a.gesturePhase !== 'idle';
+                    const stretchActive = a.stretchPhase !== 'idle';
+
+                    // Gesture cooldown / trigger
+                    if (!gestureActive && !stretchActive) {
+                        a.gestureTimer -= rawDt;
+                        if (a.gestureTimer <= 0) {
+                            // Pick gesture from pool based on desk slot
+                            const slot = a.gestureSlot;
+                            let pool;
+                            if (slot === 0 || slot === 2 || slot === 4) {
+                                pool = ['coffeeSip', 'enterTap', 'enterTap'];
+                            } else if (slot === 1) {
+                                pool = ['mouseReach', 'enterTap', 'enterTap'];
+                            } else {
+                                pool = ['enterTap'];
+                            }
+                            a.gestureType = pool[Math.floor(Math.random() * pool.length)];
+                            a.gesturePhase = 'reaching';
+                            a.gestureProgress = 0;
+                        }
+                    }
+
                     // Typing hands — forearms alternate bob + slight rotation
+                    // Gated by gesture: one-arm gestures → left types, right driven by gesture
+                    // enterTap → both driven by gesture
                     const typeSin = Math.sin(et * 5.7 + phase);
-                    a.forearms[0].position.y = a.baseForearmY + typeSin * 0.015;
-                    a.forearms[0].rotation.x = a.baseForearmRotX + typeSin * 0.04;
-                    a.forearms[1].position.y = a.baseForearmY - typeSin * 0.015;
-                    a.forearms[1].rotation.x = a.baseForearmRotX - typeSin * 0.04;
+
+                    if (!gestureActive) {
+                        // Normal typing — both arms
+                        a.forearms[0].position.y = a.baseForearmY + typeSin * 0.015;
+                        a.forearms[0].rotation.x = a.baseForearmRotX + typeSin * 0.04;
+                        a.forearms[0].position.x = -0.28;
+                        a.forearms[0].rotation.z = 0;
+                        a.forearms[1].position.y = a.baseForearmY - typeSin * 0.015;
+                        a.forearms[1].rotation.x = a.baseForearmRotX - typeSin * 0.04;
+                        a.forearms[1].position.x = 0.28;
+                        a.forearms[1].rotation.z = 0;
+                        if (a.upperArms) {
+                            a.upperArms[0].rotation.x = a.baseUpperArmRotX;
+                            a.upperArms[1].rotation.x = a.baseUpperArmRotX;
+                        }
+                    } else if (a.gestureType === 'coffeeSip') {
+                        // Left arm keeps typing
+                        a.forearms[0].position.y = a.baseForearmY + typeSin * 0.015;
+                        a.forearms[0].rotation.x = a.baseForearmRotX + typeSin * 0.04;
+                        a.forearms[0].position.x = -0.28;
+                        a.forearms[0].rotation.z = 0;
+                        if (a.upperArms) a.upperArms[0].rotation.x = a.baseUpperArmRotX;
+
+                        // Right arm: coffeeSip phases
+                        const rf = a.forearms[1];
+                        const rua = a.upperArms ? a.upperArms[1] : null;
+                        if (a.gesturePhase === 'reaching') {
+                            a.gestureProgress += rawDt / 0.8;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            rf.position.x = 0.28 + t * 0.17;
+                            rf.position.y = a.baseForearmY;
+                            rf.rotation.x = a.baseForearmRotX + t * (0.8 - a.baseForearmRotX);
+                            rf.rotation.z = 0;
+                            if (rua) rua.rotation.x = a.baseUpperArmRotX + t * (0.2 - a.baseUpperArmRotX);
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'lifting'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'lifting') {
+                            a.gestureProgress += rawDt / 0.7;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            rf.position.x = 0.45;
+                            rf.position.y = a.baseForearmY + t * 0.35;
+                            rf.rotation.x = 0.8 + t * (0.3 - 0.8);
+                            rf.rotation.z = 0;
+                            if (rua) rua.rotation.x = 0.2 + t * (-0.1 - 0.2);
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'holding'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'holding') {
+                            a.gestureProgress += rawDt / 0.5;
+                            rf.position.x = 0.45;
+                            rf.position.y = a.baseForearmY + 0.35 + Math.sin(a.gestureProgress * 12) * 0.01;
+                            rf.rotation.x = 0.3;
+                            rf.rotation.z = 0;
+                            if (rua) rua.rotation.x = -0.1;
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'returning'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'returning') {
+                            a.gestureProgress += rawDt / 1.0;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            rf.position.x = 0.45 + t * (0.28 - 0.45);
+                            rf.position.y = a.baseForearmY + 0.35 * (1 - t);
+                            rf.rotation.x = 0.3 + t * (a.baseForearmRotX - 0.3);
+                            rf.rotation.z = 0;
+                            if (rua) rua.rotation.x = -0.1 + t * (a.baseUpperArmRotX - (-0.1));
+                            if (a.gestureProgress >= 1) {
+                                a.gesturePhase = 'idle'; a.gestureType = 'none'; a.gestureProgress = 0;
+                                a.gestureTimer = 20 + Math.random() * 20;
+                            }
+                        }
+                    } else if (a.gestureType === 'mouseReach') {
+                        // Left arm keeps typing
+                        a.forearms[0].position.y = a.baseForearmY + typeSin * 0.015;
+                        a.forearms[0].rotation.x = a.baseForearmRotX + typeSin * 0.04;
+                        a.forearms[0].position.x = -0.28;
+                        a.forearms[0].rotation.z = 0;
+                        if (a.upperArms) a.upperArms[0].rotation.x = a.baseUpperArmRotX;
+
+                        // Right arm: mouseReach phases
+                        const rf = a.forearms[1];
+                        const rua = a.upperArms ? a.upperArms[1] : null;
+                        if (a.gesturePhase === 'reaching') {
+                            a.gestureProgress += rawDt / 0.5;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            rf.position.x = 0.28 + t * 0.17;
+                            rf.position.y = a.baseForearmY;
+                            rf.rotation.x = a.baseForearmRotX + t * (1.35 - a.baseForearmRotX);
+                            rf.rotation.z = 0;
+                            if (rua) rua.rotation.x = a.baseUpperArmRotX + t * (0.55 - a.baseUpperArmRotX);
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'mousing'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'mousing') {
+                            a.gestureProgress += rawDt / 1.2;
+                            rf.position.x = 0.45 + Math.sin(a.gestureProgress * 8) * 0.03;
+                            rf.position.y = a.baseForearmY;
+                            rf.rotation.x = 1.35;
+                            rf.rotation.z = Math.sin(a.gestureProgress * 6) * 0.08;
+                            if (rua) rua.rotation.x = 0.55;
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'returning'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'returning') {
+                            a.gestureProgress += rawDt / 0.8;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            rf.position.x = 0.45 + t * (0.28 - 0.45);
+                            rf.position.y = a.baseForearmY;
+                            rf.rotation.x = 1.35 + t * (a.baseForearmRotX - 1.35);
+                            rf.rotation.z = (1 - t) * rf.rotation.z;
+                            if (rua) rua.rotation.x = 0.55 + t * (a.baseUpperArmRotX - 0.55);
+                            if (a.gestureProgress >= 1) {
+                                a.gesturePhase = 'idle'; a.gestureType = 'none'; a.gestureProgress = 0;
+                                a.gestureTimer = 15 + Math.random() * 15;
+                            }
+                        }
+                    } else if (a.gestureType === 'enterTap') {
+                        // Both arms: quick tap phases
+                        if (a.gesturePhase === 'reaching') {
+                            // 'reaching' is actually 'down' phase for enterTap
+                            a.gestureProgress += rawDt / 0.15;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            for (let fi = 0; fi < 2; fi++) {
+                                a.forearms[fi].position.y = a.baseForearmY - t * 0.06;
+                                a.forearms[fi].rotation.x = a.baseForearmRotX + t * 0.15;
+                                a.forearms[fi].position.x = (fi === 0 ? -0.28 : 0.28);
+                                a.forearms[fi].rotation.z = 0;
+                            }
+                            if (a.upperArms) {
+                                a.upperArms[0].rotation.x = a.baseUpperArmRotX;
+                                a.upperArms[1].rotation.x = a.baseUpperArmRotX;
+                            }
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'bounce'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'bounce') {
+                            a.gestureProgress += rawDt / 0.2;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            for (let fi = 0; fi < 2; fi++) {
+                                a.forearms[fi].position.y = a.baseForearmY - 0.06 + t * 0.08;
+                                a.forearms[fi].rotation.x = a.baseForearmRotX + 0.15 - t * 0.2;
+                                a.forearms[fi].position.x = (fi === 0 ? -0.28 : 0.28);
+                                a.forearms[fi].rotation.z = 0;
+                            }
+                            if (a.gestureProgress >= 1) { a.gesturePhase = 'settle'; a.gestureProgress = 0; }
+                        } else if (a.gesturePhase === 'settle') {
+                            a.gestureProgress += rawDt / 0.25;
+                            const t = _gs(Math.min(1, a.gestureProgress));
+                            for (let fi = 0; fi < 2; fi++) {
+                                a.forearms[fi].position.y = a.baseForearmY + 0.02 * (1 - t);
+                                a.forearms[fi].rotation.x = a.baseForearmRotX - 0.05 * (1 - t);
+                                a.forearms[fi].position.x = (fi === 0 ? -0.28 : 0.28);
+                                a.forearms[fi].rotation.z = 0;
+                            }
+                            if (a.upperArms) {
+                                a.upperArms[0].rotation.x = a.baseUpperArmRotX;
+                                a.upperArms[1].rotation.x = a.baseUpperArmRotX;
+                            }
+                            if (a.gestureProgress >= 1) {
+                                a.gesturePhase = 'idle'; a.gestureType = 'none'; a.gestureProgress = 0;
+                                a.gestureTimer = 15 + Math.random() * 25;
+                            }
+                        }
+                    }
 
                     // Head turns — smooth turn ±0.3 rad, hold, return (every 8-15s)
                     a.headTurnTimer -= rawDt;
@@ -13001,9 +13176,10 @@
                     a.hair.rotation.y = a.headTurnAngle;
 
                     // Lean-back stretch — workers 2 & 7 only (every 20-35s)
+                    // Mutual exclusion: don't tick stretchTimer during gesture, don't start stretch during gesture
                     if (a.workerIdx === 2 || a.workerIdx === 7) {
-                        a.stretchTimer -= rawDt;
-                        if (a.stretchPhase === 'idle' && a.stretchTimer <= 0) {
+                        if (!gestureActive) a.stretchTimer -= rawDt;
+                        if (a.stretchPhase === 'idle' && a.stretchTimer <= 0 && !gestureActive) {
                             a.stretchPhase = 'leaning';
                             a.stretchTimer = 0.8;
                         } else if (a.stretchPhase === 'leaning') {

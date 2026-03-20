@@ -1073,12 +1073,14 @@ export function createOfficePeek() {
 
         // Upper arms + forearms (from shoulders)
         const forearms = [];
+        const upperArms = [];
         for (const sx of [-1, 1]) {
             const upperArm = new THREE.Mesh(
                 new THREE.BoxGeometry(0.1, 0.3, 0.1), shirtMat);
             upperArm.position.set(sx * 0.28, 1.35, 0.05);
             upperArm.rotation.x = 0.4;
             wg.add(upperArm);
+            upperArms.push(upperArm);
 
             // Forearm reaching forward (typing pose)
             const forearm = new THREE.Mesh(
@@ -1151,11 +1153,13 @@ export function createOfficePeek() {
             hair,
             torso,
             forearms,
+            upperArms,
             baseHeadY: headY,
             baseHeadZ: headZ,
             baseTorsoRotX: forwardLean,
             baseForearmY: 1.2,
             baseForearmRotX: 1.2,
+            baseUpperArmRotX: 0.4,
             // Head turn state
             headTurnAngle: 0,
             headTurnTarget: 0,
@@ -1166,6 +1170,11 @@ export function createOfficePeek() {
             stretchTimer: 20 + idx * 3.7,
             stretchPhase: 'idle', // 'idle' | 'leaning' | 'holding' | 'returning'
             stretchProgress: 0,
+            // Gesture state
+            gestureType: 'none',
+            gesturePhase: 'idle',
+            gestureTimer: 15 + idx * 2.9,
+            gestureProgress: 0,
         };
 
         return wg;
@@ -1957,6 +1966,7 @@ export function createOfficePeek() {
             worker.rotation.y = dl.workerRy;
             worker.userData.anim.phaseOffset = workerIdx * 1.7;
             worker.userData.anim.workerIdx = workerIdx;
+            worker.userData.anim.gestureSlot = di % 5;
             group.add(worker);
             npcWorkers.push(worker);
             workerIdx++;
