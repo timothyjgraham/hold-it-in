@@ -202,6 +202,14 @@
             </select>
         </div>
         <div class="control-group">
+            <label>Lighting:</label>
+            <select id="lighting">
+                <option value="game">Game (Office)</option>
+                <option value="flat" selected>Flat (even)</option>
+                <option value="none">None (unlit)</option>
+            </select>
+        </div>
+        <div class="control-group">
             <label>Filter:</label>
             <select id="filter">
                 <option value="all">All</option>
@@ -296,8 +304,8 @@
 
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 250);
 
-    // Lighting — matches Office scenario exactly
-    const ambientLight = new THREE.AmbientLight(PALETTE.ambient, 0.7);
+    // Lighting — configurable via dropdown
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
 
     const mainLight = new THREE.DirectionalLight(PALETTE.fillWarm, 0.8);
@@ -315,6 +323,33 @@
     const fillLight = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
     fillLight.position.set(-10, 20, 10);
     scene.add(fillLight);
+
+    function setLighting(mode) {
+        if (mode === 'game') {
+            // Office scenario lighting
+            ambientLight.color.set(PALETTE.ambient);
+            ambientLight.intensity = 0.7;
+            mainLight.visible = true;
+            mainLight.intensity = 0.8;
+            fillLight.visible = true;
+            fillLight.intensity = 0.3;
+        } else if (mode === 'flat') {
+            // Even lighting — bright white ambient, no directional
+            ambientLight.color.set(0xffffff);
+            ambientLight.intensity = 1.2;
+            mainLight.visible = false;
+            fillLight.visible = false;
+        } else if (mode === 'none') {
+            // Minimal light — very faint so toon materials still show color
+            ambientLight.color.set(0xffffff);
+            ambientLight.intensity = 0.15;
+            mainLight.visible = false;
+            fillLight.visible = false;
+        }
+    }
+
+    // Default to flat
+    setLighting('flat');
 
     // ═══════════════════════════════════════════════════════
     // Subject definitions
@@ -1204,6 +1239,12 @@
 
         // Elevation change updates preview
         document.getElementById('elevation').onchange = updatePreview;
+
+        // Lighting change
+        document.getElementById('lighting').onchange = (e) => {
+            setLighting(e.target.value);
+            updatePreview();
+        };
     }
 
     init();
