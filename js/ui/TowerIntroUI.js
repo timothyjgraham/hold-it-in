@@ -300,7 +300,7 @@ export class TowerIntroUI {
         _setRenderOrder(this._drone, INTRO_RENDER_ORDER);
 
         // Flight path
-        const hoverPos = new THREE.Vector3(-3.5, 28, 3);
+        const hoverPos = new THREE.Vector3(-3.5, 30, 3);
         let startPos;
 
         if (windowPositions && windowPositions.length > 0) {
@@ -315,10 +315,10 @@ export class TowerIntroUI {
                 hoverPos.clone(),
             ], false, 'catmullrom', 0.3);
         } else {
-            startPos = new THREE.Vector3(0, 45, -2);
+            startPos = new THREE.Vector3(0, 47, -2);
             this._drone.userData.flightCurve = new THREE.CatmullRomCurve3([
                 startPos.clone(),
-                new THREE.Vector3(0, 40, -2),
+                new THREE.Vector3(0, 42, -2),
                 hoverPos.clone(),
             ], false, 'catmullrom', 0.3);
         }
@@ -339,7 +339,7 @@ export class TowerIntroUI {
         // Wrap in a group for positioning
         this._towerGroup = new THREE.Group();
         this._towerGroup.add(towerMesh);
-        this._towerGroup.position.set(3.5, 23, 4);
+        this._towerGroup.position.set(3.5, 23, 1);
         this._towerGroup.scale.setScalar(0); // Start at 0, will pop in
 
         // Scale the tower mesh itself
@@ -357,7 +357,7 @@ export class TowerIntroUI {
         const pedGeo = new THREE.CylinderGeometry(pedR, pedR, pedH, 24);
         const pedMat = toonMat(PALETTE.cream);
         this._pedestal = new THREE.Mesh(pedGeo, pedMat);
-        this._pedestal.position.set(3.5, 23 - pedH / 2, 4);
+        this._pedestal.position.set(3.5, 23 - pedH / 2, 1);
         this._pedestal.scale.setScalar(0);
         this._pedestal.renderOrder = INTRO_RENDER_ORDER;
         this._scene.add(this._pedestal);
@@ -374,7 +374,7 @@ export class TowerIntroUI {
     _spawnTowerParticles() {
         const data = TOWER_INTRO_DATA[this._towerType];
         const color = data.color;
-        const center = new THREE.Vector3(3.5, 24.5, 4);
+        const center = new THREE.Vector3(3.5, 24.5, 1);
 
         for (let i = 0; i < 20; i++) {
             const geo = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 4, 4);

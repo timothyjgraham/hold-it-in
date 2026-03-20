@@ -89,10 +89,11 @@ export class PlayerCharacter {
 
         // Only play ~1 second of the animation, then fade back to idle
         clearTimeout(this._textingFadeTimeout);
+        clearTimeout(this._textingStopTimeout);
         this._textingFadeTimeout = setTimeout(() => {
             if (this._textingAction === action) {
                 action.fadeOut(0.2);
-                setTimeout(() => action.stop(), 200);
+                this._textingStopTimeout = setTimeout(() => action.stop(), 200);
             }
         }, 800);
     }
@@ -175,6 +176,7 @@ export class PlayerCharacter {
         this._disapprovalAction = null;
         this._disbeliefAction = null;
         clearTimeout(this._textingFadeTimeout);
+        clearTimeout(this._textingStopTimeout);
         this.group.rotation.y = 0;
 
         const toiletScale = 0.85;

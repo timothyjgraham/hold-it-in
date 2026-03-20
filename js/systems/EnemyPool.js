@@ -269,11 +269,11 @@ export class EnemyPool {
     _defaultColor(type) {
         const colors = {
             polite: 0xd4a574,
-            dancer: 0x3498db,
-            waddle: 0x795548,
-            panicker: 0xf1c40f,
-            powerwalker: 0x1abc9c,
-            girls: 0xe91e8c,
+            dancer: 0x59c3e8,
+            waddle: 0x8b5e3c,
+            panicker: 0xf5c842,
+            powerwalker: 0x20b89a,
+            girls: 0xe84888,
             // Forest
             deer: 0xc4a882,
             squirrel: 0xd4874a,
@@ -295,6 +295,11 @@ export class EnemyPool {
             attendant: 0xc03040,
             marshal: 0x4a4a5a,
             unruly: 0xe87830,
+            // Jumper enemies
+            vaulter: 0xa8c050,
+            kangaroo: 0xc49060,
+            frog: 0x70b830,
+            hurdler: 0xe85830,
             // Train enemies
             drunk: 0xd47070,
             ant: 0x6b3030,
