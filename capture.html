@@ -256,12 +256,14 @@
     import { getAnimationClip } from './js/animation/AnimationLibrary.js';
     import { createUpgradeDrone } from './js/models/UpgradeDroneModel.js';
     import { GLBModelCache } from './js/loaders/GLBModelCache.js';
-    import { PlayerModelLoader } from './js/loaders/PlayerModelLoader.js';
+
     import {
         toonMat, matWall, matFixture, matWood, matWhite, matInk, matPorcelain, matGold,
         matDanger, matSign, matMop, matUbik, matPotplant,
     } from './js/shaders/toonMaterials.js';
     import { t, initI18n } from './js/i18n.js';
+    import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+    import { createToonMaterial, createOutlineMaterial } from './js/shaders/toonShader.js';
 
     // Expose to window for modules that expect it
     window.PALETTE = PALETTE;
@@ -281,7 +283,7 @@
     window.matPotplant = matPotplant;
     window.CONFIG = CONFIG;
     window.GLBModelCache = GLBModelCache;
-    window.PlayerModelLoader = PlayerModelLoader;
+
     window.t = t;
 
     injectCSSPalette();
@@ -534,25 +536,132 @@
         return group;
     }
 
-    // Mixamo player (if GLBs loaded)
+    // ═══════════════════════════════════════════════════════
+    // Pete (custom Mixamo character) — loaded from FBX
+    // ═══════════════════════════════════════════════════════
+    let _peteFBX = null; // cached loaded FBX
+
+    const SKIN_BONES = ['Head', 'Neck', 'Hand', 'Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
+    const PANTS_BONES = ['UpLeg', 'Leg', 'Foot', 'Toe'];
+
+    function _getBoneColorRegion(boneName) {
+        if (SKIN_BONES.some(s => boneName.includes(s))) return 'skin';
+        if (PANTS_BONES.some(s => boneName.includes(s))) return 'pants';
+        return 'hoodie';
+    }
+
+    function _assignVertexColors(skinnedMesh, bones) {
+        const geo = skinnedMesh.geometry;
+        const skinIdx = geo.getAttribute('skinIndex');
+        const skinWt = geo.getAttribute('skinWeight');
+        const posCount = geo.getAttribute('position').count;
+
+        const hoodieCol = new THREE.Color(PALETTE.hoodie);
+        const skinCol = new THREE.Color(PALETTE.skin);
+        const pantsCol = new THREE.Color(PALETTE.pants);
+        const colors = new Float32Array(posCount * 3);
+
+        for (let v = 0; v < posCount; v++) {
+            let maxW = 0, maxBoneIdx = 0;
+            for (let j = 0; j < 4; j++) {
+                const w = skinWt.array[v * skinWt.itemSize + j];
+                if (w > maxW) {
+                    maxW = w;
+                    maxBoneIdx = Math.round(skinIdx.array[v * skinIdx.itemSize + j]);
+                }
+            }
+            const boneName = (bones[maxBoneIdx] && bones[maxBoneIdx].name) || '';
+            const region = _getBoneColorRegion(boneName);
+            let c;
+            if (region === 'skin') c = skinCol;
+            else if (region === 'pants') c = pantsCol;
+            else c = hoodieCol;
+            colors[v * 3] = c.r;
+            colors[v * 3 + 1] = c.g;
+            colors[v * 3 + 2] = c.b;
+        }
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    }
+
+    async function loadPeteFBX() {
+        if (_peteFBX) return _peteFBX;
+        const loader = new FBXLoader();
+        _peteFBX = await new Promise((resolve, reject) => {
+            loader.load('models/player/pete_sitting_idle.fbx', resolve, undefined, reject);
+        });
+        return _peteFBX;
+    }
+
     function buildMixamoPlayer() {
-        if (!PlayerModelLoader || !PlayerModelLoader.isLoaded || !PlayerModelLoader.isLoaded()) {
+        if (!_peteFBX) {
+            console.warn('Pete FBX not loaded, using procedural');
             return buildProceduralPlayer();
         }
+
         try {
-            const model = PlayerModelLoader.createPlayerInstance();
-            model.group.scale.setScalar(3.6);
-            // Advance idle animation to a good frame
-            if (model.clips && model.clips.idle) {
-                const mixer = new THREE.AnimationMixer(model.group);
-                const action = mixer.clipAction(model.clips.idle);
+            const clone = _peteFBX.clone();
+
+            // Find the SkinnedMesh
+            let skinnedMesh = null;
+            clone.traverse(child => {
+                if (child.isSkinnedMesh && !skinnedMesh) {
+                    skinnedMesh = child;
+                }
+            });
+            if (!skinnedMesh) throw new Error('No SkinnedMesh in Pete FBX');
+
+            const skeleton = skinnedMesh.skeleton;
+            const bones = skeleton.bones;
+
+            // Clone geometry for outline before vertex colors
+            const outlineGeo = skinnedMesh.geometry.clone();
+
+            // Assign vertex colors (hoodie/skin/pants by bone region)
+            _assignVertexColors(skinnedMesh, bones);
+
+            // Apply toon material
+            const lightDir = new THREE.Vector3(0.5, 1.0, 0.3).normalize();
+            const toonMaterial = createToonMaterial({
+                baseColor: new THREE.Color(PALETTE.hoodie),
+                lightDir,
+                skinning: true,
+                vertexColors: true,
+                rimPower: 3.0,
+                rimIntensity: 0.4,
+            });
+            skinnedMesh.material = toonMaterial;
+            skinnedMesh.castShadow = true;
+
+            // Create outline mesh
+            const outlineMat = createOutlineMaterial({
+                outlineWidth: 0.01,
+                outlineColor: new THREE.Color(PALETTE.ink),
+                skinning: true,
+            });
+            const outlineMesh = new THREE.SkinnedMesh(outlineGeo, outlineMat);
+            outlineMesh.bind(skeleton, skinnedMesh.bindMatrix);
+            outlineMesh.frustumCulled = false;
+            skinnedMesh.parent.add(outlineMesh);
+
+            // Wrap in group
+            const group = new THREE.Group();
+            group.add(clone);
+
+            // FBX Mixamo models are in centimeters — scale down to meters
+            group.scale.setScalar(0.036); // ~3.6 unit height (same as game's 3.6 scale on meter model)
+
+            // Play idle animation
+            if (_peteFBX.animations && _peteFBX.animations.length > 0) {
+                const mixer = new THREE.AnimationMixer(clone);
+                const action = mixer.clipAction(_peteFBX.animations[0]);
                 action.play();
                 mixer.update(0.5);
                 mixer.update(0);
             }
-            return model.group;
+
+            return group;
         } catch (e) {
-            console.warn('Mixamo player failed, using procedural:', e);
+            console.warn('Pete model failed, using procedural:', e);
             return buildProceduralPlayer();
         }
     }
@@ -568,34 +677,13 @@
         const toiletScale = 0.85;
         const seatWorldY = toiletPos.y + (1.65 + 0.05) * toiletScale;
 
-        // Try Mixamo first, fallback to procedural
-        let playerGroup;
-        if (PlayerModelLoader.loaded) {
-            try {
-                const model = PlayerModelLoader.createPlayerInstance();
-                model.group.scale.setScalar(3.6);
-                model.group.position.set(
-                    toiletPos.x,
-                    seatWorldY,
-                    toiletPos.z + 0.1 * toiletScale
-                );
-                // Advance idle to a good frame
-                if (model.clips && model.clips.idle) {
-                    const mixer = new THREE.AnimationMixer(model.group);
-                    const action = mixer.clipAction(model.clips.idle);
-                    action.play();
-                    mixer.update(0.5);
-                    mixer.update(0);
-                }
-                playerGroup = model.group;
-            } catch (e) {
-                console.warn('Mixamo player failed for composite:', e);
-            }
-        }
-        if (!playerGroup) {
-            playerGroup = buildProceduralPlayer();
-            playerGroup.position.set(toiletPos.x, seatWorldY - 0.5, toiletPos.z);
-        }
+        // Build Pete on the toilet
+        let playerGroup = buildMixamoPlayer();
+        playerGroup.position.set(
+            toiletPos.x,
+            seatWorldY,
+            toiletPos.z + 0.1 * toiletScale
+        );
         group.add(playerGroup);
         return group;
     }
@@ -967,8 +1055,8 @@
         const subjects = [
             { key: 'toilet', name: 'Toilet', category: 'player' },
             { key: 'player', name: 'Player (procedural)', category: 'player' },
-            { key: 'player-mixamo', name: 'Player (Mixamo/in-game)', category: 'player' },
-            { key: 'player-on-toilet', name: 'Player on Toilet', category: 'player' },
+            { key: 'player-mixamo', name: 'Pete (Mixamo)', category: 'player' },
+            { key: 'player-on-toilet', name: 'Pete on Toilet', category: 'player' },
         ];
 
         // Enemies
@@ -1271,16 +1359,13 @@
             console.warn('Some GLB models failed to load:', e);
         }
 
-        // Preload player Mixamo models
+        // Load Pete (custom Mixamo character) FBX
+        document.getElementById('status').textContent = 'Loading Pete FBX...';
         try {
-            if (PlayerModelLoader.preloadAll) {
-                await PlayerModelLoader.preloadAll();
-                // Add mixamo player option
-                const subjects = getAllSubjects();
-                // Already handled in getAllSubjects
-            }
+            await loadPeteFBX();
+            document.getElementById('status').textContent = 'Pete loaded';
         } catch (e) {
-            console.warn('Player GLB models failed:', e);
+            console.warn('Pete FBX failed to load:', e);
         }
 
         document.getElementById('status').textContent = 'Ready';
