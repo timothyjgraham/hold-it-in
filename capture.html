@@ -405,6 +405,36 @@
     // Model creation helpers
     // ═══════════════════════════════════════════════════════
 
+    // Strip holy light beam, sparkle particles, and extra lights from toilet
+    function stripToiletVFX(toiletGroup) {
+        const toRemove = [];
+        toiletGroup.traverse(child => {
+            if (child.isLight || child.isPoints) {
+                toRemove.push(child);
+            }
+            // The beam is a Mesh with a CylinderGeometry and transparent material
+            if (child.isMesh && child.material && child.material.transparent &&
+                child.material.opacity < 0.1 && child.geometry &&
+                child.geometry.parameters && child.geometry.parameters.openEnded === true) {
+                toRemove.push(child);
+            }
+        });
+        // Also remove by userData references
+        if (toiletGroup.userData.beam) toRemove.push(toiletGroup.userData.beam);
+        if (toiletGroup.userData.sparkles) toRemove.push(toiletGroup.userData.sparkles);
+        if (toiletGroup.userData.cleanSparkles) toRemove.push(toiletGroup.userData.cleanSparkles);
+        if (toiletGroup.userData.holySpot) toRemove.push(toiletGroup.userData.holySpot);
+        // SpotLight target
+        if (toiletGroup.userData.holySpot && toiletGroup.userData.holySpot.target) {
+            toRemove.push(toiletGroup.userData.holySpot.target);
+        }
+
+        const unique = [...new Set(toRemove)];
+        for (const obj of unique) {
+            if (obj.parent) obj.parent.remove(obj);
+        }
+    }
+
     function createSubjectModel(subjectKey) {
         // Check enemy types
         const enemyDef = ENEMY_TYPES_LIST.find(e => e.key === subjectKey);
@@ -437,7 +467,7 @@
         // Special subjects
         if (subjectKey === 'toilet') {
             const t = createToilet();
-            t.scale.setScalar(0.85);
+            stripToiletVFX(t);
             return t;
         }
 
@@ -530,7 +560,7 @@
     function buildPlayerOnToilet() {
         const group = new THREE.Group();
         const toilet = createToilet();
-        toilet.scale.setScalar(0.85);
+        stripToiletVFX(toilet);
         group.add(toilet);
 
         const toiletPos = new THREE.Vector3(0, 0, 0);
