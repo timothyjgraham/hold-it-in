@@ -1,22 +1,26 @@
-// PlayerModelLoader — preloads Mixamo GLB animations and creates skinned player instances
+// PlayerModelLoader — preloads Mixamo character (Pete FBX) + GLB animations
 // Separate from GLBModelCache because we PRESERVE skinning data (GLBModelCache strips it)
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { PALETTE } from '../data/palette.js';
 import { createToonMaterial, createOutlineMaterial } from '../shaders/toonShader.js';
 
-const _loader = new GLTFLoader();
-const _cache = {};   // key → gltf result
+const _gltfLoader = new GLTFLoader();
+const _fbxLoader = new FBXLoader();
+const _cache = {};   // key → { scene, animations } (normalized format)
 let _loaded = false;
 let _loading = null;  // singleton Promise
 
-// Model manifest — key → path relative to public/
+// Model manifest — key → { path, type }
+// idle = Pete FBX (base mesh + skeleton + idle clip)
+// others = GLB animation-only files (clips retarget onto Pete's skeleton)
 const MANIFEST = {
-    idle:        'models/player/sitting_idle.glb',
-    texting:     'models/player/touchscreen_tablet.glb',
-    disapproval: 'models/player/sitting_disapproval.glb',
-    disbelief:   'models/player/sitting_disbelief.glb',
+    idle:        { path: 'models/player/pete_sitting_idle.fbx', type: 'fbx' },
+    texting:     { path: 'models/player/touchscreen_tablet.glb', type: 'glb' },
+    disapproval: { path: 'models/player/sitting_disapproval.glb', type: 'glb' },
+    disbelief:   { path: 'models/player/sitting_disbelief.glb', type: 'glb' },
 };
 
 // Mixamo bone name → game short name mapping
@@ -50,10 +54,51 @@ const SKIN_BONES = ['Head', 'Neck', 'Hand', 'Thumb', 'Index', 'Middle', 'Ring', 
 const PANTS_BONES = ['UpLeg', 'Leg', 'Foot', 'Toe'];
 
 
-function _loadOne(url) {
+function _loadGLB(url) {
     return new Promise((resolve, reject) => {
-        _loader.load(url, resolve, undefined, reject);
+        _gltfLoader.load(url, resolve, undefined, reject);
     });
+}
+
+function _loadFBX(url) {
+    return new Promise((resolve, reject) => {
+        _fbxLoader.load(url, resolve, undefined, reject);
+    });
+}
+
+/**
+ * Strip "mixamorig:" colons from bone names so they match GLB convention ("mixamorigHips").
+ * Also renames animation track targets to match.
+ */
+function _normalizeFBXBoneNames(fbxGroup) {
+    // Rename all bones
+    fbxGroup.traverse(child => {
+        if (child.isBone || child.isSkinnedMesh || child.isObject3D) {
+            if (child.name && child.name.includes(':')) {
+                child.name = child.name.replace(/:/g, '');
+            }
+        }
+    });
+
+    // Rename animation track targets (e.g. "mixamorig:Hips.position" → "mixamorigHips.position")
+    if (fbxGroup.animations) {
+        for (const clip of fbxGroup.animations) {
+            for (const track of clip.tracks) {
+                if (track.name.includes(':')) {
+                    track.name = track.name.replace(/:/g, '');
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Scale FBX from centimeters to meters (Mixamo FBX exports at cm scale).
+ * Applies to the root transform so downstream code sees meter-scale geometry.
+ */
+function _normalizeFBXScale(fbxGroup) {
+    fbxGroup.scale.multiplyScalar(0.01);
+    fbxGroup.updateMatrixWorld(true);
 }
 
 function _getBoneColorRegion(boneName) {
@@ -141,9 +186,17 @@ export const PlayerModelLoader = {
         _loading = (async () => {
             const entries = Object.entries(MANIFEST);
             const results = await Promise.allSettled(
-                entries.map(([key, path]) =>
-                    _loadOne(path).then(gltf => ({ key, gltf }))
-                )
+                entries.map(([key, { path, type }]) => {
+                    if (type === 'fbx') {
+                        return _loadFBX(path).then(fbx => {
+                            _normalizeFBXBoneNames(fbx);
+                            _normalizeFBXScale(fbx);
+                            // Wrap in GLTF-like format: { scene, animations }
+                            return { key, gltf: { scene: fbx, animations: fbx.animations || [] } };
+                        });
+                    }
+                    return _loadGLB(path).then(gltf => ({ key, gltf }));
+                })
             );
 
             for (const result of results) {
@@ -174,7 +227,7 @@ export const PlayerModelLoader = {
         // Clone the idle model with skeleton intact
         const cloned = SkeletonUtils.clone(idleGltf.scene);
 
-        // Find the surface mesh (skip Beta_Joints debug mesh)
+        // Find the surface SkinnedMesh (skip debug meshes like Beta_Joints)
         let skinnedMesh = null;
         const toRemove = [];
         cloned.traverse(child => {
@@ -186,7 +239,7 @@ export const PlayerModelLoader = {
             }
         });
 
-        // Fallback: if no named mesh found, take the first SkinnedMesh
+        // Fallback: take the first SkinnedMesh
         if (!skinnedMesh) {
             cloned.traverse(child => {
                 if (child.isSkinnedMesh && !skinnedMesh) skinnedMesh = child;
@@ -194,7 +247,7 @@ export const PlayerModelLoader = {
         }
         if (!skinnedMesh) throw new Error('PlayerModelLoader: no SkinnedMesh found');
 
-        // Remove debug joints mesh
+        // Remove unwanted meshes
         toRemove.forEach(m => m.parent && m.parent.remove(m));
 
 
