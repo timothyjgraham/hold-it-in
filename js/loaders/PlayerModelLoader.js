@@ -14,13 +14,12 @@ let _loaded = false;
 let _loading = null;  // singleton Promise
 
 // Model manifest — key → { path, type }
-// idle = Pete FBX (base mesh + skeleton + idle clip)
-// others = GLB animation-only files (clips retarget onto Pete's skeleton)
+// All Pete FBX — same character, same skeleton, same coordinate system
 const MANIFEST = {
     idle:        { path: 'models/player/pete_sitting_idle.fbx', type: 'fbx' },
-    texting:     { path: 'models/player/touchscreen_tablet.glb', type: 'glb' },
-    disapproval: { path: 'models/player/sitting_disapproval.glb', type: 'glb' },
-    disbelief:   { path: 'models/player/sitting_disbelief.glb', type: 'glb' },
+    texting:     { path: 'models/player/pete_texting.fbx', type: 'fbx' },
+    disapproval: { path: 'models/player/pete_disapproval.fbx', type: 'fbx' },
+    disbelief:   { path: 'models/player/pete_disbelief.fbx', type: 'fbx' },
 };
 
 // Mixamo bone name → game short name mapping
@@ -202,7 +201,8 @@ export const PlayerModelLoader = {
                     if (type === 'fbx') {
                         return _loadFBX(path).then(fbx => {
                             _normalizeFBXBoneNames(fbx);
-                            _normalizeFBXScale(fbx);
+                            // Only normalize scale on the base model (idle) — sets _boneScale
+                            if (key === 'idle') _normalizeFBXScale(fbx);
                             // Wrap in GLTF-like format: { scene, animations }
                             return { key, gltf: { scene: fbx, animations: fbx.animations || [] } };
                         });
