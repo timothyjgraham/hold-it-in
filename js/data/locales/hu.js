@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LEGENDÁS',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'VISSZA',
+    'collection.newBadge':      'ÚJ!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Érmemágnes',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            '{{n}}. HULLÁM',
     'wave.cleared':             '{{n}}. HULLÁM LETISZTÍTVA  +{{bonus}}',
+    'wave.superMedivac':        'SZUPER MENTŐHELIKOPTER KÖZELEDIK!',
     'wave.loaded':              '{{n}}. HULLÁM — JÁTÉK BETÖLTVE',
     'wave.dontLetThem':         'NE ENGEDD ŐKET A VÉCÉHEZ!',
     'wave.airplaneHint':        'EZ A GÉP KÉTOLDALAS VÉCÉVEL VAN FELSZERELVE A MAXIMÁLIS KÉNYELEM ÉRDEKÉBEN',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'PUFF!',
     'canvas.mop.smack':         'CSATT!',
     'canvas.mop.thwack':        'ZUTTY!',
+    'canvas.knockback.trip':    'HUPPÁ!',
+    'canvas.knockback.crash':   'KRACH!',
+    'canvas.knockback.splat':   'CSOBBAN!',
+    'canvas.knockback.bonk':    'BUMM!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'RENDELTETÉSSZERŰ HASZNÁLAT ESETÉN BIZTONSÁGOS',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'ÚJ TORONY: {{name}}!',
+    'tower.locked.desc':        'A {{wave}}. hullámban nyílik meg',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'JÁTÉK MENTVE',

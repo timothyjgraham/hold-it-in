@@ -118,7 +118,7 @@ function createPlacardTexture(upgrade, rarity) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = rarity === 'rare' ? '#ffffff' : '#1a1a2e';
     ctx.font = getCanvasFont(32, true);
-    ctx.fillText(rarity.toUpperCase(), cW / 2, bannerH / 2);
+    ctx.fillText(t('upgrade.rarity.' + rarity), cW / 2, bannerH / 2);
 
     // ── ICON — centered, prominent ──
     const iconSize = 300;

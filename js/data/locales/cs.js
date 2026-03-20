@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LEGENDÁRNÍ',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'ZPĚT',
+    'collection.newBadge':      'NOVÉ!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Magnetický sběrač',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'VLNA {{n}}',
     'wave.cleared':             'VLNA {{n}} VYČIŠTĚNA  +{{bonus}}',
+    'wave.superMedivac':        'SUPER ZÁCHRANNÁ JEDNOTKA SE BLÍŽÍ!',
     'wave.loaded':              'VLNA {{n}} — HRA NAČTENA',
     'wave.dontLetThem':         'NEPUSŤ JE K ZÁCHODU!',
     'wave.airplaneHint':        'TOTO LETADLO JE VYBAVENO ZÁCHODEM S DVOJÍM PŘÍSTUPEM PRO MAXIMÁLNÍ POHODLÍ',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'PLESK!',
     'canvas.mop.smack':         'PRÁSK!',
     'canvas.mop.thwack':        'ŽUCH!',
+    'canvas.knockback.trip':    'KOPNUTÍ!',
+    'canvas.knockback.crash':   'PRÁSK!',
+    'canvas.knockback.splat':   'ŽUCH!',
+    'canvas.knockback.bonk':    'BUM!',
+    'canvas.knockback.oof':     'AUF!',
+    'canvas.ubik.safety':       'BEZPEČNÉ PŘI SPRÁVNÉM POUŽITÍ',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NOVÁ VĚŽ: {{name}}!',
+    'tower.locked.desc':        'Odemkne se ve vlně {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'HRA ULOŽENA',

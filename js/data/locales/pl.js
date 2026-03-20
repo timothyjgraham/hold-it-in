@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LEGENDARNY',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'WSTECZ',
+    'collection.newBadge':      'NOWE!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Magnes na Monety',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'FALA {{n}}',
     'wave.cleared':             'FALA {{n}} OCZYSZCZONA  +{{bonus}}',
+    'wave.superMedivac':        'SUPER KARETKA NADCHODZI!',
     'wave.loaded':              'FALA {{n}} — GRA WCZYTANA',
     'wave.dontLetThem':         'NIE POZWÓL IM DOTRZEĆ DO TOALETY!',
     'wave.airplaneHint':        'TEN SAMOLOT JEST WYPOSAŻONY W TOALETĘ Z PODWÓJNYM DOSTĘPEM, DLA MAKSYMALNEJ WYGODY',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'TRACH!',
     'canvas.mop.smack':         'PLASK!',
     'canvas.mop.thwack':        'ŁACH!',
+    'canvas.knockback.trip':    'POTKNIĘCIE!',
+    'canvas.knockback.crash':   'ŁUBU-DUBU!',
+    'canvas.knockback.splat':   'PLASK!',
+    'canvas.knockback.bonk':    'BĘĘC!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'BEZPIECZNY PRZY WŁAŚCIWYM UŻYCIU',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NOWA WIEŻA: {{name}}!',
+    'tower.locked.desc':        'Odblokuje się na fali {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'GRA ZAPISANA',

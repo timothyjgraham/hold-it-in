@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'ตำนาน',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'กลับ',
+    'collection.newBadge':      'ใหม่!',
 
     // --- TOWER TOOLTIPS ---
     'tower.coinmagnet.name':    'แม่เหล็กเหรียญ',
@@ -189,6 +190,7 @@ export default {
     // --- WAVE ANNOUNCEMENTS ---
     'wave.announce':            'เวฟ {{n}}',
     'wave.cleared':             'เวฟ {{n}} ผ่านแล้ว  +{{bonus}}',
+    'wave.superMedivac':        'ซูเปอร์รถพยาบาลกำลังมา!',
     'wave.loaded':              'เวฟ {{n}} — โหลดเกมแล้ว',
     'wave.dontLetThem':         'อย่าให้พวกเขาไปถึงห้องน้ำ!',
     'wave.airplaneHint':        'เครื่องบินนี้มีห้องน้ำทางเข้าคู่เพื่อความสะดวกสูงสุด',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'สะดุด!',
+    'canvas.knockback.crash':   'ชน!',
+    'canvas.knockback.splat':   'แปะ!',
+    'canvas.knockback.bonk':    'โป๊ก!',
+    'canvas.knockback.oof':     'โอ๊ย!',
+    'canvas.ubik.safety':       'ปลอดภัยเมื่อใช้ตามคำแนะนำ',
 
     // --- TOWER UNLOCK ---
     'tower.unlock':             'หอคอยใหม่: {{name}}!',
+    'tower.locked.desc':        'ปลดล็อกในเวฟ {{wave}}',
 
     // --- GAME STATE MESSAGES ---
     'game.saved':               'บันทึกเกมแล้ว',

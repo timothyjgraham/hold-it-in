@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'ЛЕГЕНДАРНЫЕ',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'НАЗАД',
+    'collection.newBadge':      'НОВОЕ!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Монетный магнит',
@@ -189,6 +190,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'ВОЛНА {{n}}',
     'wave.cleared':             'ВОЛНА {{n}} ПРОЙДЕНА  +{{bonus}}',
+    'wave.superMedivac':        'СУПЕР СКОРАЯ ПОМОЩЬ ПРИБЛИЖАЕТСЯ!',
     'wave.loaded':              'ВОЛНА {{n}} — ИГРА ЗАГРУЖЕНА',
     'wave.dontLetThem':         'НЕ ДАЙТЕ ИМ ДОБРАТЬСЯ ДО ТУАЛЕТА!',
     'wave.airplaneHint':        'ЭТОТ САМОЛЁТ ОБОРУДОВАН ДВУСТОРОННИМ ТУАЛЕТОМ ДЛЯ МАКСИМАЛЬНОГО УДОБСТВА',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'ПОДНОЖКА!',
+    'canvas.knockback.crash':   'БАБАХ!',
+    'canvas.knockback.splat':   'ШЛЁП!',
+    'canvas.knockback.bonk':    'БАМ!',
+    'canvas.knockback.oof':     'УФ!',
+    'canvas.ubik.safety':       'БЕЗОПАСНО ПРИ ПРАВИЛЬНОМ ПРИМЕНЕНИИ',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'НОВАЯ БАШНЯ: {{name}}!',
+    'tower.locked.desc':        'Откроется на волне {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'ИГРА СОХРАНЕНА',

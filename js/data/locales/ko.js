@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': '전설',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          '뒤로',
+    'collection.newBadge':      'NEW!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    '코인 자석',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            '웨이브 {{n}}',
     'wave.cleared':             '웨이브 {{n}} 클리어  +{{bonus}}',
+    'wave.superMedivac':        '슈퍼 구급대 접근 중!',
     'wave.loaded':              '웨이브 {{n}} — 게임 로드 완료',
     'wave.dontLetThem':         '화장실에 닿지 못하게 해!',
     'wave.airplaneHint':        '이 비행기에는 양방향 접근이 가능한 화장실이 장착되어 있습니다. 최고의 편의를 위해',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          '찰싹!',
     'canvas.mop.smack':         '탁!',
     'canvas.mop.thwack':        '쿵!',
+    'canvas.knockback.trip':    '쿵!',
+    'canvas.knockback.crash':   '쾅!',
+    'canvas.knockback.splat':   '철퍽!',
+    'canvas.knockback.bonk':    '꽝!',
+    'canvas.knockback.oof':     '윽!',
+    'canvas.ubik.safety':       '지시에 따라 사용하면 안전합니다',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             '새 타워: {{name}}!',
+    'tower.locked.desc':        '웨이브 {{wave}}에서 해금',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               '게임 저장 완료',

@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': '傳說',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          '返回',
+    'collection.newBadge':      '新!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    '硬幣磁鐵',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            '第 {{n}} 波',
     'wave.cleared':             '第 {{n}} 波完成  +{{bonus}}',
+    'wave.superMedivac':        '超級救護隊來襲！',
     'wave.loaded':              '第 {{n}} 波 — 遊戲已載入',
     'wave.dontLetThem':         '別讓他們靠近馬桶！',
     'wave.airplaneHint':        '本架飛機配備雙向進入廁所，為您提供最大便利',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          '啪！',
     'canvas.mop.smack':         '啵！',
     'canvas.mop.thwack':        '碰！',
+    'canvas.knockback.trip':    '絆倒！',
+    'canvas.knockback.crash':   '哐當！',
+    'canvas.knockback.splat':   '啪嗒！',
+    'canvas.knockback.bonk':    '嘭！',
+    'canvas.knockback.oof':     '嗚！',
+    'canvas.ubik.safety':       '按說明使用時安全可靠',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             '新塔防：{{name}}！',
+    'tower.locked.desc':        '在第{{wave}}波解鎖',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               '遊戲已儲存',

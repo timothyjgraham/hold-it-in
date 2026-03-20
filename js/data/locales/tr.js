@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'EFSANEVİ',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'GERİ',
+    'collection.newBadge':      'YENİ!',
 
     // --- TOWER TOOLTIPS ---
     'tower.coinmagnet.name':    'Para Mıknatısı',
@@ -189,6 +190,7 @@ export default {
     // --- WAVE ANNOUNCEMENTS ---
     'wave.announce':            'DALGA {{n}}',
     'wave.cleared':             'DALGA {{n}} TEMİZLENDİ  +{{bonus}}',
+    'wave.superMedivac':        'SÜPER AMBULANS YAKLAŞIYOR!',
     'wave.loaded':              'DALGA {{n}} — OYUN YÜKLENDİ',
     'wave.dontLetThem':         'TUVALETE ULAŞMALARINA İZİN VERME!',
     'wave.airplaneHint':        'BU UÇAK MAKSİMUM KONFOR İÇİN ÇİFT GİRİŞLİ TUVALETE SAHİPTİR',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'TAKIL!',
+    'canvas.knockback.crash':   'ÇARPIŞ!',
+    'canvas.knockback.splat':   'ŞLAP!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'TALİMATA UYGUN KULLANILDIĞINDA GÜVENLİDİR',
 
     // --- TOWER UNLOCK ---
     'tower.unlock':             'YENİ KULE: {{name}}!',
+    'tower.locked.desc':        'Dalga {{wave}}\'de açılır',
 
     // --- GAME STATE MESSAGES ---
     'game.saved':               'OYUN KAYDEDİLDİ',

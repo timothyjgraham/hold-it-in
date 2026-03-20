@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'LENDÁRIOS',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'VOLTAR',
+    'collection.newBadge':      'NOVO!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Imã de moedas',
@@ -189,6 +190,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'ONDA {{n}}',
     'wave.cleared':             'ONDA {{n}} LIMPA  +{{bonus}}',
+    'wave.superMedivac':        'SUPER AMBULÂNCIA A CAMINHO!',
     'wave.loaded':              'ONDA {{n}} — JOGO CARREGADO',
     'wave.dontLetThem':         'NÃO DEIXE ELES CHEGAREM AO VASO!',
     'wave.airplaneHint':        'ESTE AVIÃO ESTÁ EQUIPADO COM BANHEIRO DE DUPLO ACESSO, PARA MÁXIMA CONVENIÊNCIA',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'TROPEÇÃO!',
+    'canvas.knockback.crash':   'CRASH!',
+    'canvas.knockback.splat':   'SPLAT!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'SEGURO QUANDO USADO CONFORME INDICADO',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NOVA TORRE: {{name}}!',
+    'tower.locked.desc':        'Desbloqueia na onda {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'JOGO SALVO',

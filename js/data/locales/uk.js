@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'ЛЕГЕНДАРНІ',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'НАЗАД',
+    'collection.newBadge':      'НОВЕ!',
 
     // --- TOWER TOOLTIPS ---
     'tower.coinmagnet.name':    'Монетний магніт',
@@ -189,6 +190,7 @@ export default {
     // --- WAVE ANNOUNCEMENTS ---
     'wave.announce':            'ХВИЛЯ {{n}}',
     'wave.cleared':             'ХВИЛЯ {{n}} ПРОЙДЕНА  +{{bonus}}',
+    'wave.superMedivac':        'СУПЕР ШВИДКА ДОПОМОГА НАБЛИЖАЄТЬСЯ!',
     'wave.loaded':              'ХВИЛЯ {{n}} — ГРУ ЗАВАНТАЖЕНО',
     'wave.dontLetThem':         'НЕ ПУСКАЙ ЇХ ДО ТУАЛЕТУ!',
     'wave.airplaneHint':        'ЦЕЙ ЛІТАК ОБЛАДНАНИЙ ТУАЛЕТОМ З ДВОМА ВХОДАМИ ДЛЯ МАКСИМАЛЬНОЇ ЗРУЧНОСТІ',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'ПІДНІЖКА!',
+    'canvas.knockback.crash':   'БАБАХ!',
+    'canvas.knockback.splat':   'ШЛЬОП!',
+    'canvas.knockback.bonk':    'БАМ!',
+    'canvas.knockback.oof':     'УФ!',
+    'canvas.ubik.safety':       'БЕЗПЕЧНО ПРИ ПРАВИЛЬНОМУ ВИКОРИСТАННІ',
 
     // --- TOWER UNLOCK ---
     'tower.unlock':             'НОВА ВЕЖА: {{name}}!',
+    'tower.locked.desc':        'Відкриється на хвилі {{wave}}',
 
     // --- GAME STATE MESSAGES ---
     'game.saved':               'ГРУ ЗБЕРЕЖЕНО',

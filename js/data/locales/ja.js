@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'レジェンダリー',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          '戻る',
+    'collection.newBadge':      'NEW!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'コインマグネット',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'ウェーブ {{n}}',
     'wave.cleared':             'ウェーブ {{n}} クリア  +{{bonus}}',
+    'wave.superMedivac':        'スーパー救護班、接近中！',
     'wave.loaded':              'ウェーブ {{n}} — ゲームロード済み',
     'wave.dontLetThem':         'トイレに近づけさせるな！',
     'wave.airplaneHint':        'この飛行機には両面アクセスのトイレが装備されています。最高の利便性のために',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'ドカッ！',
     'canvas.mop.smack':         'ガツン！',
     'canvas.mop.thwack':        'ズバッ！',
+    'canvas.knockback.trip':    'ドテッ！',
+    'canvas.knockback.crash':   'ガシャン！',
+    'canvas.knockback.splat':   'ベチャ！',
+    'canvas.knockback.bonk':    'ゴツン！',
+    'canvas.knockback.oof':     'うっ！',
+    'canvas.ubik.safety':       '用法を守って正しくお使いください',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             '新タワー: {{name}}！',
+    'tower.locked.desc':        'ウェーブ{{wave}}で解放',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'ゲームをセーブしました',

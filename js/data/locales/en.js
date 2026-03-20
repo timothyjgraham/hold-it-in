@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'LEGENDARY',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'BACK',
+    'collection.newBadge':      'NEW!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Coin Magnet',
@@ -296,6 +297,12 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'TRIP!',
+    'canvas.knockback.crash':   'CRASH!',
+    'canvas.knockback.splat':   'SPLAT!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'OOF!',
+    'canvas.ubik.safety':       'SAFE WHEN USED AS DIRECTED',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NEW TOWER: {{name}}!',

@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LÉGENDAIRE',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'RETOUR',
+    'collection.newBadge':      'NOUVEAU !',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Aimant à Pièces',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'VAGUE {{n}}',
     'wave.cleared':             'VAGUE {{n}} TERMINÉE  +{{bonus}}',
+    'wave.superMedivac':        'SUPER AMBULANCE EN APPROCHE !',
     'wave.loaded':              'VAGUE {{n}} — PARTIE CHARGÉE',
     'wave.dontLetThem':         'NE LES LAISSEZ PAS ATTEINDRE LES TOILETTES !',
     'wave.airplaneHint':        'CET AVION EST ÉQUIPÉ DE TOILETTES À DOUBLE ACCÈS, POUR UN CONFORT MAXIMAL',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'VLAM !',
     'canvas.mop.smack':         'CLAC !',
     'canvas.mop.thwack':        'SBAM !',
+    'canvas.knockback.trip':    'CROCHE-PIED !',
+    'canvas.knockback.crash':   'CRASH !',
+    'canvas.knockback.splat':   'SPLATCH !',
+    'canvas.knockback.bonk':    'BONK !',
+    'canvas.knockback.oof':     'OUF !',
+    'canvas.ubik.safety':       'SANS DANGER SI UTILISÉ CORRECTEMENT',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NOUVELLE TOUR : {{name}} !',
+    'tower.locked.desc':        'Débloqué à la vague {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'PARTIE SAUVEGARDÉE',

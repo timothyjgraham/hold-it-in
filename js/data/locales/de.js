@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'LEGENDÄR',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'ZURÜCK',
+    'collection.newBadge':      'NEU!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Münzmagnet',
@@ -189,6 +190,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'WELLE {{n}}',
     'wave.cleared':             'WELLE {{n}} GESCHAFFT  +{{bonus}}',
+    'wave.superMedivac':        'SUPER-RETTUNGSHUBSCHRAUBER IM ANFLUG!',
     'wave.loaded':              'WELLE {{n}} — SPIEL GELADEN',
     'wave.dontLetThem':         'LASS SIE NICHT ANS KLO!',
     'wave.airplaneHint':        'DIESES FLUGZEUG VERFÜGT ÜBER EINE TOILETTE MIT DOPPELZUGANG, FÜR MAXIMALEN KOMFORT',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'STOLPER!',
+    'canvas.knockback.crash':   'KRACH!',
+    'canvas.knockback.splat':   'KLATSCH!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'SICHER BEI BESTIMMUNGSGEMÄSSEM GEBRAUCH',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NEUER TURM: {{name}}!',
+    'tower.locked.desc':        'Wird in Welle {{wave}} freigeschaltet',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'SPIEL GESPEICHERT',

@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LEGENDARISCH',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'TERUG',
+    'collection.newBadge':      'NIEUW!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Muntmagneet',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'GOLF {{n}}',
     'wave.cleared':             'GOLF {{n}} OVERLEEFD  +{{bonus}}',
+    'wave.superMedivac':        'SUPER AMBULANCE IN AANTOCHT!',
     'wave.loaded':              'GOLF {{n}} — SPEL GELADEN',
     'wave.dontLetThem':         'LAAT ZE NIET BIJ DE WC KOMEN!',
     'wave.airplaneHint':        'DIT VLIEGTUIG IS UITGERUST MET EEN WC MET DUBBELE TOEGANG, VOOR MAXIMAAL GEMAK',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'KLAP!',
     'canvas.mop.smack':         'PETS!',
     'canvas.mop.thwack':        'BONK!',
+    'canvas.knockback.trip':    'STRUIKEL!',
+    'canvas.knockback.crash':   'KRAK!',
+    'canvas.knockback.splat':   'PLATS!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'OEF!',
+    'canvas.ubik.safety':       'VEILIG BIJ CORRECT GEBRUIK',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NIEUWE TOREN: {{name}}!',
+    'tower.locked.desc':        'Ontgrendeld bij golf {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'SPEL OPGESLAGEN',

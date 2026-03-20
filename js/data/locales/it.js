@@ -119,6 +119,7 @@ export default {
     'collection.filter.legendary': 'LEGGENDARIO',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'INDIETRO',
+    'collection.newBadge':      'NUOVO!',
 
     // --- TOWER TOOLTIPS ---
     'tower.coinmagnet.name':    'Magnete monete',
@@ -189,6 +190,7 @@ export default {
     // --- WAVE ANNOUNCEMENTS ---
     'wave.announce':            'ONDATA {{n}}',
     'wave.cleared':             'ONDATA {{n}} COMPLETATA  +{{bonus}}',
+    'wave.superMedivac':        'SUPER AMBULANZA IN ARRIVO!',
     'wave.loaded':              'ONDATA {{n}} — PARTITA CARICATA',
     'wave.dontLetThem':         'NON FARLI ARRIVARE AL BAGNO!',
     'wave.airplaneHint':        'QUESTO AEREO È DOTATO DI UN BAGNO A DOPPIO ACCESSO, PER LA MASSIMA COMODITÀ',
@@ -295,9 +297,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    'SGAMBETTO!',
+    'canvas.knockback.crash':   'CRASH!',
+    'canvas.knockback.splat':   'SPLAT!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'SICURO SE USATO COME INDICATO',
 
     // --- TOWER UNLOCK ---
     'tower.unlock':             'NUOVA TORRE: {{name}}!',
+    'tower.locked.desc':        'Si sblocca all\'ondata {{wave}}',
 
     // --- GAME STATE MESSAGES ---
     'game.saved':               'PARTITA SALVATA',

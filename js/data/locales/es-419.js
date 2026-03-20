@@ -120,6 +120,7 @@ export default {
     'collection.filter.legendary': 'LEGENDARIO',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'VOLVER',
+    'collection.newBadge':      '¡NUEVO!',
 
     // --- TOWER TOOLTIPS ---
     'tower.coinmagnet.name':    'Imán de monedas',
@@ -190,6 +191,7 @@ export default {
     // --- WAVE ANNOUNCEMENTS ---
     'wave.announce':            'OLEADA {{n}}',
     'wave.cleared':             'OLEADA {{n}} COMPLETADA  +{{bonus}}',
+    'wave.superMedivac':        '¡SUPER AMBULANCIA EN CAMINO!',
     'wave.loaded':              'OLEADA {{n}} — PARTIDA CARGADA',
     'wave.dontLetThem':         'NO DEJES QUE LLEGUEN AL BAÑO!',
     'wave.airplaneHint':        'ESTE AVIÓN ESTÁ EQUIPADO CON UN BAÑO DE DOBLE ACCESO, PARA MÁXIMA COMODIDAD',
@@ -296,9 +298,16 @@ export default {
     'canvas.mop.whap':          'WHAP!',
     'canvas.mop.smack':         'SMACK!',
     'canvas.mop.thwack':        'THWACK!',
+    'canvas.knockback.trip':    '¡TROPIEZO!',
+    'canvas.knockback.crash':   '¡CRASH!',
+    'canvas.knockback.splat':   '¡PLAF!',
+    'canvas.knockback.bonk':    '¡BONK!',
+    'canvas.knockback.oof':     '¡UFF!',
+    'canvas.ubik.safety':       'SEGURO SI SE USA SEGÚN LAS INDICACIONES',
 
     // --- TOWER UNLOCK ---
     'tower.unlock':             'NUEVA TORRE: {{name}}!',
+    'tower.locked.desc':        'Se desbloquea en la oleada {{wave}}',
 
     // --- GAME STATE MESSAGES ---
     'game.saved':               'PARTIDA GUARDADA',

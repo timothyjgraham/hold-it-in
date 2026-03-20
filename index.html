@@ -4864,7 +4864,7 @@
                         '<div class="cc-reveal-face" style="display:none;">' +
                             '<div class="cc-icon"></div>' +
                             '<div class="cc-name"></div>' +
-                            '<div class="cc-new-badge">NEW!</div>' +
+                            '<div class="cc-new-badge">' + t('collection.newBadge') + '</div>' +
                         '</div>';
 
                     // Queue reveal face icon for lazy render
@@ -5512,7 +5512,7 @@
                 } else {
                     btn.classList.add('tower-locked');
                     btn.disabled = false; // Keep enabled so hover/click events fire
-                    btn.setAttribute('data-unlock', `WAVE ${unlockWave}`);
+                    btn.setAttribute('data-unlock', t('hud.wave', { n: unlockWave }));
                 }
             });
         },
@@ -6450,7 +6450,7 @@
             ctx.font = getCanvasFont(56, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const words = ['TRIP!', 'CRASH!', 'SPLAT!', 'BONK!', 'OOF!'];
+            const words = [t('canvas.knockback.trip'), t('canvas.knockback.crash'), t('canvas.knockback.splat'), t('canvas.knockback.bonk'), t('canvas.knockback.oof')];
             const text = words[Math.floor(Math.random() * words.length)];
             // Terracotta text with black outline
             ctx.strokeStyle = '#1a1a2e';
@@ -8125,7 +8125,7 @@
                 lctx.fillStyle = '#555544';
                 lctx.font = 'italic 28px "Courier New", monospace';
                 lctx.textAlign = 'center';
-                lctx.fillText('SAFE WHEN USED AS DIRECTED', 256, 200);
+                lctx.fillText(t('canvas.ubik.safety'), 256, 200);
 
                 // Small hazard triangles as decorative elements
                 lctx.fillStyle = '#8b7a2a';

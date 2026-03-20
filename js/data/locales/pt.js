@@ -118,6 +118,7 @@ export default {
     'collection.filter.legendary': 'LENDÁRIOS',
     'collection.filter.count':  '{{rarity}} ({{found}}/{{total}})',
     'collection.back':          'VOLTAR',
+    'collection.newBadge':      'NOVO!',
 
     // ─── TOWER TOOLTIPS ──────────────────────────────────────────────────
     'tower.coinmagnet.name':    'Íman de Moedas',
@@ -188,6 +189,7 @@ export default {
     // ─── WAVE ANNOUNCEMENTS ─────────────────────────────────────────────
     'wave.announce':            'VAGA {{n}}',
     'wave.cleared':             'VAGA {{n}} LIMPA  +{{bonus}}',
+    'wave.superMedivac':        'SUPER AMBULÂNCIA A CAMINHO!',
     'wave.loaded':              'VAGA {{n}} — JOGO CARREGADO',
     'wave.dontLetThem':         'NÃO OS DEIXES CHEGAR À SANITA!',
     'wave.airplaneHint':        'ESTE AVIÃO ESTÁ EQUIPADO COM UMA CASA DE BANHO DE DUPLO ACESSO, PARA MÁXIMA CONVENIÊNCIA',
@@ -294,9 +296,16 @@ export default {
     'canvas.mop.whap':          'ZÁS!',
     'canvas.mop.smack':         'PLAFT!',
     'canvas.mop.thwack':        'TOMA!',
+    'canvas.knockback.trip':    'TROPEÇÃO!',
+    'canvas.knockback.crash':   'CRASH!',
+    'canvas.knockback.splat':   'SPLAT!',
+    'canvas.knockback.bonk':    'BONK!',
+    'canvas.knockback.oof':     'UFF!',
+    'canvas.ubik.safety':       'SEGURO QUANDO USADO CONFORME INDICADO',
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NOVA TORRE: {{name}}!',
+    'tower.locked.desc':        'Desbloqueia na vaga {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'JOGO GRAVADO',
