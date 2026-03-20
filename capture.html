@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hold It In — Asset Capture Tool</title>
+    <script src="lib/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            color: #fff4d9;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+        }
+        #header {
+            padding: 16px 24px;
+            border-bottom: 2px solid #2d2b3d;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #1a1a2e;
+        }
+        h1 { font-size: 18px; white-space: nowrap; }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        label { font-size: 12px; opacity: 0.7; }
+        select, input[type="number"] {
+            background: #2d2b3d;
+            color: #fff4d9;
+            border: 1px solid #505060;
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        input[type="number"] { width: 70px; }
+        button {
+            background: #4a86c8;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover { background: #5a96d8; }
+        button:disabled { background: #505060; cursor: not-allowed; }
+        button.danger { background: #ff6b7a; }
+        button.success { background: #50c878; }
+        #progress {
+            display: none;
+            padding: 8px 24px;
+            background: #2d2b3d;
+            border-bottom: 1px solid #505060;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #505060;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            background: #50c878;
+            width: 0%;
+            transition: width 0.2s;
+        }
+        #progress-text {
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+        #workspace {
+            display: flex;
+            height: calc(100vh - 120px);
+            min-height: 500px;
+        }
+        #preview-panel {
+            flex: 0 0 512px;
+            padding: 16px;
+            border-right: 1px solid #2d2b3d;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        #preview-canvas {
+            background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 20px 20px;
+            border: 1px solid #505060;
+            image-rendering: auto;
+        }
+        #preview-info {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        #subject-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .subject-section {
+            margin-bottom: 24px;
+        }
+        .subject-section h2 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #ffd93d;
+            border-bottom: 1px solid #2d2b3d;
+            padding-bottom: 4px;
+        }
+        .subject-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .subject-card {
+            width: 100px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            padding: 4px;
+            text-align: center;
+            transition: border-color 0.15s;
+        }
+        .subject-card:hover { border-color: #4a86c8; }
+        .subject-card.active { border-color: #ffd93d; }
+        .subject-card.captured { border-color: #50c878; }
+        .subject-card canvas {
+            width: 90px;
+            height: 90px;
+            background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 10px 10px;
+            display: block;
+            margin: 0 auto;
+        }
+        .subject-card .name {
+            font-size: 10px;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Captured gallery */
+        #gallery {
+            display: none;
+            padding: 16px 24px;
+        }
+        .gallery-section { margin-bottom: 24px; }
+        .gallery-section h3 {
+            font-size: 13px;
+            color: #ffd93d;
+            margin-bottom: 8px;
+        }
+        .gallery-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .gallery-grid img {
+            width: 128px;
+            height: 128px;
+            object-fit: contain;
+            background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 10px 10px;
+            border: 1px solid #2d2b3d;
+            cursor: pointer;
+        }
+        .gallery-grid img:hover { border-color: #4a86c8; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Asset Capture Tool</h1>
+        <div class="control-group">
+            <label>Resolution:</label>
+            <input type="number" id="resolution" value="1024" min="256" max="4096" step="256">
+        </div>
+        <div class="control-group">
+            <label>Angles:</label>
+            <select id="angle-count">
+                <option value="1">1 (front 3/4)</option>
+                <option value="4">4 (cardinal)</option>
+                <option value="8" selected>8 (every 45°)</option>
+                <option value="12">12 (every 30°)</option>
+                <option value="16">16 (every 22.5°)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Elevation:</label>
+            <select id="elevation">
+                <option value="25" selected>25°</option>
+                <option value="35">35°</option>
+                <option value="45">45°</option>
+                <option value="15">15° (low)</option>
+                <option value="0">0° (eye level)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Filter:</label>
+            <select id="filter">
+                <option value="all">All</option>
+                <option value="enemies">Enemies only</option>
+                <option value="towers">Towers only</option>
+                <option value="player">Player + Toilet</option>
+                <option value="drones">Drones only</option>
+            </select>
+        </div>
+        <button id="btn-capture-selected" onclick="captureSelected()">Capture Selected</button>
+        <button id="btn-capture-all" class="success" onclick="captureAll()">Capture All</button>
+        <button id="btn-download" class="success" style="display:none" onclick="downloadZip()">Download ZIP</button>
+        <span id="status" style="font-size:12px; opacity:0.7;"></span>
+    </div>
+    <div id="progress">
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+        <div id="progress-text">Initializing...</div>
+    </div>
+    <div id="workspace">
+        <div id="preview-panel">
+            <canvas id="preview-canvas" width="512" height="512"></canvas>
+            <div id="preview-info">Click a subject to preview</div>
+            <div class="control-group">
+                <label>Rotate:</label>
+                <input type="range" id="angle-slider" min="0" max="360" value="45" style="flex:1">
+                <span id="angle-display">45°</span>
+            </div>
+        </div>
+        <div id="subject-list"></div>
+    </div>
+    <div id="gallery"></div>
+
+    <script type="module">
+    // ═══════════════════════════════════════════════════════
+    // Import game modules (same as main.js but cherry-picked)
+    // ═══════════════════════════════════════════════════════
+    import { PALETTE, OUTLINE_WIDTH, injectCSSPalette } from './js/data/palette.js';
+    import { CONFIG } from './js/data/config.js';
+    import { createToilet } from './js/models/ToiletModel.js';
+    import { createEnemyModel, clearGeometryCache } from './js/models/EnemyModelFactory.js';
+    import { ENEMY_VISUAL_CONFIG } from './js/data/enemyConfig.js';
+    import { AnimationController } from './js/animation/AnimationController.js';
+    import { getAnimationClip } from './js/animation/AnimationLibrary.js';
+    import { createUpgradeDrone } from './js/models/UpgradeDroneModel.js';
+    import { GLBModelCache } from './js/loaders/GLBModelCache.js';
+    import { PlayerModelLoader } from './js/loaders/PlayerModelLoader.js';
+    import {
+        toonMat, matWall, matFixture, matWood, matWhite, matInk, matPorcelain, matGold,
+        matDanger, matSign, matMop, matUbik, matPotplant,
+    } from './js/shaders/toonMaterials.js';
+    import { t, initI18n } from './js/i18n.js';
+
+    // Expose to window for modules that expect it
+    window.PALETTE = PALETTE;
+    window.OUTLINE_WIDTH = OUTLINE_WIDTH;
+    window.toonMat = toonMat;
+    window.matWall = matWall;
+    window.matFixture = matFixture;
+    window.matWood = matWood;
+    window.matWhite = matWhite;
+    window.matInk = matInk;
+    window.matPorcelain = matPorcelain;
+    window.matGold = matGold;
+    window.matDanger = matDanger;
+    window.matSign = matSign;
+    window.matMop = matMop;
+    window.matUbik = matUbik;
+    window.matPotplant = matPotplant;
+    window.CONFIG = CONFIG;
+    window.GLBModelCache = GLBModelCache;
+    window.PlayerModelLoader = PlayerModelLoader;
+    window.t = t;
+
+    injectCSSPalette();
+    initI18n();
+
+    // ═══════════════════════════════════════════════════════
+    // Three.js setup — matches game but with transparent bg
+    // ═══════════════════════════════════════════════════════
+    const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.setClearColor(0x000000, 0); // Transparent!
+
+    const scene = new THREE.Scene();
+    // NO fog — it would blend objects toward a color, ruining transparency
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 250);
+
+    // Lighting — matches Office scenario exactly
+    const ambientLight = new THREE.AmbientLight(PALETTE.ambient, 0.7);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(PALETTE.fillWarm, 0.8);
+    mainLight.position.set(6, 42, 18);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.set(1024, 1024);
+    mainLight.shadow.camera.left = -35;
+    mainLight.shadow.camera.right = 35;
+    mainLight.shadow.camera.top = 70;
+    mainLight.shadow.camera.bottom = -5;
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 100;
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(PALETTE.rimCool, 0.3);
+    fillLight.position.set(-10, 20, 10);
+    scene.add(fillLight);
+
+    // ═══════════════════════════════════════════════════════
+    // Subject definitions
+    // ═══════════════════════════════════════════════════════
+    const ENEMY_TYPES_LIST = [
+        // Office
+        { key: 'polite', name: 'Polite Knocker', color: PALETTE.polite, category: 'enemies-office' },
+        { key: 'dancer', name: 'Dancer', color: PALETTE.dancer, category: 'enemies-office' },
+        { key: 'waddle', name: 'Waddle', color: PALETTE.waddle, category: 'enemies-office' },
+        { key: 'panicker', name: 'Panicker', color: PALETTE.panicker, category: 'enemies-office' },
+        { key: 'powerwalker', name: 'Powerwalker', color: PALETTE.powerwalker, category: 'enemies-office' },
+        { key: 'girls', name: 'Girls', color: PALETTE.girls, category: 'enemies-office' },
+        { key: 'drunk', name: 'Drunk (Train)', color: PALETTE.drunk, category: 'enemies-office' },
+        { key: 'vaulter', name: 'Vaulter (Jumper)', color: PALETTE.vaulter, category: 'enemies-office' },
+        // Forest
+        { key: 'deer', name: 'Deer', color: PALETTE.deer || 0xc49060, category: 'enemies-forest' },
+        { key: 'squirrel', name: 'Squirrel', color: PALETTE.squirrel || 0xd4a574, category: 'enemies-forest' },
+        { key: 'bear', name: 'Bear', color: PALETTE.bear || 0x6b4e3c, category: 'enemies-forest' },
+        { key: 'fox', name: 'Fox', color: PALETTE.fox || 0xe07830, category: 'enemies-forest' },
+        { key: 'moose', name: 'Moose', color: PALETTE.moose || 0x5a4a3a, category: 'enemies-forest' },
+        { key: 'raccoon', name: 'Raccoon', color: PALETTE.raccoon || 0x808080, category: 'enemies-forest' },
+        { key: 'ant', name: 'Ant (Train)', color: PALETTE.forestAnt || 0x6b3030, category: 'enemies-forest' },
+        { key: 'kangaroo', name: 'Kangaroo (Jumper)', color: PALETTE.forestKangaroo || 0xc49060, category: 'enemies-forest' },
+        // Ocean
+        { key: 'dolphin', name: 'Dolphin', color: PALETTE.dolphin || 0x6090c0, category: 'enemies-ocean' },
+        { key: 'flyfish', name: 'Flying Fish', color: PALETTE.flyfish || 0x70b0e0, category: 'enemies-ocean' },
+        { key: 'shark', name: 'Shark', color: PALETTE.shark || 0x607080, category: 'enemies-ocean' },
+        { key: 'pirate', name: 'Pirate', color: PALETTE.pirate || 0xc08040, category: 'enemies-ocean' },
+        { key: 'seaturtle', name: 'Sea Turtle', color: PALETTE.seaturtle || 0x50a060, category: 'enemies-ocean' },
+        { key: 'jellyfish', name: 'Jellyfish', color: PALETTE.jellyfish || 0xd080c0, category: 'enemies-ocean' },
+        { key: 'seahorse', name: 'Seahorse (Train)', color: PALETTE.oceanSeahorse || 0xf0a870, category: 'enemies-ocean' },
+        { key: 'frog', name: 'Frog (Jumper)', color: PALETTE.oceanFrog || 0x70b830, category: 'enemies-ocean' },
+        // Airplane
+        { key: 'nervous', name: 'Nervous Flier', color: PALETTE.nervous || 0xd4a574, category: 'enemies-airplane' },
+        { key: 'business', name: 'Business Class', color: PALETTE.business || 0x4a6080, category: 'enemies-airplane' },
+        { key: 'stumbler', name: 'Stumbler', color: PALETTE.stumbler || 0xb08060, category: 'enemies-airplane' },
+        { key: 'attendant', name: 'Attendant', color: PALETTE.attendant || 0x2060a0, category: 'enemies-airplane' },
+        { key: 'marshal', name: 'Air Marshal', color: PALETTE.marshal || 0x404060, category: 'enemies-airplane' },
+        { key: 'unruly', name: 'Unruly Passenger', color: PALETTE.unruly || 0xe06040, category: 'enemies-airplane' },
+        { key: 'trolley', name: 'Trolley (Train)', color: PALETTE.airplaneTrolley || 0x9a9aa8, category: 'enemies-airplane' },
+        { key: 'hurdler', name: 'Hurdler (Jumper)', color: PALETTE.airplaneHurdler || 0xe85830, category: 'enemies-airplane' },
+    ];
+
+    const TOWER_DEFS = {
+        coinmagnet: { name: 'Coin Magnet', color: PALETTE.magnet },
+        wetfloor:   { name: 'Wet Floor Sign', color: PALETTE.sign },
+        mop:        { name: 'Mop Turret', color: PALETTE.mop },
+        ubik:       { name: 'Ubik Spray', color: PALETTE.ubik },
+        potplant:   { name: 'Pot Plant', color: PALETTE.potplant },
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // Model creation helpers
+    // ═══════════════════════════════════════════════════════
+
+    function createSubjectModel(subjectKey) {
+        // Check enemy types
+        const enemyDef = ENEMY_TYPES_LIST.find(e => e.key === subjectKey);
+        if (enemyDef) {
+            const config = ENEMY_VISUAL_CONFIG[subjectKey];
+            const size = config ? config.size : 2.0;
+            const result = createEnemyModel(subjectKey, enemyDef.color, false, size);
+            // Pose with idle animation
+            if (result.skeleton && result.boneMap) {
+                try {
+                    const clip = getAnimationClip(subjectKey, 'walk');
+                    if (clip) {
+                        const mixer = new THREE.AnimationMixer(result.group);
+                        const action = mixer.clipAction(clip);
+                        action.play();
+                        // Advance to a representative frame (30% through walk cycle)
+                        mixer.update(clip.duration * 0.3);
+                        mixer.update(0);
+                    }
+                } catch (e) { /* no walk clip, that's fine */ }
+            }
+            return result.group;
+        }
+
+        // Check towers
+        if (TOWER_DEFS[subjectKey]) {
+            return buildTowerMesh(subjectKey, TOWER_DEFS[subjectKey]);
+        }
+
+        // Special subjects
+        if (subjectKey === 'toilet') {
+            const t = createToilet();
+            t.scale.setScalar(0.85);
+            return t;
+        }
+
+        if (subjectKey === 'player') {
+            return buildProceduralPlayer();
+        }
+
+        if (subjectKey === 'player-mixamo') {
+            return buildMixamoPlayer();
+        }
+
+        if (subjectKey === 'player-on-toilet') {
+            return buildPlayerOnToilet();
+        }
+
+        if (subjectKey.startsWith('drone-')) {
+            const rarity = subjectKey.replace('drone-', '');
+            const drone = createUpgradeDrone(rarity);
+            return drone;
+        }
+
+        return null;
+    }
+
+    // Procedural player (fallback if GLBs not loaded)
+    function buildProceduralPlayer() {
+        // Import dynamically
+        const group = new THREE.Group();
+        // Simple representation using game colors
+        const bodyMat = toonMat(PALETTE.hoodie);
+        const skinMat = toonMat(PALETTE.skin);
+        const pantsMat = toonMat(PALETTE.pants);
+
+        // Torso
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.6), bodyMat);
+        torso.position.y = 1.8;
+        group.add(torso);
+
+        // Head
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), skinMat);
+        head.position.y = 2.75;
+        group.add(head);
+
+        // Arms
+        for (const side of [-1, 1]) {
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.8, 6), bodyMat);
+            arm.position.set(side * 0.6, 1.7, 0);
+            arm.rotation.z = side * 0.3;
+            group.add(arm);
+            const hand = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), skinMat);
+            hand.position.set(side * 0.75, 1.3, 0);
+            group.add(hand);
+        }
+
+        // Legs
+        for (const side of [-1, 1]) {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.7, 6), pantsMat);
+            leg.position.set(side * 0.2, 0.7, 0.2);
+            leg.rotation.x = -0.5;
+            group.add(leg);
+        }
+
+        return group;
+    }
+
+    // Mixamo player (if GLBs loaded)
+    function buildMixamoPlayer() {
+        if (!PlayerModelLoader || !PlayerModelLoader.isLoaded || !PlayerModelLoader.isLoaded()) {
+            return buildProceduralPlayer();
+        }
+        try {
+            const model = PlayerModelLoader.createPlayerInstance();
+            model.group.scale.setScalar(3.6);
+            // Advance idle animation to a good frame
+            if (model.clips && model.clips.idle) {
+                const mixer = new THREE.AnimationMixer(model.group);
+                const action = mixer.clipAction(model.clips.idle);
+                action.play();
+                mixer.update(0.5);
+                mixer.update(0);
+            }
+            return model.group;
+        } catch (e) {
+            console.warn('Mixamo player failed, using procedural:', e);
+            return buildProceduralPlayer();
+        }
+    }
+
+    // Player on toilet composite
+    function buildPlayerOnToilet() {
+        const group = new THREE.Group();
+        const toilet = createToilet();
+        toilet.scale.setScalar(0.85);
+        group.add(toilet);
+
+        const toiletPos = new THREE.Vector3(0, 0, 0);
+        const toiletScale = 0.85;
+        const seatWorldY = toiletPos.y + (1.65 + 0.05) * toiletScale;
+
+        // Try Mixamo first, fallback to procedural
+        let playerGroup;
+        if (PlayerModelLoader.loaded) {
+            try {
+                const model = PlayerModelLoader.createPlayerInstance();
+                model.group.scale.setScalar(3.6);
+                model.group.position.set(
+                    toiletPos.x,
+                    seatWorldY,
+                    toiletPos.z + 0.1 * toiletScale
+                );
+                // Advance idle to a good frame
+                if (model.clips && model.clips.idle) {
+                    const mixer = new THREE.AnimationMixer(model.group);
+                    const action = mixer.clipAction(model.clips.idle);
+                    action.play();
+                    mixer.update(0.5);
+                    mixer.update(0);
+                }
+                playerGroup = model.group;
+            } catch (e) {
+                console.warn('Mixamo player failed for composite:', e);
+            }
+        }
+        if (!playerGroup) {
+            playerGroup = buildProceduralPlayer();
+            playerGroup.position.set(toiletPos.x, seatWorldY - 0.5, toiletPos.z);
+        }
+        group.add(playerGroup);
+        return group;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Tower mesh builders (replicated from Game._createTowerMesh)
+    // ═══════════════════════════════════════════════════════
+
+    function buildTowerMesh(type, def) {
+        const group = new THREE.Group();
+        const mat = toonMat(def.color);
+
+        if (type === 'coinmagnet') {
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 0.25, 12), toonMat(PALETTE.charcoal));
+            base.position.y = 0.125;
+            group.add(base);
+
+            const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.5, 10), toonMat(PALETTE.rimCool, { transparent: true, opacity: 0.3 }));
+            jar.position.y = 0.5;
+            group.add(jar);
+
+            const coinsInside = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.15, 8), matGold());
+            coinsInside.position.y = 0.33;
+            group.add(coinsInside);
+
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.6, 8), toonMat(PALETTE.fixture));
+            pole.position.y = 1.05;
+            group.add(pole);
+
+            const magnetHead = new THREE.Group();
+            magnetHead.position.y = 1.45;
+            const horseshoe = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.14, 12, 16, Math.PI), toonMat(PALETTE.danger));
+            horseshoe.rotation.z = Math.PI;
+            magnetHead.add(horseshoe);
+            const tipMat2 = toonMat(PALETTE.fixture);
+            const tipGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.22, 8);
+            const tipL = new THREE.Mesh(tipGeo, tipMat2);
+            tipL.position.set(-0.4, -0.11, 0);
+            magnetHead.add(tipL);
+            const tipR = new THREE.Mesh(tipGeo, tipMat2);
+            tipR.position.set(0.4, -0.11, 0);
+            magnetHead.add(tipR);
+            group.add(magnetHead);
+        } else if (type === 'wetfloor') {
+            const signMat2 = toonMat(PALETTE.sign);
+            const inkMat = toonMat(PALETTE.ink);
+            const postL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.6, 0.2), signMat2);
+            postL.position.set(-1.8, 0.8, 0);
+            group.add(postL);
+            const postR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.6, 0.2), signMat2);
+            postR.position.set(1.8, 0.8, 0);
+            group.add(postR);
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 0.15), signMat2);
+            rail.position.set(0, 1.1, 0);
+            group.add(rail);
+            const railLow = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.2, 0.12), signMat2);
+            railLow.position.set(0, 0.45, 0);
+            group.add(railLow);
+            for (let s = 0; s < 7; s++) {
+                const hazStripe = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.32, 0.16), inkMat);
+                hazStripe.position.set(-1.5 + s * 0.5, 1.1, 0);
+                group.add(hazStripe);
+            }
+            const panelL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.05), signMat2);
+            panelL.position.set(0, 1.1, 0.12);
+            panelL.rotation.x = 0.15;
+            group.add(panelL);
+            const panelR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.05), signMat2);
+            panelR.position.set(0, 1.1, -0.12);
+            panelR.rotation.x = -0.15;
+            group.add(panelR);
+            const exLine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.055), inkMat);
+            exLine.position.set(0, 1.25, 0.15);
+            exLine.rotation.x = 0.15;
+            group.add(exLine);
+            const exDot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.055), inkMat);
+            exDot.position.set(0, 1.0, 0.14);
+            exDot.rotation.x = 0.15;
+            group.add(exDot);
+            const footL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.1, 0.35), signMat2);
+            footL.position.set(-1.8, 0.05, 0);
+            group.add(footL);
+            const footR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.1, 0.35), signMat2);
+            footR.position.set(1.8, 0.05, 0);
+            group.add(footR);
+        } else if (type === 'mop') {
+            const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.7, 8), toonMat(PALETTE.fixture));
+            bucket.position.y = 0.35;
+            group.add(bucket);
+            const rim = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.04, 6, 12), toonMat(PALETTE.charcoal));
+            rim.position.y = 0.7;
+            rim.rotation.x = Math.PI / 2;
+            group.add(rim);
+            const water = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.05, 8), toonMat(PALETTE.rimCool));
+            water.position.y = 0.65;
+            group.add(water);
+            const mopArm = new THREE.Group();
+            group.add(mopArm);
+            const handleLen = 3.5;
+            const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, handleLen, 6), toonMat(PALETTE.wood));
+            handle.rotation.x = Math.PI / 2;
+            handle.position.set(0, 0.85, handleLen / 2);
+            mopArm.add(handle);
+            const mopHead = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 0.7), mat);
+            mopHead.position.set(0, 0.72, handleLen);
+            mopArm.add(mopHead);
+            const strandMat = toonMat(PALETTE.mop);
+            for (let si = -1; si <= 1; si++) {
+                const strand = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.45), strandMat);
+                strand.position.set(si * 0.2, 0.52, handleLen);
+                mopArm.add(strand);
+            }
+        } else if (type === 'ubik') {
+            const canRadius = 0.55;
+            const canHeight = 2.0;
+            const segments = 12;
+            const outlineMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, side: THREE.BackSide });
+            const outlineGeo = new THREE.CylinderGeometry(canRadius + 0.04, canRadius + 0.04, canHeight + 0.04, segments);
+            const outline = new THREE.Mesh(outlineGeo, outlineMat);
+            outline.position.y = canHeight / 2 + 0.15;
+            group.add(outline);
+            const canGeo = new THREE.CylinderGeometry(canRadius, canRadius, canHeight, segments);
+            const canMesh = new THREE.Mesh(canGeo, mat);
+            canMesh.position.y = canHeight / 2 + 0.15;
+            group.add(canMesh);
+            const bottomDome = new THREE.Mesh(
+                new THREE.SphereGeometry(canRadius, segments, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat
+            );
+            bottomDome.position.y = 0.15;
+            group.add(bottomDome);
+            const shoulderGeo = new THREE.CylinderGeometry(canRadius * 0.7, canRadius, 0.25, segments);
+            const shoulderMesh = new THREE.Mesh(shoulderGeo, mat);
+            shoulderMesh.position.y = canHeight + 0.15;
+            group.add(shoulderMesh);
+            const shoulderOutline = new THREE.Mesh(
+                new THREE.CylinderGeometry(canRadius * 0.7 + 0.04, canRadius + 0.04, 0.29, segments), outlineMat
+            );
+            shoulderOutline.position.y = canHeight + 0.15;
+            group.add(shoulderOutline);
+            const capMat = toonMat(PALETTE.white);
+            const capGeo = new THREE.CylinderGeometry(canRadius * 0.55, canRadius * 0.7, 0.2, segments);
+            const cap = new THREE.Mesh(capGeo, capMat);
+            cap.position.y = canHeight + 0.35;
+            group.add(cap);
+            const nozzleMat = toonMat(PALETTE.fixture);
+            const nozzleGeo = new THREE.CylinderGeometry(0.06, 0.1, 0.15, 6);
+            const nozzle = new THREE.Mesh(nozzleGeo, nozzleMat);
+            nozzle.rotation.x = Math.PI / 2;
+            nozzle.position.set(0, canHeight + 0.35, canRadius * 0.55 + 0.07);
+            group.add(nozzle);
+            const nozzleOutline = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.09, 0.13, 0.19, 6), outlineMat
+            );
+            nozzleOutline.rotation.x = Math.PI / 2;
+            nozzleOutline.position.copy(nozzle.position);
+            group.add(nozzleOutline);
+
+            // Label
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 512;
+            labelCanvas.height = 256;
+            const lctx = labelCanvas.getContext('2d');
+            lctx.fillStyle = '#f5f0e0';
+            lctx.fillRect(0, 0, 512, 256);
+            lctx.strokeStyle = '#333322';
+            lctx.lineWidth = 4;
+            lctx.strokeRect(0, 0, 512, 256);
+            lctx.fillStyle = '#1a5c2a';
+            lctx.font = '900 120px "Courier New", monospace';
+            lctx.textAlign = 'center';
+            lctx.textBaseline = 'middle';
+            const ubikText = 'UBIK';
+            const letterSpacing = 22;
+            const totalWidth = lctx.measureText(ubikText).width + letterSpacing * (ubikText.length - 1);
+            let cursorX = 256 - totalWidth / 2;
+            for (let ci = 0; ci < ubikText.length; ci++) {
+                const ch = ubikText[ci];
+                const chW = lctx.measureText(ch).width;
+                lctx.fillText(ch, cursorX + chW / 2, 105);
+                cursorX += chW + letterSpacing;
+            }
+            lctx.fillStyle = '#f5f0e0';
+            const bridgeY = 105, bridgeH = 8;
+            cursorX = 256 - totalWidth / 2;
+            for (let ci = 0; ci < ubikText.length; ci++) {
+                const ch = ubikText[ci];
+                const chW = lctx.measureText(ch).width;
+                if ('UBD'.includes(ch)) {
+                    lctx.fillRect(cursorX - 2, bridgeY - bridgeH / 2, chW + 4, bridgeH);
+                }
+                cursorX += chW + letterSpacing;
+            }
+            lctx.fillStyle = '#555544';
+            lctx.font = 'italic 28px "Courier New", monospace';
+            lctx.textAlign = 'center';
+            lctx.fillText('SAFE FROM EVERYTHING', 256, 200);
+            lctx.fillStyle = '#8b7a2a';
+            for (const tx of [60, 452]) {
+                lctx.beginPath();
+                lctx.moveTo(tx, 35);
+                lctx.lineTo(tx - 15, 60);
+                lctx.lineTo(tx + 15, 60);
+                lctx.closePath();
+                lctx.fill();
+                lctx.fillStyle = '#f5f0e0';
+                lctx.font = 'bold 16px monospace';
+                lctx.fillText('!', tx, 54);
+                lctx.fillStyle = '#8b7a2a';
+            }
+            const labelTex = new THREE.CanvasTexture(labelCanvas);
+            const labelMat = new THREE.MeshToonMaterial({ map: labelTex });
+            const labelGeo = new THREE.CylinderGeometry(canRadius + 0.01, canRadius + 0.01, canHeight * 0.45, segments);
+            const label = new THREE.Mesh(labelGeo, labelMat);
+            label.position.y = canHeight * 0.45 + 0.15;
+            group.add(label);
+        } else if (type === 'potplant') {
+            const potMat2 = toonMat(PALETTE.potplant);
+            const leafMat2 = toonMat(PALETTE.success);
+            const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.9, 8), potMat2);
+            pot.position.y = 0.45;
+            group.add(pot);
+            const potRim = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.48, 0.1, 8), potMat2);
+            potRim.position.y = 0.9;
+            group.add(potRim);
+            const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 8), toonMat(PALETTE.ink));
+            soil.position.y = 0.88;
+            group.add(soil);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.8, 6), toonMat(PALETTE.wood));
+            trunk.position.y = 1.25;
+            group.add(trunk);
+            for (const [lx, ly, lz, lr] of [
+                [0, 1.6, 0, 0.45], [0.22, 1.8, 0.17, 0.33], [-0.17, 1.9, -0.12, 0.3],
+                [0.12, 1.4, -0.17, 0.28], [-0.22, 1.5, 0.12, 0.25],
+            ]) {
+                const leaf = new THREE.Mesh(new THREE.SphereGeometry(lr, 6, 6), leafMat2);
+                leaf.position.set(lx, ly, lz);
+                group.add(leaf);
+            }
+        }
+
+        return group;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Camera framing — auto-fit any subject
+    // ═══════════════════════════════════════════════════════
+
+    function getSubjectBounds(obj) {
+        const box = new THREE.Box3().setFromObject(obj);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        return { box, center, size, maxDim };
+    }
+
+    function positionCamera(center, maxDim, azimuthDeg, elevationDeg) {
+        const az = azimuthDeg * Math.PI / 180;
+        const el = elevationDeg * Math.PI / 180;
+        // Distance to fit subject in view (FOV-dependent)
+        const fovRad = camera.fov * Math.PI / 180;
+        const dist = (maxDim / 2) / Math.tan(fovRad / 2) * 1.5; // 1.5x padding
+
+        const x = center.x + dist * Math.sin(az) * Math.cos(el);
+        const y = center.y + dist * Math.sin(el);
+        const z = center.z + dist * Math.cos(az) * Math.cos(el);
+
+        camera.position.set(x, y, z);
+        camera.lookAt(center);
+        camera.updateProjectionMatrix();
+
+        // Move lights relative to subject
+        mainLight.position.set(center.x + 6, center.y + 20, center.z + 12);
+        mainLight.target.position.copy(center);
+        mainLight.target.updateMatrixWorld();
+        fillLight.position.set(center.x - 8, center.y + 10, center.z + 5);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Capture logic
+    // ═══════════════════════════════════════════════════════
+
+    let currentSubject = null;
+    let currentSubjectKey = null;
+    const capturedImages = new Map(); // key → [{angle, blob, dataUrl}]
+
+    function clearScene() {
+        // Remove all non-light objects
+        const toRemove = [];
+        scene.traverse(child => {
+            if (child !== scene && !child.isLight && child.parent === scene) {
+                toRemove.push(child);
+            }
+        });
+        toRemove.forEach(obj => scene.remove(obj));
+        currentSubject = null;
+    }
+
+    function showSubject(subjectKey) {
+        clearScene();
+        currentSubjectKey = subjectKey;
+        const model = createSubjectModel(subjectKey);
+        if (!model) {
+            document.getElementById('preview-info').textContent = `Failed to create: ${subjectKey}`;
+            return;
+        }
+        currentSubject = model;
+        scene.add(model);
+
+        // Update preview
+        updatePreview();
+
+        // Highlight active card
+        document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('active'));
+        const card = document.querySelector(`[data-key="${subjectKey}"]`);
+        if (card) card.classList.add('active');
+
+        const entry = getAllSubjects().find(s => s.key === subjectKey);
+        document.getElementById('preview-info').textContent = entry ? entry.name : subjectKey;
+    }
+
+    function updatePreview() {
+        if (!currentSubject) return;
+        const canvas = document.getElementById('preview-canvas');
+        const az = parseFloat(document.getElementById('angle-slider').value);
+        const el = parseFloat(document.getElementById('elevation').value);
+
+        renderer.setSize(512, 512);
+        const bounds = getSubjectBounds(currentSubject);
+        positionCamera(bounds.center, bounds.maxDim, az, el);
+        renderer.render(scene, camera);
+
+        // Copy to visible canvas
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 512, 512);
+        ctx.drawImage(renderer.domElement, 0, 0, 512, 512);
+    }
+
+    function captureSubject(subjectKey, resolution, angles, elevation) {
+        clearScene();
+        const model = createSubjectModel(subjectKey);
+        if (!model) return [];
+
+        scene.add(model);
+        currentSubject = model;
+
+        renderer.setSize(resolution, resolution);
+        const bounds = getSubjectBounds(model);
+        const captures = [];
+
+        for (let i = 0; i < angles.length; i++) {
+            positionCamera(bounds.center, bounds.maxDim, angles[i], elevation);
+            renderer.render(scene, camera);
+
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            captures.push({
+                angle: angles[i],
+                dataUrl: dataUrl,
+            });
+        }
+
+        return captures;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Subject registry
+    // ═══════════════════════════════════════════════════════
+
+    function getAllSubjects() {
+        const subjects = [
+            { key: 'toilet', name: 'Toilet', category: 'player' },
+            { key: 'player', name: 'Player (procedural)', category: 'player' },
+            { key: 'player-mixamo', name: 'Player (Mixamo/in-game)', category: 'player' },
+            { key: 'player-on-toilet', name: 'Player on Toilet', category: 'player' },
+        ];
+
+        // Enemies
+        for (const e of ENEMY_TYPES_LIST) {
+            subjects.push({ key: e.key, name: e.name, category: e.category });
+        }
+
+        // Towers
+        for (const [key, def] of Object.entries(TOWER_DEFS)) {
+            subjects.push({ key, name: def.name, category: 'towers' });
+        }
+
+        // Drones
+        subjects.push({ key: 'drone-common', name: 'Drone (Common)', category: 'drones' });
+        subjects.push({ key: 'drone-rare', name: 'Drone (Rare)', category: 'drones' });
+        subjects.push({ key: 'drone-legendary', name: 'Drone (Legendary)', category: 'drones' });
+
+        return subjects;
+    }
+
+    function getFilteredSubjects() {
+        const filter = document.getElementById('filter').value;
+        return getAllSubjects().filter(s => {
+            if (filter === 'all') return true;
+            if (filter === 'enemies') return s.category.startsWith('enemies');
+            if (filter === 'towers') return s.category === 'towers';
+            if (filter === 'player') return s.category === 'player';
+            if (filter === 'drones') return s.category === 'drones';
+            return true;
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // UI — build subject list
+    // ═══════════════════════════════════════════════════════
+
+    function buildSubjectList() {
+        const container = document.getElementById('subject-list');
+        container.innerHTML = '';
+
+        const subjects = getAllSubjects();
+        const categories = {};
+        for (const s of subjects) {
+            if (!categories[s.category]) categories[s.category] = [];
+            categories[s.category].push(s);
+        }
+
+        const categoryNames = {
+            'player': 'Player & Toilet',
+            'enemies-office': 'Enemies — Office',
+            'enemies-forest': 'Enemies — Forest',
+            'enemies-ocean': 'Enemies — Ocean',
+            'enemies-airplane': 'Enemies — Airplane',
+            'towers': 'Towers',
+            'drones': 'Upgrade Drones',
+        };
+
+        for (const [catKey, catSubjects] of Object.entries(categories)) {
+            const section = document.createElement('div');
+            section.className = 'subject-section';
+            section.innerHTML = `<h2>${categoryNames[catKey] || catKey}</h2>`;
+            const grid = document.createElement('div');
+            grid.className = 'subject-grid';
+
+            for (const s of catSubjects) {
+                const card = document.createElement('div');
+                card.className = 'subject-card';
+                card.dataset.key = s.key;
+                card.innerHTML = `<canvas width="128" height="128"></canvas><div class="name">${s.name}</div>`;
+                card.onclick = () => showSubject(s.key);
+                grid.appendChild(card);
+
+                // Generate thumbnail
+                setTimeout(() => generateThumbnail(s.key, card.querySelector('canvas')), 0);
+            }
+
+            section.appendChild(grid);
+            container.appendChild(section);
+        }
+    }
+
+    function generateThumbnail(subjectKey, canvas) {
+        // Create a quick render for the thumbnail
+        const model = createSubjectModel(subjectKey);
+        if (!model) return;
+
+        // Temporarily add to scene
+        scene.add(model);
+        renderer.setSize(128, 128);
+        const bounds = getSubjectBounds(model);
+        positionCamera(bounds.center, bounds.maxDim, 45, 25);
+        renderer.render(scene, camera);
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 128, 128);
+        ctx.drawImage(renderer.domElement, 0, 0, 128, 128);
+
+        scene.remove(model);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Capture all / selected
+    // ═══════════════════════════════════════════════════════
+
+    function getAngles() {
+        const count = parseInt(document.getElementById('angle-count').value);
+        if (count === 1) return [45]; // Nice 3/4 view
+        const angles = [];
+        for (let i = 0; i < count; i++) {
+            angles.push((360 / count) * i);
+        }
+        return angles;
+    }
+
+    window.captureSelected = async function() {
+        if (!currentSubjectKey) {
+            alert('Click a subject first');
+            return;
+        }
+        const resolution = parseInt(document.getElementById('resolution').value);
+        const angles = getAngles();
+        const elevation = parseFloat(document.getElementById('elevation').value);
+
+        const captures = captureSubject(currentSubjectKey, resolution, angles, elevation);
+        capturedImages.set(currentSubjectKey, captures);
+
+        const card = document.querySelector(`[data-key="${currentSubjectKey}"]`);
+        if (card) card.classList.add('captured');
+
+        document.getElementById('btn-download').style.display = '';
+        document.getElementById('status').textContent = `Captured ${captures.length} images of ${currentSubjectKey}`;
+
+        // Restore preview
+        showSubject(currentSubjectKey);
+    };
+
+    window.captureAll = async function() {
+        const subjects = getFilteredSubjects();
+        const resolution = parseInt(document.getElementById('resolution').value);
+        const angles = getAngles();
+        const elevation = parseFloat(document.getElementById('elevation').value);
+        const total = subjects.length;
+
+        document.getElementById('progress').style.display = '';
+        document.getElementById('btn-capture-all').disabled = true;
+
+        capturedImages.clear();
+
+        for (let i = 0; i < subjects.length; i++) {
+            const s = subjects[i];
+            document.getElementById('progress-text').textContent = `Capturing ${s.name} (${i + 1}/${total})`;
+            document.getElementById('progress-fill').style.width = `${((i + 1) / total) * 100}%`;
+
+            // Yield to UI
+            await new Promise(r => setTimeout(r, 10));
+
+            const captures = captureSubject(s.key, resolution, angles, elevation);
+            capturedImages.set(s.key, captures);
+
+            const card = document.querySelector(`[data-key="${s.key}"]`);
+            if (card) card.classList.add('captured');
+        }
+
+        document.getElementById('progress-text').textContent = `Done! Captured ${total} subjects × ${angles.length} angles = ${total * angles.length} images`;
+        document.getElementById('btn-capture-all').disabled = false;
+        document.getElementById('btn-download').style.display = '';
+        document.getElementById('status').textContent = `${total * angles.length} images ready`;
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // Download as ZIP (using JSZip from CDN)
+    // ═══════════════════════════════════════════════════════
+
+    let JSZip = null;
+
+    async function loadJSZip() {
+        if (JSZip) return JSZip;
+        // Dynamically load JSZip
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+            script.onload = () => {
+                JSZip = window.JSZip;
+                resolve(JSZip);
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    window.downloadZip = async function() {
+        if (capturedImages.size === 0) {
+            alert('No captures yet');
+            return;
+        }
+
+        document.getElementById('status').textContent = 'Building ZIP...';
+
+        try {
+            const ZipClass = await loadJSZip();
+            const zip = new ZipClass();
+
+            const subjects = getAllSubjects();
+            const categoryFolders = {
+                'player': 'player',
+                'enemies-office': 'enemies/office',
+                'enemies-forest': 'enemies/forest',
+                'enemies-ocean': 'enemies/ocean',
+                'enemies-airplane': 'enemies/airplane',
+                'towers': 'towers',
+                'drones': 'drones',
+            };
+
+            for (const [subjectKey, captures] of capturedImages) {
+                const subjectInfo = subjects.find(s => s.key === subjectKey);
+                const folder = categoryFolders[subjectInfo?.category] || 'misc';
+
+                for (const cap of captures) {
+                    const angleName = Math.round(cap.angle).toString().padStart(3, '0');
+                    const filename = `${folder}/${subjectKey}_${angleName}deg.png`;
+
+                    // Convert data URL to binary
+                    const base64 = cap.dataUrl.split(',')[1];
+                    zip.file(filename, base64, { base64: true });
+                }
+            }
+
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'hold-it-in-assets.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            document.getElementById('status').textContent = 'ZIP downloaded!';
+        } catch (e) {
+            console.error('ZIP creation failed:', e);
+            document.getElementById('status').textContent = 'ZIP failed — downloading individually...';
+            downloadIndividual();
+        }
+    };
+
+    function downloadIndividual() {
+        const subjects = getAllSubjects();
+        let delay = 0;
+        for (const [subjectKey, captures] of capturedImages) {
+            for (const cap of captures) {
+                const angleName = Math.round(cap.angle).toString().padStart(3, '0');
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = cap.dataUrl;
+                    a.download = `${subjectKey}_${angleName}deg.png`;
+                    a.click();
+                }, delay);
+                delay += 200;
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Init
+    // ═══════════════════════════════════════════════════════
+
+    async function init() {
+        document.getElementById('status').textContent = 'Loading GLB models...';
+
+        // Preload GLB models for ocean enemies
+        try {
+            await GLBModelCache.preloadAll();
+            document.getElementById('status').textContent = 'GLB models loaded';
+        } catch (e) {
+            console.warn('Some GLB models failed to load:', e);
+        }
+
+        // Preload player Mixamo models
+        try {
+            if (PlayerModelLoader.preloadAll) {
+                await PlayerModelLoader.preloadAll();
+                // Add mixamo player option
+                const subjects = getAllSubjects();
+                // Already handled in getAllSubjects
+            }
+        } catch (e) {
+            console.warn('Player GLB models failed:', e);
+        }
+
+        document.getElementById('status').textContent = 'Ready';
+
+        // Build the subject list with thumbnails
+        buildSubjectList();
+
+        // Preview angle slider
+        const slider = document.getElementById('angle-slider');
+        slider.oninput = () => {
+            document.getElementById('angle-display').textContent = slider.value + '°';
+            updatePreview();
+        };
+
+        // Elevation change updates preview
+        document.getElementById('elevation').onchange = updatePreview;
+    }
+
+    init();
+    </script>
+</body>
+</html>
