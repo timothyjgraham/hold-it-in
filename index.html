@@ -2718,6 +2718,39 @@
                     return;
                 }
 
+                // Debug: Ctrl+Shift+U — unlock all towers + scenarios
+                if (e.ctrlKey && e.shiftKey && e.code === 'KeyU') {
+                    e.preventDefault();
+                    // Unlock all towers permanently
+                    const allTowers = {};
+                    for (const type of Object.keys(TOWER_UNLOCK_WAVES)) {
+                        allTowers[type] = true;
+                    }
+                    localStorage.setItem('holditin_tower_unlocks', JSON.stringify(allTowers));
+                    this._applyTowerLocks(999);
+
+                    // Unlock all scenarios by setting best stats
+                    for (const s of ['office', 'forest', 'ocean', 'airplane']) {
+                        if (!this._bestStats[s]) this._bestStats[s] = { wave: 0, score: 0 };
+                        this._bestStats[s].wave = Math.max(this._bestStats[s].wave, 20);
+                        this._bestStats[s].score = Math.max(this._bestStats[s].score, 1);
+                    }
+                    try { localStorage.setItem('holditin_stats', JSON.stringify(this._bestStats)); } catch(e) {}
+                    this._updateBestStats();
+                    if (typeof this._updateScenarioLocks === 'function') this._updateScenarioLocks();
+
+                    // Toast
+                    if (window.SFX) SFX.play('tower_unlock');
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-notification';
+                    toast.textContent = 'DEBUG: All towers & scenarios unlocked';
+                    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ffd93d;color:#1a1a2e;padding:10px 24px;border-radius:8px;font-weight:bold;z-index:99999;font-size:16px;pointer-events:none;';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    console.log('[DEBUG] All towers and scenarios unlocked');
+                    return;
+                }
+
                 // If rebinding, capture the key instead
                 if (this._rebinding) {
                     e.preventDefault();
