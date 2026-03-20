@@ -219,6 +219,7 @@
                 <option value="drones">Drones only</option>
             </select>
         </div>
+        <button onclick="copyToClipboard()">Copy View</button>
         <button id="btn-capture-selected" onclick="captureSelected()">Capture Selected</button>
         <button id="btn-capture-all" class="success" onclick="captureAll()">Capture All</button>
         <button id="btn-download" class="success" style="display:none" onclick="downloadZip()">Download ZIP</button>
@@ -1081,6 +1082,33 @@
         }
         return angles;
     }
+
+    window.copyToClipboard = async function() {
+        if (!currentSubject) {
+            alert('Click a subject first');
+            return;
+        }
+        const resolution = parseInt(document.getElementById('resolution').value);
+        const az = parseFloat(document.getElementById('angle-slider').value);
+        const el = parseFloat(document.getElementById('elevation').value);
+
+        renderer.setSize(resolution, resolution);
+        const bounds = getSubjectBounds(currentSubject);
+        positionCamera(bounds.center, bounds.maxDim, az, el);
+        renderer.render(scene, camera);
+
+        try {
+            const blob = await new Promise(r => renderer.domElement.toBlob(r, 'image/png'));
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            document.getElementById('status').textContent = `Copied ${resolution}×${resolution} PNG to clipboard`;
+        } catch (e) {
+            console.error('Clipboard write failed:', e);
+            document.getElementById('status').textContent = 'Clipboard failed — try clicking the page first';
+        }
+
+        // Restore preview size
+        updatePreview();
+    };
 
     window.captureSelected = async function() {
         if (!currentSubjectKey) {
