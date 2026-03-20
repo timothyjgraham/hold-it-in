@@ -23,14 +23,14 @@ const _scratchDir = new THREE.Vector3();
 
 // Selection animation durations (seconds)
 const COMMON_SELECT_DUR = 0.6;
-const RARE_SELECT_DUR = 0.9;
-const LEGENDARY_SELECT_DUR = 1.4;
+const RARE_SELECT_DUR = 1.1;
+const LEGENDARY_SELECT_DUR = 1.8;
 const REJECTED_EXIT_DUR = 1.5;
 const REJECTED_STAGGER = 0.2;
 
 // Slowmo
-const LEGENDARY_SLOWMO_DUR = 0.5;
-const RARE_SLOWMO_DUR = 0.15;
+const LEGENDARY_SLOWMO_DUR = 0.7;
+const RARE_SLOWMO_DUR = 0.3;
 
 // Presenting phase (chosen drone close-up)
 const PRESENT_FLY_DUR = 0.8;      // Fly to close-up position
@@ -41,7 +41,7 @@ const CARD_DROP_DUR = 0.9;        // Card flight to HUD duration
 
 // Card drop display dimensions
 const CARD_DROP_W = 360;
-const CARD_DROP_H = 293;
+const CARD_DROP_H = 383;
 
 // ─── UPGRADE STAT PREVIEW LOOKUP ─────────────────────────────────────────────
 
@@ -748,102 +748,139 @@ export class UpgradeSelectionUI {
             if (window.SFX) SFX.play('upgrade_common');
             // White sparkle burst
             this._particles.push(..._spawnParticleBurst(
-                this._scene, droneWorldPos, PALETTE.white, 12, 3, 0.5
+                this._scene, droneWorldPos, PALETTE.white, 18, 3.5, 0.6
+            ));
+            // Subtle confetti
+            this._particles.push(..._spawnConfettiBurst(
+                this._scene, droneWorldPos,
+                [PALETTE.white, PALETTE.cream, PALETTE.rarityCommon],
+                8, 3, 0.7
             ));
         } else if (rarity === 'rare') {
             if (window.SFX) SFX.play('upgrade_rare');
 
-            // Violet screen flash
-            _screenFlash(0.2, '#9b8ec4', 0.35);
+            // Double violet flash — first bright, then softer follow-up
+            _screenFlash(0.2, '#9b8ec4', 0.5);
+            setTimeout(() => _screenFlash(0.25, '#d4c8f0', 0.3), 100);
 
-            // Colored particle burst — MORE particles
+            // Colored particle burst — big and dramatic
             const upgrade = this.options[index];
             const burstColor = upgrade.towerRequirement && upgrade.towerRequirement[0]
                 ? this._getTowerColor(upgrade.towerRequirement[0])
                 : PALETTE.rarityRare;
             this._particles.push(..._spawnParticleBurst(
-                this._scene, droneWorldPos, burstColor, 35, 5, 0.8
+                this._scene, droneWorldPos, burstColor, 55, 6, 1.0
             ));
 
-            // Confetti burst in rarity colors
+            // Second wave of particles — white sparkles
+            this._particles.push(..._spawnParticleBurst(
+                this._scene, droneWorldPos, PALETTE.white, 20, 4, 0.7
+            ));
+
+            // Confetti burst in rarity colors — much more
             this._particles.push(..._spawnConfettiBurst(
                 this._scene, droneWorldPos,
-                [PALETTE.rarityRare, PALETTE.white, burstColor],
-                15, 4, 1.0
+                [PALETTE.rarityRare, PALETTE.white, burstColor, 0xd4c8f0],
+                25, 5, 1.2
             ));
 
-            // Brief slowmo
-            this._slowmoTimer = RARE_SLOWMO_DUR;
+            // Slowmo — noticeable
+            this._slowmoTimer = 0.3;
 
-            // Zoom-punch (lighter than legendary)
+            // Zoom-punch — punchy
             this._zoomPunch = 0;
-            this._zoomPunchVel = 8;
+            this._zoomPunchVel = 14;
 
-            // Screen shake (light)
-            this._shakeTimer = 0.12;
-            this._shakeIntensity = 0.15;
+            // Screen shake — moderate rumble
+            this._shakeTimer = 0.18;
+            this._shakeIntensity = 0.22;
 
-            // Shockwave ring
+            // Double shockwave rings — staggered violet
             this._shockwaves.push(_spawnShockwaveRing(
-                this._scene, droneWorldPos, PALETTE.rarityRare, 6, 0.6
+                this._scene, droneWorldPos, PALETTE.rarityRare, 8, 0.7
             ));
+            setTimeout(() => {
+                if (this._scene) {
+                    this._shockwaves.push(_spawnShockwaveRing(
+                        this._scene, droneWorldPos, 0xd4c8f0, 6, 0.6
+                    ));
+                }
+            }, 80);
 
-            // Saturation punch
+            // Saturation punch — strong
             this._satPunch = 0;
-            this._satPunchVel = 0.4;
+            this._satPunchVel = 0.6;
+
+            // Dim rejected drones slightly
+            for (let i = 0; i < this.drones.length; i++) {
+                if (i === index) continue;
+                this._applyBrightness(this.drones[i], 0.6);
+            }
 
         } else if (rarity === 'legendary') {
             if (window.SFX) SFX.play('upgrade_legendary');
 
-            // Double gold flash — first big, then a staggered follow-up
-            _screenFlash(0.2, 'var(--pal-gold, #ffd93d)', 0.7);
-            setTimeout(() => _screenFlash(0.25, '#fff0c0', 0.4), 120);
+            // Triple gold flash — cascading intensity
+            _screenFlash(0.25, 'var(--pal-gold, #ffd93d)', 0.85);
+            setTimeout(() => _screenFlash(0.3, '#fff0c0', 0.5), 100);
+            setTimeout(() => _screenFlash(0.2, '#ffffff', 0.3), 250);
 
-            // Massive gold particle shower from above
+            // Massive gold particle shower from above — doubled
             this._particles.push(..._spawnGoldShower(
-                this._scene, this._camera.position, 80
+                this._scene, this._camera.position, 120
             ));
 
-            // Gold confetti burst at drone
+            // Gold confetti burst at drone — massive
             this._particles.push(..._spawnConfettiBurst(
                 this._scene, droneWorldPos,
-                [PALETTE.gold, PALETTE.rarityLegendary, PALETTE.white, 0xffe066],
-                30, 6, 1.4
+                [PALETTE.gold, PALETTE.rarityLegendary, PALETTE.white, 0xffe066, 0xfff0c0],
+                45, 7, 1.6
             ));
 
-            // Extra radial burst from drone
+            // Big radial burst from drone
             this._particles.push(..._spawnParticleBurst(
-                this._scene, droneWorldPos, PALETTE.gold, 25, 5, 0.9
+                this._scene, droneWorldPos, PALETTE.gold, 40, 6, 1.1
             ));
 
-            // Slowmo — longer, more dramatic
-            this._slowmoTimer = LEGENDARY_SLOWMO_DUR;
+            // White sparkle burst for extra contrast
+            this._particles.push(..._spawnParticleBurst(
+                this._scene, droneWorldPos, PALETTE.white, 20, 4, 0.8
+            ));
 
-            // Zoom-punch — BIGGER
+            // Slowmo — dramatic freeze moment
+            this._slowmoTimer = 0.7;
+
+            // Zoom-punch — INSANE
             if (window.SFX) SFX.play('zoom_punch');
             this._zoomPunch = 0;
-            this._zoomPunchVel = 20;
+            this._zoomPunchVel = 28;
 
-            // Screen shake — strong rumble
-            this._shakeTimer = 0.25;
-            this._shakeIntensity = 0.3;
+            // Screen shake — heavy rumble
+            this._shakeTimer = 0.35;
+            this._shakeIntensity = 0.4;
 
-            // Expanding shockwave ring
+            // Triple expanding shockwave rings — staggered gold cascade
             this._shockwaves.push(_spawnShockwaveRing(
-                this._scene, droneWorldPos, PALETTE.gold, 10, 0.8
+                this._scene, droneWorldPos, PALETTE.gold, 12, 0.9
             ));
-            // Staggered second ring
             setTimeout(() => {
                 if (this._scene) {
                     this._shockwaves.push(_spawnShockwaveRing(
-                        this._scene, droneWorldPos, PALETTE.glow, 8, 0.7
+                        this._scene, droneWorldPos, PALETTE.glow, 9, 0.7
                     ));
                 }
-            }, 100);
+            }, 80);
+            setTimeout(() => {
+                if (this._scene) {
+                    this._shockwaves.push(_spawnShockwaveRing(
+                        this._scene, droneWorldPos, PALETTE.white, 7, 0.6
+                    ));
+                }
+            }, 200);
 
-            // Saturation punch (post-processing)
+            // Saturation punch — maximum
             this._satPunch = 0;
-            this._satPunchVel = 0.8;
+            this._satPunchVel = 1.0;
 
             // Make rejected drones droop/wobble
             for (let i = 0; i < this.drones.length; i++) {
@@ -890,24 +927,68 @@ export class UpgradeSelectionUI {
             }
         }
 
-        // ─── Rare: victory spin (360 yaw) + sign flip ────────────────────
+        // ─── Rare: victory spin (360 yaw) + sign flip + upward surge ────
         if (rarity === 'rare') {
             // 360 degree yaw spin
-            const spinT = Math.min(1, t / 0.7); // Complete spin in first 70% of duration
+            const spinT = Math.min(1, t / 0.65);
             const easedSpin = spinT < 0.5 ? 2 * spinT * spinT : 1 - Math.pow(-2 * spinT + 2, 2) / 2;
             selDrone.rotation.y = easedSpin * Math.PI * 2;
+
+            // Upward surge during spin — lifts and settles
+            const surgeT = Math.min(1, t / 0.5);
+            const surge = Math.sin(surgeT * Math.PI) * 0.5;
+            selDrone.position.y = selDrone.userData.targetPos.y + surge;
 
             // Sign flip
             if (selDrone.userData.signGroup) {
                 selDrone.userData.signGroup.rotation.x = easedSpin * Math.PI * 2;
             }
+
+            // Brightness pulse at mid-point
+            if (t > 0.2 && t < 0.6) {
+                const pulseT = (t - 0.2) / 0.4;
+                this._applyBrightness(selDrone, 1.0 + Math.sin(pulseT * Math.PI) * 0.4);
+            }
+
+            // Spawn trailing particles during spin
+            if (t < 0.7 && Math.random() < 0.3) {
+                const wp = new THREE.Vector3();
+                selDrone.getWorldPosition(wp);
+                wp.x += (Math.random() - 0.5) * 1.5;
+                wp.z += (Math.random() - 0.5) * 1.5;
+                this._particles.push(..._spawnParticleBurst(
+                    this._scene, wp, PALETTE.rarityRare, 2, 2, 0.4
+                ));
+            }
         }
 
-        // ─── Legendary: barrel roll ──────────────────────────────────────
+        // ─── Legendary: barrel roll + rise + brightness flash ────────────
         if (rarity === 'legendary') {
-            const rollT = Math.min(1, t / 0.6);
+            const rollT = Math.min(1, t / 0.5);
             const easedRoll = rollT < 0.5 ? 2 * rollT * rollT : 1 - Math.pow(-2 * rollT + 2, 2) / 2;
             selDrone.rotation.z = easedRoll * Math.PI * 2;
+
+            // Dramatic upward surge
+            const surgeT = Math.min(1, t / 0.6);
+            const surge = Math.sin(surgeT * Math.PI) * 0.8;
+            selDrone.position.y = selDrone.userData.targetPos.y + surge;
+
+            // Brightness pulse — golden flash at peak of roll
+            if (t > 0.15 && t < 0.5) {
+                const pulseT = (t - 0.15) / 0.35;
+                this._applyBrightness(selDrone, 1.0 + Math.sin(pulseT * Math.PI) * 0.6);
+            }
+
+            // Spawn trailing gold particles during roll
+            if (t < 0.6 && Math.random() < 0.4) {
+                const wp = new THREE.Vector3();
+                selDrone.getWorldPosition(wp);
+                wp.x += (Math.random() - 0.5) * 2;
+                wp.z += (Math.random() - 0.5) * 2;
+                this._particles.push(..._spawnParticleBurst(
+                    this._scene, wp, PALETTE.gold, 3, 2.5, 0.5
+                ));
+            }
 
             // Droop/wobble on rejected drones
             for (let i = 0; i < this.drones.length; i++) {
@@ -916,10 +997,12 @@ export class UpgradeSelectionUI {
                 const rud = rd.userData;
                 if (rud._drooping) {
                     rud._droopTimer += dt;
-                    // Droop down
-                    rd.position.y = rud.targetPos.y - Math.sin(rud._droopTimer * 3) * 0.2 - rud._droopTimer * 0.3;
+                    // Droop down — faster
+                    rd.position.y = rud.targetPos.y - Math.sin(rud._droopTimer * 3) * 0.3 - rud._droopTimer * 0.5;
                     // Wobble
-                    rd.rotation.z = Math.sin(rud._droopTimer * 8) * 0.1;
+                    rd.rotation.z = Math.sin(rud._droopTimer * 8) * 0.15;
+                    // Fade out
+                    this._applyBrightness(rd, Math.max(0.3, 1.0 - rud._droopTimer * 0.5));
                 }
             }
         }
@@ -987,10 +1070,12 @@ export class UpgradeSelectionUI {
         selDrone.userData.state = 'presenting';
         const startPos = selDrone.position.clone();
 
-        // Calculate close-up: 9 units in front of camera along view direction
+        // Calculate close-up: 9 units in front of camera along view direction,
+        // raised slightly so the hanging sign doesn't clip off the bottom
         const viewDir = new THREE.Vector3();
         this._camera.getWorldDirection(viewDir);
         const presentPos = this._camera.position.clone().add(viewDir.multiplyScalar(9));
+        presentPos.y += 2.0;
 
         selDrone.userData._presentStartPos = startPos;
         selDrone.userData._presentTargetPos = presentPos;
@@ -1063,6 +1148,14 @@ export class UpgradeSelectionUI {
             if (t >= 1 && !this._presentWaiting) {
                 this._presentWaiting = true;
                 this._presentWaitTimer = 0;
+
+                // Arrival flash — rarity-colored
+                const arrRarity = selUd.rarity;
+                if (arrRarity === 'legendary') {
+                    _screenFlash(0.3, '#ffd93d', 0.25);
+                } else if (arrRarity === 'rare') {
+                    _screenFlash(0.25, '#9b8ec4', 0.15);
+                }
             }
         }
 
@@ -1083,6 +1176,7 @@ export class UpgradeSelectionUI {
 
         const selDrone = this.drones[this.selectedIndex];
         const upgrade = this.options[this.selectedIndex];
+        this._cardDropRarity = upgrade.rarity || 'common';
 
         // Project sign center to screen coordinates
         const signWorldPos = new THREE.Vector3();
@@ -1139,7 +1233,7 @@ export class UpgradeSelectionUI {
         const rarity = upgrade.rarity;
 
         // ── Render card content onto a canvas (mirrors the 3D placard sign) ──
-        const cW = 800, cH = 650;
+        const cW = 800, cH = 850;
         const canvas = document.createElement('canvas');
         canvas.width = cW;
         canvas.height = cH;
@@ -1155,8 +1249,8 @@ export class UpgradeSelectionUI {
             bgGrad.addColorStop(0, '#ffe066');
             bgGrad.addColorStop(1, '#ffd93d');
         } else if (rarity === 'rare') {
-            bgGrad.addColorStop(0, '#fff8ed');
-            bgGrad.addColorStop(1, '#fff4d9');
+            bgGrad.addColorStop(0, '#f0e8f8');
+            bgGrad.addColorStop(1, '#e8ddf2');
         } else {
             bgGrad.addColorStop(0, '#ffffff');
             bgGrad.addColorStop(1, '#faf5ef');
@@ -1164,6 +1258,23 @@ export class UpgradeSelectionUI {
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, cW, cH);
         ctx.restore();
+
+        // Rare: subtle violet shimmer lines
+        if (rarity === 'rare') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(0, 0, cW, cH, 20);
+            ctx.clip();
+            ctx.strokeStyle = 'rgba(155, 142, 196, 0.15)';
+            ctx.lineWidth = 1.5;
+            for (let i = -cH; i < cW + cH; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + cH, cH);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
 
         // Legendary: diagonal shimmer lines
         if (rarity === 'legendary') {
@@ -1213,7 +1324,7 @@ export class UpgradeSelectionUI {
         // ── Icon — centered, prominent ──
         const iconSize = 300;
         const iconCX = cW / 2;
-        const iconCY = 210;
+        const iconCY = 250;
         draw3DUpgradeIcon(ctx, upgrade.icon || 'star', rarity, iconCX, iconCY, iconSize, 0);
 
         // ── Name — centered below icon ──
@@ -1239,7 +1350,7 @@ export class UpgradeSelectionUI {
         nameLines.push(curLine);
 
         const nLineH = nameFontSize + 6;
-        const nStartY = 400 - (nameLines.length - 1) * nLineH / 2;
+        const nStartY = 480 - (nameLines.length - 1) * nLineH / 2;
         for (let i = 0; i < nameLines.length; i++) {
             // Drop shadow
             ctx.fillStyle = 'rgba(0,0,0,0.12)';
@@ -1333,10 +1444,16 @@ export class UpgradeSelectionUI {
 
         // ── Build DOM element ──
         const shadowGlow = rarity === 'legendary'
-            ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 30px rgba(255,217,61,0.6)'
+            ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 40px rgba(255,217,61,0.7), 0 0 80px rgba(255,217,61,0.3)'
             : rarity === 'rare'
-                ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 18px rgba(155,142,196,0.4)'
+                ? '3px 4px 0px rgba(26,26,46,0.5), 0 0 25px rgba(155,142,196,0.55), 0 0 50px rgba(155,142,196,0.2)'
                 : '3px 4px 0px rgba(26,26,46,0.5)';
+
+        const borderStyle = rarity === 'legendary'
+            ? '4px solid #ffd93d'
+            : rarity === 'rare'
+                ? '3.5px solid #9b8ec4'
+                : '3px solid #1a1a2e';
 
         const el = document.createElement('div');
         el.id = 'upgrade-card-drop';
@@ -1346,6 +1463,7 @@ export class UpgradeSelectionUI {
             z-index: 110;
             width: ${CARD_DROP_W}px;
             height: ${CARD_DROP_H}px;
+            border: ${borderStyle};
             border-radius: 12px;
             overflow: visible;
             opacity: 0;
@@ -1354,7 +1472,7 @@ export class UpgradeSelectionUI {
             top: ${screenY - CARD_DROP_H / 2}px;
         `;
 
-        canvas.style.cssText = 'width:100%;height:100%;display:block;';
+        canvas.style.cssText = 'width:100%;height:100%;display:block;border-radius:9px;';
         el.appendChild(canvas);
 
         document.body.appendChild(el);
@@ -1384,12 +1502,18 @@ export class UpgradeSelectionUI {
             this._cardDropEl.style.left = (x - CARD_DROP_W / 2) + 'px';
             this._cardDropEl.style.top = (y - CARD_DROP_H / 2) + 'px';
 
+            // Rarity-scaled animation intensity
+            const isLeg = this._cardDropRarity === 'legendary';
+            const isRare = this._cardDropRarity === 'rare';
+
             // Scale: shrink from full size with juicy pop in the middle
             const shrink = 1.0 - t * 0.65;
-            const pop = Math.sin(t * Math.PI) * 0.15;
+            const popAmp = isLeg ? 0.22 : isRare ? 0.18 : 0.15;
+            const pop = Math.sin(t * Math.PI) * popAmp;
             const scale = shrink + pop;
-            // Wobble rotation that damps out
-            const rot = Math.sin(t * Math.PI * 4) * 15 * (1 - t);
+            // Wobble rotation that damps out — more dramatic for higher rarities
+            const wobbleAmp = isLeg ? 22 : isRare ? 18 : 15;
+            const rot = Math.sin(t * Math.PI * 4) * wobbleAmp * (1 - t);
             this._cardDropEl.style.transform = `scale(${scale}) rotate(${rot}deg)`;
 
             // Fade in quickly, stay visible, fade out at end
@@ -1399,6 +1523,15 @@ export class UpgradeSelectionUI {
                 this._cardDropEl.style.opacity = String((1 - t) / 0.12);
             } else {
                 this._cardDropEl.style.opacity = '1';
+            }
+
+            // Pulsing glow during flight for rare/legendary
+            if (isLeg || isRare) {
+                const glowPulse = 0.8 + Math.sin(t * Math.PI * 6) * 0.2;
+                const glowColor = isLeg ? `255,217,61` : `155,142,196`;
+                const baseSize = isLeg ? 40 : 25;
+                const outerSize = isLeg ? 80 : 50;
+                this._cardDropEl.style.boxShadow = `3px 4px 0px rgba(26,26,46,0.5), 0 0 ${baseSize * glowPulse}px rgba(${glowColor},${0.7 * glowPulse}), 0 0 ${outerSize * glowPulse}px rgba(${glowColor},${0.3 * glowPulse})`;
             }
         }
 

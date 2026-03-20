@@ -299,6 +299,7 @@ export default {
 
     // ─── TOWER UNLOCK ────────────────────────────────────────────────────
     'tower.unlock':             'NEW TOWER: {{name}}!',
+    'tower.locked.desc':        'Unlocks at Wave {{wave}}',
 
     // ─── GAME STATE MESSAGES ─────────────────────────────────────────────
     'game.saved':               'GAME SAVED',

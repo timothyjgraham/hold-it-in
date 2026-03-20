@@ -35,15 +35,15 @@ const RARITY = {
         body:         PALETTE.droneRare,          // soft lavender
         accent:       PALETTE.rarityRare,         // deeper violet
         glow:         PALETTE.rarityRare,         // violet
-        emissive:     0.25,
-        outlineScale: 1.0,
+        emissive:     0.35,
+        outlineScale: 1.2,
         bladeCount:   2,
     },
     legendary: {
         body:         PALETTE.droneLegendary,     // rich gold
         accent:       PALETTE.rarityLegendary,    // deep gold
         glow:         PALETTE.rarityLegendary,    // gold
-        emissive:     0.4,
+        emissive:     0.5,
         outlineScale: 1.5,
         bladeCount:   3,
     },
@@ -54,9 +54,9 @@ const RARITY = {
 function createPlacardTexture(upgrade, rarity) {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
-    canvas.height = 650;
+    canvas.height = 850;
     const ctx = canvas.getContext('2d');
-    const cW = 800, cH = 650;
+    const cW = 800, cH = 850;
 
     // ── Background with subtle gradient ──
     const bgGrad = ctx.createLinearGradient(0, 0, 0, cH);
@@ -64,14 +64,26 @@ function createPlacardTexture(upgrade, rarity) {
         bgGrad.addColorStop(0, '#ffe066');
         bgGrad.addColorStop(1, '#ffd93d');
     } else if (rarity === 'rare') {
-        bgGrad.addColorStop(0, '#fff8ed');
-        bgGrad.addColorStop(1, '#fff4d9');
+        bgGrad.addColorStop(0, '#f0e8f8');
+        bgGrad.addColorStop(1, '#e8ddf2');
     } else {
         bgGrad.addColorStop(0, '#ffffff');
         bgGrad.addColorStop(1, '#faf5ef');
     }
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, cW, cH);
+
+    // Rare: subtle violet shimmer lines
+    if (rarity === 'rare') {
+        ctx.strokeStyle = 'rgba(155, 142, 196, 0.15)';
+        ctx.lineWidth = 1.5;
+        for (let i = -cH; i < cW + cH; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i + cH, cH);
+            ctx.stroke();
+        }
+    }
 
     // Legendary: diagonal shimmer lines across gold background
     if (rarity === 'legendary') {
@@ -111,7 +123,7 @@ function createPlacardTexture(upgrade, rarity) {
     // ── ICON — centered, prominent ──
     const iconSize = 300;
     const iconCX = cW / 2;
-    const iconCY = 185;
+    const iconCY = 250;
 
     // Save icon background region for animated re-rendering (avoids visible square artifact)
     const _iconHalf = Math.ceil(iconSize / 2) + 2;
@@ -142,7 +154,7 @@ function createPlacardTexture(upgrade, rarity) {
     nameLines.push(currentLine);
 
     const nameLineH = nameFontSize + 6;
-    const nameStartY = 400 - (nameLines.length - 1) * nameLineH / 2;
+    const nameStartY = 480 - (nameLines.length - 1) * nameLineH / 2;
     for (let i = 0; i < nameLines.length; i++) {
         // Drop shadow
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
@@ -366,8 +378,8 @@ function _buildRarityBeam(root, rarity) {
     const innerBotR    = 1.5 + scale * 0.5;
     const outerTopR    = innerTopR * 1.8;
     const outerBotR    = innerBotR * 1.4;
-    const innerOpacity = 0.03 + scale * 0.02;
-    const outerOpacity = innerOpacity * 0.35;
+    const innerOpacity = 0.05 + scale * 0.03;
+    const outerOpacity = innerOpacity * 0.4;
 
     const beamGroup = new THREE.Group();
     beamGroup.name = 'rarityBeam';
@@ -478,8 +490,41 @@ function _buildLegendaryExtras(root, cfg) {
     return extras;
 }
 
+// ─── RARE EXTRAS (glow dome, jitter outline) ────────────────────────────────
+
+function _buildRareExtras(root, cfg) {
+    const extras = {};
+
+    // Glow dome underneath (like legendary but violet and subtler)
+    const glowDome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshBasicMaterial({
+            color: cfg.glow,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+        })
+    );
+    glowDome.position.y = -BODY_HALF_H - 0.05;
+    glowDome.rotation.x = Math.PI;
+    root.add(glowDome);
+
+    // Single jittery outline — subtle violet ink wobble
+    const outlineW = OUTLINE_WIDTH.tower * 1.2;
+    const jitter = new THREE.Mesh(
+        new THREE.SphereGeometry(BODY_R + outlineW * 1.5, 16, 12),
+        outlineMatJittery(outlineW * 1.0, cfg.glow, 0.08)
+    );
+    jitter.scale.y = BODY_SQUISH;
+    root.add(jitter);
+    extras.jitterMats = [jitter.material];
+
+    return extras;
+}
+
 // ─── AMBIENT MOTES ──────────────────────────────────────────────────────────
-// Common: none. Rare: 6 violet. Legendary: 12 gold + 2 large counter-rotating.
+// Common: none. Rare: 10 violet. Legendary: 14 gold + 2 large counter-rotating.
 
 function _createMotes(root, rarity) {
     if (rarity === 'common') return [];
@@ -487,14 +532,14 @@ function _createMotes(root, rarity) {
     const cfg = RARITY[rarity];
     const motes = [];
 
-    const count    = rarity === 'legendary' ? 12 : 6;
+    const count    = rarity === 'legendary' ? 14 : 10;
     const minR     = rarity === 'legendary' ? 0.8 : 0.6;
-    const maxR     = rarity === 'legendary' ? 1.4 : 1.0;
-    const minSpd   = rarity === 'legendary' ? 0.6 : 0.8;
+    const maxR     = rarity === 'legendary' ? 1.4 : 1.1;
+    const minSpd   = rarity === 'legendary' ? 0.6 : 0.7;
     const maxSpd   = 1.4;
-    const size     = rarity === 'legendary' ? 0.04 : 0.035;
-    const ei       = rarity === 'legendary' ? 1.0 : 0.8;
-    const opa      = rarity === 'legendary' ? 0.8 : 0.7;
+    const size     = rarity === 'legendary' ? 0.045 : 0.04;
+    const ei       = rarity === 'legendary' ? 1.0 : 0.9;
+    const opa      = rarity === 'legendary' ? 0.85 : 0.75;
 
     for (let i = 0; i < count; i++) {
         const mat = toonMat(cfg.glow, {
@@ -541,13 +586,14 @@ function _createMotes(root, rarity) {
 // ─── BEAM PARTICLES (legendary — rising motes within the beam column) ──────
 
 function _createBeamParticles(root, rarity) {
-    if (rarity !== 'legendary') return [];
+    if (rarity === 'common') return [];
 
     const cfg = RARITY[rarity];
     const particles = [];
-    const beamH = 6.0;
+    const beamH = rarity === 'legendary' ? 6.0 : 5.0;
+    const count = rarity === 'legendary' ? 10 : 5;
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < count; i++) {
         const mat = new THREE.MeshBasicMaterial({
             color: cfg.glow,
             transparent: true,
@@ -593,10 +639,12 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     // ── Rarity beam (rare + legendary) ─────────────────────────────────
     const beamGroup = _buildRarityBeam(root, rarity);
 
-    // ── Legendary extras (ring, crown, jitter, glow dome) ──────────────
+    // ── Rarity extras (ring, crown, jitter, glow dome) ─────────────────
     let extras = {};
     if (rarity === 'legendary') {
         extras = _buildLegendaryExtras(root, cfg);
+    } else if (rarity === 'rare') {
+        extras = _buildRareExtras(root, cfg);
     }
 
     // ── Ambient motes (rare + legendary) ───────────────────────────────
@@ -625,9 +673,9 @@ export function createUpgradeDrone(upgrade, slotIndex) {
     chainR.position.set(chainSpacing, -chainLength / 2, 0);
     signGroup.add(chainR);
 
-    // Placard (800x650 canvas → 4.5 x 3.65625 world units)
+    // Placard (800x850 canvas → 4.5 x 4.78125 world units)
     const placardW = 4.5;
-    const placardH = 3.65625;
+    const placardH = 4.78125;
     const placardD = 0.04;
 
     const placardTexture = createPlacardTexture(upgrade, rarity);
@@ -735,9 +783,9 @@ export function updateUpgradeDrone(drone, dt) {
     }
 
     // ── PENDULUM PHYSICS (sign swing) ───────────────────────────────────
-    const g = 9.8;
-    const L = 0.5;
-    const damping = 3.5;
+    const g = 4.0;
+    const L = 0.8;
+    const damping = 5.0;
     const accelForce = ud._externalAccel || 0;
 
     const angAccel = -(g / L) * Math.sin(ud.pendulumAngle)
@@ -745,7 +793,12 @@ export function updateUpgradeDrone(drone, dt) {
                     + accelForce;
     ud.pendulumVelocity += angAccel * dt;
     ud.pendulumAngle += ud.pendulumVelocity * dt;
-    ud.pendulumAngle = Math.max(-0.6, Math.min(0.6, ud.pendulumAngle));
+    // Soft clamp — smoothly decelerates near limits instead of hard bounce
+    const maxAngle = 0.5;
+    if (Math.abs(ud.pendulumAngle) > maxAngle) {
+        ud.pendulumAngle = Math.sign(ud.pendulumAngle) * maxAngle;
+        ud.pendulumVelocity *= -0.3;
+    }
 
     if (ud.signGroup) {
         ud.signGroup.rotation.z = ud.pendulumAngle;
@@ -764,9 +817,10 @@ export function updateUpgradeDrone(drone, dt) {
         ud._beamTime += dt;
         ud.beamGroup.rotation.y += dt * 0.3;
 
-        // Pulse opacity — legendary pulses faster
-        const pulseRate = ud.rarity === 'legendary' ? 2.5 : 1.5;
-        const pulse = 0.85 + Math.sin(ud._beamTime * pulseRate) * 0.15;
+        // Pulse opacity — legendary pulses faster and with more amplitude
+        const pulseRate = ud.rarity === 'legendary' ? 3.0 : 2.0;
+        const pulseAmp = ud.rarity === 'legendary' ? 0.25 : 0.18;
+        const pulse = (1.0 - pulseAmp) + Math.sin(ud._beamTime * pulseRate) * pulseAmp;
 
         for (const child of ud.beamGroup.children) {
             if (child.userData._baseOpacity !== undefined) {
@@ -791,7 +845,7 @@ export function updateUpgradeDrone(drone, dt) {
         }
     }
 
-    // ── LEGENDARY EXTRAS ────────────────────────────────────────────────
+    // ── RARITY EXTRAS ─────────────────────────────────────────────────
     if (ud.rarity === 'legendary') {
         // Orbital ring rotation
         if (ud.orbitalRing) {
@@ -802,12 +856,12 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud.crownSpikes) {
             ud.crownSpikes.position.y = Math.sin(ud.hoverTime * 2.5) * 0.02;
         }
+    }
 
-        // Update jitter shader time uniforms (different rates for visual variety)
-        if (ud.jitterMats) {
-            ud.jitterMats[0].uniforms.uTime.value += dt;
-            if (ud.jitterMats[1]) ud.jitterMats[1].uniforms.uTime.value += dt * 1.3;
-        }
+    // Jitter shader time uniforms (rare + legendary)
+    if (ud.jitterMats) {
+        ud.jitterMats[0].uniforms.uTime.value += dt;
+        if (ud.jitterMats[1]) ud.jitterMats[1].uniforms.uTime.value += dt * 1.3;
     }
 
     // ── ANIMATED 3D ICON on placard (throttled to every 6th frame) ─────
@@ -816,7 +870,7 @@ export function updateUpgradeDrone(drone, dt) {
         if (ud._iconFrame % 6 === 0) {
             const tex = ud.placardTexture;
             const ctx = tex._iconCtx;
-            const cx = 400, cy = 185, half = 152;
+            const cx = 400, cy = 250, half = 152;
 
             // Restore saved background region (avoids visible square artifact)
             if (tex._iconBgData) {

@@ -184,8 +184,9 @@ function _borderlandsPostProcess(time) {
             const gyA = -atl - 2 * atc - atr + abl + 2 * abc + abr;
             let edgeA = Math.sqrt(gxA * gxA + gyA * gyA);
 
-            // Higher res → edges are thinner, so boost multipliers slightly
-            edges[idx] = Math.min(1.0, edgeL * 1.8 + edgeA * 3.0);
+            // Keep silhouette edges strong (alpha) but suppress internal toon-ramp
+            // boundaries that crawl across surfaces during rotation
+            edges[idx] = Math.min(1.0, edgeL * 0.5 + edgeA * 3.0);
         }
     }
 
@@ -268,6 +269,49 @@ function _borderlandsPostProcess(time) {
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
+// ─── RARITY GLOW AURA ───────────────────────────────────────────────────────
+// Paints a soft radial glow behind the 3D icon based on rarity color.
+
+function _drawRarityGlow(ctx, rarity, cx, cy, size, time) {
+    if (rarity === 'common') return;
+
+    const half = size / 2;
+    const r = half * 0.85;
+    const t = time || 0;
+
+    if (rarity === 'legendary') {
+        // Pulsing gold aura — two layered radial gradients
+        const pulse = 0.7 + Math.sin(t * 3.0) * 0.15;
+        const outerPulse = 0.4 + Math.sin(t * 2.0 + 1.0) * 0.1;
+
+        // Outer glow — wide, soft
+        const g2 = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.3);
+        g2.addColorStop(0, `rgba(255, 217, 61, ${outerPulse * 0.3})`);
+        g2.addColorStop(0.5, `rgba(255, 224, 102, ${outerPulse * 0.15})`);
+        g2.addColorStop(1, 'rgba(255, 217, 61, 0)');
+        ctx.fillStyle = g2;
+        ctx.fillRect(cx - half, cy - half, size, size);
+
+        // Inner glow — bright core
+        const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.8);
+        g1.addColorStop(0, `rgba(255, 240, 192, ${pulse * 0.35})`);
+        g1.addColorStop(0.6, `rgba(255, 217, 61, ${pulse * 0.15})`);
+        g1.addColorStop(1, 'rgba(255, 217, 61, 0)');
+        ctx.fillStyle = g1;
+        ctx.fillRect(cx - half, cy - half, size, size);
+    } else {
+        // Violet aura for rare — gentle pulsing
+        const pulse = 0.6 + Math.sin(t * 2.5) * 0.12;
+
+        const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 1.1);
+        g1.addColorStop(0, `rgba(155, 142, 196, ${pulse * 0.25})`);
+        g1.addColorStop(0.6, `rgba(155, 142, 196, ${pulse * 0.1})`);
+        g1.addColorStop(1, 'rgba(155, 142, 196, 0)');
+        ctx.fillStyle = g1;
+        ctx.fillRect(cx - half, cy - half, size, size);
+    }
+}
+
 /**
  * Draw a rotating 3D upgrade icon onto a 2D canvas context.
  * Includes Borderlands-style post-processing (ink edges, cross-hatching).
@@ -284,7 +328,12 @@ function _borderlandsPostProcess(time) {
 export function draw3DUpgradeIcon(ctx, iconKey, rarity, cx, cy, size, time, skipPostProcess) {
     if (!_renderer) return;
 
-    _setupScene(iconKey, rarity || 'common', time || 0);
+    const r = rarity || 'common';
+
+    // Draw rarity glow aura behind the icon
+    _drawRarityGlow(ctx, r, cx, cy, size, time);
+
+    _setupScene(iconKey, r, time || 0);
     _renderer.render(_scene, _camera);
 
     const result = skipPostProcess ? _renderer.domElement : _borderlandsPostProcess(time);

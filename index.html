@@ -3482,6 +3482,15 @@
             document.querySelectorAll('.tower-btn:not(.sell-btn)').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    // Locked tower: shake feedback only
+                    if (btn.classList.contains('tower-locked')) {
+                        if (window.SFX) SFX.play('tower_deny');
+                        // Restart shake animation
+                        btn.style.animation = 'none';
+                        btn.offsetHeight; // force reflow
+                        btn.style.animation = 'tower-locked-shake 0.4s ease-in-out';
+                        return;
+                    }
                     const towerType = btn.dataset.tower;
                     if (this._sellMode) this._exitSellMode();
                     if (window.SFX) SFX.play('ui_tower_select');
@@ -3490,6 +3499,21 @@
 
                 // Tooltip show on hover
                 btn.addEventListener('mouseenter', () => {
+                    // Locked tower: show unlock requirement in tooltip
+                    if (btn.classList.contains('tower-locked')) {
+                        if (window.SFX) SFX.play('ui_hover');
+                        const unlockWave = TOWER_UNLOCK_WAVES[btn.dataset.tower] || 1;
+                        tipName.textContent = btn.dataset.tipName;
+                        tipCost.textContent = '';
+                        tipDesc.textContent = t('tower.locked.desc', { wave: unlockWave }) || `Unlocks at Wave ${unlockWave}`;
+                        const tipStats = tooltip.querySelector('.tip-stats');
+                        if (tipStats) tipStats.innerHTML = '';
+                        const rect = btn.getBoundingClientRect();
+                        tooltip.style.right = (window.innerWidth - rect.left + 10) + 'px';
+                        tooltip.style.top = (rect.top + rect.height / 2 - 40) + 'px';
+                        tooltip.classList.add('visible');
+                        return;
+                    }
                     if (window.SFX) SFX.play('ui_hover');
                     tipName.textContent = btn.dataset.tipName;
                     tipCost.textContent = btn.dataset.tipCost;
@@ -5487,7 +5511,7 @@
                     btn.removeAttribute('data-unlock');
                 } else {
                     btn.classList.add('tower-locked');
-                    btn.disabled = true;
+                    btn.disabled = false; // Keep enabled so hover/click events fire
                     btn.setAttribute('data-unlock', `WAVE ${unlockWave}`);
                 }
             });
@@ -6969,7 +6993,7 @@
                     drone.position.copy(pos);
 
                     // Pendulum force from smoothed lateral acceleration
-                    ud._externalAccel = -ud._smoothVel.x * 3.0;
+                    ud._externalAccel = -ud._smoothVel.x * 1.5;
 
                     // Tilt fading in last 20% of flight
                     const tiltFade = Math.min(1, (1 - t) / 0.2);
@@ -7526,12 +7550,14 @@
             style.id = 'upgrade-glow-css';
             style.textContent = `
                 @keyframes upgrade-legendary-pulse {
-                    0%, 100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 10px rgba(255,217,61,0.45), inset 0 0 6px rgba(255,217,61,0.1); }
-                    50%      { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 18px rgba(255,217,61,0.75), inset 0 0 10px rgba(255,217,61,0.2); }
+                    0%   { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 8px rgba(255,217,61,0.4), 0 0 20px rgba(255,217,61,0.15), inset 0 0 6px rgba(255,217,61,0.1); border-color: #ffd93d; }
+                    50%  { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 16px rgba(255,217,61,0.8), 0 0 35px rgba(255,217,61,0.3), inset 0 0 12px rgba(255,217,61,0.2); border-color: #ffe580; }
+                    100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 8px rgba(255,217,61,0.4), 0 0 20px rgba(255,217,61,0.15), inset 0 0 6px rgba(255,217,61,0.1); border-color: #ffd93d; }
                 }
                 @keyframes upgrade-rare-glow {
-                    0%, 100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 8px rgba(155,142,196,0.35), inset 0 0 4px rgba(155,142,196,0.1); }
-                    50%      { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 14px rgba(155,142,196,0.6), inset 0 0 8px rgba(155,142,196,0.18); }
+                    0%   { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 6px rgba(155,142,196,0.3), 0 0 16px rgba(155,142,196,0.1), inset 0 0 4px rgba(155,142,196,0.08); border-color: #9b8ec4; }
+                    50%  { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 12px rgba(155,142,196,0.65), 0 0 28px rgba(155,142,196,0.2), inset 0 0 8px rgba(155,142,196,0.15); border-color: #b8aad8; }
+                    100% { box-shadow: 2px 3px 0px rgba(0,0,0,0.2), 0 0 6px rgba(155,142,196,0.3), 0 0 16px rgba(155,142,196,0.1), inset 0 0 4px rgba(155,142,196,0.08); border-color: #9b8ec4; }
                 }
             `;
             document.head.appendChild(style);
@@ -7605,8 +7631,8 @@
             };
             const rarityShadow = {
                 common: '2px 3px 0px rgba(0,0,0,0.2)',
-                rare: '2px 3px 0px rgba(0,0,0,0.2), 0 0 10px rgba(155,142,196,0.5), inset 0 0 6px rgba(155,142,196,0.15)',
-                legendary: '2px 3px 0px rgba(0,0,0,0.2), 0 0 14px rgba(255,217,61,0.6), inset 0 0 8px rgba(255,217,61,0.15)',
+                rare: '2px 3px 0px rgba(0,0,0,0.2), 0 0 10px rgba(155,142,196,0.5), 0 0 22px rgba(155,142,196,0.15), inset 0 0 6px rgba(155,142,196,0.12)',
+                legendary: '2px 3px 0px rgba(0,0,0,0.2), 0 0 14px rgba(255,217,61,0.6), 0 0 30px rgba(255,217,61,0.2), inset 0 0 8px rgba(255,217,61,0.15)',
             };
 
             // Create icon data URL using canvas icon system
@@ -7699,7 +7725,19 @@
                 rare: '#ede8f5',
                 legendary: 'var(--pal-gold, #ffd93d)',
             };
+            const rarityShadow = {
+                common: '2px 3px 0px rgba(0,0,0,0.15)',
+                rare: '2px 3px 0px rgba(0,0,0,0.15), 0 0 15px rgba(155,142,196,0.5), 0 0 30px rgba(155,142,196,0.15)',
+                legendary: '2px 3px 0px rgba(0,0,0,0.15), 0 0 20px rgba(255,217,61,0.6), 0 0 40px rgba(255,217,61,0.2)',
+            };
+            const rarityBorder = {
+                common: '3px solid var(--pal-ink, #1a1a2e)',
+                rare: '3.5px solid #9b8ec4',
+                legendary: '4px solid #ffd93d',
+            };
             toast.style.background = rarityBg[upgrade.rarity] || rarityBg.common;
+            toast.style.boxShadow = rarityShadow[upgrade.rarity] || rarityShadow.common;
+            toast.style.border = rarityBorder[upgrade.rarity] || rarityBorder.common;
 
             // Icon (canvas-rendered, no emoji)
             const iconURL = window.createIconDataURL ? window.createIconDataURL(upgrade.icon || 'star', 128) : '';
