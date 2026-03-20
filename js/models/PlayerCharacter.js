@@ -14,6 +14,7 @@ export class PlayerCharacter {
         this.mixer = null;
         this.phoneMesh = null;
         this.clips = null;
+        this.boneScale = 1; // 1 for GLB (meters), ~94 for FBX (cm)
 
         // Animation actions
         this._idleAction = null;
@@ -40,6 +41,7 @@ export class PlayerCharacter {
         this.skeleton = model.skeleton;
         this.boneMap = model.boneMap;
         this.clips = model.clips;
+        this.boneScale = model.boneScale || 1;
 
         // Mixamo Beta is ~1.8m (meter scale). Scale up to match game's stylized proportions.
         // Old procedural player was ~2.0 units visible above toilet seat.
@@ -347,10 +349,11 @@ export class PlayerCharacter {
     // ───────────────────────────────────────
 
     _createPhone() {
-        // Phone dimensions in model-local space (meters). Group scale (1.8) applies on top.
-        const phoneW = 0.15;
-        const phoneH = 0.25;
-        const phoneD = 0.025;
+        // Phone dimensions in bone-local space. For GLB (meters) bs=1, for FBX (cm) bs~94.
+        const bs = this.boneScale;
+        const phoneW = 0.15 * bs;
+        const phoneH = 0.25 * bs;
+        const phoneD = 0.025 * bs;
 
         // Phone body
         const phoneGeo = new THREE.BoxGeometry(phoneW, phoneH, phoneD);
@@ -370,10 +373,10 @@ export class PlayerCharacter {
         screen.position.z = phoneD * 0.51;
         this.phoneMesh.add(screen);
 
-        // Attach to LEFT hand bone (model-space offsets, meters)
+        // Attach to LEFT hand bone (bone-local offsets, scaled by boneScale)
         // Mixamo LeftHand: local Y points along fingers, X is side-to-side, Z is palm normal
         if (this.boneMap.hand_L) {
-            this.phoneMesh.position.set(0, 0.1, 0.04);
+            this.phoneMesh.position.set(0, 0.1 * bs, 0.04 * bs);
             this.phoneMesh.rotation.set(-1.2, 0.3, 0);
             this.boneMap.hand_L.add(this.phoneMesh);
         }

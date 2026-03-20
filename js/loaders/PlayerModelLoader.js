@@ -93,11 +93,23 @@ function _normalizeFBXBoneNames(fbxGroup) {
 }
 
 /**
- * Scale FBX from centimeters to meters (Mixamo FBX exports at cm scale).
- * Applies to the root transform so downstream code sees meter-scale geometry.
+ * Normalize FBX scale so it visually matches Mixamo GLB convention (~1.8m tall).
+ * Measures actual height and applies a correcting root scale.
+ * Stores boneScale = (native height / 1.8) so bone-local positions can be
+ * converted: multiply meter-scale values by boneScale to get bone-local values.
  */
+const _TARGET_HEIGHT = 1.8; // Mixamo Beta GLB height in meters
+let _boneScale = 1; // 1 for GLB (meters), ~94 for FBX (cm)
+
 function _normalizeFBXScale(fbxGroup) {
-    fbxGroup.scale.multiplyScalar(0.01);
+    fbxGroup.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(fbxGroup);
+    const height = box.max.y - box.min.y;
+    if (height > 0.01) {
+        const scaleFactor = _TARGET_HEIGHT / height;
+        fbxGroup.scale.multiplyScalar(scaleFactor);
+        _boneScale = height / _TARGET_HEIGHT;
+    }
     fbxGroup.updateMatrixWorld(true);
 }
 
@@ -321,6 +333,6 @@ export const PlayerModelLoader = {
             clips.disbelief = _cache.disbelief.animations[0];
         }
 
-        return { group, skinnedMesh, skeleton, boneMap, outlineMesh, clips };
+        return { group, skinnedMesh, skeleton, boneMap, outlineMesh, clips, boneScale: _boneScale };
     },
 };
