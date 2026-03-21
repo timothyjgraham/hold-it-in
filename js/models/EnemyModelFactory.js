@@ -1322,7 +1322,8 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.82, bodyW, bodyLen, 0.08, 10, 10);
+    // Extra-long barrel to overlap both shoulder and haunch zones, preventing gaps
+    const bodyGeo = createOrganicTorso(bodyW * 0.82, bodyW, bodyLen * 1.10, 0.08, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;  // Y→Z, lies horizontal
@@ -1330,23 +1331,23 @@ function _buildRigidDeer(size, config, materials, boneMap) {
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // ═══ SHOULDER: ellipsoid on chest bone — bridges body barrel to front legs ═══
-    const shoulderR = bodyW * 0.90;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: ellipsoid on chest bone — oversized to overlap body barrel ═══
+    const shoulderR = bodyW * 1.0;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.05, 0.80, 0.90 * (bodyH / bodyW)); // wide, flat, match body height ratio
-    shoulder.position.set(0, -shoulderR * 0.10, 0); // sit slightly below chest bone
+    shoulder.scale.set(1.08, 0.80, 0.90 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.08, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // ═══ HAUNCH: ellipsoid on pelvis bone — bridges body barrel to hind legs ═══
-    const haunchR = bodyW * 1.05;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: ellipsoid on pelvis bone — oversized to overlap body barrel ═══
+    const haunchR = bodyW * 1.15;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.10, 0.85, 0.90 * (bodyH / bodyW)); // wider rump, flattened
-    haunch.position.set(0, -haunchR * 0.08, 0);
+    haunch.scale.set(1.12, 0.85, 0.90 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.06, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -1618,7 +1619,8 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW, bodyLen, 0.12, 10, 10);
+    // Extended barrel for gap-free body coverage
+    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW, bodyLen * 1.10, 0.12, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;  // horizontal
@@ -1626,23 +1628,23 @@ function _buildRigidSquirrel(size, config, materials, boneMap) {
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // ═══ SHOULDER: small ellipsoid on chest — bridges body to front legs ═══
-    const shoulderR = bodyW * 0.88;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 8, 6);
+    // ═══ SHOULDER: oversized to overlap body barrel ═══
+    const shoulderR = bodyW * 1.0;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.0, 0.78, 0.85 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    shoulder.scale.set(1.02, 0.78, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.06, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // ═══ HAUNCH: slightly larger ellipsoid on pelvis — bridges to hind legs ═══
-    const haunchR = bodyW * 1.0;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 8, 6);
+    // ═══ HAUNCH: oversized to overlap body barrel ═══
+    const haunchR = bodyW * 1.12;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.05, 0.82, 0.85 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.06, 0);
+    haunch.scale.set(1.08, 0.82, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.04, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -1872,7 +1874,8 @@ function _buildRigidBear(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 1.10, bodyLen, 0.12, 10, 10);
+    // Extended barrel for gap-free coverage of shoulder/haunch zones
+    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 1.10, bodyLen * 1.08, 0.12, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
@@ -1882,7 +1885,7 @@ function _buildRigidBear(size, config, materials, boneMap) {
 
     // ═══ SHOULDER HUMP: raised sphere on top of chest ═══
     const humpH = d.shoulderHumpH * s;
-    const humpGeo = new THREE.SphereGeometry(humpH * 1.5, 8, 8);
+    const humpGeo = new THREE.SphereGeometry(humpH * 1.5, 10, 8);
     const hump = new THREE.Mesh(humpGeo, materials.body);
     hump.name = 'hump';
     hump.scale.set(1.3, 1.0, 1.0);
@@ -1890,13 +1893,13 @@ function _buildRigidBear(size, config, materials, boneMap) {
     boneMap.chest.add(hump);
     parts.hump = hump;
 
-    // ═══ SHOULDER: wide ellipsoid on chest ═══
-    const shoulderR = bodyW * 1.05;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: oversized for gap-free overlap with body ═══
+    const shoulderR = bodyW * 1.15;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.10, 0.75, 0.85 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.10, 0);
+    shoulder.scale.set(1.12, 0.75, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.08, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
@@ -1909,13 +1912,13 @@ function _buildRigidBear(size, config, materials, boneMap) {
     boneMap.belly.add(belly);
     parts.belly = belly;
 
-    // ═══ HAUNCH: wide ellipsoid on pelvis ═══
-    const haunchR = bodyW * 1.15;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: oversized for gap-free overlap with body ═══
+    const haunchR = bodyW * 1.25;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.15, 0.80, 0.85 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.08, 0);
+    haunch.scale.set(1.18, 0.80, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.06, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -2054,35 +2057,33 @@ function _buildRigidBear(size, config, materials, boneMap) {
     boneMap.hindLowerLeg_R.add(hLowerR);
     parts.hindLowerLegR = hLowerR;
 
-    // ═══ PAWS: wide flattened spheres at bottom of lower legs ═══
-    const pawR = legThick * 1.5;
-    const pawGeo = new THREE.SphereGeometry(pawR, 8, 6);
+    // ═══ PAWS: wide rounded boxes — organic bear paw shape ═══
+    const pawW = legThick * 3.2;
+    const pawH = legThick * 1.2;
+    const pawD = legThick * 3.8;
+    const pawGeo = createRoundedBox(pawW, pawH, pawD, pawH * 0.35);
 
     const pawFL = new THREE.Mesh(pawGeo, materials.body);
     pawFL.name = 'frontHoofL';
-    pawFL.scale.set(1.2, 0.5, 1.3);
-    pawFL.position.set(0, -fLowerH * 0.52, 0);
+    pawFL.position.set(0, -fLowerH * 0.48, -legThick * 0.3);
     boneMap.frontLowerLeg_L.add(pawFL);
     parts.frontHoofL = pawFL;
 
     const pawFR = new THREE.Mesh(pawGeo, materials.body);
     pawFR.name = 'frontHoofR';
-    pawFR.scale.set(1.2, 0.5, 1.3);
-    pawFR.position.set(0, -fLowerH * 0.52, 0);
+    pawFR.position.set(0, -fLowerH * 0.48, -legThick * 0.3);
     boneMap.frontLowerLeg_R.add(pawFR);
     parts.frontHoofR = pawFR;
 
     const pawHL = new THREE.Mesh(pawGeo, materials.body);
     pawHL.name = 'hindHoofL';
-    pawHL.scale.set(1.2, 0.5, 1.3);
-    pawHL.position.set(0, -hLowerH * 0.52, 0);
+    pawHL.position.set(0, -hLowerH * 0.48, -legThick * 0.3);
     boneMap.hindLowerLeg_L.add(pawHL);
     parts.hindHoofL = pawHL;
 
     const pawHR = new THREE.Mesh(pawGeo, materials.body);
     pawHR.name = 'hindHoofR';
-    pawHR.scale.set(1.2, 0.5, 1.3);
-    pawHR.position.set(0, -hLowerH * 0.52, 0);
+    pawHR.position.set(0, -hLowerH * 0.48, -legThick * 0.3);
     boneMap.hindLowerLeg_R.add(pawHR);
     parts.hindHoofR = pawHR;
 
@@ -2112,7 +2113,8 @@ function _buildRigidFox(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.80, bodyW * 0.90, bodyLen, 0.04, 10, 10);
+    // Extended barrel for gap-free coverage
+    const bodyGeo = createOrganicTorso(bodyW * 0.80, bodyW * 0.90, bodyLen * 1.10, 0.04, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
@@ -2120,13 +2122,13 @@ function _buildRigidFox(size, config, materials, boneMap) {
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // ═══ SHOULDER: lean ellipsoid on chest ═══
-    const shoulderR = bodyW * 0.88;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: oversized for gap-free overlap ═══
+    const shoulderR = bodyW * 1.0;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.0, 0.78, 0.85 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    shoulder.scale.set(1.02, 0.78, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.06, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
@@ -2138,13 +2140,13 @@ function _buildRigidFox(size, config, materials, boneMap) {
     boneMap.chest.add(chestPatch);
     parts.chestPatch = chestPatch;
 
-    // ═══ HAUNCH: lean ellipsoid on pelvis ═══
-    const haunchR = bodyW * 0.95;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: oversized for gap-free overlap ═══
+    const haunchR = bodyW * 1.08;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.05, 0.82, 0.85 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.06, 0);
+    haunch.scale.set(1.08, 0.82, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.04, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -2287,6 +2289,36 @@ function _buildRigidFox(size, config, materials, boneMap) {
     boneMap.hindLowerLeg_R.add(hLowerR);
     parts.hindLowerLegR = hLowerR;
 
+    // ═══ PAWS: small rounded feet at bottom of lower legs ═══
+    const pawW = legThick * 1.6;
+    const pawH2 = legThick * 0.6;
+    const pawD = legThick * 2.0;
+    const pawGeo = createRoundedBox(pawW, pawH2, pawD, pawH2 * 0.35);
+
+    const pawFL = new THREE.Mesh(pawGeo, materials.legs);
+    pawFL.name = 'frontHoofL';
+    pawFL.position.set(0, -fLowerH * 0.48, -legThick * 0.2);
+    boneMap.frontLowerLeg_L.add(pawFL);
+    parts.frontHoofL = pawFL;
+
+    const pawFR = new THREE.Mesh(pawGeo, materials.legs);
+    pawFR.name = 'frontHoofR';
+    pawFR.position.set(0, -fLowerH * 0.48, -legThick * 0.2);
+    boneMap.frontLowerLeg_R.add(pawFR);
+    parts.frontHoofR = pawFR;
+
+    const pawHL = new THREE.Mesh(pawGeo, materials.legs);
+    pawHL.name = 'hindHoofL';
+    pawHL.position.set(0, -hLowerH * 0.48, -legThick * 0.2);
+    boneMap.hindLowerLeg_L.add(pawHL);
+    parts.hindHoofL = pawHL;
+
+    const pawHR = new THREE.Mesh(pawGeo, materials.legs);
+    pawHR.name = 'hindHoofR';
+    pawHR.position.set(0, -hLowerH * 0.48, -legThick * 0.2);
+    boneMap.hindLowerLeg_R.add(pawHR);
+    parts.hindHoofR = pawHR;
+
     // ═══ TAIL: 4-segment bushy bottle-brush (overlapping spheres) ═══
     const tailR = d.tailRadius * s;
     const tailSizes = [0.85, 1.20, 1.30, 1.05]; // swells then tapers
@@ -2320,7 +2352,8 @@ function _buildRigidMoose(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 1.05, bodyLen, 0.06, 10, 10);
+    // Extended barrel for gap-free coverage
+    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 1.05, bodyLen * 1.08, 0.06, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
@@ -2330,7 +2363,7 @@ function _buildRigidMoose(size, config, materials, boneMap) {
 
     // ═══ SHOULDER HUMP: raised sphere on chest ═══
     const humpR = bodyH * 0.5;
-    const humpGeo = new THREE.SphereGeometry(humpR, 8, 8);
+    const humpGeo = new THREE.SphereGeometry(humpR, 10, 8);
     const hump = new THREE.Mesh(humpGeo, materials.body);
     hump.name = 'hump';
     hump.scale.set(1.2, 0.9, 1.0);
@@ -2338,23 +2371,23 @@ function _buildRigidMoose(size, config, materials, boneMap) {
     boneMap.chest.add(hump);
     parts.hump = hump;
 
-    // ═══ SHOULDER: ellipsoid on chest ═══
-    const shoulderR = bodyW * 0.95;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: oversized for gap-free overlap ═══
+    const shoulderR = bodyW * 1.08;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.05, 0.80, 0.88 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    shoulder.scale.set(1.08, 0.80, 0.88 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.06, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // ═══ HAUNCH: ellipsoid on pelvis ═══
-    const haunchR = bodyW * 1.08;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: oversized for gap-free overlap ═══
+    const haunchR = bodyW * 1.18;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.10, 0.85, 0.88 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.06, 0);
+    haunch.scale.set(1.12, 0.85, 0.88 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.04, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -2611,7 +2644,8 @@ function _buildRigidRaccoon(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 0.95, bodyLen, 0.08, 10, 10);
+    // Extended barrel for gap-free coverage
+    const bodyGeo = createOrganicTorso(bodyW * 0.85, bodyW * 0.95, bodyLen * 1.10, 0.08, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
@@ -2619,23 +2653,23 @@ function _buildRigidRaccoon(size, config, materials, boneMap) {
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // ═══ SHOULDER: ellipsoid on chest ═══
-    const shoulderR = bodyW * 0.85;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: oversized for gap-free overlap ═══
+    const shoulderR = bodyW * 0.98;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.0, 0.78, 0.85 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    shoulder.scale.set(1.02, 0.78, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.06, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // ═══ HAUNCH: slightly wider ellipsoid on pelvis ═══
-    const haunchR = bodyW * 0.95;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: oversized for gap-free overlap ═══
+    const haunchR = bodyW * 1.08;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.05, 0.80, 0.85 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.06, 0);
+    haunch.scale.set(1.08, 0.80, 0.85 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.04, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
@@ -2798,6 +2832,19 @@ function _buildRigidRaccoon(size, config, materials, boneMap) {
     boneMap.frontLowerLeg_R.add(pawFR);
     parts.frontHoofR = pawFR;
 
+    // ═══ HIND PAWS: matching hand-like boxes ═══
+    const pawHL = new THREE.Mesh(pawGeo, materials.legs);
+    pawHL.name = 'hindHoofL';
+    pawHL.position.set(0, -hLowerH * 0.48, 0);
+    boneMap.hindLowerLeg_L.add(pawHL);
+    parts.hindHoofL = pawHL;
+
+    const pawHR = new THREE.Mesh(pawGeo, materials.legs);
+    pawHR.name = 'hindHoofR';
+    pawHR.position.set(0, -hLowerH * 0.48, 0);
+    boneMap.hindLowerLeg_R.add(pawHR);
+    parts.hindHoofR = pawHR;
+
     // ═══ TAIL: 4 cylinder segments with alternating widths (striped) ═══
     const tailR = d.tailRadius * s;
     const tailWidths = [1.0, 1.18, 1.0, 1.15]; // alternating thick/thin for stripe look
@@ -2840,44 +2887,43 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Front body: wider, rounder — attached to body_front
-    const frontLen = bodyLen * 0.52;
-    const frontGeo = createOrganicTorso(bodyW * 0.65, bodyW, frontLen, 0.08, 8, 8);
+    // Front body: wider, rounder — extended to overlap mid zone
+    const frontLen = bodyLen * 0.56;
+    const frontGeo = createOrganicTorso(bodyW * 0.65, bodyW, frontLen, 0.08, 10, 10);
     const frontBody = new THREE.Mesh(frontGeo, materials.body);
     frontBody.name = 'bodyFront';
     frontBody.rotation.x = Math.PI / 2; // horizontal
     frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    frontBody.position.set(0, 0, frontLen * 0.15);
+    frontBody.position.set(0, 0, frontLen * 0.12);
     boneMap.body_front.add(frontBody);
     parts.bodyFront = frontBody;
 
-    // Rear body: tapers toward tail — attached to body_rear
-    const rearLen = bodyLen * 0.52;
-    const rearGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.70, rearLen, 0.04, 8, 8);
+    // Rear body: tapers toward tail — extended to overlap mid zone
+    const rearLen = bodyLen * 0.56;
+    const rearGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.72, rearLen, 0.04, 10, 10);
     const rearBody = new THREE.Mesh(rearGeo, materials.body);
     rearBody.name = 'bodyRear';
     rearBody.rotation.x = Math.PI / 2;
     rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    rearBody.position.set(0, 0, -rearLen * 0.15);
+    rearBody.position.set(0, 0, -rearLen * 0.12);
     boneMap.body_rear.add(rearBody);
     parts.bodyRear = rearBody;
 
-    // Bridging mid-section on root
-    const midR = bodyW * 0.95;
-    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    // Bridging mid-section on root — oversized to fill any gaps
+    const midR = bodyW * 1.05;
+    const midGeo = new THREE.SphereGeometry(midR, 10, 8);
     const mid = new THREE.Mesh(midGeo, materials.body);
     mid.name = 'bodyMid';
-    mid.scale.set(1.0, bodyH / bodyW, 1.15);
+    mid.scale.set(1.0, bodyH / bodyW, 1.25);
     boneMap.root.add(mid);
     parts.bodyMid = mid;
 
-    // Belly: lighter underside on body_front
-    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.80, 8, 5,
-        0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45);
+    // Belly: lighter underside — full sphere, no partial-sphere artifacts
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.85, 10, 8);
     const belly = new THREE.Mesh(bellyGeo, materials.skin);
     belly.name = 'belly';
-    belly.position.set(0, -bodyH * 0.10, 0);
-    belly.scale.set(1.0, 0.90, 1.30);
+    belly.position.set(0, -bodyH * 0.12, 0);
+    belly.scale.set(1.0, 0.42, 1.35); // wide flat disc underneath
     boneMap.body_front.add(belly);
     parts.belly = belly;
 
@@ -2922,12 +2968,13 @@ function _buildRigidDolphin(size, config, materials, boneMap) {
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
 
-    // Mouth line: subtle smile
-    const mouthGeo = new THREE.BoxGeometry(headR * 0.04, headR * 0.02, headR * 0.40);
+    // Mouth line: subtle smile — thin capsule for smooth organic line
+    const mouthGeo = createCapsule(headR * 0.02, headR * 0.38, 6, 2);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
     mouth.position.set(0, -headR * 0.28, -headR * 0.70);
-    mouth.rotation.y = 0.05; // slight curve hint
+    mouth.rotation.set(0, 0, Math.PI / 2); // horizontal line
+    mouth.scale.set(1.0, 1.0, 0.40);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
@@ -3023,44 +3070,43 @@ function _buildRigidFlyfish(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Front body: slightly wider, attached to body_front
-    const frontLen = bodyLen * 0.50;
-    const frontGeo = createOrganicTorso(bodyW * 0.60, bodyW, frontLen, 0.06, 8, 8);
+    // Front body: slightly wider — extended for gap-free overlap
+    const frontLen = bodyLen * 0.55;
+    const frontGeo = createOrganicTorso(bodyW * 0.60, bodyW, frontLen, 0.06, 10, 10);
     const frontBody = new THREE.Mesh(frontGeo, materials.body);
     frontBody.name = 'bodyFront';
     frontBody.rotation.x = Math.PI / 2;
     frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    frontBody.position.set(0, 0, frontLen * 0.15);
+    frontBody.position.set(0, 0, frontLen * 0.12);
     boneMap.body_front.add(frontBody);
     parts.bodyFront = frontBody;
 
-    // Rear body: tapers sharply
-    const rearLen = bodyLen * 0.50;
-    const rearGeo = createOrganicTorso(bodyW * 0.22, bodyW * 0.65, rearLen, 0.03, 8, 8);
+    // Rear body: tapers sharply — extended for gap-free overlap
+    const rearLen = bodyLen * 0.55;
+    const rearGeo = createOrganicTorso(bodyW * 0.22, bodyW * 0.68, rearLen, 0.03, 10, 10);
     const rearBody = new THREE.Mesh(rearGeo, materials.body);
     rearBody.name = 'bodyRear';
     rearBody.rotation.x = Math.PI / 2;
     rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    rearBody.position.set(0, 0, -rearLen * 0.15);
+    rearBody.position.set(0, 0, -rearLen * 0.12);
     boneMap.body_rear.add(rearBody);
     parts.bodyRear = rearBody;
 
-    // Bridging mid-section
-    const midR = bodyW * 0.85;
-    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    // Bridging mid-section — oversized to fill any gaps
+    const midR = bodyW * 0.95;
+    const midGeo = new THREE.SphereGeometry(midR, 10, 8);
     const mid = new THREE.Mesh(midGeo, materials.body);
     mid.name = 'bodyMid';
-    mid.scale.set(1.0, bodyH / bodyW, 1.10);
+    mid.scale.set(1.0, bodyH / bodyW, 1.20);
     boneMap.root.add(mid);
     parts.bodyMid = mid;
 
-    // Silver belly highlight
-    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.70, 6, 4,
-        0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45);
+    // Silver belly highlight — full sphere, no partial-sphere artifacts
+    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.75, 10, 8);
     const belly = new THREE.Mesh(bellyGeo, materials.skin);
     belly.name = 'belly';
-    belly.position.set(0, -bodyH * 0.10, 0);
-    belly.scale.set(1.0, 0.85, 1.20);
+    belly.position.set(0, -bodyH * 0.12, 0);
+    belly.scale.set(1.0, 0.38, 1.25); // flat disc underneath
     boneMap.body_front.add(belly);
     parts.belly = belly;
 
@@ -3174,44 +3220,44 @@ function _buildRigidShark(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Front body: wide, intimidating
-    const frontLen = bodyLen * 0.52;
-    const frontGeo = createOrganicTorso(bodyW * 0.70, bodyW, frontLen, 0.10, 10, 10);
+    // Front body: wide, intimidating — extended for gap-free overlap
+    const frontLen = bodyLen * 0.56;
+    const frontGeo = createOrganicTorso(bodyW * 0.70, bodyW, frontLen, 0.10, 12, 12);
     const frontBody = new THREE.Mesh(frontGeo, materials.body);
     frontBody.name = 'bodyFront';
     frontBody.rotation.x = Math.PI / 2;
     frontBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    frontBody.position.set(0, 0, frontLen * 0.12);
+    frontBody.position.set(0, 0, frontLen * 0.10);
     boneMap.body_front.add(frontBody);
     parts.bodyFront = frontBody;
 
-    // Rear body: long taper to tail
-    const rearLen = bodyLen * 0.52;
-    const rearGeo = createOrganicTorso(bodyW * 0.25, bodyW * 0.75, rearLen, 0.04, 10, 10);
+    // Rear body: long taper — extended for gap-free overlap
+    const rearLen = bodyLen * 0.56;
+    const rearGeo = createOrganicTorso(bodyW * 0.25, bodyW * 0.78, rearLen, 0.04, 12, 12);
     const rearBody = new THREE.Mesh(rearGeo, materials.body);
     rearBody.name = 'bodyRear';
     rearBody.rotation.x = Math.PI / 2;
     rearBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    rearBody.position.set(0, 0, -rearLen * 0.12);
+    rearBody.position.set(0, 0, -rearLen * 0.10);
     boneMap.body_rear.add(rearBody);
     parts.bodyRear = rearBody;
 
-    // Bridging mid-section
-    const midR = bodyW * 1.0;
-    const midGeo = new THREE.SphereGeometry(midR, 10, 8);
+    // Bridging mid-section — oversized to fill any gaps
+    const midR = bodyW * 1.10;
+    const midGeo = new THREE.SphereGeometry(midR, 12, 10);
     const mid = new THREE.Mesh(midGeo, materials.body);
     mid.name = 'bodyMid';
-    mid.scale.set(1.0, bodyH / bodyW, 1.15);
+    mid.scale.set(1.0, bodyH / bodyW, 1.25);
     boneMap.root.add(mid);
     parts.bodyMid = mid;
 
-    // Light belly (classic counter-shading)
-    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.85, 8, 5,
-        0, Math.PI * 2, Math.PI * 0.52, Math.PI * 0.48);
+    // Light belly (classic counter-shading) — full sphere, positioned underneath
+    const bellyR = bodyW * 0.90;
+    const bellyGeo = new THREE.SphereGeometry(bellyR, 12, 10);
     const belly = new THREE.Mesh(bellyGeo, materials.skin);
     belly.name = 'belly';
-    belly.position.set(0, -bodyH * 0.12, 0);
-    belly.scale.set(1.0, 0.90, 1.35);
+    belly.position.set(0, -bodyH * 0.15, 0);
+    belly.scale.set(1.0, 0.40, 1.40); // wide flat disc underneath body
     boneMap.body_front.add(belly);
     parts.belly = belly;
 
@@ -3236,31 +3282,34 @@ function _buildRigidShark(size, config, materials, boneMap) {
     boneMap.snout.add(snoutMesh);
     parts.snout = snoutMesh;
 
-    // Eyes: small, cold, set far to sides
-    const eyeSize = headR * 0.08;
-    const eyeGeo = new THREE.SphereGeometry(eyeSize, 5, 4);
-    const eyeSpacing = headR * 0.68;
+    // Eyes: small, cold, seated firmly on sides of head
+    // Head is scaled (1.10, 0.75, 1.05) — position eyes on the surface, not inside/outside
+    const eyeSize = headR * 0.10;
+    const eyeGeo = new THREE.SphereGeometry(eyeSize, 6, 5);
+    const eyeSpacing = headR * 0.58; // pulled in to sit on head surface
 
     const eyeL = new THREE.Mesh(eyeGeo, faceMat);
     eyeL.name = 'eyeL';
-    eyeL.position.set(-eyeSpacing, headR * 0.10, -headR * 0.30);
-    eyeL.scale.set(0.50, 0.80, 0.40);
+    eyeL.position.set(-eyeSpacing, headR * 0.08, -headR * 0.48);
+    eyeL.scale.set(0.55, 0.90, 0.45);
     boneMap.head.add(eyeL);
     parts.eyeL = eyeL;
 
     const eyeR = new THREE.Mesh(eyeGeo, faceMat);
     eyeR.name = 'eyeR';
-    eyeR.position.set(eyeSpacing, headR * 0.10, -headR * 0.30);
-    eyeR.scale.set(0.50, 0.80, 0.40);
+    eyeR.position.set(eyeSpacing, headR * 0.08, -headR * 0.48);
+    eyeR.scale.set(0.55, 0.90, 0.45);
     boneMap.head.add(eyeR);
     parts.eyeR = eyeR;
 
-    // Jaw: dark underside gap suggesting open mouth
+    // Jaw: dark underside — wide flattened capsule for organic mouth shape
     const jawW = d.jawWidth * s;
-    const jawGeo = new THREE.BoxGeometry(jawW, headR * 0.10, headR * 0.50);
+    const jawGeo = createCapsule(jawW * 0.50, headR * 0.45, 8, 3);
     const jaw = new THREE.Mesh(jawGeo, faceMat);
     jaw.name = 'jaw';
-    jaw.position.set(0, -headR * 0.42, -headR * 0.60);
+    jaw.rotation.x = Math.PI * 0.52;
+    jaw.position.set(0, -headR * 0.38, -headR * 0.55);
+    jaw.scale.set(1.3, 1.0, 0.30); // wide, flat underside
     boneMap.head.add(jaw);
     parts.jaw = jaw;
 
@@ -3600,19 +3649,19 @@ function _buildRigidSeaturtle(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Front body section
-    const frontGeo = new THREE.SphereGeometry(bodyW * 0.40, 8, 6);
+    // Front body section — oversized to fill under shell
+    const frontGeo = new THREE.SphereGeometry(bodyW * 0.48, 10, 8);
     const frontBody = new THREE.Mesh(frontGeo, materials.body);
     frontBody.name = 'bodyFront';
-    frontBody.scale.set(1.0, 0.50, 1.30);
+    frontBody.scale.set(1.0, 0.50, 1.40);
     boneMap.body_front.add(frontBody);
     parts.bodyFront = frontBody;
 
-    // Rear body section
-    const rearGeo = new THREE.SphereGeometry(bodyW * 0.35, 8, 6);
+    // Rear body section — oversized to fill under shell
+    const rearGeo = new THREE.SphereGeometry(bodyW * 0.42, 10, 8);
     const rearBody = new THREE.Mesh(rearGeo, materials.body);
     rearBody.name = 'bodyRear';
-    rearBody.scale.set(1.0, 0.45, 1.20);
+    rearBody.scale.set(1.0, 0.45, 1.30);
     boneMap.body_rear.add(rearBody);
     parts.bodyRear = rearBody;
 
@@ -5404,32 +5453,33 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const bodyH = (d.bodyHeight || 0.10) * s;
     const bodyLen = (d.bodyLength || 0.25) * s;
 
-    const upperLen = bodyLen * 0.50;
-    const upperGeo = createOrganicTorso(bodyW * 0.55, bodyW * 0.90, upperLen, 0.06, 8, 8);
+    // Extended for gap-free overlap
+    const upperLen = bodyLen * 0.55;
+    const upperGeo = createOrganicTorso(bodyW * 0.55, bodyW * 0.90, upperLen, 0.06, 10, 10);
     const upperBody = new THREE.Mesh(upperGeo, materials.body);
     upperBody.name = 'upperBody';
     // Keep vertical — no 90° rotation like horizontal marine creatures
     upperBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    upperBody.position.set(0, upperLen * 0.10, 0);
+    upperBody.position.set(0, upperLen * 0.08, 0);
     boneMap.body_front.add(upperBody);
     parts.upperBody = upperBody;
 
-    // ═══ LOWER BODY: narrowing downward (body_rear) ═══
-    const lowerLen = bodyLen * 0.50;
-    const lowerGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.65, lowerLen, 0.04, 8, 8);
+    // ═══ LOWER BODY: narrowing downward — extended for overlap ═══
+    const lowerLen = bodyLen * 0.55;
+    const lowerGeo = createOrganicTorso(bodyW * 0.30, bodyW * 0.68, lowerLen, 0.04, 10, 10);
     const lowerBody = new THREE.Mesh(lowerGeo, materials.body);
     lowerBody.name = 'lowerBody';
     lowerBody.scale.set(1.0, 1.0, bodyH / bodyW);
-    lowerBody.position.set(0, -lowerLen * 0.10, 0);
+    lowerBody.position.set(0, -lowerLen * 0.08, 0);
     boneMap.body_rear.add(lowerBody);
     parts.lowerBody = lowerBody;
 
-    // Bridging midsection on root
-    const midR = bodyW * 0.80;
-    const midGeo = new THREE.SphereGeometry(midR, 8, 6);
+    // Bridging midsection — oversized for gap-free coverage
+    const midR = bodyW * 0.92;
+    const midGeo = new THREE.SphereGeometry(midR, 10, 8);
     const mid = new THREE.Mesh(midGeo, materials.body);
     mid.name = 'bodyMid';
-    mid.scale.set(1.0, 1.15, bodyH / bodyW);
+    mid.scale.set(1.0, 1.25, bodyH / bodyW);
     boneMap.root.add(mid);
     parts.bodyMid = mid;
 
@@ -5501,15 +5551,16 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
         parts['crownSpike' + i] = spike;
     }
 
-    // ═══ DORSAL FIN RIDGE: thin box along the back (on dorsal bone) ═══
+    // ═══ DORSAL FIN RIDGE: thin capsule along the back (on dorsal bone) ═══
     const dorsalH = (d.dorsalHeight || 0.06) * s;
     const dorsalLen = (d.dorsalLength || 0.10) * s;
-    const dorsalGeo = new THREE.BoxGeometry(0.008 * s, dorsalH, dorsalLen);
+    const dorsalGeo = createCapsule(dorsalLen * 0.50, dorsalH, 6, 3);
     const dorsalMat = materials.body.clone();
     dorsalMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.oceanSeahorseDorsal) };
     const dorsal = new THREE.Mesh(dorsalGeo, dorsalMat);
     dorsal.name = 'dorsal';
     dorsal.position.set(0, dorsalH * 0.30, 0);
+    dorsal.scale.set(0.10, 1.0, 1.0); // thin ridge
     boneMap.dorsal.add(dorsal);
     parts.dorsal = dorsal;
 
@@ -5894,8 +5945,8 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Main body: pear-shaped — wider at the bottom (belly/rump area)
-    const bodyGeo = createOrganicTorso(bodyW * 0.75, bodyW * 1.1, bodyLen, 0.15, 10, 10);
+    // Main body: pear-shaped — extended barrel for gap-free coverage
+    const bodyGeo = createOrganicTorso(bodyW * 0.75, bodyW * 1.1, bodyLen * 1.10, 0.15, 12, 12);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
@@ -5903,34 +5954,33 @@ function _buildRigidKangaroo(size, config, materials, boneMap) {
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // ═══ SHOULDER: smaller than deer — kangaroos are top-light ═══
-    const shoulderR = bodyW * 0.70;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // ═══ SHOULDER: oversized for gap-free overlap ═══
+    const shoulderR = bodyW * 0.82;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(0.90, 0.75, 0.85 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.08, 0);
+    shoulder.scale.set(0.92, 0.75, 0.85 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.06, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // ═══ HAUNCH: very large — muscular rump ═══
-    const haunchR = bodyW * 1.30;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // ═══ HAUNCH: very large — muscular rump, oversized for overlap ═══
+    const haunchR = bodyW * 1.38;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.15, 0.90, 0.95 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.05, 0);
+    haunch.scale.set(1.18, 0.90, 0.95 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.03, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
-    // Belly: lighter underbelly patch
-    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.80, 8, 6,
-        0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55);
+    // Belly: lighter underbelly — full sphere (no partial sphere artifacts)
+    const bellyR = bodyW * 0.85;
+    const bellyGeo = new THREE.SphereGeometry(bellyR, 10, 8);
     const belly = new THREE.Mesh(bellyGeo, materials.skin);
     belly.name = 'belly';
-    belly.rotation.x = Math.PI / 2;
-    belly.position.set(0, -bodyH * 0.15, 0);
-    belly.scale.set(1.0, 0.90, 1.20);
+    belly.position.set(0, -bodyH * 0.18, 0);
+    belly.scale.set(1.0, 0.45, 1.10); // wide, flat disc underneath
     boneMap.spine_mid.add(belly);
     parts.belly = belly;
 
@@ -6143,123 +6193,124 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     const d = config.bodyDimensions;
     const faceMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink });
 
-    // ═══ BODY: wide, squat, rounded — classic frog shape ═══
+    // ═══ BODY: single wide, squat egg — classic tree frog blob shape ═══
+    // Use a longer barrel to cover chest/pelvis bones, preventing gaps
     const bodyLen = d.bodyLength * s;
     const bodyW = d.bodyWidth * s;
     const bodyH = d.bodyHeight * s;
 
-    // Main body: wide egg shape — much wider than tall
-    const bodyGeo = createOrganicTorso(bodyW * 0.65, bodyW * 1.1, bodyLen, 0.25, 10, 12);
+    // Main body: wide egg — extra-long to overlap shoulder/haunch zones
+    const bodyGeo = createOrganicTorso(bodyW * 0.70, bodyW * 1.05, bodyLen * 1.15, 0.20, 12, 14);
     const body = new THREE.Mesh(bodyGeo, materials.body);
     body.name = 'body';
     body.rotation.x = Math.PI / 2;
-    body.scale.set(1.35, 1.0, bodyH / bodyW * 0.80); // extra wide, squat
+    body.scale.set(1.40, 1.0, bodyH / bodyW * 0.75); // extra wide, squat
     boneMap.spine_mid.add(body);
     parts.body = body;
 
-    // Shoulder bridge — smooth transition to head
-    const shoulderR = bodyW * 0.85;
-    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 10, 8);
+    // Shoulder bridge — generously sized to overlap with body
+    const shoulderR = bodyW * 1.05;
+    const shoulderGeo = new THREE.SphereGeometry(shoulderR, 12, 10);
     const shoulder = new THREE.Mesh(shoulderGeo, materials.body);
     shoulder.name = 'shoulder';
-    shoulder.scale.set(1.30, 0.65, 0.80 * (bodyH / bodyW));
-    shoulder.position.set(0, -shoulderR * 0.05, 0);
+    shoulder.scale.set(1.35, 0.60, 0.75 * (bodyH / bodyW));
+    shoulder.position.set(0, -shoulderR * 0.02, 0);
     boneMap.chest.add(shoulder);
     parts.shoulder = shoulder;
 
-    // Haunch — wide rear
-    const haunchR = bodyW * 1.10;
-    const haunchGeo = new THREE.SphereGeometry(haunchR, 10, 8);
+    // Haunch — wide rear, overlaps with body barrel
+    const haunchR = bodyW * 1.25;
+    const haunchGeo = new THREE.SphereGeometry(haunchR, 12, 10);
     const haunch = new THREE.Mesh(haunchGeo, materials.body);
     haunch.name = 'haunch';
-    haunch.scale.set(1.25, 0.70, 0.85 * (bodyH / bodyW));
-    haunch.position.set(0, -haunchR * 0.05, 0);
+    haunch.scale.set(1.30, 0.65, 0.80 * (bodyH / bodyW));
+    haunch.position.set(0, -haunchR * 0.02, 0);
     boneMap.pelvis.add(haunch);
     parts.haunch = haunch;
 
-    // Belly: pale yellow-green underbelly
-    const bellyGeo = new THREE.SphereGeometry(bodyW * 0.90, 8, 6,
-        0, Math.PI * 2, Math.PI * 0.40, Math.PI * 0.60);
+    // Belly: full sphere underneath body — clean underbelly, no partial-sphere artifacts
+    const bellyR = bodyW * 0.95;
+    const bellyGeo = new THREE.SphereGeometry(bellyR, 12, 10);
     const bellyMesh = new THREE.Mesh(bellyGeo, materials.skin);
     bellyMesh.name = 'belly';
-    bellyMesh.rotation.x = Math.PI / 2;
-    bellyMesh.position.set(0, -bodyH * 0.18, 0);
-    bellyMesh.scale.set(1.30, 0.85, 1.10);
+    bellyMesh.position.set(0, -bodyH * 0.20, 0);
+    bellyMesh.scale.set(1.35, 0.45, 0.90); // wide, flat disc underneath
     boneMap.spine_mid.add(bellyMesh);
     parts.belly = bellyMesh;
 
     // ═══ HEAD: wide, flat, with bulging eyes on top — very frog ═══
     const headR = d.headRadius * s;
-    const headGeo = new THREE.SphereGeometry(headR, 10, 8);
+    const headGeo = new THREE.SphereGeometry(headR, 12, 10);
     const head = new THREE.Mesh(headGeo, materials.body);
     head.name = 'head';
-    head.scale.set(1.40, 0.70, 1.10); // very wide and flat
+    head.scale.set(1.45, 0.65, 1.15); // very wide and flat
     boneMap.head.add(head);
     parts.head = head;
 
-    // ═══ EYES: huge bulging — signature tree frog feature ═══
-    const eyeBulgeR = headR * 0.38;
-    const eyeBulgeGeo = new THREE.SphereGeometry(eyeBulgeR, 8, 6);
+    // ═══ EYES: HUGE bulging — the signature tree frog feature ═══
+    // Larger, more prominent eye bulges that really pop off the head
+    const eyeBulgeR = headR * 0.45;
+    const eyeBulgeGeo = new THREE.SphereGeometry(eyeBulgeR, 10, 8);
 
-    // Eye bulges (colored, sit on top of head)
+    // Eye bulges (colored, sit prominently on top of head)
     const eyeBulgeL = new THREE.Mesh(eyeBulgeGeo, materials.body);
     eyeBulgeL.name = 'eyeBulgeL';
-    eyeBulgeL.position.set(-headR * 0.55, headR * 0.45, -headR * 0.25);
-    eyeBulgeL.scale.set(1.0, 1.1, 0.9);
+    eyeBulgeL.position.set(-headR * 0.52, headR * 0.50, -headR * 0.20);
+    eyeBulgeL.scale.set(1.0, 1.15, 0.95);
     boneMap.head.add(eyeBulgeL);
     parts.eyeBulgeL = eyeBulgeL;
 
     const eyeBulgeR_m = new THREE.Mesh(eyeBulgeGeo, materials.body);
     eyeBulgeR_m.name = 'eyeBulgeR';
-    eyeBulgeR_m.position.set(headR * 0.55, headR * 0.45, -headR * 0.25);
-    eyeBulgeR_m.scale.set(1.0, 1.1, 0.9);
+    eyeBulgeR_m.position.set(headR * 0.52, headR * 0.50, -headR * 0.20);
+    eyeBulgeR_m.scale.set(1.0, 1.15, 0.95);
     boneMap.head.add(eyeBulgeR_m);
     parts.eyeBulgeR = eyeBulgeR_m;
 
-    // Pupils — dark horizontal ovals on the eye bulges
-    const pupilGeo = new THREE.SphereGeometry(eyeBulgeR * 0.55, 6, 5);
+    // Pupils — dark horizontal ovals sitting on eye bulge surfaces
+    const pupilGeo = new THREE.SphereGeometry(eyeBulgeR * 0.50, 8, 6);
     const pupilL = new THREE.Mesh(pupilGeo, faceMat);
     pupilL.name = 'eyeL';
-    pupilL.position.set(-headR * 0.55, headR * 0.48, -headR * 0.52);
-    pupilL.scale.set(1.3, 0.70, 0.40); // wide horizontal slits
+    pupilL.position.set(-headR * 0.52, headR * 0.54, -headR * 0.50);
+    pupilL.scale.set(1.2, 0.65, 0.35); // wide horizontal slits
     boneMap.head.add(pupilL);
     parts.eyeL = pupilL;
 
     const pupilR = new THREE.Mesh(pupilGeo, faceMat);
     pupilR.name = 'eyeR';
-    pupilR.position.set(headR * 0.55, headR * 0.48, -headR * 0.52);
-    pupilR.scale.set(1.3, 0.70, 0.40);
+    pupilR.position.set(headR * 0.52, headR * 0.54, -headR * 0.50);
+    pupilR.scale.set(1.2, 0.65, 0.35);
     boneMap.head.add(pupilR);
     parts.eyeR = pupilR;
 
-    // Wide smiling mouth line
-    const mouthGeo = new THREE.TorusGeometry(headR * 0.50, headR * 0.025, 4, 10, Math.PI);
+    // Wide smiling mouth — flattened capsule arc, not a torus
+    const mouthGeo = createCapsule(headR * 0.03, headR * 0.65, 6, 2);
     const mouth = new THREE.Mesh(mouthGeo, faceMat);
     mouth.name = 'mouth';
-    mouth.position.set(0, -headR * 0.20, -headR * 0.80);
-    mouth.rotation.set(0, 0, Math.PI);
+    mouth.position.set(0, -headR * 0.25, -headR * 0.82);
+    mouth.rotation.set(0, 0, Math.PI / 2);
     mouth.scale.set(1.0, 1.0, 0.40);
     boneMap.head.add(mouth);
     parts.mouth = mouth;
 
-    // Nostrils — two tiny dots
-    const nostrilGeo = new THREE.SphereGeometry(headR * 0.05, 4, 3);
+    // Nostrils — two tiny dots on snout surface
+    const nostrilGeo = new THREE.SphereGeometry(headR * 0.06, 5, 4);
     const nostrilL = new THREE.Mesh(nostrilGeo, faceMat);
     nostrilL.name = 'nostrilL';
-    nostrilL.position.set(-headR * 0.18, headR * 0.02, -headR * 0.95);
+    nostrilL.position.set(-headR * 0.20, headR * 0.05, -headR * 0.98);
     boneMap.head.add(nostrilL);
     parts.nostrilL = nostrilL;
 
     const nostrilR = new THREE.Mesh(nostrilGeo, faceMat);
     nostrilR.name = 'nostrilR';
-    nostrilR.position.set(headR * 0.18, headR * 0.02, -headR * 0.95);
+    nostrilR.position.set(headR * 0.20, headR * 0.05, -headR * 0.98);
     boneMap.head.add(nostrilR);
     parts.nostrilR = nostrilR;
 
-    // ═══ FRONT LEGS: short, splayed outward — frog pose ═══
-    const fLegR = d.legThickness * s;
+    // ═══ FRONT LEGS: short, chunky — frog forelimbs ═══
+    const fLegR = d.legThickness * s * 1.4; // thicker than before
     const fUpperH = 0.10 * s;
-    const fUpperGeo = createCapsule(fLegR, fUpperH, 6, 3);
+    const fUpperGeo = createCapsule(fLegR, fUpperH, 8, 4);
 
     const fUpperL = new THREE.Mesh(fUpperGeo, materials.body);
     fUpperL.name = 'frontUpperLegL';
@@ -6274,7 +6325,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     parts.frontUpperLegR = fUpperRm;
 
     const fLowerH = 0.08 * s;
-    const fLowerGeo = createCapsule(fLegR * 0.80, fLowerH, 6, 3);
+    const fLowerGeo = createCapsule(fLegR * 0.85, fLowerH, 8, 4);
 
     const fLowerL = new THREE.Mesh(fLowerGeo, materials.body);
     fLowerL.name = 'frontLowerLegL';
@@ -6288,23 +6339,23 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     boneMap.frontLowerLeg_R.add(fLowerRm);
     parts.frontLowerLegR = fLowerRm;
 
-    // Front webbed feet — flat splayed toes
+    // Front webbed feet — flat rounded pads
     const fFootS = d.hoofSize * s;
-    const fFootGeo = createRoundedBox(fFootS * 2.0, fFootS * 0.4, fFootS * 2.0, fFootS * 0.15);
+    const fFootGeo = createRoundedBox(fFootS * 2.2, fFootS * 0.5, fFootS * 2.2, fFootS * 0.20);
     const fFootL = new THREE.Mesh(fFootGeo, materials.body);
     fFootL.name = 'frontFootL';
-    fFootL.position.set(0, -fFootS * 0.1, -fFootS * 0.3);
+    fFootL.position.set(0, -fFootS * 0.15, -fFootS * 0.4);
     boneMap.frontFoot_L.add(fFootL);
     parts.frontFootL = fFootL;
 
     const fFootR = new THREE.Mesh(fFootGeo, materials.body);
     fFootR.name = 'frontFootR';
-    fFootR.position.set(0, -fFootS * 0.1, -fFootS * 0.3);
+    fFootR.position.set(0, -fFootS * 0.15, -fFootS * 0.4);
     boneMap.frontFoot_R.add(fFootR);
     parts.frontFootR = fFootR;
 
     // ═══ HIND LEGS: large, powerful — folded Z-shape for jumping ═══
-    const hLegR = d.legThickness * s * 1.5;
+    const hLegR = d.legThickness * s * 1.8; // thick powerful thighs
     const hUpperH = 0.16 * s;
     const hUpperGeo = createCapsule(hLegR, hUpperH, 8, 4);
 
@@ -6321,7 +6372,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     parts.hindUpperLegR = hUpperRm;
 
     const hLowerH = 0.18 * s;
-    const hLowerGeo = createCapsule(hLegR * 0.72, hLowerH, 8, 4);
+    const hLowerGeo = createCapsule(hLegR * 0.65, hLowerH, 8, 4);
 
     const hLowerL = new THREE.Mesh(hLowerGeo, materials.body);
     hLowerL.name = 'hindLowerLegL';
@@ -6337,33 +6388,35 @@ function _buildRigidFrog(size, config, materials, boneMap) {
 
     // Hind webbed feet — BIG, flat, splayed
     const hFootS = d.hoofSize * s;
-    const hFootGeo = createRoundedBox(hFootS * 2.8, hFootS * 0.45, hFootS * 3.5, hFootS * 0.18);
+    const hFootGeo = createRoundedBox(hFootS * 3.0, hFootS * 0.50, hFootS * 3.8, hFootS * 0.22);
     const hFootL = new THREE.Mesh(hFootGeo, materials.body);
     hFootL.name = 'hindFootL';
-    hFootL.position.set(0, -hFootS * 0.1, -hFootS * 0.6);
+    hFootL.position.set(0, -hFootS * 0.15, -hFootS * 0.7);
     boneMap.hindFoot_L.add(hFootL);
     parts.hindFootL = hFootL;
 
     const hFootR = new THREE.Mesh(hFootGeo, materials.body);
     hFootR.name = 'hindFootR';
-    hFootR.position.set(0, -hFootS * 0.1, -hFootS * 0.6);
+    hFootR.position.set(0, -hFootS * 0.15, -hFootS * 0.7);
     boneMap.hindFoot_R.add(hFootR);
     parts.hindFootR = hFootR;
 
     // ═══ SPOTS: darker green patches on the back ═══
-    const spotGeo = new THREE.SphereGeometry(bodyW * 0.22, 6, 5);
-    const spotMat = materials.body.clone();
-    spotMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.oceanFrogSpots) };
+    // Use MeshBasicMaterial for spots to avoid shader cloning issues
+    const spotGeo = new THREE.SphereGeometry(bodyW * 0.24, 8, 6);
+    const spotMat = new THREE.MeshBasicMaterial({
+        color: PALETTE.oceanFrogSpots || 0x4a8020,
+    });
     const spotPositions = [
-        { x: bodyW * 0.30, y: bodyH * 0.15, z: 0 },
-        { x: -bodyW * 0.25, y: bodyH * 0.18, z: bodyLen * 0.15 },
-        { x: bodyW * 0.10, y: bodyH * 0.20, z: -bodyLen * 0.10 },
+        { x: bodyW * 0.30, y: bodyH * 0.20, z: 0 },
+        { x: -bodyW * 0.25, y: bodyH * 0.22, z: bodyLen * 0.15 },
+        { x: bodyW * 0.10, y: bodyH * 0.25, z: -bodyLen * 0.10 },
     ];
     spotPositions.forEach((pos, i) => {
         const spot = new THREE.Mesh(spotGeo, spotMat);
         spot.name = 'spot' + i;
         spot.position.set(pos.x, pos.y, pos.z);
-        spot.scale.set(1.2, 0.35, 1.0); // flat patches
+        spot.scale.set(1.2, 0.30, 1.0); // flat patches
         boneMap.spine_mid.add(spot);
         parts['spot' + i] = spot;
     });
