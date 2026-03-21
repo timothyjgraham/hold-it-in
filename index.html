@@ -2729,11 +2729,12 @@
                     localStorage.setItem('holditin_tower_unlocks', JSON.stringify(allTowers));
                     this._applyTowerLocks(999);
 
-                    // Unlock all scenarios by setting best stats
+                    // Unlock all scenarios by setting best stats + completion flags
                     for (const s of ['office', 'forest', 'ocean', 'airplane']) {
                         if (!this._bestStats[s]) this._bestStats[s] = { wave: 0, score: 0 };
                         this._bestStats[s].wave = Math.max(this._bestStats[s].wave, 20);
                         this._bestStats[s].score = Math.max(this._bestStats[s].score, 1);
+                        localStorage.setItem(`holditin_completed_${s}`, 'true');
                     }
                     try { localStorage.setItem('holditin_stats', JSON.stringify(this._bestStats)); } catch(e) {}
                     this._updateBestStats();
