@@ -173,6 +173,9 @@ export const PALETTE = {
     oceanSeahorse:   0xf0a870,  // Warm coral/orange — drifting chain (train)
     oceanFrog:       0x70b830,  // Vivid leaf green — tropical tree frog (jumper)
     oceanFrogBelly:  0xc8e870,  // Pale yellow-green — frog underbelly
+    oceanFrogSpots:  0x508820,  // Dark green back spots — frog
+    oceanSeahorseCrown:  0xe8a050,  // Lighter crown ridge — seahorse
+    oceanSeahorseDorsal: 0xf0c070,  // Translucent dorsal fin — seahorse
 
     // ─── OCEAN LIGHTING ────────────────────────────────────────────────────
 
@@ -236,6 +239,30 @@ export const PALETTE = {
     nervousSweat:     0x88ccff,  // Nervous flyer stress sweat — cool blue droplets
     briefcaseLeather: 0x4a3a2a,  // Business class briefcase — dark warm leather
     briefcaseClasp:   0xdaa520,  // Briefcase clasp — goldenrod metal
+
+    // ─── HAIR / SKIN VARIANTS ────────────────────────────────────────────────
+    // Distinct hair and skin tones across enemy types
+
+    hairBlack:        0x1a1a1a,  // Near-black slicked hair — business class
+    hairDarkBrown:    0x3a2a1a,  // Dark brown bob/bun — attendant, trolley operator
+    hairBuzzcut:      0x2a2a2a,  // Military buzz-cut — marshal; also gloves, dark details
+    hairTawny:        0x8a6a3a,  // Tawny messy tufts — unruly passengers
+    hairDarkAuburn:   0x2a2020,  // Very dark auburn — hurdler
+    skinFlushed:      0xf0b898,  // Flushed ruddy skin — drunk office worker
+
+    // ─── ENEMY PROPS ─────────────────────────────────────────────────────────
+    // Small accessories and details on enemy models
+
+    drunkNose:        0xdd3333,  // Red bulb nose — drunk worker
+    stainBrown:       0xa05020,  // Drink stain splatter — unruly passenger
+    sportWhite:       0xf0f0f0,  // Athletic headband/wristband — vaulter, hurdler
+    parchment:        0xf5f0e0,  // Paper bag, cups — stumbler, attendant
+    silverTray:       0xc8c8c8,  // Serving tray — flight attendant
+    glassesBlack:     0x0a0a14,  // Sunglasses lens — air marshal
+    earBlack:         0x111111,  // Earpiece, coiled wire — air marshal
+    scarfGold:        0xffd700,  // Gold scarf/neckerchief — flight attendant
+    stumblerEyeWhite: 0xeeffee,  // Green-tinted eye whites — stumbler
+    coolItem:         0xc8d8e8,  // Cool-toned item — trolley cart accessory
 };
 
 // ─── OUTLINE WIDTHS ───────────────────────────────────────────────────────────

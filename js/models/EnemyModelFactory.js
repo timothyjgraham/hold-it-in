@@ -4464,7 +4464,7 @@ function _buildRigidNervousFlyer(size, config, materials, boneMap) {
     // ═══ NECK PILLOW: big puffy torus — signature accessory ═══
     const pillowGeo = new THREE.TorusGeometry(headR * 0.62, headR * 0.22, 8, 14);
     const pillowMat = materials.body.clone();
-    pillowMat.uniforms.uBaseColor = { value: new THREE.Color(0x6688aa) };
+    pillowMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.rimCool) };
     const pillow = new THREE.Mesh(pillowGeo, pillowMat);
     pillow.name = 'neckPillow';
     pillow.position.set(0, -headR * 0.50, 0);
@@ -4560,7 +4560,7 @@ function _buildRigidBusinessClass(size, config, materials, boneMap) {
     // Slicked-back hair — prominent dark cap
     const hairGeo = new THREE.SphereGeometry(headR * 0.92, 10, 8);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x1a1a1a) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairBlack) };
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.name = 'hair';
     hair.position.set(0, headR * 0.18, headR * 0.10);
@@ -4641,7 +4641,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const eyeY = headR * 0.08;
     const eyeZ = -headR * 0.90;
     // White eyeballs
-    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xeeffee });  // slightly green whites
+    const whiteMat = new THREE.MeshBasicMaterial({ color: PALETTE.stumblerEyeWhite });
     const whiteGeo = new THREE.SphereGeometry(eyeSize * 1.3, 6, 5);
     const whiteL = new THREE.Mesh(whiteGeo, whiteMat);
     whiteL.name = 'whiteL';
@@ -4693,7 +4693,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
 
     // Green cheek patches — queasy tint
     const cheekGeo = new THREE.SphereGeometry(headR * 0.18, 6, 5);
-    const cheekMat = new THREE.MeshBasicMaterial({ color: 0x7ab87a, transparent: true, opacity: 0.45 });
+    const cheekMat = new THREE.MeshBasicMaterial({ color: PALETTE.airplaneStumbler, transparent: true, opacity: 0.45 });
     const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
     cheekL.name = 'cheekL';
     cheekL.position.set(-headR * 0.38, -headR * 0.08, -headR * 0.72);
@@ -4710,7 +4710,7 @@ function _buildRigidStumbler(size, config, materials, boneMap) {
     const bagW = 0.10 * s;
     const bagH = 0.16 * s;
     const bagGeo = createRoundedBox(bagW, bagH, 0.06 * s, 0.008 * s);
-    const bagMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e0 });
+    const bagMat = new THREE.MeshBasicMaterial({ color: PALETTE.parchment });
     const bag = new THREE.Mesh(bagGeo, bagMat);
     bag.name = 'vomitBag';
     bag.position.set(0, -0.36 * s, -0.04 * s);
@@ -4745,7 +4745,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
 
     // Scarf/neckerchief — bright gold triangle at neck
     const scarfGeo = new THREE.BoxGeometry(torsoW * 0.65, 0.06 * s, 0.015 * s);
-    const scarfMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const scarfMat = new THREE.MeshBasicMaterial({ color: PALETTE.scarfGold });
     const scarf = new THREE.Mesh(scarfGeo, scarfMat);
     scarf.name = 'scarf';
     scarf.position.set(0, torsoH * 0.38, -torsoD * 0.50);
@@ -4789,7 +4789,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
     // Dark brown hair — neat bob under hat
     const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x3a2a1a) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairDarkBrown) };
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.name = 'hair';
     hair.position.set(0, headR * 0.10, headR * 0.05);
@@ -4807,7 +4807,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
 
     // ═══ SERVING TRAY: prominent silver platform with cups ═══
     const trayGeo = createRoundedBox(0.24 * s, 0.02 * s, 0.16 * s, 0.005 * s);
-    const trayMat = new THREE.MeshBasicMaterial({ color: 0xc8c8c8 });
+    const trayMat = new THREE.MeshBasicMaterial({ color: PALETTE.silverTray });
     const tray = new THREE.Mesh(trayGeo, trayMat);
     tray.name = 'tray';
     tray.position.set(0.04 * s, -0.28 * s, -0.04 * s);
@@ -4815,7 +4815,7 @@ function _buildRigidAttendant(size, config, materials, boneMap) {
     parts.tray = tray;
     // Cups on tray
     const cupGeo = new THREE.CylinderGeometry(0.022 * s, 0.018 * s, 0.055 * s, 6);
-    const cupMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e0 });
+    const cupMat = new THREE.MeshBasicMaterial({ color: PALETTE.parchment });
     for (let i = 0; i < 2; i++) {
         const cup = new THREE.Mesh(cupGeo, cupMat);
         cup.name = 'cup' + i;
@@ -4873,7 +4873,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
     const glassW = headR * 0.78;
     const glassH = headR * 0.18;
     const glassGeo = new THREE.BoxGeometry(glassW, glassH, headR * 0.05);
-    const glassMat = new THREE.MeshBasicMaterial({ color: 0x0a0a14 });
+    const glassMat = new THREE.MeshBasicMaterial({ color: PALETTE.glassesBlack });
     const glasses = new THREE.Mesh(glassGeo, glassMat);
     glasses.name = 'sunglasses';
     glasses.position.set(0, headR * 0.06, -headR * 0.92);
@@ -4898,7 +4898,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
     // Buzz-cut hair — military tight
     const hairGeo = new THREE.SphereGeometry(headR * 0.90, 10, 8);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x2a2a2a) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairBuzzcut) };
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.name = 'hair';
     hair.position.set(0, headR * 0.20, 0);
@@ -4907,7 +4907,7 @@ function _buildRigidMarshal(size, config, materials, boneMap) {
     parts.hair = hair;
 
     // ═══ EARPIECE + COILED WIRE ═══
-    const earMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const earMat = new THREE.MeshBasicMaterial({ color: PALETTE.earBlack });
     const earGeo = new THREE.SphereGeometry(headR * 0.09, 5, 4);
     const earpiece = new THREE.Mesh(earGeo, earMat);
     earpiece.name = 'earpiece';
@@ -4949,7 +4949,7 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
 
     // Drink stain on shirt
     const stainGeo = new THREE.SphereGeometry(0.07 * s, 5, 4);
-    const stainMat = new THREE.MeshBasicMaterial({ color: 0xa05020, transparent: true, opacity: 0.45 });
+    const stainMat = new THREE.MeshBasicMaterial({ color: PALETTE.stainBrown, transparent: true, opacity: 0.45 });
     const stain = new THREE.Mesh(stainGeo, stainMat);
     stain.name = 'stain';
     stain.position.set(0.04 * s, 0, -torsoD * 0.48);
@@ -5011,7 +5011,7 @@ function _buildRigidUnrulyPassengers(size, config, materials, boneMap) {
     // ═══ MESSY HAIR — 4 wild tufts like the Panicker ═══
     const tuftGeo = new THREE.SphereGeometry(headR * 0.25, 6, 5);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x8a6a3a) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairTawny) };
     for (let i = 0; i < 4; i++) {
         const tuft = new THREE.Mesh(tuftGeo, hairMat);
         tuft.name = 'hairTuft' + i;
@@ -5085,7 +5085,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const headR = 0.28 * s;
     const headGeo = new THREE.SphereGeometry(headR, 12, 10);
     const ruddyMat = materials.skin.clone();
-    ruddyMat.uniforms.uBaseColor = { value: new THREE.Color(0xf0b898) }; // flushed skin tone
+    ruddyMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.skinFlushed) };
     const head = new THREE.Mesh(headGeo, ruddyMat);
     head.name = 'head';
     head.scale.set(1.0, 0.92, 0.97);
@@ -5119,7 +5119,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
 
     // Red nose — small red sphere on nose
     const redNoseGeo = new THREE.SphereGeometry(headR * 0.10, 6, 5);
-    const redNoseMat = new THREE.MeshBasicMaterial({ color: 0xdd3333 });
+    const redNoseMat = new THREE.MeshBasicMaterial({ color: PALETTE.drunkNose });
     const redNose = new THREE.Mesh(redNoseGeo, redNoseMat);
     redNose.name = 'redNose';
     redNose.position.set(0, -headR * 0.08, -headR * 0.95);
@@ -5156,7 +5156,7 @@ function _buildRigidDrunk(size, config, materials, boneMap) {
     const hatR = headR * 0.28;
     const hatGeo = new THREE.ConeGeometry(hatR, hatH, 8);
     const hatMat = materials.body.clone();
-    hatMat.uniforms.uBaseColor = { value: new THREE.Color(0xe84888) }; // festive pink
+    hatMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.girls) };
     const hat = new THREE.Mesh(hatGeo, hatMat);
     hat.name = 'partyHat';
     hat.position.set(headR * 0.15, headR * 0.72, -headR * 0.05);
@@ -5484,7 +5484,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const crownH = headR * 0.45;
     const crownGeo = new THREE.ConeGeometry(headR * 0.12, crownH, 4);
     const crownMat = materials.body.clone();
-    crownMat.uniforms.uBaseColor = { value: new THREE.Color(0xe8a050) }; // slightly lighter crown
+    crownMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.oceanSeahorseCrown) };
 
     for (let i = 0; i < 3; i++) {
         const spike = new THREE.Mesh(crownGeo, crownMat);
@@ -5506,7 +5506,7 @@ function _buildRigidSeahorse(size, config, materials, boneMap) {
     const dorsalLen = (d.dorsalLength || 0.10) * s;
     const dorsalGeo = new THREE.BoxGeometry(0.008 * s, dorsalH, dorsalLen);
     const dorsalMat = materials.body.clone();
-    dorsalMat.uniforms.uBaseColor = { value: new THREE.Color(0xf0c070) }; // slightly translucent-looking lighter
+    dorsalMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.oceanSeahorseDorsal) };
     const dorsal = new THREE.Mesh(dorsalGeo, dorsalMat);
     dorsal.name = 'dorsal';
     dorsal.position.set(0, dorsalH * 0.30, 0);
@@ -5624,7 +5624,7 @@ function _buildRigidTrolley(size, config, materials, boneMap) {
     // Dark hair — neat bob under hat
     const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x3a2a1a) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairDarkBrown) };
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.name = 'hair';
     hair.position.set(0, headR * 0.10, headR * 0.05);
@@ -5678,7 +5678,7 @@ function _buildRigidTrolley(size, config, materials, boneMap) {
 
     // Cart body — metallic silver rounded box
     const cartMat = materials.body.clone();
-    cartMat.uniforms.uBaseColor = { value: new THREE.Color(0x9a9aa8) };
+    cartMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.airplaneTrolley) };
     const cartGeo = createRoundedBox(cartW, cartH, cartD, 0.02 * s, 3);
     const cart = new THREE.Mesh(cartGeo, cartMat);
     cart.name = 'cartBody';
@@ -5731,7 +5731,7 @@ function _buildRigidTrolley(size, config, materials, boneMap) {
 
     // Shelf items — 2-3 small cylinders on top (bottles/cups)
     const itemGeo = new THREE.CylinderGeometry(0.020 * s, 0.016 * s, 0.06 * s, 6);
-    const itemColors = [0xf5f0e0, 0xffccaa, 0xc8d8e8]; // cream, warm, cool
+    const itemColors = [PALETTE.parchment, PALETTE.skin, PALETTE.coolItem];
     for (let i = 0; i < 3; i++) {
         const itemMat = materials.body.clone();
         itemMat.uniforms.uBaseColor = { value: new THREE.Color(itemColors[i]) };
@@ -5801,7 +5801,7 @@ function _buildRigidVaulter(size, config, materials, boneMap) {
 
     // Sport headband — wraps around forehead
     const bandGeo = new THREE.TorusGeometry(headR * 0.82, headR * 0.08, 6, 16);
-    const bandMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const bandMat = new THREE.MeshBasicMaterial({ color: PALETTE.sportWhite });
     const band = new THREE.Mesh(bandGeo, bandMat);
     band.name = 'headband';
     band.position.set(0, headR * 0.28, 0);
@@ -5838,7 +5838,7 @@ function _buildRigidVaulter(size, config, materials, boneMap) {
 
     // Fingerless gloves — slightly larger hands with knuckle details
     const gloveGeo = new THREE.SphereGeometry(armRadius * 1.3, 6, 5);
-    const gloveMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
+    const gloveMat = new THREE.MeshBasicMaterial({ color: PALETTE.hairBuzzcut });
 
     const gloveL = new THREE.Mesh(gloveGeo, gloveMat);
     gloveL.name = 'gloveL';
@@ -6353,7 +6353,7 @@ function _buildRigidFrog(size, config, materials, boneMap) {
     // ═══ SPOTS: darker green patches on the back ═══
     const spotGeo = new THREE.SphereGeometry(bodyW * 0.22, 6, 5);
     const spotMat = materials.body.clone();
-    spotMat.uniforms.uBaseColor = { value: new THREE.Color(0x508820) };
+    spotMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.oceanFrogSpots) };
     const spotPositions = [
         { x: bodyW * 0.30, y: bodyH * 0.15, z: 0 },
         { x: -bodyW * 0.25, y: bodyH * 0.18, z: bodyLen * 0.15 },
@@ -6433,7 +6433,7 @@ function _buildRigidHurdler(size, config, materials, boneMap) {
 
     // Athletic headband — thinner than vaulter's
     const hbGeo = new THREE.TorusGeometry(headR * 0.80, headR * 0.06, 6, 14);
-    const hbMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const hbMat = new THREE.MeshBasicMaterial({ color: PALETTE.sportWhite });
     const hb = new THREE.Mesh(hbGeo, hbMat);
     hb.name = 'headband';
     hb.position.set(0, headR * 0.30, 0);
@@ -6445,7 +6445,7 @@ function _buildRigidHurdler(size, config, materials, boneMap) {
     // Short cropped hair
     const hairGeo = new THREE.SphereGeometry(headR * 0.88, 8, 6);
     const hairMat = materials.body.clone();
-    hairMat.uniforms.uBaseColor = { value: new THREE.Color(0x2a2020) };
+    hairMat.uniforms.uBaseColor = { value: new THREE.Color(PALETTE.hairDarkAuburn) };
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.name = 'hair';
     hair.position.set(0, headR * 0.18, headR * 0.05);
@@ -6458,7 +6458,7 @@ function _buildRigidHurdler(size, config, materials, boneMap) {
 
     // Wristbands — small accent
     const wbGeo = new THREE.TorusGeometry(0.075 * s, 0.015 * s, 4, 8);
-    const wbMat = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const wbMat = new THREE.MeshBasicMaterial({ color: PALETTE.sportWhite });
 
     const wbL = new THREE.Mesh(wbGeo, wbMat);
     wbL.name = 'wristbandL';
